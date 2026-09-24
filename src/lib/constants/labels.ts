@@ -1,0 +1,123 @@
+/**
+ * Libellés de l'interface — source unique de vérité.
+ * Aucun texte affiché ne doit être écrit en dur dans un composant.
+ */
+export const LABELS = {
+  app: {
+    name: "CentroManager",
+    tagline: "Abonnements et présences pour centres de langue et de soutien scolaire",
+    metaDescription:
+      "Gérez les abonnements, les paiements et les présences de votre centre de langue ou de soutien scolaire.",
+  },
+  common: {
+    loading: "Chargement…",
+    retry: "Réessayer",
+    cancel: "Annuler",
+    confirm: "Confirmer",
+    save: "Enregistrer",
+    search: "Rechercher",
+    back: "Retour",
+    close: "Fermer",
+    openMenu: "Ouvrir le menu",
+    skipToContent: "Aller au contenu principal",
+  },
+  theme: {
+    toggle: "Changer de thème",
+    light: "Clair",
+    dark: "Sombre",
+    system: "Système",
+  },
+  currency: {
+    code: "MAD",
+    name: "dirham marocain",
+    namePlural: "dirhams marocains",
+  },
+  status: {
+    upToDate: "À jour",
+    overdue: "En retard",
+    pending: "En attente",
+    paid: "Payé",
+    absent: "Absent",
+    present: "Présent",
+  },
+  roles: {
+    admin: "Administrateur",
+    assistant: "Assistant",
+    teacher: "Professeur",
+  },
+  nav: {
+    mainLabel: "Navigation principale",
+    styleguide: "Charte graphique",
+    dashboard: "Tableau de bord",
+    students: "Élèves",
+    attendance: "Appel",
+    schedule: "Emploi du temps",
+    settings: "Paramètres",
+  },
+  styleguide: {
+    title: "Charte graphique",
+    description: "Tokens de design et composants de base de CentroManager.",
+    sections: {
+      colors: "Couleurs",
+      typography: "Typographie",
+      buttons: "Boutons",
+      badges: "Pastilles de statut",
+      stats: "Indicateurs",
+      emptyState: "État vide",
+      loading: "État de chargement",
+      toasts: "Notifications",
+    },
+    swatches: {
+      primary: "Principale — bleu profond",
+      highlight: "Accent — ambre",
+      success: "À jour — vert",
+      overdue: "En retard — rouge",
+      absence: "Absence — orange",
+      muted: "Neutre",
+    },
+    typography: {
+      display: "Titre de page",
+      heading: "Titre de section",
+      body: "Texte courant : les élèves à jour de leurs paiements apparaissent avec une pastille verte.",
+      caption: "Légende et informations secondaires",
+      amountLabel: "Montant en chiffres tabulaires",
+      dateLabel: "Date au format jour mois année",
+    },
+    buttons: {
+      primary: "Action principale",
+      secondary: "Secondaire",
+      outline: "Contour",
+      ghost: "Discret",
+      destructive: "Supprimer",
+      highlight: "Mettre en avant",
+      present: "Présent",
+      absent: "Absent",
+    },
+    stats: {
+      collected: "Encaissé ce mois",
+      expected: "Attendu ce mois",
+      unpaid: "Impayés",
+      absencesToday: "Absences aujourd'hui",
+      vsLastMonth: "par rapport au mois dernier",
+    },
+    emptyState: {
+      title: "Aucun élève pour le moment",
+      description: "Les élèves inscrits apparaîtront ici. Commencez par ajouter votre premier élève.",
+      action: "Ajouter un élève",
+    },
+    toasts: {
+      trigger: "Afficher une notification",
+      success: "Paiement enregistré",
+      successDescription: "La facture a été marquée comme payée.",
+      errorTrigger: "Afficher une erreur",
+      error: "Une erreur est survenue",
+      errorDescription: "Vérifiez votre connexion puis réessayez.",
+    },
+  },
+  errors: {
+    generic: "Une erreur est survenue",
+    notFoundTitle: "Page introuvable",
+    notFoundDescription: "La page que vous cherchez n'existe pas ou a été déplacée.",
+    backHome: "Revenir à l'accueil",
+  },
+} as const;

@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CentroManager
 
-## Getting Started
+SaaS de gestion des abonnements et des présences pour les centres de langue et de soutien scolaire.
 
-First, run the development server:
+## Stack
+
+Next.js 15 (App Router) · TypeScript strict · Tailwind CSS v4 · shadcn/ui · Supabase · Zod · React Hook Form · TanStack Query · date-fns (fr) · Recharts · Sonner · Lucide
+
+## Démarrage
 
 ```bash
+npm install
+cp .env.example .env.local   # variables Supabase (phase 2)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Scripts : `dev`, `build`, `start`, `lint`, `typecheck`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Organisation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+  app/                    routes (App Router)
+    charte/               page de démonstration de la charte graphique
+  components/
+    ui/                   composants shadcn adaptés à la charte
+    layout/               coque applicative, logo, bascule de thème
+    shared/               composants métier transverses (montant, statut, état vide…)
+    providers/            fournisseurs React (thème)
+  config/navigation.ts    entrées de navigation par espace
+  lib/
+    constants/labels.ts   TOUS les libellés français de l'interface
+    format.ts             formatage MAD, pourcentages, dates (jj/mm/aaaa)
+```
 
-## Learn More
+## Conventions
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Aucun texte en dur dans les composants : tout passe par `LABELS` (`src/lib/constants/labels.ts`).
+- Montants : composant `Money` ou `formatMAD` / `formatMADLong`, toujours en chiffres tabulaires (`numeric`).
+- Couleurs : tokens uniquement (`primary`, `highlight`, `success`, `overdue`, `absence`), jamais de valeur brute dans un composant.
+- Zones tactiles ≥ 44 px (`Button` par défaut `h-11`), boutons d'appel via `size="call"` (≥ 64 px).
+- Icônes : Lucide uniquement. Pas d'emoji dans l'interface.
+- `any` est interdit (règle ESLint en erreur).
