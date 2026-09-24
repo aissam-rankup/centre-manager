@@ -4,21 +4,23 @@ import { LABELS } from "@/lib/constants/labels";
 import { cn } from "@/lib/utils";
 
 type LogoProps = {
+  /** « sidebar » : pour la barre latérale bleu nuit. */
+  variant?: "default" | "sidebar";
   className?: string;
-  showName?: boolean;
 };
 
-export function Logo({ className, showName = true }: LogoProps) {
+export function Logo({ variant = "default", className }: LogoProps) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+    <span className={cn("inline-flex items-center gap-3", className)}>
+      <span
+        className={cn(
+          "flex size-9 items-center justify-center rounded-[10px]",
+          variant === "sidebar" ? "bg-white/10 text-white" : "bg-primary text-primary-foreground",
+        )}
+      >
         <GraduationCap className="size-5" aria-hidden />
       </span>
-      {showName ? (
-        <span className="text-base font-semibold tracking-tight">{LABELS.app.name}</span>
-      ) : (
-        <span className="sr-only">{LABELS.app.name}</span>
-      )}
+      <span className="text-base font-semibold tracking-tight">{LABELS.app.name}</span>
     </span>
   );
 }

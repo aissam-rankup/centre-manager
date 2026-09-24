@@ -1,7 +1,11 @@
-import { format, formatDistanceToNow } from "date-fns";
+import { TZDate } from "@date-fns/tz";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 import { LABELS } from "@/lib/constants/labels";
+
+/** Fuseau horaire de référence de l'application. */
+export const TIME_ZONE = "Africa/Casablanca";
 
 const amountFormatter = new Intl.NumberFormat("fr-FR", {
   minimumFractionDigits: 0,
@@ -13,42 +17,44 @@ const percentFormatter = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 1,
 });
 
-/** 1 250 MAD — montant avec le code devise. */
+/** « 1 200 MAD » */
 export function formatMAD(amount: number): string {
-  return `${amountFormatter.format(amount)} ${LABELS.currency.code}`;
+  // Espace insécable classique pour les milliers, pour un rendu « 1 200 MAD » homogène.
+  const digits = amountFormatter.format(amount).replace(/ /g, " ");
+  return `${digits} ${LABELS.currency.code}`;
 }
 
-/** 1 250 dirhams marocains — montant avec la devise en toutes lettres. */
-export function formatMADLong(amount: number): string {
-  const unit = Math.abs(amount) >= 2 ? LABELS.currency.namePlural : LABELS.currency.name;
-  return `${amountFormatter.format(amount)} ${unit}`;
-}
-
-/** 12,5 % */
+/** « 12,5 % » */
 export function formatPercent(ratio: number): string {
   return percentFormatter.format(ratio);
 }
 
-/** 24/09/2026 */
-export function formatDateShort(date: Date | string): string {
-  return format(toDate(date), "dd/MM/yyyy", { locale: fr });
+/** Date au fuseau de Casablanca. */
+export function inAppTimeZone(date: Date | string): TZDate {
+  return new TZDate(typeof date === "string" ? new Date(date) : date, TIME_ZONE);
 }
 
-/** 24 septembre 2026 */
-export function formatDateLong(date: Date | string): string {
-  return format(toDate(date), "d MMMM yyyy", { locale: fr });
+/** Date du jour à Casablanca. */
+export function today(): TZDate {
+  return TZDate.tz(TIME_ZONE);
 }
 
-/** jeudi 24 septembre 2026 */
+/** « 24/09/2026 » */
+export function formatDate(date: Date | string): string {
+  return format(inAppTimeZone(date), "dd/MM/yyyy", { locale: fr });
+}
+
+/** « 24/09/2026 14:30 » */
+export function formatDateTime(date: Date | string): string {
+  return format(inAppTimeZone(date), "dd/MM/yyyy HH:mm", { locale: fr });
+}
+
+/** « jeudi 24/09/2026 » */
 export function formatDateWithWeekday(date: Date | string): string {
-  return format(toDate(date), "EEEE d MMMM yyyy", { locale: fr });
+  return format(inAppTimeZone(date), "EEEE dd/MM/yyyy", { locale: fr });
 }
 
-/** il y a 3 jours */
-export function formatRelative(date: Date | string): string {
-  return formatDistanceToNow(toDate(date), { locale: fr, addSuffix: true });
-}
-
-function toDate(date: Date | string): Date {
-  return typeof date === "string" ? new Date(date) : date;
+/** « 2026-09-24 » — format des colonnes `date` Postgres, au fuseau de Casablanca. */
+export function toISODate(date: Date | string): string {
+  return format(inAppTimeZone(date), "yyyy-MM-dd");
 }

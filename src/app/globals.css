@@ -5,19 +5,34 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CentroManager — tokens de design
- * Couleur principale : bleu profond · Accent : ambre
- * Sémantique : vert = à jour · rouge = en retard · orange = absence
- * Rayon 12 px · ombres douces · grille de 4 px (--spacing par défaut de Tailwind)
+ * CentroManager — tokens de design (Tailwind v4 : la configuration du thème vit dans @theme).
+ *
+ * Les couleurs de la charte sont utilisées telles quelles pour les fonds, bordures,
+ * points de statut, contours de photo et graphiques. Les variantes « -ink » sont des
+ * nuances plus sombres de la même teinte, réservées au texte, pour garantir un
+ * contraste d'au moins 4,5:1 (y compris sur un fond teinté à 10 %).
+ * Les variantes « -strong » servent de fond aux boutons à texte blanc.
  */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
+  /* Typographie */
+  --text-title: 28px;
+  --text-title--line-height: 36px;
+  --text-title--font-weight: 700;
+  --text-section: 20px;
+  --text-section--line-height: 28px;
+  --text-section--font-weight: 600;
+  --text-body: 15px;
+  --text-body--line-height: 24px;
+  --text-caption: 13px;
+  --text-caption--line-height: 18px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -30,26 +45,29 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
+  --color-destructive: var(--danger-ink);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Accent de marque (ambre) */
+  /* Bleu vif : liens, états actifs, focus */
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  /* Ambre : mise en avant, un seul usage par écran */
   --color-highlight: var(--highlight);
+  --color-highlight-ink: var(--highlight-ink);
   --color-highlight-foreground: var(--highlight-foreground);
-  --color-highlight-soft: var(--highlight-soft);
-
-  /* Sémantique métier */
+  /* Vert succès : à jour, présent */
   --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-success-soft: var(--success-soft);
-  --color-overdue: var(--overdue);
-  --color-overdue-foreground: var(--overdue-foreground);
-  --color-overdue-soft: var(--overdue-soft);
-  --color-absence: var(--absence);
-  --color-absence-foreground: var(--absence-foreground);
-  --color-absence-soft: var(--absence-soft);
+  --color-success-ink: var(--success-ink);
+  --color-success-strong: var(--success-strong);
+  /* Rouge alerte : retard de paiement, absent */
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-strong: var(--danger-strong);
+  /* Orange attention : absence, relance à faire */
+  --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -59,152 +77,149 @@
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-primary: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-ring: var(--ring);
 
-  /* Rayon : 12 px pour les surfaces principales */
+  /* Formes */
   --radius-sm: 8px;
   --radius-md: 10px;
-  --radius-lg: var(--radius);
-  --radius-xl: var(--radius);
+  --radius-lg: 12px;
+  --radius-xl: 12px;
   --radius-2xl: 16px;
-  --radius-3xl: 20px;
+  --radius-3xl: 24px;
   --radius-4xl: 9999px;
 
-  /* Ombres douces */
-  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 2px 8px rgb(15 23 42 / 0.05);
-  --shadow-raised: 0 2px 4px rgb(15 23 42 / 0.05), 0 8px 24px rgb(15 23 42 / 0.08);
+  /* Ombre très douce */
+  --shadow-soft: 0 1px 2px rgb(17 24 39 / 0.04), 0 1px 3px rgb(17 24 39 / 0.04);
+  --shadow-raised: 0 4px 16px rgb(17 24 39 / 0.08);
 }
 
 :root {
   --radius: 12px;
 
-  --background: #f6f8fb;
-  --foreground: #0f172a;
+  --background: #f6f7f9;
+  --foreground: #111827;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #111827;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --popover-foreground: #111827;
 
-  /* Bleu profond */
-  --primary: #1e3a8a;
+  /* Bleu nuit principal */
+  --primary: #1b2a4a;
   --primary-foreground: #ffffff;
 
-  --secondary: #eef2f8;
-  --secondary-foreground: #1e293b;
-  --muted: #eef2f7;
-  --muted-foreground: #5b6477;
-  /* Surface de survol neutre (utilisée par les menus shadcn) */
-  --accent: #eaf0fb;
-  --accent-foreground: #1e3a8a;
+  --secondary: #eef0f4;
+  --secondary-foreground: #111827;
+  --muted: #eef0f4;
+  --muted-foreground: #6b7280;
+  /* Surface de survol des menus */
+  --accent: #eef0f4;
+  --accent-foreground: #111827;
 
-  --destructive: #dc2626;
-  --border: #e2e8f0;
-  --input: #d5dce6;
-  --ring: #3b5fc4;
+  --border: #e3e6eb;
+  --input: #e3e6eb;
+  --ring: #2f6bff;
 
-  /* Ambre */
-  --highlight: #f59e0b;
-  --highlight-foreground: #3b2300;
-  --highlight-soft: #fef3c7;
+  --brand: #2f6bff;
+  --brand-ink: #185bff;
+  --highlight: #f2a649;
+  --highlight-ink: #a35f0c;
+  --highlight-foreground: #1b2a4a;
+  --success: #1f9d6b;
+  --success-ink: #187b54;
+  --success-strong: #187b54;
+  --danger: #d64545;
+  --danger-ink: #cb2d2d;
+  --danger-strong: #cb2d2d;
+  --warning: #e8833a;
+  --warning-ink: #af5514;
 
-  /* Vert — à jour */
-  --success: #15803d;
-  --success-foreground: #ffffff;
-  --success-soft: #dcfce7;
-  /* Rouge — en retard */
-  --overdue: #dc2626;
-  --overdue-foreground: #ffffff;
-  --overdue-soft: #fee2e2;
-  /* Orange — absence */
-  --absence: #ea580c;
-  --absence-foreground: #ffffff;
-  --absence-soft: #ffedd5;
+  --chart-1: #2f6bff;
+  --chart-2: #1b2a4a;
+  --chart-3: #f2a649;
+  --chart-4: #1f9d6b;
+  --chart-5: #e8833a;
 
-  --chart-1: #1e3a8a;
-  --chart-2: #f59e0b;
-  --chart-3: #3b82f6;
-  --chart-4: #0d9488;
-  --chart-5: #94a3b8;
-
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #1e3a8a;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eaf0fb;
-  --sidebar-accent-foreground: #1e3a8a;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #3b5fc4;
+  /* Barre latérale en bleu nuit */
+  --sidebar: #1b2a4a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-muted: #c3cadb;
+  --sidebar-accent: #2a3b60;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2a3b60;
 }
 
+/* Thème sombre dérivé des mêmes teintes — contrastes vérifiés à 4,5:1 minimum. */
 .dark {
-  --background: #0b1120;
-  --foreground: #e6ebf4;
-  --card: #121a2c;
-  --card-foreground: #e6ebf4;
-  --popover: #141d31;
-  --popover-foreground: #e6ebf4;
+  --background: #0d1526;
+  --foreground: #e7eaf0;
+  --card: #141e33;
+  --card-foreground: #e7eaf0;
+  --popover: #18233b;
+  --popover-foreground: #e7eaf0;
 
-  --primary: #7ea2f5;
-  --primary-foreground: #0b1633;
+  --primary: #8daeff;
+  --primary-foreground: #0d1526;
 
-  --secondary: #1b2539;
-  --secondary-foreground: #e6ebf4;
-  --muted: #1a2335;
-  --muted-foreground: #97a2b8;
-  --accent: #1d2a45;
-  --accent-foreground: #c9d8fb;
+  --secondary: #1d2944;
+  --secondary-foreground: #e7eaf0;
+  --muted: #1d2944;
+  --muted-foreground: #9ca3af;
+  --accent: #1d2944;
+  --accent-foreground: #e7eaf0;
 
-  --destructive: #f87171;
-  --border: #243049;
-  --input: #2c3953;
-  --ring: #7ea2f5;
+  --border: #27324a;
+  --input: #2f3b56;
+  --ring: #628fff;
 
-  --highlight: #fbbf24;
-  --highlight-foreground: #2b1a00;
-  --highlight-soft: #3a2c0c;
+  --brand: #2f6bff;
+  --brand-ink: #628fff;
+  --highlight: #f2a649;
+  --highlight-ink: #f2a649;
+  --highlight-foreground: #1b2a4a;
+  --success: #1f9d6b;
+  --success-ink: #22ac75;
+  --success-strong: #187b54;
+  --danger: #d64545;
+  --danger-ink: #e07171;
+  --danger-strong: #cb2d2d;
+  --warning: #e8833a;
+  --warning-ink: #e8833a;
 
-  --success: #4ade80;
-  --success-foreground: #052e14;
-  --success-soft: #0f2e1d;
-  --overdue: #f87171;
-  --overdue-foreground: #3b0909;
-  --overdue-soft: #3a1418;
-  --absence: #fb923c;
-  --absence-foreground: #3a1604;
-  --absence-soft: #3a2012;
+  --chart-1: #628fff;
+  --chart-2: #8daeff;
+  --chart-3: #f2a649;
+  --chart-4: #22ac75;
+  --chart-5: #e8833a;
 
-  --chart-1: #7ea2f5;
-  --chart-2: #fbbf24;
-  --chart-3: #60a5fa;
-  --chart-4: #2dd4bf;
-  --chart-5: #64748b;
-
-  --sidebar: #0f1626;
-  --sidebar-foreground: #e6ebf4;
-  --sidebar-primary: #7ea2f5;
-  --sidebar-primary-foreground: #0b1633;
-  --sidebar-accent: #1d2a45;
-  --sidebar-accent-foreground: #c9d8fb;
-  --sidebar-border: #243049;
-  --sidebar-ring: #7ea2f5;
+  --sidebar: #0a1120;
+  --sidebar-foreground: #e7eaf0;
+  --sidebar-muted: #9ca3af;
+  --sidebar-accent: #1d2944;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1d2944;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   html {
     @apply font-sans;
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv11", "ss01";
+    @apply bg-background text-body text-foreground antialiased;
+  }
+  /* Focus visible sur tous les éléments interactifs */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
@@ -220,8 +235,8 @@
   box-shadow: var(--shadow-raised);
 }
 
-/* Montants : chiffres tabulaires systématiques */
+/* Montants et chiffres : chiffres tabulaires, graisse 600 */
 @utility numeric {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
+  font-weight: 600;
 }
