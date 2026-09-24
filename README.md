@@ -71,8 +71,8 @@ Ouvrez http://localhost:3000.
 ### 6. Vérifier
 
 ```bash
-npm run db:test     # tests des policies RLS (pgTAP)
-npm run typecheck   # TypeScript strict
+npm run db:test     # tests pgTAP : policies RLS et hook JWT
+npm run typecheck   # types de routes Next + TypeScript strict
 npm run lint        # ESLint
 npm run build       # build de production
 ```
@@ -90,6 +90,29 @@ Mot de passe commun : **`CentroDemo2026!`**
 | Professeur — Anglais (TC), Français (1ère BAC) | prof3@centro.demo | Youssef Amrani |
 
 Contenu du seed : 1 centre, 3 niveaux, 6 matières, 40 élèves, 72 inscriptions, 12 créneaux hebdomadaires, 4 semaines de présences, factures du mois précédent et du mois en cours (dont une partie en retard), alertes et relances. Les dates sont calculées à partir du jour du `db:reset`.
+
+## Authentification et espaces
+
+| Espace | Rôle | URL |
+| --- | --- | --- |
+| Connexion | — | `/connexion` |
+| Accueil (assistant) | `assistant` | `/assistant` |
+| Professeur | `teacher` | `/professeur` |
+| Administration | `admin` | `/admin` |
+| Compte inactif | compte désactivé ou sans profil | `/compte-inactif` |
+
+- **Connexion** : email et mot de passe, via une Server Action (`src/lib/auth/actions.ts`). Les inscriptions publiques sont fermées ; les comptes sont créés par l'administration.
+- **Proxy** (`src/proxy.ts`) : rafraîchit la session, impose une session sur toutes les pages (sauf `/connexion`) et oriente `/` et `/connexion` vers l'espace du rôle. La page demandée est conservée dans `?suivant=` ; seuls les chemins internes du bon espace sont acceptés.
+- **Garde serveur** (`requireRole` dans `src/lib/auth/session.ts`) : chaque espace vérifie le rôle et l'activation **en base**. C'est la source de vérité : une désactivation ou un changement de rôle s'applique immédiatement, même si le jeton n'est pas encore renouvelé.
+- **Jeton** : le hook `custom_access_token_hook` ajoute `user_role`, `center_id` et `profile_active` au JWT. Il sert uniquement aux redirections rapides du proxy.
+- **La charte graphique** (`/charte`) n'est disponible qu'en développement.
+
+### Mise en production (Supabase hébergé)
+
+1. Appliquer les migrations : `npx supabase link --project-ref <ref>` puis `npx supabase db push`.
+2. Activer le hook : **Authentication > Hooks > Customize Access Token**, fonction `public.custom_access_token_hook`.
+3. Désactiver les inscriptions publiques : **Authentication > Sign In / Providers > Allow new users to sign up** décoché.
+4. Renseigner les variables de `.env.example` dans Vercel (`SUPABASE_SERVICE_ROLE_KEY` en variable serveur uniquement).
 
 ## Base de données
 
@@ -124,10 +147,16 @@ supabase/
   config.toml             configuration locale (ports 5434x, inscriptions publiques fermées)
   migrations/             migrations SQL versionnées
   seed.sql                données de démonstration
-  tests/database/         tests pgTAP des policies RLS
+  tests/database/         tests pgTAP (policies RLS, hook JWT)
 src/
+  proxy.ts                session et redirections (ex-middleware)
   app/                    routes (App Router)
-    charte/               démonstration de la charte : tokens, composants, états
+    (auth)/connexion/     page de connexion
+    assistant/            espace accueil
+    professeur/           espace professeur ((shell) = pages avec navigation)
+    admin/                espace administration
+    compte-inactif/       compte désactivé ou sans profil
+    charte/               démonstration de la charte (développement uniquement)
   components/
     ui/                   composants shadcn adaptés à la charte
     layout/               coque applicative, logo, bascule de thème
@@ -138,7 +167,9 @@ src/
   lib/
     constants/labels.ts   TOUS les libellés français de l'interface
     format.ts             « 1 200 MAD », pourcentages, dates jj/mm/aaaa (Africa/Casablanca)
-    supabase/             types générés de la base
+    auth/                 routes par rôle, session serveur, Server Actions, schémas Zod
+    supabase/             clients (navigateur, serveur, service_role, proxy) et types générés
+    env.ts, env.server.ts variables d'environnement validées (Zod)
 ```
 
 ## Conventions

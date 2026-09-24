@@ -6,9 +6,10 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { Logo } from "@/components/layout/logo";
-import { isNavItemActive, type NavItem } from "@/components/layout/nav-types";
+import { findActiveHref, type NavItem } from "@/components/layout/nav-types";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { type ShellUser, UserMenu } from "@/components/layout/user-menu";
+import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { NAVIGATION, type NavSpace } from "@/config/navigation";
 import { LABELS } from "@/lib/constants/labels";
 import { cn } from "@/lib/utils";
@@ -18,10 +19,14 @@ const MAX_BOTTOM_ITEMS = 5;
 
 type AppShellProps = {
   space: NavSpace;
+  /** Utilisateur connecté (absent sur la charte graphique). */
+  user?: ShellUser;
+  /** Libellé de l'espace, affiché sous le logo de la barre latérale. */
+  spaceLabel?: string;
   children: ReactNode;
 };
 
-export function AppShell({ space, children }: AppShellProps) {
+export function AppShell({ space, user, spaceLabel, children }: AppShellProps) {
   const items = NAVIGATION[space];
   const home = items[0]?.href ?? "/";
 
@@ -41,6 +46,9 @@ export function AppShell({ space, children }: AppShellProps) {
             <Logo variant="sidebar" />
           </Link>
         </div>
+        {spaceLabel ? (
+          <p className="px-6 pb-2 text-caption font-medium tracking-wide text-sidebar-muted uppercase">{spaceLabel}</p>
+        ) : null}
         <SidebarNav items={items} />
       </aside>
 
@@ -52,6 +60,7 @@ export function AppShell({ space, children }: AppShellProps) {
           </Link>
           <div className="ml-auto flex items-center gap-1">
             <ThemeToggle />
+            {user ? <UserMenu user={user} /> : null}
           </div>
         </header>
 
@@ -66,13 +75,13 @@ export function AppShell({ space, children }: AppShellProps) {
 }
 
 function SidebarNav({ items }: { items: readonly NavItem[] }) {
-  const pathname = usePathname();
+  const activeHref = findActiveHref(items, usePathname());
 
   return (
     <nav aria-label={LABELS.nav.mainLabel} className="flex-1 px-3 py-2">
       <ul className="flex flex-col gap-1">
         {items.map((item) => {
-          const active = isNavItemActive(pathname, item);
+          const active = item.href === activeHref;
           const Icon = item.icon;
           return (
             <li key={item.href}>
@@ -97,11 +106,11 @@ function SidebarNav({ items }: { items: readonly NavItem[] }) {
 }
 
 function BottomNav({ items }: { items: readonly NavItem[] }) {
-  const pathname = usePathname();
+  const activeHref = findActiveHref(items, usePathname());
   const overflow = items.length > MAX_BOTTOM_ITEMS;
   const visible = overflow ? items.slice(0, MAX_BOTTOM_ITEMS - 1) : items;
   const hidden = overflow ? items.slice(MAX_BOTTOM_ITEMS - 1) : [];
-  const hiddenActive = hidden.some((item) => isNavItemActive(pathname, item));
+  const hiddenActive = hidden.some((item) => item.href === activeHref);
 
   return (
     <nav
@@ -110,23 +119,24 @@ function BottomNav({ items }: { items: readonly NavItem[] }) {
     >
       <ul className="mx-auto flex max-w-lg">
         {visible.map((item) => {
-          const active = isNavItemActive(pathname, item);
+          const active = item.href === activeHref;
           const Icon = item.icon;
           return (
-            <li key={item.href} className="flex-1">
+            <li key={item.href} className="min-w-0 flex-1">
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
+                aria-label={item.shortLabel ? item.label : undefined}
                 className={cn(tabClass, active && "text-brand-ink")}
               >
                 <Icon className="size-6" aria-hidden />
-                <span className="max-w-full truncate">{item.label}</span>
+                <span className="max-w-full truncate">{item.shortLabel ?? item.label}</span>
               </Link>
             </li>
           );
         })}
         {overflow ? (
-          <li className="flex-1">
+          <li className="min-w-0 flex-1">
             <Sheet>
               <SheetTrigger className={cn(tabClass, "w-full", hiddenActive && "text-brand-ink")}>
                 <Ellipsis className="size-6" aria-hidden />
@@ -137,20 +147,22 @@ function BottomNav({ items }: { items: readonly NavItem[] }) {
                 <ul className="flex flex-col gap-1 px-2">
                   {hidden.map((item) => {
                     const Icon = item.icon;
-                    const active = isNavItemActive(pathname, item);
+                    const active = item.href === activeHref;
                     return (
                       <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          aria-current={active ? "page" : undefined}
-                          className={cn(
-                            "flex min-h-11 items-center gap-3 rounded-[10px] px-3 font-medium hover:bg-muted",
-                            active && "text-brand-ink",
-                          )}
-                        >
-                          <Icon className="size-5" aria-hidden />
-                          {item.label}
-                        </Link>
+                        <SheetClose asChild>
+                          <Link
+                            href={item.href}
+                            aria-current={active ? "page" : undefined}
+                            className={cn(
+                              "flex min-h-11 items-center gap-3 rounded-[10px] px-3 font-medium hover:bg-muted",
+                              active && "text-brand-ink",
+                            )}
+                          >
+                            <Icon className="size-5" aria-hidden />
+                            {item.label}
+                          </Link>
+                        </SheetClose>
                       </li>
                     );
                   })}
@@ -165,4 +177,4 @@ function BottomNav({ items }: { items: readonly NavItem[] }) {
 }
 
 const tabClass =
-  "flex min-h-16 flex-col items-center justify-center gap-1 px-1 text-caption font-medium text-muted-foreground";
+  "flex min-h-16 w-full flex-col items-center justify-center gap-1 px-1 text-caption font-medium text-muted-foreground";

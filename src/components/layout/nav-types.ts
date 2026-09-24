@@ -3,12 +3,21 @@ import type { LucideIcon } from "lucide-react";
 export type NavItem = {
   href: string;
   label: string;
+  /** Libellé court pour la barre de navigation mobile (13 caractères environ). */
+  shortLabel?: string;
   icon: LucideIcon;
-  /** Actif uniquement sur l'URL exacte (pas sur les sous-pages). */
-  exact?: boolean;
 };
 
-export function isNavItemActive(pathname: string, item: NavItem): boolean {
-  if (pathname === item.href) return true;
-  return !item.exact && pathname.startsWith(`${item.href}/`);
+/**
+ * Entrée active : celle dont le chemin correspond le plus précisément à l'URL.
+ * « /assistant/eleves/nouveau » active « Nouvel élève » et non « Élèves » ;
+ * une fiche « /assistant/eleves/123 » active « Élèves ».
+ */
+export function findActiveHref(items: readonly NavItem[], pathname: string): string | null {
+  let best: string | null = null;
+  for (const { href } of items) {
+    const matches = pathname === href || pathname.startsWith(`${href}/`);
+    if (matches && (best === null || href.length > best.length)) best = href;
+  }
+  return best;
 }
