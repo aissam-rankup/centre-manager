@@ -39,6 +39,20 @@ export type Database = {
             foreignKeyName: "alerts_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "alerts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -73,6 +87,20 @@ export type Database = {
           teacher_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "attendance_student_id_fkey"
             columns: ["student_id"]
@@ -124,6 +152,7 @@ export type Database = {
       enrollments: {
         Row: {
           active: boolean
+          billing_day: number | null
           id: string
           price_agreed: number
           start_date: string
@@ -132,6 +161,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          billing_day?: number | null
           id?: string
           price_agreed: number
           start_date?: string
@@ -140,6 +170,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          billing_day?: number | null
           id?: string
           price_agreed?: number
           start_date?: string
@@ -147,6 +178,20 @@ export type Database = {
           subject_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "enrollments_student_id_fkey"
             columns: ["student_id"]
@@ -213,7 +258,28 @@ export type Database = {
             foreignKeyName: "follow_ups_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["oldest_invoice_id"]
+          },
+          {
+            foreignKeyName: "follow_ups_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "follow_ups_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
             referencedColumns: ["id"]
           },
           {
@@ -440,6 +506,7 @@ export type Database = {
           level_id: string
           notes: string | null
           photo_url: string | null
+          search_name: string | null
         }
         Insert: {
           center_id: string
@@ -452,6 +519,7 @@ export type Database = {
           level_id: string
           notes?: string | null
           photo_url?: string | null
+          search_name?: string | null
         }
         Update: {
           center_id?: string
@@ -464,6 +532,7 @@ export type Database = {
           level_id?: string
           notes?: string | null
           photo_url?: string | null
+          search_name?: string | null
         }
         Relationships: [
           {
@@ -589,6 +658,20 @@ export type Database = {
             foreignKeyName: "enrollments_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
@@ -605,6 +688,112 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "subjects"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      follow_up_queue: {
+        Row: {
+          center_id: string | null
+          days_overdue: number | null
+          followed_up_today: boolean | null
+          full_name: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          last_follow_up_at: string | null
+          level_name: string | null
+          oldest_due_date: string | null
+          oldest_invoice_id: string | null
+          overdue_amount: number | null
+          overdue_count: number | null
+          photo_url: string | null
+          student_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      open_absence_alerts: {
+        Row: {
+          absence_count: number | null
+          center_id: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string | null
+          last_session_date: string | null
+          level_name: string | null
+          photo_url: string | null
+          student_id: string | null
+          subject_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "alerts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_directory: {
+        Row: {
+          center_id: string | null
+          created_at: string | null
+          full_name: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          id: string | null
+          is_overdue: boolean | null
+          level_id: string | null
+          level_name: string | null
+          level_sort_order: number | null
+          overdue_amount: number | null
+          overdue_count: number | null
+          photo_url: string | null
+          search_name: string | null
+          unpaid_amount: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_level_id_center_id_fkey"
+            columns: ["level_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id", "center_id"]
           },
         ]
       }
@@ -646,7 +835,54 @@ export type Database = {
       }
     }
     Functions: {
+      assistant_dashboard_stats: {
+        Args: never
+        Returns: {
+          absences_today: number
+          open_absence_alerts: number
+          overdue_amount: number
+          overdue_count: number
+          overdue_students: number
+          unpaid_amount: number
+          unpaid_count: number
+        }[]
+      }
+      create_student: {
+        Args: {
+          p_full_name: string
+          p_guardian_name?: string
+          p_guardian_phone?: string
+          p_level_id: string
+          p_notes?: string
+          p_photo_path?: string
+          p_student_id: string
+          p_subject_ids: string[]
+        }
+        Returns: string
+      }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      mark_invoice_paid: {
+        Args: { p_invoice_id: string }
+        Returns: {
+          amount_due: number
+          amount_paid: number
+          due_date: string
+          enrollment_id: string
+          id: string
+          paid_at: string | null
+          paid_by: string | null
+          period_end: string
+          period_start: string
+          status: Database["public"]["Enums"]["invoice_status"]
+          student_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "invoices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       alert_type: "consecutive_absences" | "overdue_payment"

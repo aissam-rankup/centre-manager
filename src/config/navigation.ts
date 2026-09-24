@@ -24,7 +24,7 @@ export const NAVIGATION: Record<NavSpace, readonly NavItem[]> = {
   assistant: [
     { href: ROUTES.assistant.home, label: LABELS.nav.dashboard, shortLabel: LABELS.nav.short.dashboard, icon: LayoutDashboard },
     { href: ROUTES.assistant.students, label: LABELS.nav.students, icon: Users },
-    { href: ROUTES.assistant.newStudent, label: LABELS.nav.newStudent, icon: UserPlus },
+    { href: ROUTES.assistant.newStudent, label: LABELS.nav.newStudent, shortLabel: LABELS.nav.short.newStudent, icon: UserPlus },
     { href: ROUTES.assistant.newTeacher, label: LABELS.nav.newTeacher, shortLabel: LABELS.nav.short.newTeacher, icon: GraduationCap },
   ],
   teacher: [

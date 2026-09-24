@@ -29,9 +29,20 @@ export function formatPercent(ratio: number): string {
   return percentFormatter.format(ratio);
 }
 
-/** Date au fuseau de Casablanca. */
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * Date au fuseau de Casablanca.
+ * Une date seule (« 2026-09-23 », colonne Postgres `date`) est un jour calendaire :
+ * elle est prise telle quelle, sans conversion de fuseau.
+ */
 export function inAppTimeZone(date: Date | string): TZDate {
-  return new TZDate(typeof date === "string" ? new Date(date) : date, TIME_ZONE);
+  if (typeof date === "string") {
+    const match = DATE_ONLY.exec(date);
+    if (match) return new TZDate(Number(match[1]), Number(match[2]) - 1, Number(match[3]), TIME_ZONE);
+    return new TZDate(new Date(date), TIME_ZONE);
+  }
+  return new TZDate(date, TIME_ZONE);
 }
 
 /** Date du jour à Casablanca. */

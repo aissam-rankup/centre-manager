@@ -27,7 +27,7 @@ type StatCardProps = {
 export function StatCard({ label, value, icon: Icon, tone = "primary", hint, className }: StatCardProps) {
   return (
     <Card className={className}>
-      <CardContent className="flex items-start gap-4">
+      <CardContent className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
         <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-[10px]", TONE_STYLES[tone])}>
           <Icon className="size-5" aria-hidden />
         </span>
@@ -44,12 +44,12 @@ export function StatCard({ label, value, icon: Icon, tone = "primary", hint, cla
 export function StatCardSkeleton({ className }: { className?: string }) {
   return (
     <Card className={className} aria-hidden>
-      <CardContent className="flex items-start gap-4">
+      <CardContent className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
         <Skeleton className="size-11 rounded-[10px]" />
-        <div className="flex flex-1 flex-col gap-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-3 w-40" />
+        <div className="flex w-full min-w-0 flex-1 flex-col gap-2">
+          <Skeleton className="h-4 w-24 max-w-full" />
+          <Skeleton className="h-8 w-32 max-w-full" />
+          <Skeleton className="h-3 w-40 max-w-full" />
         </div>
       </CardContent>
     </Card>

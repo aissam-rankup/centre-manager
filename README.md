@@ -114,6 +114,15 @@ Contenu du seed : 1 centre, 3 niveaux, 6 matières, 40 élèves, 72 inscriptions
 3. Désactiver les inscriptions publiques : **Authentication > Sign In / Providers > Allow new users to sign up** décoché.
 4. Renseigner les variables de `.env.example` dans Vercel (`SUPABASE_SERVICE_ROLE_KEY` en variable serveur uniquement).
 
+## Règles de facturation
+
+- **Deux cycles** : le 1er et le 15 du mois, déterminés par la date d'inscription (jour 1 à 14 : cycle du 1er ; jour 15 à 31 : cycle du 15).
+- **Période** : un mois complet à partir du jour du cycle (ex. du 15/09 au 14/10).
+- **Échéance** : début de période + 5 jours (le 6 ou le 20). La **première facture**, créée dès l'inscription, est due 5 jours après la date d'inscription.
+- **Paiement intégral** uniquement. Marquer une facture comme payée résout automatiquement l'alerte de retard liée.
+- **Retard** : une facture impayée dont l'échéance est dépassée est affichée « En retard ».
+- **Relances du jour** : élèves en retard, du plus ancien retard au plus récent. Un élève relancé aujourd'hui en sort jusqu'au lendemain.
+
 ## Base de données
 
 | Commande | Effet |

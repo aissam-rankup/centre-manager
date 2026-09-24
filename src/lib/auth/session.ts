@@ -62,10 +62,16 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
  * Garde d'un espace : compte connecté, actif et du rôle attendu.
  * Un compte d'un autre rôle est renvoyé vers son propre espace.
  */
-export async function requireRole(role: UserRole): Promise<SessionProfile> {
+export async function requireRole(role: UserRole | readonly UserRole[]): Promise<SessionProfile> {
+  const allowed: readonly UserRole[] = typeof role === "string" ? [role] : role;
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
   if (state.status === "no-profile" || !state.profile.active) redirect(ROUTES.inactive);
-  if (state.profile.role !== role) redirect(ROLE_HOME[state.profile.role]);
+  if (!allowed.includes(state.profile.role)) redirect(ROLE_HOME[state.profile.role]);
   return state.profile;
+}
+
+/** Garde des données de l'accueil : administrateur ou assistant. */
+export function requireStaff(): Promise<SessionProfile> {
+  return requireRole(["admin", "assistant"]);
 }

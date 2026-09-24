@@ -3,7 +3,7 @@
 --
 -- 1 centre · 3 niveaux · 6 matières · 1 admin · 1 assistant · 3 professeurs
 -- 40 élèves · planning hebdomadaire · 4 semaines de présences
--- factures du mois précédent et du mois en cours, dont certaines en retard.
+-- factures par cycle (1er ou 15 du mois) depuis l'inscription, dont certaines en retard.
 --
 -- Toutes les dates sont calculées à partir du jour du `supabase db reset`
 -- (fuseau Africa/Casablanca) : la démo reste cohérente quel que soit le jour.
@@ -160,7 +160,11 @@ begin
 
   -- -------------------------------------------------------------------
   -- Inscriptions : les deux matières du niveau (une seule si idx % 5 = 0).
-  -- Réduction de 50 MAD si idx % 13 = 0. Nouveaux élèves (idx % 7 = 0) : ce mois-ci.
+  -- Réduction de 50 MAD si idx % 13 = 0.
+  -- Date d'inscription (détermine le cycle de facturation) :
+  --  * idx % 7 = 0 : nouvel élève, inscrit ces derniers jours ;
+  --  * idx % 3 = 0 : le 15 du mois précédent (cycle du 15) ;
+  --  * sinon       : le 1er du mois précédent (cycle du 1er).
   -- -------------------------------------------------------------------
   create temp table demo_enrollments on commit drop as
   select
@@ -169,42 +173,55 @@ begin
     d.id as student_id,
     s.id as subject_id,
     s.monthly_price - case when d.idx % 13 = 0 then 50 else 0 end as price_agreed,
-    case when d.idx % 7 = 0 then v_current_month else v_previous_month end as start_date
+    case
+      when d.idx % 7 = 0 then greatest(v_current_month, v_today - (d.idx % 5))
+      when d.idx % 3 = 0 then v_previous_month + 14
+      else v_previous_month
+    end as start_date
   from demo_students d
   join public.subjects s on s.level_id = d.level_id
   where d.idx % 5 <> 0 or s.name = 'Mathématiques';
 
+  -- Le trigger enrollments_after_insert_first_invoice crée la première facture.
   insert into public.enrollments (id, student_id, subject_id, start_date, price_agreed, active)
   select e.id, e.student_id, e.subject_id, e.start_date, e.price_agreed, true
   from demo_enrollments e;
 
   -- -------------------------------------------------------------------
-  -- Factures : mois précédent et mois en cours.
-  -- Échéance le 5, le 15 ou le 25 selon l'élève.
-  --  * mois précédent : payé, sauf idx % 10 = 3 (impayé → en retard) ;
-  --  * mois en cours  : impayé si idx % 4 = 1 ou idx % 10 = 3, sinon payé ;
+  -- Factures : toutes les périodes depuis l'inscription jusqu'à aujourd'hui.
+  -- Échéance : inscription + 5 jours (1re facture), puis début de période + 5.
+  --  * périodes passées  : payées, sauf idx % 10 = 3 ;
+  --  * période en cours  : impayée si idx % 4 = 1 ou idx % 10 = 3, sinon payée ;
   --    impayé → « overdue » si l'échéance est dépassée, sinon « pending ».
   -- -------------------------------------------------------------------
-  with periods as (
+  with enrollment_cycles as (
     select
       e.*,
-      m.month_start,
-      (m.month_start + interval '1 month - 1 day')::date as month_end,
-      m.month_start + (4 + (e.idx % 3) * 10) as due_date,
-      case
-        when m.month_start = v_previous_month then e.idx % 10 <> 3
-        else not (e.idx % 4 = 1 or e.idx % 10 = 3)
-      end as is_paid
+      en.billing_day,
+      private.billing_period_start(e.start_date, en.billing_day) as first_period,
+      private.billing_period_start(v_today, en.billing_day) as current_period
     from demo_enrollments e
-    cross join (values (v_previous_month), (v_current_month)) as m(month_start)
-    where m.month_start >= date_trunc('month', e.start_date)::date
+    join public.enrollments en on en.id = e.id
+  ),
+  periods as (
+    select
+      c.*,
+      g::date as period_start,
+      (g + interval '1 month' - interval '1 day')::date as period_end,
+      case when g::date = c.first_period then c.start_date + 5 else g::date + 5 end as due_date,
+      case
+        when g::date < c.current_period then c.idx % 10 <> 3
+        else not (c.idx % 4 = 1 or c.idx % 10 = 3)
+      end as is_paid
+    from enrollment_cycles c
+    cross join generate_series(c.first_period, c.current_period, interval '1 month') as g
   )
   insert into public.invoices (
     enrollment_id, student_id, period_start, period_end, amount_due, amount_paid,
     status, due_date, paid_at, paid_by
   )
   select
-    p.id, p.student_id, p.month_start, p.month_end, p.price_agreed,
+    p.id, p.student_id, p.period_start, p.period_end, p.price_agreed,
     case when p.is_paid then p.price_agreed else 0 end,
     case
       when p.is_paid then 'paid'
@@ -213,13 +230,22 @@ begin
     end::public.invoice_status,
     p.due_date,
     case
-      when p.is_paid then least(
-        (p.due_date - (p.idx % 5))::timestamp + time '10:30',
-        (v_today - 1)::timestamp + time '10:30'
+      when p.is_paid then greatest(
+        p.start_date::timestamp + time '10:30',
+        least(
+          (p.due_date - (p.idx % 5))::timestamp + time '10:30',
+          (v_today - 1)::timestamp + time '10:30'
+        )
       ) at time zone 'Africa/Casablanca'
     end,
     case when p.is_paid then c_assistant end
-  from periods p;
+  from periods p
+  on conflict (enrollment_id, period_start) do update
+  set amount_paid = excluded.amount_paid,
+      status = excluded.status,
+      due_date = excluded.due_date,
+      paid_at = excluded.paid_at,
+      paid_by = excluded.paid_by;
 
   -- -------------------------------------------------------------------
   -- Présences : 4 semaines de séances passées (jusqu'à hier inclus).

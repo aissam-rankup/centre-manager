@@ -10,11 +10,11 @@ export function PageSkeleton() {
         <Skeleton className="h-9 w-56" />
         <Skeleton className="h-5 w-80 max-w-full" />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
         <StatCardSkeleton />
         <StatCardSkeleton />
-        <StatCardSkeleton className="hidden sm:flex" />
-        <StatCardSkeleton className="hidden xl:flex" />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
       </div>
       <Card aria-hidden>
         <CardContent className="flex flex-col gap-4">

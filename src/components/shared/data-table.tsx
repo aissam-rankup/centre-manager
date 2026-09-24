@@ -20,6 +20,8 @@ type DataTableProps<Row> = {
   rows: readonly Row[];
   getRowId: (row: Row) => string;
   caption: string;
+  /** « plain » : sans cadre ni ombre, pour un tableau placé dans une carte. */
+  variant?: "card" | "plain";
   className?: string;
 };
 
@@ -27,7 +29,7 @@ type DataTableProps<Row> = {
  * Tableau : lignes de 52 px et en-tête collant sur desktop,
  * transformé automatiquement en liste de cartes sous 768 px.
  */
-export function DataTable<Row>({ columns, rows, getRowId, caption, className }: DataTableProps<Row>) {
+export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "card", className }: DataTableProps<Row>) {
   const titleColumns = columns.filter((c) => c.mobile === "title");
   const asideColumns = columns.filter((c) => c.mobile === "aside");
   const metaColumns = columns.filter((c) => (c.mobile ?? "meta") === "meta");
@@ -37,7 +39,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, className }: 
       {/* Mobile : cartes */}
       <ul className="flex flex-col gap-3 md:hidden" aria-label={caption}>
         {rows.map((row) => (
-          <li key={getRowId(row)} className="rounded-xl border bg-card p-4 shadow-soft">
+          <li key={getRowId(row)} className={cn("rounded-xl border bg-card p-4", variant === "card" && "shadow-soft")}>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 {titleColumns.map((column) => (
@@ -65,7 +67,12 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, className }: 
       </ul>
 
       {/* Desktop : tableau */}
-      <div className="hidden overflow-auto rounded-xl border bg-card shadow-soft md:block md:max-h-[640px]">
+      <div
+        className={cn(
+          "hidden overflow-auto md:block md:max-h-[640px]",
+          variant === "card" ? "rounded-xl border bg-card shadow-soft" : "-mx-(--card-spacing)",
+        )}
+      >
         <table className="w-full border-collapse text-left">
           <caption className="sr-only">{caption}</caption>
           <thead className="sticky top-0 z-10 bg-card">
