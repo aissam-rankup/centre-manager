@@ -316,5 +316,35 @@ begin
   from public.invoices i
   join demo_students d on d.id = i.student_id
   where i.status = 'overdue' and (d.idx / 2) % 2 = 0;
+
+  -- -------------------------------------------------------------------
+  -- Packs « Toutes matières » (moins cher que les matières à l'unité)
+  -- et deux nouveaux élèves abonnés. Les inscriptions aux matières du pack
+  -- et la première facture sont créées par trigger.
+  -- -------------------------------------------------------------------
+  with created as (
+    insert into public.packs (center_id, level_id, name, monthly_price)
+    values
+      (c_center, v_tc, 'Toutes matières', 500),
+      (c_center, v_1bac, 'Toutes matières', 650),
+      (c_center, v_2bac, 'Toutes matières', 850)
+    returning id, level_id
+  )
+  insert into public.pack_subjects (pack_id, subject_id)
+  select c.id, s.id
+  from created c
+  join public.subjects s on s.level_id = c.level_id;
+
+  with new_students as (
+    insert into public.students (center_id, full_name, level_id, guardian_name, guardian_phone, created_at, created_by)
+    values
+      (c_center, 'Lina Bennani', v_tc, 'Mme Bennani', '06 71 24 58 93', v_today - 2, c_assistant),
+      (c_center, 'Othmane Tazi', v_2bac, 'M. Tazi', '06 72 35 69 14', v_today - 2, c_assistant)
+    returning id, level_id
+  )
+  insert into public.pack_enrollments (student_id, pack_id, start_date, price_agreed)
+  select n.id, p.id, v_today - 2, p.monthly_price
+  from new_students n
+  join public.packs p on p.level_id = n.level_id;
 end;
 $$;

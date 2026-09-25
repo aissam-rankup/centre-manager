@@ -8,7 +8,7 @@ import { toISODate, today } from "@/lib/format";
 const L = LABELS.admin.reports;
 const PERIODS: readonly ReportPeriod[] = ["30", "90", "all"];
 
-/** Export CSV d'un rapport : ?type=niveaux|matieres|absences&periode=30|90|all (admin uniquement). */
+/** Export CSV d'un rapport : ?type=niveaux|matieres|packs|absences&periode=30|90|all (admin uniquement). */
 export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get("type");
   const rawPeriod = request.nextUrl.searchParams.get("periode");
@@ -35,6 +35,12 @@ export async function GET(request: NextRequest) {
           row.monthlyPrice,
           row.monthlyRevenue,
         ]),
+      );
+      break;
+    case "packs":
+      csv = toCsv(
+        [L.pack, L.level, L.subscribers, `${L.price} (MAD)`, `${L.packRevenue} (MAD)`],
+        reports.byPack.map((row) => [row.packName, row.levelName, row.subscribers, row.monthlyPrice, row.monthlyRevenue]),
       );
       break;
     case "absences":

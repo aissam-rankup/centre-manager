@@ -30,6 +30,16 @@ export const subjectSchema = z.object({
 });
 export type SubjectInput = z.infer<typeof subjectSchema>;
 
+export const packSchema = z.object({
+  id: z.uuid().nullable(),
+  levelId: z.uuid(V.levelRequired),
+  name: name(80),
+  monthlyPrice: z.coerce.number(V.priceInvalid).min(0, V.priceInvalid).max(100000, V.priceInvalid),
+  active: z.boolean(),
+  subjectIds: z.array(z.uuid()).min(1, V.packSubjectsRequired),
+});
+export type PackInput = z.infer<typeof packSchema>;
+
 // ---------------------------------------------------------------------
 // Planning
 // ---------------------------------------------------------------------
@@ -99,3 +109,10 @@ export const enrollmentCreateSchema = z.object({
   subjectId: z.uuid(V.subjectRequired),
 });
 export type EnrollmentCreateInput = z.infer<typeof enrollmentCreateSchema>;
+
+export const packSubscriptionCreateSchema = z.object({
+  studentId: z.uuid(),
+  packId: z.uuid(V.packRequired),
+});
+
+export const packSubscriptionUpdateSchema = enrollmentUpdateSchema;

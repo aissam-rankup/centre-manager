@@ -49,7 +49,7 @@ export default async function AdminStudentPage({ params }: PageProps<"/admin/ele
     );
   }
 
-  const levelSubjects = catalog.find((level) => level.id === student.levelId)?.subjects ?? [];
+  const levelCatalog = catalog.find((level) => level.id === student.levelId);
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,7 +63,13 @@ export default async function AdminStudentPage({ params }: PageProps<"/admin/ele
       <StudentHeader student={student} actions={<StudentAdminActions student={student} levels={levels} />} />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <EnrollmentsEditor studentId={student.id} enrollments={student.enrollments} levelSubjects={levelSubjects} />
+        <EnrollmentsEditor
+          studentId={student.id}
+          enrollments={student.enrollments}
+          packSubscriptions={student.packSubscriptions}
+          levelSubjects={levelCatalog?.subjects ?? []}
+          levelPacks={levelCatalog?.packs ?? []}
+        />
         <FollowUpsSection student={student} />
       </div>
 

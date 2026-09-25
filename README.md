@@ -91,7 +91,7 @@ Mot de passe commun : **`CentroDemo2026!`**
 | Professeur — Physique-Chimie (2ème BAC) | prof2@centro.demo | Laila Chakir |
 | Professeur — Anglais (TC), Français (1ère BAC) | prof3@centro.demo | Youssef Amrani |
 
-Contenu du seed : 1 centre, 3 niveaux, 6 matières, 40 élèves, 72 inscriptions, 12 créneaux hebdomadaires, 4 semaines de présences, factures du mois précédent et du mois en cours (dont une partie en retard), alertes et relances. Les dates sont calculées à partir du jour du `db:reset`.
+Contenu du seed : 1 centre, 3 niveaux, 6 matières, 3 packs « Toutes matières », 42 élèves (dont 2 en pack), 72 inscriptions à l'unité, 12 créneaux hebdomadaires, 4 semaines de présences, factures du mois précédent et du mois en cours (dont une partie en retard), alertes et relances. Les dates sont calculées à partir du jour du `db:reset`.
 
 ## Authentification et espaces
 
@@ -163,6 +163,14 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 - **Utilisateurs** : création (mot de passe provisoire à communiquer), modification, désactivation / réactivation (la connexion est aussi bloquée côté Auth). Un administrateur ne peut ni se désactiver ni changer son propre rôle ; le rôle professeur est figé.
 - **Élèves** : liste complète (recherche, niveau, statut de paiement), fiche avec modification, suppression définitive (photo comprise) et gestion des inscriptions (prix convenu, arrêt, reprise, ajout). Pour changer un élève de niveau, arrêter d'abord ses inscriptions au niveau actuel.
 - **Rapports** : effectifs par niveau et par matière, revenu mensuel (somme des prix convenus), classement des matières par taux d'absence (30 jours, 90 jours ou depuis le début). Export CSV compatible Excel (séparateur « ; », UTF-8).
+
+## Packs d'abonnement
+
+- **Catalogue** (admin, Niveaux et matières) : un pack appartient à un niveau, regroupe des matières cochées et a un prix mensuel unique. Un pack décoché « Proposer ce pack » n'est plus proposé ; les abonnés en cours continuent.
+- **Souscription** : à l'inscription (assistant, formule « Pack ») ou depuis la fiche élève (admin). L'élève est inscrit automatiquement à chaque matière du pack : il apparaît dans les listes de classe, l'appel et les alertes d'absences.
+- **Facturation** : une seule facture par mois pour le pack, mêmes cycles (1er / 15) et échéances qu'une inscription. Les matières du pack n'ont ni prix ni facture propres.
+- **Règles** : un élève a soit un pack, soit des matières à l'unité, jamais les deux, et au plus un pack actif. Arrêter ou reprendre le pack arrête ou reprend toutes ses matières. Ajouter ou retirer une matière d'un pack met à jour ses abonnés.
+- **Rapports** : abonnés et revenu mensuel par pack, export CSV.
 
 ## Règles de facturation
 

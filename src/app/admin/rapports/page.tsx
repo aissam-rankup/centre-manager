@@ -14,6 +14,7 @@ import {
   type AbsenceRate,
   getReports,
   type LevelReportRow,
+  type PackReportRow,
   type ReportPeriod,
   type SubjectReportRow,
 } from "@/lib/data/admin";
@@ -51,6 +52,24 @@ const SUBJECT_COLUMNS: readonly DataTableColumn<SubjectReportRow>[] = [
     align: "end",
     cell: (row) => <Money amount={row.monthlyRevenue} />,
   },
+];
+
+const PACK_COLUMNS: readonly DataTableColumn<PackReportRow>[] = [
+  {
+    id: "pack",
+    header: L.pack,
+    mobile: "title",
+    cell: (row) => (
+      <span className="flex flex-col">
+        <span className="font-medium">{row.packName}</span>
+        <span className="text-caption text-muted-foreground md:hidden">{row.levelName}</span>
+      </span>
+    ),
+  },
+  { id: "level", header: L.level, mobile: "hidden", cell: (row) => row.levelName },
+  { id: "subscribers", header: L.subscribers, align: "end", cell: (row) => <span className="numeric">{row.subscribers}</span> },
+  { id: "price", header: L.price, align: "end", cell: (row) => <Money amount={row.monthlyPrice} /> },
+  { id: "revenue", header: L.packRevenue, align: "end", cell: (row) => <Money amount={row.monthlyRevenue} /> },
 ];
 
 type RankedRate = AbsenceRate & { rank: number };
@@ -108,10 +127,21 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
             <SectionCard id="niveaux" title={L.byLevel} aside={<ExportButton type="niveaux" period={period} />}>
               <DataTable columns={LEVEL_COLUMNS} rows={reports.byLevel} getRowId={(row) => row.levelId} caption={L.byLevel} variant="plain" />
             </SectionCard>
-            <SectionCard id="matieres" title={L.bySubject} aside={<ExportButton type="matieres" period={period} />}>
+            <SectionCard
+              id="matieres"
+              title={L.bySubject}
+              description={L.bySubjectHint}
+              aside={<ExportButton type="matieres" period={period} />}
+            >
               <DataTable columns={SUBJECT_COLUMNS} rows={reports.bySubject} getRowId={(row) => row.subjectId} caption={L.bySubject} variant="plain" />
             </SectionCard>
           </div>
+
+          {reports.byPack.length > 0 ? (
+            <SectionCard id="packs" title={L.byPack} description={L.byPackHint} aside={<ExportButton type="packs" period={period} />}>
+              <DataTable columns={PACK_COLUMNS} rows={reports.byPack} getRowId={(row) => row.packId} caption={L.byPack} variant="plain" />
+            </SectionCard>
+          ) : null}
 
           <SectionCard
             id="absences"

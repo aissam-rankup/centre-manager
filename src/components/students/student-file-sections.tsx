@@ -86,30 +86,68 @@ export function StudentHeader({ student, actions }: { student: StudentFile; acti
 // Matières payées
 // ---------------------------------------------------------------------
 export function SubjectsSection({ student }: { student: StudentFile }) {
+  // Les matières d'un pack sont listées sous le pack, qui porte le prix et la facture.
+  const standalone = student.enrollments.filter((enrollment) => !enrollment.packEnrollmentId);
+  const packs = student.packSubscriptions;
+
   return (
     <SectionCard id="matieres" title={L.sections.subjects}>
-      {student.enrollments.length === 0 ? (
+      {standalone.length === 0 && packs.length === 0 ? (
         <EmptyState icon={CircleDollarSign} title={L.subjects.emptyTitle} description={L.subjects.emptyDescription} />
       ) : (
         <ul className="flex flex-col divide-y">
-          {student.enrollments.map((enrollment) => (
-            <li key={enrollment.id} className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="font-medium">{enrollment.subjectName}</span>
-                <span className="text-caption text-muted-foreground">
-                  {LABELS.billing.cycle[enrollment.billingDay]} ·{" "}
-                  {enrollment.nextDueDate ? L.subjects.nextDue(formatDate(enrollment.nextDueDate)) : L.subjects.upToDate}
-                </span>
-              </div>
-              <span className="shrink-0 text-right">
-                <Money amount={enrollment.priceAgreed} />
-                <span className="block text-caption text-muted-foreground">{LABELS.billing.perMonth}</span>
-              </span>
-            </li>
+          {packs.map((pack) => (
+            <SubscriptionRow
+              key={pack.id}
+              title={LABELS.packs.label(pack.packName)}
+              detail={LABELS.packs.includes(pack.subjectNames.join(", "))}
+              billingDay={pack.billingDay}
+              nextDueDate={pack.nextDueDate}
+              price={pack.priceAgreed}
+              active={pack.active}
+            />
+          ))}
+          {standalone.map((enrollment) => (
+            <SubscriptionRow
+              key={enrollment.id}
+              title={enrollment.subjectName}
+              billingDay={enrollment.billingDay}
+              nextDueDate={enrollment.nextDueDate}
+              price={enrollment.priceAgreed}
+              active={enrollment.active}
+            />
           ))}
         </ul>
       )}
     </SectionCard>
+  );
+}
+
+type SubscriptionRowProps = {
+  title: string;
+  detail?: string;
+  billingDay: number;
+  nextDueDate: string | null;
+  price: number;
+  active: boolean;
+};
+
+function SubscriptionRow({ title, detail, billingDay, nextDueDate, price, active }: SubscriptionRowProps) {
+  return (
+    <li className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="font-medium">{title}</span>
+        {detail ? <span className="text-caption text-muted-foreground">{detail}</span> : null}
+        <span className="text-caption text-muted-foreground">
+          {active ? LABELS.billing.cycle[billingDay] : LABELS.admin.students.enrollments.inactive} ·{" "}
+          {nextDueDate ? L.subjects.nextDue(formatDate(nextDueDate)) : L.subjects.upToDate}
+        </span>
+      </div>
+      <span className="shrink-0 text-right">
+        <Money amount={price} />
+        <span className="block text-caption text-muted-foreground">{LABELS.billing.perMonth}</span>
+      </span>
+    </li>
   );
 }
 

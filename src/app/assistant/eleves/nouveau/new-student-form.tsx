@@ -52,23 +52,42 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
 
   const form = useForm<NewStudentInput>({
     resolver: zodResolver(newStudentSchema),
-    defaultValues: { fullName: "", guardianName: "", guardianPhone: "", notes: "", levelId: "", subjectIds: [] },
+    defaultValues: {
+      fullName: "",
+      guardianName: "",
+      guardianPhone: "",
+      notes: "",
+      levelId: "",
+      formula: "unit",
+      subjectIds: [],
+      packId: "",
+    },
     mode: "onTouched",
   });
   const { register, control, formState, setValue, trigger, getValues } = form;
   const errors = formState.errors;
 
-  const [fullName, levelId, subjectIds, guardianName, guardianPhone] = useWatch({
+  const [fullName, levelId, formula, subjectIds, packId, guardianName, guardianPhone] = useWatch({
     control,
-    name: ["fullName", "levelId", "subjectIds", "guardianName", "guardianPhone"],
+    name: ["fullName", "levelId", "formula", "subjectIds", "packId", "guardianName", "guardianPhone"],
   });
 
   const level = levels.find((item) => item.id === levelId) ?? null;
-  const selectedSubjects = useMemo(
-    () => (level ? level.subjects.filter((subject) => subjectIds.includes(subject.id)) : []),
-    [level, subjectIds],
-  );
-  const monthlyTotal = selectedSubjects.reduce((sum, subject) => sum + subject.monthlyPrice, 0);
+  const selectedPack = formula === "pack" ? (level?.packs.find((pack) => pack.id === packId) ?? null) : null;
+  const selectedSubjects = useMemo(() => {
+    if (!level) return [];
+    const ids = formula === "pack" ? (selectedPack?.subjectIds ?? []) : subjectIds;
+    return level.subjects.filter((subject) => ids.includes(subject.id));
+  }, [level, formula, selectedPack, subjectIds]);
+  const monthlyTotal =
+    formula === "pack"
+      ? (selectedPack?.monthlyPrice ?? 0)
+      : selectedSubjects.reduce((sum, subject) => sum + subject.monthlyPrice, 0);
+  const subjectNames = (ids: string[]) =>
+    (level?.subjects ?? [])
+      .filter((subject) => ids.includes(subject.id))
+      .map((subject) => subject.name)
+      .join(", ");
 
   // Première facture : due 5 jours après l'inscription ; cycle selon le jour d'inscription.
   const firstDueIso = useMemo(() => {
@@ -174,8 +193,10 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
                       value={field.value}
                       onValueChange={(value) => {
                         field.onChange(value);
-                        // Les matières dépendent du niveau.
+                        // Matières et packs dépendent du niveau.
+                        setValue("formula", "unit", { shouldValidate: false });
                         setValue("subjectIds", [], { shouldValidate: false });
+                        setValue("packId", "", { shouldValidate: false });
                       }}
                       aria-invalid={errors.levelId ? true : undefined}
                     >
@@ -191,7 +212,65 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
                 {errors.levelId ? <p className="text-caption text-danger-ink">{errors.levelId.message}</p> : null}
               </fieldset>
 
-              {level ? (
+              {level && level.packs.length > 0 ? (
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="mb-2 font-medium">{L.fields.formula}</legend>
+                  <Controller
+                    control={control}
+                    name="formula"
+                    render={({ field }) => (
+                      <RadioGroup value={field.value} onValueChange={field.onChange} className="grid-cols-2">
+                        <ChoiceItem>
+                          <RadioGroupItem value="unit" />
+                          {L.fields.formulaUnit}
+                        </ChoiceItem>
+                        <ChoiceItem>
+                          <RadioGroupItem value="pack" />
+                          {L.fields.formulaPack}
+                        </ChoiceItem>
+                      </RadioGroup>
+                    )}
+                  />
+                </fieldset>
+              ) : null}
+
+              {level && formula === "pack" ? (
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="font-medium">{L.fields.packs}</legend>
+                  <p className="mb-2 text-caption text-muted-foreground">{L.fields.packsHint}</p>
+                  <Controller
+                    control={control}
+                    name="packId"
+                    render={({ field }) => (
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // Efface l'erreur dès le choix (un bouton radio ne déclenche pas « blur »).
+                          if (errors.packId) void trigger("packId");
+                        }}
+                        aria-invalid={errors.packId ? true : undefined}
+                      >
+                        {level.packs.map((pack) => (
+                          <ChoiceItem key={pack.id} className="items-start">
+                            <RadioGroupItem value={pack.id} className="mt-0.5" />
+                            <span className="flex min-w-0 flex-1 flex-col">
+                              <span>{pack.name}</span>
+                              <span className="text-caption text-muted-foreground">
+                                {LABELS.packs.includes(subjectNames(pack.subjectIds))}
+                              </span>
+                            </span>
+                            <Money amount={pack.monthlyPrice} className="text-muted-foreground" />
+                          </ChoiceItem>
+                        ))}
+                      </RadioGroup>
+                    )}
+                  />
+                  {errors.packId ? <p className="text-caption text-danger-ink">{errors.packId.message}</p> : null}
+                </fieldset>
+              ) : null}
+
+              {level && formula === "unit" ? (
                 <fieldset className="flex flex-col gap-2">
                   <legend className="font-medium">{L.fields.subjects}</legend>
                   <p className="mb-2 text-caption text-muted-foreground">{L.fields.subjectsHint}</p>
@@ -217,6 +296,7 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
                                         ? [...new Set([...current, subject.id])]
                                         : current.filter((id) => id !== subject.id),
                                     );
+                                    if (errors.subjectIds) void trigger("subjectIds");
                                   }}
                                 />
                                 <span className="flex-1">{subject.name}</span>
@@ -260,12 +340,21 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
               <SummaryRow label={L.summary.subjects} onEdit={() => goTo(2)}>
                 <span className="flex flex-col gap-1">
                   <span className="text-muted-foreground">{level?.name}</span>
-                  {selectedSubjects.map((subject) => (
-                    <span key={subject.id} className="flex justify-between gap-4">
-                      <span>{subject.name}</span>
-                      <Money amount={subject.monthlyPrice} />
+                  {selectedPack ? (
+                    <span className="flex flex-col">
+                      <span className="font-medium">{LABELS.packs.label(selectedPack.name)}</span>
+                      <span className="text-caption text-muted-foreground">
+                        {LABELS.packs.includes(subjectNames(selectedPack.subjectIds))}
+                      </span>
                     </span>
-                  ))}
+                  ) : (
+                    selectedSubjects.map((subject) => (
+                      <span key={subject.id} className="flex justify-between gap-4">
+                        <span>{subject.name}</span>
+                        <Money amount={subject.monthlyPrice} />
+                      </span>
+                    ))
+                  )}
                   <span className="mt-1 flex justify-between gap-4 border-t pt-2 font-semibold">
                     <span>{L.fields.total}</span>
                     <Money amount={monthlyTotal} />

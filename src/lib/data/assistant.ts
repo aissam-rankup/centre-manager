@@ -1,6 +1,7 @@
 import "server-only";
 
 import { requireStaff } from "@/lib/auth/session";
+import { LABELS } from "@/lib/constants/labels";
 import { toISODate, today } from "@/lib/format";
 import { signPhotoUrls } from "@/lib/storage/photos";
 import type { Database } from "@/lib/supabase/database.types";
@@ -211,6 +212,20 @@ export type StudentEnrollment = {
   startDate: string;
   active: boolean;
   nextDueDate: string | null;
+  /** Renseigné si la matière est couverte par un pack (pas de prix ni de facture propres). */
+  packEnrollmentId: string | null;
+};
+
+export type StudentPackSubscription = {
+  id: string;
+  packId: string;
+  packName: string;
+  priceAgreed: number;
+  billingDay: number;
+  startDate: string;
+  active: boolean;
+  nextDueDate: string | null;
+  subjectNames: string[];
 };
 
 export type StudentInvoice = {
@@ -248,6 +263,7 @@ export type StudentFile = {
   isOverdue: boolean;
   oldestOverdueInvoiceId: string | null;
   enrollments: StudentEnrollment[];
+  packSubscriptions: StudentPackSubscription[];
   invoices: StudentInvoice[];
   absences: StudentAbsence[];
   followUps: StudentFollowUp[];
@@ -265,15 +281,22 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
   if (error) throw error;
   if (!student) return null;
 
-  const [enrollmentsResult, invoicesResult, absencesResult, followUpsResult] = await Promise.all([
+  const [enrollmentsResult, packsResult, invoicesResult, absencesResult, followUpsResult] = await Promise.all([
     supabase
       .from("enrollments")
-      .select("id, subject_id, start_date, price_agreed, billing_day, active, subjects(name)")
+      .select("id, subject_id, start_date, price_agreed, billing_day, active, pack_enrollment_id, subjects(name)")
+      .eq("student_id", studentId)
+      .order("start_date", { ascending: true }),
+    supabase
+      .from("pack_enrollments")
+      .select("id, pack_id, start_date, price_agreed, billing_day, active, packs(name)")
       .eq("student_id", studentId)
       .order("start_date", { ascending: true }),
     supabase
       .from("invoices")
-      .select("id, enrollment_id, period_start, period_end, amount_due, status, due_date, paid_at, enrollments(subjects(name))")
+      .select(
+        "id, enrollment_id, pack_enrollment_id, period_start, period_end, amount_due, status, due_date, paid_at, enrollments(subjects(name)), pack_enrollments(packs(name))",
+      )
       .eq("student_id", studentId)
       .order("period_start", { ascending: false })
       .order("due_date", { ascending: false }),
@@ -291,6 +314,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
   ]);
 
   if (enrollmentsResult.error) throw enrollmentsResult.error;
+  if (packsResult.error) throw packsResult.error;
   if (invoicesResult.error) throw invoicesResult.error;
   if (absencesResult.error) throw absencesResult.error;
   if (followUpsResult.error) throw followUpsResult.error;
@@ -298,7 +322,9 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
   const todayIso = toISODate(today());
   const invoices: StudentInvoice[] = invoicesResult.data.map((row) => ({
     id: row.id,
-    subjectName: row.enrollments?.subjects?.name ?? "",
+    subjectName: row.pack_enrollments?.packs?.name
+      ? LABELS.packs.label(row.pack_enrollments.packs.name)
+      : (row.enrollments?.subjects?.name ?? ""),
     periodStart: row.period_start,
     periodEnd: row.period_end,
     amountDue: Number(row.amount_due),
@@ -307,11 +333,13 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     paidAt: row.paid_at,
   }));
 
-  const unpaidByEnrollment = new Map<string, string>();
+  // Prochaine échéance impayée, par inscription ou par abonnement pack.
+  const unpaidBySource = new Map<string, string>();
   for (const row of invoicesResult.data) {
-    if (row.status === "paid") continue;
-    const current = unpaidByEnrollment.get(row.enrollment_id);
-    if (!current || row.due_date < current) unpaidByEnrollment.set(row.enrollment_id, row.due_date);
+    const source = row.enrollment_id ?? row.pack_enrollment_id;
+    if (row.status === "paid" || !source) continue;
+    const current = unpaidBySource.get(source);
+    if (!current || row.due_date < current) unpaidBySource.set(source, row.due_date);
   }
 
   const overdue = invoices
@@ -340,7 +368,22 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
       billingDay: row.billing_day ?? 1,
       startDate: row.start_date,
       active: row.active,
-      nextDueDate: unpaidByEnrollment.get(row.id) ?? null,
+      nextDueDate: unpaidBySource.get(row.id) ?? null,
+      packEnrollmentId: row.pack_enrollment_id,
+    })),
+    packSubscriptions: packsResult.data.map((row) => ({
+      id: row.id,
+      packId: row.pack_id,
+      packName: row.packs?.name ?? "",
+      priceAgreed: Number(row.price_agreed),
+      billingDay: row.billing_day ?? 1,
+      startDate: row.start_date,
+      active: row.active,
+      nextDueDate: unpaidBySource.get(row.id) ?? null,
+      subjectNames: enrollmentsResult.data
+        .filter((enrollment) => enrollment.pack_enrollment_id === row.id)
+        .map((enrollment) => enrollment.subjects?.name ?? "")
+        .sort((a, b) => a.localeCompare(b, "fr")),
     })),
     invoices,
     absences: absencesResult.data.map((row) => ({
@@ -362,10 +405,14 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
 // ---------------------------------------------------------------------
 // Référentiel : niveaux et matières (formulaires)
 // ---------------------------------------------------------------------
+export type LevelPack = { id: string; name: string; monthlyPrice: number; subjectIds: string[] };
+
 export type LevelWithSubjects = {
   id: string;
   name: string;
   subjects: { id: string; name: string; monthlyPrice: number }[];
+  /** Packs proposés (actifs) du niveau. */
+  packs: LevelPack[];
 };
 
 export async function getLevelsWithSubjects(): Promise<LevelWithSubjects[]> {
@@ -374,7 +421,7 @@ export async function getLevelsWithSubjects(): Promise<LevelWithSubjects[]> {
 
   const { data, error } = await supabase
     .from("levels")
-    .select("id, name, sort_order, subjects(id, name, monthly_price)")
+    .select("id, name, sort_order, subjects(id, name, monthly_price), packs(id, name, monthly_price, active, pack_subjects(subject_id))")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   if (error) throw error;
@@ -385,5 +432,14 @@ export async function getLevelsWithSubjects(): Promise<LevelWithSubjects[]> {
     subjects: [...level.subjects]
       .sort((a, b) => a.name.localeCompare(b.name, "fr"))
       .map((subject) => ({ id: subject.id, name: subject.name, monthlyPrice: Number(subject.monthly_price) })),
+    packs: level.packs
+      .filter((pack) => pack.active)
+      .sort((a, b) => a.name.localeCompare(b.name, "fr"))
+      .map((pack) => ({
+        id: pack.id,
+        name: pack.name,
+        monthlyPrice: Number(pack.monthly_price),
+        subjectIds: pack.pack_subjects.map((item) => item.subject_id),
+      })),
   }));
 }

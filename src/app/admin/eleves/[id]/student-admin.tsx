@@ -14,11 +14,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { addEnrollment, deleteStudent, updateEnrollment, updateStudent } from "@/lib/actions/admin";
+import {
+  addEnrollment,
+  deleteStudent,
+  subscribePack,
+  updateEnrollment,
+  updatePackSubscription,
+  updateStudent,
+} from "@/lib/actions/admin";
 import { ROUTES } from "@/lib/auth/routes";
 import { LABELS } from "@/lib/constants/labels";
 import type { LevelOption } from "@/lib/data/admin";
-import type { LevelWithSubjects, StudentEnrollment, StudentFile } from "@/lib/data/assistant";
+import type { LevelWithSubjects, StudentEnrollment, StudentFile, StudentPackSubscription } from "@/lib/data/assistant";
+import { formatMAD } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { studentUpdateSchema } from "@/lib/validation/admin";
 
@@ -103,33 +111,168 @@ export function StudentAdminActions({ student, levels }: { student: StudentFile;
 }
 
 // ---------------------------------------------------------------------
-// Inscriptions : prix convenu, arrêt / reprise, ajout
+// Inscriptions : prix convenu, arrêt / reprise, ajout, packs
 // ---------------------------------------------------------------------
 type EnrollmentsEditorProps = {
   studentId: string;
   enrollments: StudentEnrollment[];
+  packSubscriptions: StudentPackSubscription[];
   levelSubjects: LevelWithSubjects["subjects"];
+  levelPacks: LevelWithSubjects["packs"];
 };
 
-export function EnrollmentsEditor({ studentId, enrollments, levelSubjects }: EnrollmentsEditorProps) {
+export function EnrollmentsEditor({
+  studentId,
+  enrollments,
+  packSubscriptions,
+  levelSubjects,
+  levelPacks,
+}: EnrollmentsEditorProps) {
   const E = L.enrollments;
-  // Une matière déjà suivie (même arrêtée) se reprend via « Reprendre » : pas de seconde inscription.
-  const enrolledSubjectIds = new Set(enrollments.map((e) => e.subjectId));
+  const standalone = enrollments.filter((enrollment) => !enrollment.packEnrollmentId);
+  const covered = enrollments.filter((enrollment) => enrollment.packEnrollmentId && enrollment.active);
+  const activePack = packSubscriptions.find((pack) => pack.active) ?? null;
+  const hasActiveStandalone = standalone.some((enrollment) => enrollment.active);
+  // Une matière déjà suivie à l'unité (même arrêtée) se reprend via « Reprendre » : pas de seconde inscription.
+  const enrolledSubjectIds = new Set(standalone.map((e) => e.subjectId));
   const available = levelSubjects.filter((subject) => !enrolledSubjectIds.has(subject.id));
+  const packNames = new Map(packSubscriptions.map((pack) => [pack.id, pack.packName]));
+  // Un pack déjà souscrit (même arrêté) se reprend via « Reprendre ».
+  const subscribedPackIds = new Set(packSubscriptions.map((pack) => pack.packId));
+  const availablePacks = levelPacks.filter((pack) => !subscribedPackIds.has(pack.id));
 
   return (
     <SectionCard id="inscriptions" title={E.title} description={E.description}>
       <ul className="flex flex-col divide-y">
-        {enrollments.map((enrollment) => (
+        {packSubscriptions.map((pack) => (
+          <PackRow key={pack.id} subscription={pack} />
+        ))}
+        {covered.map((enrollment) => (
+          <li key={enrollment.id} className="flex flex-col gap-0.5 py-3 first:pt-0 last:pb-0">
+            <span className="font-medium">{enrollment.subjectName}</span>
+            <span className="text-caption text-muted-foreground">
+              {LABELS.packs.coveredByPack(packNames.get(enrollment.packEnrollmentId ?? "") ?? "")}
+            </span>
+          </li>
+        ))}
+        {standalone.map((enrollment) => (
           <EnrollmentRow key={enrollment.id} enrollment={enrollment} />
         ))}
       </ul>
-      {available.length === 0 ? (
-        <p className="text-caption text-muted-foreground">{E.noOtherSubject}</p>
+      {activePack ? (
+        <p className="text-caption text-muted-foreground">{E.packActiveHint}</p>
       ) : (
-        <AddEnrollment studentId={studentId} subjects={available} />
+        <>
+          {available.length === 0 ? (
+            <p className="text-caption text-muted-foreground">{E.noOtherSubject}</p>
+          ) : (
+            <AddEnrollment studentId={studentId} subjects={available} />
+          )}
+          {availablePacks.length > 0 ? (
+            hasActiveStandalone ? (
+              <p className="text-caption text-muted-foreground">{E.packNeedsStop}</p>
+            ) : (
+              <SubscribePack studentId={studentId} packs={availablePacks} />
+            )
+          ) : null}
+        </>
       )}
     </SectionCard>
+  );
+}
+
+function PackRow({ subscription }: { subscription: StudentPackSubscription }) {
+  const E = L.enrollments;
+  const [price, setPrice] = useState(String(subscription.priceAgreed));
+  const [pending, startTransition] = useTransition();
+  const priceChanged = Number(price) !== subscription.priceAgreed;
+  const title = LABELS.packs.label(subscription.packName);
+
+  const save = (active: boolean) => {
+    startTransition(async () => {
+      const result = await updatePackSubscription({ id: subscription.id, priceAgreed: price, active });
+      if (result.ok) toast.success(E.saved);
+      else toast.error(result.error);
+    });
+  };
+
+  return (
+    <li className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-end">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="font-medium">{title}</span>
+        <span className="text-caption text-muted-foreground">
+          {LABELS.packs.includes(subscription.subjectNames.join(", "))}
+        </span>
+        <span className={cn("text-caption font-medium", subscription.active ? "text-success-ink" : "text-muted-foreground")}>
+          {subscription.active ? E.active : E.inactive} · {LABELS.billing.cycle[subscription.billingDay]}
+        </span>
+      </div>
+      <div className="flex items-end gap-2">
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`prix-pack-${subscription.id}`} className="text-caption text-muted-foreground">
+            {E.price}
+          </label>
+          <Input
+            id={`prix-pack-${subscription.id}`}
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step={10}
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
+            className="numeric w-28 font-normal"
+          />
+        </div>
+        {priceChanged ? (
+          <Button onClick={() => save(subscription.active)} disabled={pending} aria-label={`${LABELS.admin.common.save} — ${title}`}>
+            {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <Save aria-hidden />}
+          </Button>
+        ) : null}
+        <Button variant="outline" onClick={() => save(!subscription.active)} disabled={pending}>
+          {subscription.active ? E.stop : E.resume}
+        </Button>
+      </div>
+    </li>
+  );
+}
+
+function SubscribePack({ studentId, packs }: { studentId: string; packs: LevelWithSubjects["packs"] }) {
+  const E = L.enrollments;
+  const [packId, setPackId] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  const subscribe = () => {
+    startTransition(async () => {
+      const result = await subscribePack({ studentId, packId });
+      if (result.ok) {
+        toast.success(E.packAdded);
+        setPackId("");
+      } else {
+        toast.error(result.error);
+      }
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-end">
+      <div className="flex flex-1 flex-col gap-1">
+        <label htmlFor={`pack-${studentId}`} className="text-caption text-muted-foreground">
+          {E.addPack}
+        </label>
+        <NativeSelect id={`pack-${studentId}`} value={packId} onChange={(event) => setPackId(event.target.value)}>
+          <option value="">{E.choosePack}</option>
+          {packs.map((pack) => (
+            <option key={pack.id} value={pack.id}>
+              {`${pack.name} — ${formatMAD(pack.monthlyPrice)}`}
+            </option>
+          ))}
+        </NativeSelect>
+      </div>
+      <Button onClick={subscribe} disabled={!packId || pending}>
+        {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <Plus aria-hidden />}
+        {E.addPack}
+      </Button>
+    </div>
   );
 }
 

@@ -92,12 +92,39 @@ export async function getAdminDashboard(levelId: string | null): Promise<AdminDa
 // Niveaux et matières
 // ---------------------------------------------------------------------
 export type AdminSubject = { id: string; name: string; monthlyPrice: number; activeEnrollments: number };
-export type AdminLevel = { id: string; name: string; sortOrder: number; studentCount: number; subjects: AdminSubject[] };
+export type AdminPack = {
+  id: string;
+  name: string;
+  monthlyPrice: number;
+  active: boolean;
+  subscribers: number;
+  subjectIds: string[];
+};
+export type AdminLevel = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  studentCount: number;
+  subjects: AdminSubject[];
+  packs: AdminPack[];
+};
 
 export async function getLevelsWithStats(): Promise<AdminLevel[]> {
   const { supabase } = await adminClient();
-  const { data, error } = await supabase.rpc("admin_enrollment_report");
-  if (error) throw error;
+  const [reportResult, packsResult, packSubjectsResult] = await Promise.all([
+    supabase.rpc("admin_enrollment_report"),
+    supabase.rpc("admin_pack_report"),
+    supabase.from("pack_subjects").select("pack_id, subject_id"),
+  ]);
+  if (reportResult.error) throw reportResult.error;
+  if (packsResult.error) throw packsResult.error;
+  if (packSubjectsResult.error) throw packSubjectsResult.error;
+  const data = reportResult.data;
+
+  const subjectsByPack = new Map<string, string[]>();
+  for (const row of packSubjectsResult.data) {
+    subjectsByPack.set(row.pack_id, [...(subjectsByPack.get(row.pack_id) ?? []), row.subject_id]);
+  }
 
   const levels = new Map<string, AdminLevel>();
   for (const row of data) {
@@ -107,6 +134,16 @@ export async function getLevelsWithStats(): Promise<AdminLevel[]> {
       sortOrder: row.level_sort,
       studentCount: row.level_students,
       subjects: [],
+      packs: packsResult.data
+        .filter((pack) => pack.level_id === row.level_id)
+        .map((pack) => ({
+          id: pack.pack_id,
+          name: pack.pack_name,
+          monthlyPrice: Number(pack.monthly_price),
+          active: pack.active,
+          subscribers: pack.subscribers,
+          subjectIds: subjectsByPack.get(pack.pack_id) ?? [],
+        })),
     };
     if (row.subject_id && row.subject_name) {
       level.subjects.push({
@@ -302,20 +339,32 @@ export type SubjectReportRow = {
   monthlyRevenue: number;
 };
 
+export type PackReportRow = {
+  packId: string;
+  packName: string;
+  levelName: string;
+  subscribers: number;
+  monthlyPrice: number;
+  monthlyRevenue: number;
+};
+
 export type Reports = {
   byLevel: LevelReportRow[];
   bySubject: SubjectReportRow[];
+  byPack: PackReportRow[];
   absenceRanking: AbsenceRate[];
 };
 
 export async function getReports(period: ReportPeriod): Promise<Reports> {
   const { supabase } = await adminClient();
-  const [enrollmentResult, ratesResult] = await Promise.all([
+  const [enrollmentResult, ratesResult, packsResult] = await Promise.all([
     supabase.rpc("admin_enrollment_report"),
     supabase.rpc("admin_absence_rates", { p_days: period === "all" ? undefined : Number(period) }),
+    supabase.rpc("admin_pack_report"),
   ]);
   if (enrollmentResult.error) throw enrollmentResult.error;
   if (ratesResult.error) throw ratesResult.error;
+  if (packsResult.error) throw packsResult.error;
 
   const byLevel = new Map<string, LevelReportRow>();
   const bySubject: SubjectReportRow[] = [];
@@ -343,6 +392,14 @@ export async function getReports(period: ReportPeriod): Promise<Reports> {
   return {
     byLevel: [...byLevel.values()],
     bySubject,
+    byPack: packsResult.data.map((row) => ({
+      packId: row.pack_id,
+      packName: row.pack_name,
+      levelName: row.level_name,
+      subscribers: row.subscribers,
+      monthlyPrice: Number(row.monthly_price),
+      monthlyRevenue: Number(row.agreed_revenue),
+    })),
     absenceRanking: mapRates(ratesResult.data),
   };
 }

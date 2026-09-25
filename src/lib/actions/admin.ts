@@ -15,6 +15,9 @@ import {
   enrollmentCreateSchema,
   enrollmentUpdateSchema,
   levelSchema,
+  packSchema,
+  packSubscriptionCreateSchema,
+  packSubscriptionUpdateSchema,
   slotSchema,
   studentUpdateSchema,
   subjectSchema,
@@ -109,6 +112,103 @@ export async function deleteSubject(subjectId: string): Promise<ActionResult> {
   const { error } = await supabase.from("subjects").delete().eq("id", subjectId);
   if (error) return failure(describeAdminError(error));
   revalidateAdmin();
+  return success();
+}
+
+// ---------------------------------------------------------------------
+// Packs
+// ---------------------------------------------------------------------
+export async function savePack(input: unknown): Promise<ActionResult> {
+  const parsed = packSchema.safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
+  const { profile, supabase } = await admin();
+  const { id, levelId, name, monthlyPrice, active, subjectIds } = parsed.data;
+
+  let packId = id;
+  if (packId) {
+    const { error } = await supabase.from("packs").update({ name, monthly_price: monthlyPrice, active }).eq("id", packId);
+    if (error) return failure(describeAdminError(error), error.code === "23505" ? { name: E.duplicate } : undefined);
+  } else {
+    const { data, error } = await supabase
+      .from("packs")
+      .insert({ center_id: profile.centerId, level_id: levelId, name, monthly_price: monthlyPrice, active })
+      .select("id")
+      .single();
+    if (error) return failure(describeAdminError(error), error.code === "23505" ? { name: E.duplicate } : undefined);
+    packId = data.id;
+  }
+
+  // Matières du pack : différentiel (les abonnés suivent, par trigger).
+  const { data: current, error: currentError } = await supabase
+    .from("pack_subjects")
+    .select("subject_id")
+    .eq("pack_id", packId);
+  if (currentError) return failure(describeAdminError(currentError));
+  const existing = new Set(current.map((row) => row.subject_id));
+  const wanted = new Set(subjectIds);
+  const toAdd = subjectIds.filter((subjectId) => !existing.has(subjectId));
+  const toRemove = [...existing].filter((subjectId) => !wanted.has(subjectId));
+
+  if (toAdd.length > 0) {
+    const { error } = await supabase
+      .from("pack_subjects")
+      .insert(toAdd.map((subjectId) => ({ pack_id: packId, subject_id: subjectId })));
+    if (error) return failure(describeAdminError(error));
+  }
+  if (toRemove.length > 0) {
+    const { error } = await supabase.from("pack_subjects").delete().eq("pack_id", packId).in("subject_id", toRemove);
+    if (error) return failure(describeAdminError(error));
+  }
+
+  revalidateAdmin();
+  revalidatePath(ROUTES.assistant.home, "layout");
+  return success();
+}
+
+export async function deletePack(packId: string): Promise<ActionResult> {
+  if (!idSchema.safeParse(packId).success) return failure(LABELS.actions.errors.invalid);
+  const { supabase } = await admin();
+  const { error } = await supabase.from("packs").delete().eq("id", packId);
+  if (error) return failure(describeAdminError(error));
+  revalidateAdmin();
+  return success();
+}
+
+export async function subscribePack(input: unknown): Promise<ActionResult> {
+  const parsed = packSubscriptionCreateSchema.safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
+  const { supabase } = await admin();
+
+  const { data: pack, error: packError } = await supabase
+    .from("packs")
+    .select("monthly_price")
+    .eq("id", parsed.data.packId)
+    .maybeSingle();
+  if (packError) return failure(describeAdminError(packError));
+  if (!pack) return failure(LABELS.actions.errors.notFound);
+
+  // Prix convenu = prix du pack ; matières et première facture créées par trigger.
+  const { error } = await supabase
+    .from("pack_enrollments")
+    .insert({ student_id: parsed.data.studentId, pack_id: parsed.data.packId, price_agreed: pack.monthly_price });
+  if (error) return failure(describeAdminError(error));
+
+  revalidateAdmin();
+  revalidatePath(ROUTES.assistant.home, "layout");
+  return success();
+}
+
+export async function updatePackSubscription(input: unknown): Promise<ActionResult> {
+  const parsed = packSubscriptionUpdateSchema.safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
+  const { supabase } = await admin();
+  const { id, priceAgreed, active } = parsed.data;
+
+  const { error } = await supabase.from("pack_enrollments").update({ price_agreed: priceAgreed, active }).eq("id", id);
+  if (error) return failure(describeAdminError(error));
+
+  revalidateAdmin();
+  revalidatePath(ROUTES.assistant.home, "layout");
   return success();
 }
 
@@ -336,7 +436,8 @@ export async function addEnrollment(input: unknown): Promise<ActionResult> {
     .from("enrollments")
     .select("id", { count: "exact", head: true })
     .eq("student_id", parsed.data.studentId)
-    .eq("subject_id", parsed.data.subjectId);
+    .eq("subject_id", parsed.data.subjectId)
+    .is("pack_enrollment_id", null);
   if (existingError) return failure(describeAdminError(existingError));
   if ((count ?? 0) > 0) return failure(LABELS.admin.students.enrollments.alreadyEnrolled);
 

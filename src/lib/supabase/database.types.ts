@@ -154,6 +154,7 @@ export type Database = {
           active: boolean
           billing_day: number | null
           id: string
+          pack_enrollment_id: string | null
           price_agreed: number
           start_date: string
           student_id: string
@@ -163,6 +164,7 @@ export type Database = {
           active?: boolean
           billing_day?: number | null
           id?: string
+          pack_enrollment_id?: string | null
           price_agreed: number
           start_date?: string
           student_id: string
@@ -172,12 +174,20 @@ export type Database = {
           active?: boolean
           billing_day?: number | null
           id?: string
+          pack_enrollment_id?: string | null
           price_agreed?: number
           start_date?: string
           student_id?: string
           subject_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "enrollments_pack_enrollment_id_fkey"
+            columns: ["pack_enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "pack_enrollments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "enrollments_student_id_fkey"
             columns: ["student_id"]
@@ -296,8 +306,9 @@ export type Database = {
           amount_due: number
           amount_paid: number
           due_date: string
-          enrollment_id: string
+          enrollment_id: string | null
           id: string
+          pack_enrollment_id: string | null
           paid_at: string | null
           paid_by: string | null
           period_end: string
@@ -309,8 +320,9 @@ export type Database = {
           amount_due: number
           amount_paid?: number
           due_date: string
-          enrollment_id: string
+          enrollment_id?: string | null
           id?: string
+          pack_enrollment_id?: string | null
           paid_at?: string | null
           paid_by?: string | null
           period_end: string
@@ -322,8 +334,9 @@ export type Database = {
           amount_due?: number
           amount_paid?: number
           due_date?: string
-          enrollment_id?: string
+          enrollment_id?: string | null
           id?: string
+          pack_enrollment_id?: string | null
           paid_at?: string | null
           paid_by?: string | null
           period_end?: string
@@ -344,6 +357,13 @@ export type Database = {
             columns: ["enrollment_id", "student_id"]
             isOneToOne: false
             referencedRelation: "enrollments"
+            referencedColumns: ["id", "student_id"]
+          },
+          {
+            foreignKeyName: "invoices_pack_enrollment_fkey"
+            columns: ["pack_enrollment_id", "student_id"]
+            isOneToOne: false
+            referencedRelation: "pack_enrollments"
             referencedColumns: ["id", "student_id"]
           },
           {
@@ -381,6 +401,150 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "centers"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      pack_enrollments: {
+        Row: {
+          active: boolean
+          billing_day: number | null
+          created_at: string
+          id: string
+          pack_id: string
+          price_agreed: number
+          start_date: string
+          student_id: string
+        }
+        Insert: {
+          active?: boolean
+          billing_day?: number | null
+          created_at?: string
+          id?: string
+          pack_id: string
+          price_agreed: number
+          start_date?: string
+          student_id: string
+        }
+        Update: {
+          active?: boolean
+          billing_day?: number | null
+          created_at?: string
+          id?: string
+          pack_id?: string
+          price_agreed?: number
+          start_date?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pack_enrollments_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pack_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "pack_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pack_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pack_subjects: {
+        Row: {
+          pack_id: string
+          subject_id: string
+        }
+        Insert: {
+          pack_id: string
+          subject_id: string
+        }
+        Update: {
+          pack_id?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pack_subjects_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pack_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subject_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pack_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packs: {
+        Row: {
+          active: boolean
+          center_id: string
+          created_at: string
+          id: string
+          level_id: string
+          monthly_price: number
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          center_id: string
+          created_at?: string
+          id?: string
+          level_id: string
+          monthly_price: number
+          name: string
+        }
+        Update: {
+          active?: boolean
+          center_id?: string
+          created_at?: string
+          id?: string
+          level_id?: string
+          monthly_price?: number
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packs_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packs_level_id_center_id_fkey"
+            columns: ["level_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id", "center_id"]
           },
         ]
       }
@@ -888,6 +1052,20 @@ export type Database = {
           student_count: number
         }[]
       }
+      admin_pack_report: {
+        Args: never
+        Returns: {
+          active: boolean
+          agreed_revenue: number
+          level_id: string
+          level_name: string
+          level_sort: number
+          monthly_price: number
+          pack_id: string
+          pack_name: string
+          subscribers: number
+        }[]
+      }
       assistant_dashboard_stats: {
         Args: never
         Returns: {
@@ -907,6 +1085,7 @@ export type Database = {
           p_guardian_phone?: string
           p_level_id: string
           p_notes?: string
+          p_pack_id?: string
           p_photo_path?: string
           p_student_id: string
           p_subject_ids: string[]
@@ -920,8 +1099,9 @@ export type Database = {
           amount_due: number
           amount_paid: number
           due_date: string
-          enrollment_id: string
+          enrollment_id: string | null
           id: string
+          pack_enrollment_id: string | null
           paid_at: string | null
           paid_by: string | null
           period_end: string

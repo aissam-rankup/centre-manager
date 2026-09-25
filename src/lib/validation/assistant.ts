@@ -31,14 +31,26 @@ export type FollowUpInput = z.infer<typeof followUpSchema>;
 // ---------------------------------------------------------------------
 // Nouvel élève
 // ---------------------------------------------------------------------
-export const newStudentSchema = z.object({
-  fullName: z.string().trim().min(1, S.fullNameRequired).max(100, S.fullNameTooLong),
-  guardianName: optionalText(100, S.fullNameTooLong),
-  guardianPhone: optionalPhone(S.phoneInvalid),
-  notes: optionalText(500, S.notesTooLong),
-  levelId: z.string().min(1, S.levelRequired).pipe(z.uuid(S.levelRequired)),
-  subjectIds: z.array(z.uuid()).min(1, S.subjectsRequired),
-});
+export const newStudentSchema = z
+  .object({
+    fullName: z.string().trim().min(1, S.fullNameRequired).max(100, S.fullNameTooLong),
+    guardianName: optionalText(100, S.fullNameTooLong),
+    guardianPhone: optionalPhone(S.phoneInvalid),
+    notes: optionalText(500, S.notesTooLong),
+    levelId: z.string().min(1, S.levelRequired).pipe(z.uuid(S.levelRequired)),
+    /** Matières à l'unité ou pack : jamais les deux. */
+    formula: z.enum(["unit", "pack"]),
+    subjectIds: z.array(z.uuid()),
+    packId: z.string(),
+  })
+  .superRefine((values, ctx) => {
+    if (values.formula === "unit" && values.subjectIds.length === 0) {
+      ctx.addIssue({ code: "custom", path: ["subjectIds"], message: S.subjectsRequired });
+    }
+    if (values.formula === "pack" && !z.uuid().safeParse(values.packId).success) {
+      ctx.addIssue({ code: "custom", path: ["packId"], message: S.packRequired });
+    }
+  });
 
 export type NewStudentInput = z.infer<typeof newStudentSchema>;
 
@@ -46,7 +58,7 @@ export type NewStudentInput = z.infer<typeof newStudentSchema>;
 export const NEW_STUDENT_STEP_FIELDS = [
   ["fullName"],
   ["guardianName", "guardianPhone", "notes"],
-  ["levelId", "subjectIds"],
+  ["levelId", "formula", "subjectIds", "packId"],
   [],
 ] as const satisfies readonly (readonly (keyof NewStudentInput)[])[];
 

@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 
 import { ConfirmAction } from "@/components/shared/confirm-action";
-import { deleteLevel, deleteSlot, deleteSubject } from "@/lib/actions/admin";
+import { deleteLevel, deletePack, deleteSlot, deleteSubject } from "@/lib/actions/admin";
 import { LABELS } from "@/lib/constants/labels";
 
 const C = LABELS.admin.common;
@@ -48,6 +48,19 @@ export function DeleteSlotButton({ slotId, label, children }: { slotId: string; 
       confirmLabel={C.delete}
       successMessage={C.deleted}
       action={() => deleteSlot(slotId)}
+    />
+  );
+}
+
+export function DeletePackButton({ packId, name, children }: { packId: string; name: string; children: ReactElement }) {
+  return (
+    <ConfirmAction
+      trigger={children}
+      title={L.deletePack(name)}
+      description={`${L.deletePackHint} ${C.irreversible}`}
+      confirmLabel={C.delete}
+      successMessage={C.deleted}
+      action={() => deletePack(packId)}
     />
   );
 }
