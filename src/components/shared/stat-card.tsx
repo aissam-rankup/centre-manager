@@ -33,7 +33,8 @@ export function StatCard({ label, value, icon: Icon, tone = "primary", hint, cla
         </span>
         <div className="flex min-w-0 flex-col gap-1">
           <p className="text-caption text-muted-foreground">{label}</p>
-          <p className="numeric text-2xl leading-8">{value}</p>
+          {/* Le montant peut passer « MAD » à la ligne ; les milliers restent insécables. */}
+          <p className="numeric text-xl leading-7 sm:text-2xl sm:leading-8 [&_span]:whitespace-normal">{value}</p>
           {hint ? <p className="text-caption text-muted-foreground">{hint}</p> : null}
         </div>
       </CardContent>

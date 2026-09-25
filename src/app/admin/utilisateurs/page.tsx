@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 
-import { ScreenPlaceholder } from "@/components/shared/screen-placeholder";
 import { LABELS } from "@/lib/constants/labels";
+import { getUsers } from "@/lib/data/admin";
+import { getLevelsWithSubjects } from "@/lib/data/assistant";
 
-export const metadata: Metadata = { title: LABELS.nav.users };
+import { UsersBoard } from "./users-board";
 
-export default function AdminUsersPage() {
-  return <ScreenPlaceholder title={LABELS.nav.users} />;
+export const metadata: Metadata = { title: LABELS.admin.users.title };
+
+export default async function AdminUsersPage() {
+  const [users, levels] = await Promise.all([getUsers(), getLevelsWithSubjects()]);
+  return <UsersBoard users={users} levels={levels} />;
 }

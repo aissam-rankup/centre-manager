@@ -42,14 +42,16 @@ npm run db:start
 
 Le premier démarrage télécharge les images Docker (quelques minutes). La commande applique les migrations de `supabase/migrations`, puis le seed de démonstration `supabase/seed.sql`.
 
-Supabase utilise les ports **5434x** pour cohabiter avec d'autres projets locaux :
+Supabase utilise les ports **5532x** pour cohabiter avec d'autres projets locaux :
 
 | Service | URL |
 | --- | --- |
-| API | http://127.0.0.1:54341 |
-| Base Postgres | postgresql://postgres:postgres@127.0.0.1:54342/postgres |
-| Studio | http://127.0.0.1:54343 |
-| Emails de test (Mailpit) | http://127.0.0.1:54344 |
+| API | http://127.0.0.1:55321 |
+| Base Postgres | postgresql://postgres:postgres@127.0.0.1:55322/postgres |
+| Studio | http://127.0.0.1:55323 |
+| Emails de test (Mailpit) | http://127.0.0.1:55324 |
+
+> **Windows** : Hyper-V réserve dynamiquement des plages de ports (`netsh interface ipv4 show excludedportrange protocol=tcp`). Si `supabase start` échoue avec « bind: An attempt was made to access a socket in a way forbidden », changez les ports dans `supabase/config.toml` (et `NEXT_PUBLIC_SUPABASE_URL`) vers une plage libre.
 
 ### 4. Configurer les variables d'environnement
 
@@ -123,6 +125,17 @@ Contenu du seed : 1 centre, 3 niveaux, 6 matières, 40 élèves, 72 inscriptions
 - L'appel n'est possible que le jour de la séance (règle vérifiée aussi par la RLS).
 - Démo : prof1 a une séance chaque jour du lundi au jeudi et le samedi ; prof2 le mardi et le vendredi ; prof3 le mardi, le mercredi, le vendredi et le samedi.
 
+## Espace administrateur
+
+- **Tableau de bord** : encaissé et attendu du mois, reste à encaisser (en MAD et en %), effectif, taux d'absence par matière sur 30 jours (graphique + tableau). Filtre par niveau.
+  - *Attendu du mois* : factures dont la période commence dans le mois civil en cours. *Encaissé* : la part payée de ces factures.
+  - *Taux d'absence* : absences ÷ présences saisies.
+- **Niveaux et matières** : création, modification, suppression et tarifs. Une suppression est refusée tant que l'élément est utilisé. Un nouveau tarif s'applique aux nouvelles inscriptions ; le prix convenu des inscriptions existantes se modifie depuis la fiche élève.
+- **Planning** : grille hebdomadaire filtrable par niveau. Seuls les professeurs affectés à la matière sont proposés. Les conflits de salle et de professeur sont signalés dans le formulaire et refusés par la base.
+- **Utilisateurs** : création (mot de passe provisoire à communiquer), modification, désactivation / réactivation (la connexion est aussi bloquée côté Auth). Un administrateur ne peut ni se désactiver ni changer son propre rôle ; le rôle professeur est figé.
+- **Élèves** : liste complète (recherche, niveau, statut de paiement), fiche avec modification, suppression définitive (photo comprise) et gestion des inscriptions (prix convenu, arrêt, reprise, ajout). Pour changer un élève de niveau, arrêter d'abord ses inscriptions au niveau actuel.
+- **Rapports** : effectifs par niveau et par matière, revenu mensuel (somme des prix convenus), classement des matières par taux d'absence (30 jours, 90 jours ou depuis le début). Export CSV compatible Excel (séparateur « ; », UTF-8).
+
 ## Règles de facturation
 
 - **Deux cycles** : le 1er et le 15 du mois, déterminés par la date d'inscription (jour 1 à 14 : cycle du 1er ; jour 15 à 31 : cycle du 15).
@@ -155,14 +168,15 @@ npx supabase migration new nom_de_la_migration
 - **Assistant** : lecture de tout son centre. Crée élèves, inscriptions (au tarif de la matière), relances et comptes professeur. Sur les factures, ne modifie que `amount_paid`, `status`, `paid_at` et `paid_by`.
 - **Professeur** : voit les élèves inscrits à ses matières et ses propres créneaux. Saisit les présences de ses matières, uniquement le jour même. Aucun accès aux factures ni aux prix : il lit les matières et les listes de classe via les vues `subject_catalog` et `class_rosters`, sans tarifs.
 - **Compte désactivé** : aucun accès.
-- **Planning** : les conflits de salle et de professeur sont refusés par des contraintes d'exclusion.
+- **Planning** : les conflits de salle et de professeur sont refusés par des contraintes d'exclusion ; un créneau exige un professeur affecté à la matière.
+- **Inscriptions** : un élève ne suit activement que des matières de son niveau.
 - **Photos** : bucket privé `student-photos`, chemin `{center_id}/{fichier}`, lecture limitée au même centre.
 
 ## Organisation
 
 ```
 supabase/
-  config.toml             configuration locale (ports 5434x, inscriptions publiques fermées)
+  config.toml             configuration locale (ports 5532x, inscriptions publiques fermées)
   migrations/             migrations SQL versionnées
   seed.sql                données de démonstration
   tests/database/         tests pgTAP (policies RLS, hook JWT)

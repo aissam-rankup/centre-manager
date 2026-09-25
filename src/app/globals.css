@@ -191,7 +191,7 @@
   --warning: #e8833a;
   --warning-ink: #e8833a;
 
-  --chart-1: #628fff;
+  --chart-1: #5a88ff; /* validé : bande de luminosité et contraste sur fond sombre */
   --chart-2: #8daeff;
   --chart-3: #f2a649;
   --chart-4: #22ac75;
@@ -239,4 +239,12 @@
 @utility numeric {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+}
+
+/* Rangées défilantes (pastilles de filtre) : défilement tactile sans barre visible */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

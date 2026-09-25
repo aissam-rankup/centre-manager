@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 
-import { ScreenPlaceholder } from "@/components/shared/screen-placeholder";
 import { LABELS } from "@/lib/constants/labels";
+import { getAdminStudents, getLevelOptions } from "@/lib/data/admin";
 
-export const metadata: Metadata = { title: LABELS.nav.students };
+import { StudentsBoard } from "./students-board";
 
-export default function AdminStudentsPage() {
-  return <ScreenPlaceholder title={LABELS.nav.students} />;
+export const metadata: Metadata = { title: LABELS.admin.students.title };
+
+export default async function AdminStudentsPage() {
+  const [students, levels] = await Promise.all([getAdminStudents(), getLevelOptions()]);
+  return <StudentsBoard students={students} levels={levels} />;
 }

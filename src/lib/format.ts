@@ -69,3 +69,8 @@ export function formatDateWithWeekday(date: Date | string): string {
 export function toISODate(date: Date | string): string {
   return format(inAppTimeZone(date), "yyyy-MM-dd");
 }
+
+/** « septembre 2026 » */
+export function formatMonth(date: Date | string): string {
+  return format(inAppTimeZone(date), "MMMM yyyy", { locale: fr });
+}

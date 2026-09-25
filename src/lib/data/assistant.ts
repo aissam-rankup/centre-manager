@@ -200,6 +200,7 @@ export async function searchStudentDirectory(query: string): Promise<StudentList
 // ---------------------------------------------------------------------
 export type StudentEnrollment = {
   id: string;
+  subjectId: string;
   subjectName: string;
   priceAgreed: number;
   billingDay: number;
@@ -233,6 +234,7 @@ export type StudentFollowUp = {
 export type StudentFile = {
   id: string;
   fullName: string;
+  levelId: string;
   levelName: string;
   photoUrl: string | null;
   guardianName: string | null;
@@ -253,7 +255,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
 
   const { data: student, error } = await supabase
     .from("students")
-    .select("id, full_name, photo_url, guardian_name, guardian_phone, notes, created_at, levels(name)")
+    .select("id, full_name, level_id, photo_url, guardian_name, guardian_phone, notes, created_at, levels(name)")
     .eq("id", studentId)
     .maybeSingle();
   if (error) throw error;
@@ -262,7 +264,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
   const [enrollmentsResult, invoicesResult, absencesResult, followUpsResult] = await Promise.all([
     supabase
       .from("enrollments")
-      .select("id, start_date, price_agreed, billing_day, active, subjects(name)")
+      .select("id, subject_id, start_date, price_agreed, billing_day, active, subjects(name)")
       .eq("student_id", studentId)
       .order("start_date", { ascending: true }),
     supabase
@@ -317,6 +319,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
   return {
     id: student.id,
     fullName: student.full_name,
+    levelId: student.level_id,
     levelName: student.levels?.name ?? "",
     photoUrl: student.photo_url ? (photos.get(student.photo_url) ?? null) : null,
     guardianName: student.guardian_name,
@@ -327,6 +330,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     oldestOverdueInvoiceId: overdue[0]?.id ?? null,
     enrollments: enrollmentsResult.data.map((row) => ({
       id: row.id,
+      subjectId: row.subject_id,
       subjectName: row.subjects?.name ?? "",
       priceAgreed: Number(row.price_agreed),
       billingDay: row.billing_day ?? 1,

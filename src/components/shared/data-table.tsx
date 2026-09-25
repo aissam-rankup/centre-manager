@@ -9,9 +9,10 @@ export type DataTableColumn<Row> = {
   align?: "start" | "end";
   /**
    * Rôle de la colonne dans la carte mobile :
-   * « title » = ligne principale, « meta » = paire libellé/valeur, « aside » = coin droit, « hidden » = masquée.
+   * « title » = ligne principale, « meta » = paire libellé/valeur, « wide » = paire sur toute la largeur
+   * (valeur longue non tronquée, ex. email), « aside » = coin droit, « hidden » = masquée.
    */
-  mobile?: "title" | "meta" | "aside" | "hidden";
+  mobile?: "title" | "meta" | "wide" | "aside" | "hidden";
   className?: string;
 };
 
@@ -32,7 +33,7 @@ type DataTableProps<Row> = {
 export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "card", className }: DataTableProps<Row>) {
   const titleColumns = columns.filter((c) => c.mobile === "title");
   const asideColumns = columns.filter((c) => c.mobile === "aside");
-  const metaColumns = columns.filter((c) => (c.mobile ?? "meta") === "meta");
+  const metaColumns = columns.filter((c) => ["meta", "wide"].includes(c.mobile ?? "meta"));
 
   return (
     <div className={className}>
@@ -55,9 +56,9 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
             {metaColumns.length > 0 ? (
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-3">
                 {metaColumns.map((column) => (
-                  <div key={column.id} className="flex min-w-0 flex-col">
+                  <div key={column.id} className={cn("flex min-w-0 flex-col", column.mobile === "wide" && "col-span-2")}>
                     <dt className="text-caption text-muted-foreground">{column.header}</dt>
-                    <dd className="truncate">{column.cell(row)}</dd>
+                    <dd className={column.mobile === "wide" ? "break-words" : "truncate"}>{column.cell(row)}</dd>
                   </div>
                 ))}
               </dl>

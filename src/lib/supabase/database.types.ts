@@ -835,6 +835,57 @@ export type Database = {
       }
     }
     Functions: {
+      admin_absence_rates: {
+        Args: { p_days?: number; p_level_id?: string }
+        Returns: {
+          absence_rate: number
+          absent_count: number
+          level_id: string
+          level_name: string
+          level_sort: number
+          subject_id: string
+          subject_name: string
+          total_count: number
+        }[]
+      }
+      admin_enrollment_report: {
+        Args: never
+        Returns: {
+          active_enrollments: number
+          agreed_revenue: number
+          level_id: string
+          level_name: string
+          level_sort: number
+          level_students: number
+          monthly_price: number
+          subject_id: string
+          subject_name: string
+        }[]
+      }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          active: boolean
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_sign_in_at: string
+          phone: string
+          role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
+      admin_month_revenue: {
+        Args: { p_level_id?: string }
+        Returns: {
+          collected_amount: number
+          expected_amount: number
+          invoice_count: number
+          month_start: string
+          paid_count: number
+          student_count: number
+        }[]
+      }
       assistant_dashboard_stats: {
         Args: never
         Returns: {

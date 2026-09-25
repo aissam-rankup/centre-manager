@@ -16,18 +16,12 @@ import { Input } from "@/components/ui/input";
 import { createTeacher } from "@/lib/actions/assistant";
 import { LABELS } from "@/lib/constants/labels";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
+import { generatePassword } from "@/lib/password";
 import { type NewTeacherInput, newTeacherSchema } from "@/lib/validation/assistant";
 
 const L = LABELS.assistant.newTeacher;
 
 const EMPTY: NewTeacherInput = { fullName: "", phone: "", email: "", password: "", subjectIds: [] };
-
-/** Mot de passe provisoire lisible : sans caractères ambigus (0/O, 1/l/I). */
-function generatePassword(length = 12): string {
-  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-  const values = crypto.getRandomValues(new Uint32Array(length));
-  return Array.from(values, (value) => alphabet[value % alphabet.length]).join("");
-}
 
 type Created = { email: string; password: string };
 
