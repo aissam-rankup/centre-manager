@@ -140,8 +140,8 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 
 1. hPanel → **Websites → Add Website → Node.js Apps → Import Git Repository**, choisir `centre-manager`, branche `main`.
 2. Réglages de build : framework **Next.js**, Node **22.x**, build `npm run build`, démarrage `npm run start`.
-3. **Variables d'environnement** : importer un fichier `.env` avec les 4 variables (modèle `.env.hostinger`, non versionné). Les `NEXT_PUBLIC_*` sont intégrées au build : les renseigner **avant** le premier déploiement, et redéployer après toute modification.
-4. `NEXT_PUBLIC_APP_URL` doit être l'URL publique exacte (ex. `https://centre.exemple.ma`) : elle autorise les Server Actions derrière le proxy Hostinger.
+3. **Variables d'environnement** : importer un fichier `.env` avec les 3 variables Supabase (modèle `.env.hostinger`, non versionné). Les `NEXT_PUBLIC_*` sont intégrées au build : les renseigner **avant** le premier déploiement, et redéployer après toute modification.
+4. `NEXT_PUBLIC_APP_URL` est facultative : l'application fonctionne sur le domaine temporaire Hostinger sans elle. Si les enregistrements sont refusés (« Invalid Server Actions request »), la renseigner avec l'URL publique exacte et redéployer.
 5. Chaque `git push` sur `main` redéploie automatiquement.
 
 ## Mode appel (professeur)
