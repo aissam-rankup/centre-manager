@@ -114,6 +114,15 @@ Contenu du seed : 1 centre, 3 niveaux, 6 matières, 40 élèves, 72 inscriptions
 3. Désactiver les inscriptions publiques : **Authentication > Sign In / Providers > Allow new users to sign up** décoché.
 4. Renseigner les variables de `.env.example` dans Vercel (`SUPABASE_SERVICE_ROLE_KEY` en variable serveur uniquement).
 
+## Mode appel (professeur)
+
+- L'accueil du professeur liste ses séances du jour, avec l'état de l'appel.
+- Une carte par élève (photo 200 px), boutons Présent / Absent de 64 px. Marquer passe à l'élève suivant non marqué.
+- Navigation : glissement horizontal sur mobile, flèches ← → au clavier. Raccourcis : P (présent), A (absent).
+- Récapitulatif avant validation : toucher un élève inverse son statut. L'appel déjà fait s'ouvre directement sur le récapitulatif, pour correction.
+- L'appel n'est possible que le jour de la séance (règle vérifiée aussi par la RLS).
+- Démo : prof1 a une séance chaque jour du lundi au jeudi et le samedi ; prof2 le mardi et le vendredi ; prof3 le mardi, le mercredi, le vendredi et le samedi.
+
 ## Règles de facturation
 
 - **Deux cycles** : le 1er et le 15 du mois, déterminés par la date d'inscription (jour 1 à 14 : cycle du 1er ; jour 15 à 31 : cycle du 15).

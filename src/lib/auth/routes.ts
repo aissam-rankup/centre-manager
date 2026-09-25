@@ -14,6 +14,7 @@ export const ROUTES = {
   teacher: {
     home: "/professeur",
     schedule: "/professeur/emploi-du-temps",
+    call: (slotId: string) => `/professeur/appel/${slotId}`,
   },
   admin: {
     home: "/admin",
