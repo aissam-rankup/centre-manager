@@ -134,6 +134,16 @@ Prérequis : un compte Supabase et un compte Vercel. Les connexions (`login`) et
    | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings > API > clé `service_role` — **jamais** préfixée `NEXT_PUBLIC_` |
 5. **Premier administrateur** : *Authentication > Users > Add user* (email, mot de passe, « Auto Confirm User »), puis exécuter [`supabase/scripts/first-admin.sql`](supabase/scripts/first-admin.sql) dans le SQL Editor après y avoir renseigné le nom du centre, l'email et le nom. Les autres comptes se créent ensuite depuis l'espace administrateur.
 
+### Déploiement sur Hostinger (Node.js Web App)
+
+Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur supabase.com (étapes 1 à 3 et 5 ci-dessus).
+
+1. hPanel → **Websites → Add Website → Node.js Apps → Import Git Repository**, choisir `centre-manager`, branche `main`.
+2. Réglages de build : framework **Next.js**, Node **22.x**, build `npm run build`, démarrage `npm run start`.
+3. **Variables d'environnement** : importer un fichier `.env` avec les 4 variables (modèle `.env.hostinger`, non versionné). Les `NEXT_PUBLIC_*` sont intégrées au build : les renseigner **avant** le premier déploiement, et redéployer après toute modification.
+4. `NEXT_PUBLIC_APP_URL` doit être l'URL publique exacte (ex. `https://centre.exemple.ma`) : elle autorise les Server Actions derrière le proxy Hostinger.
+5. Chaque `git push` sur `main` redéploie automatiquement.
+
 ## Mode appel (professeur)
 
 - L'accueil du professeur liste ses séances du jour, avec l'état de l'appel.
