@@ -109,12 +109,30 @@ Contenu du seed : 1 centre, 3 niveaux, 6 matières, 40 élèves, 72 inscriptions
 - **Jeton** : le hook `custom_access_token_hook` ajoute `user_role`, `center_id` et `profile_active` au JWT. Il sert uniquement aux redirections rapides du proxy.
 - **La charte graphique** (`/charte`) n'est disponible qu'en développement.
 
-### Mise en production (Supabase hébergé)
+### Mise en production (Supabase hébergé + Vercel)
 
-1. Appliquer les migrations : `npx supabase link --project-ref <ref>` puis `npx supabase db push`.
-2. Activer le hook : **Authentication > Hooks > Customize Access Token**, fonction `public.custom_access_token_hook`.
-3. Désactiver les inscriptions publiques : **Authentication > Sign In / Providers > Allow new users to sign up** décoché.
-4. Renseigner les variables de `.env.example` dans Vercel (`SUPABASE_SERVICE_ROLE_KEY` en variable serveur uniquement).
+Prérequis : un compte Supabase et un compte Vercel. Les connexions (`login`) et les mots de passe se saisissent vous-même.
+
+1. **Créer le projet Supabase** (région proche du Maroc, ex. `eu-west-3` Paris) et noter sa référence (`<ref>`, visible dans l'URL du tableau de bord).
+2. **Appliquer les migrations** (le mot de passe de la base est demandé) :
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref <ref>
+   npm run db:push
+   ```
+   `db push` n'exécute jamais le seed de démonstration.
+3. **Réglages Auth** dans le tableau de bord Supabase :
+   - **Authentication > Hooks > Customize Access Token** : fonction `public.custom_access_token_hook` ;
+   - **Authentication > Sign In / Providers** : décocher **Allow new users to sign up** ;
+   - **Authentication > URL Configuration** : Site URL = l'URL Vercel de production.
+4. **Déployer sur Vercel** : *Add New… > Project*, importer le dépôt GitHub, puis renseigner les variables d'environnement :
+   | Variable | Valeur |
+   | --- | --- |
+   | `NEXT_PUBLIC_APP_URL` | URL de production (ex. `https://centre-manager.vercel.app`) |
+   | `NEXT_PUBLIC_SUPABASE_URL` | Project Settings > API > Project URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Project Settings > API > clé `anon` (publique) |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings > API > clé `service_role` — **jamais** préfixée `NEXT_PUBLIC_` |
+5. **Premier administrateur** : *Authentication > Users > Add user* (email, mot de passe, « Auto Confirm User »), puis exécuter [`supabase/scripts/first-admin.sql`](supabase/scripts/first-admin.sql) dans le SQL Editor après y avoir renseigné le nom du centre, l'email et le nom. Les autres comptes se créent ensuite depuis l'espace administrateur.
 
 ## Mode appel (professeur)
 
@@ -174,6 +192,7 @@ Historique des exécutions : `select * from cron.job_run_details order by start_
 | `npm run db:reset` | Recrée la base : migrations + seed |
 | `npm run db:test` | Lance les tests pgTAP de `supabase/tests` |
 | `npm run db:types` | Régénère `src/lib/supabase/database.types.ts` |
+| `npm run db:push` | Applique les migrations au projet Supabase lié (production) |
 
 Toute modification de schéma passe par une nouvelle migration :
 
