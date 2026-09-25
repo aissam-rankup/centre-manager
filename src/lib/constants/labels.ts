@@ -463,7 +463,8 @@ export const LABELS = {
       },
       alerts: {
         title: "Alertes d'absences",
-        description: "Élèves absents plusieurs séances de suite dans une matière.",
+        description:
+          "Élèves absents 3 séances de suite dans une matière. L'alerte se ferme après une relance « absence » ou au retour de l'élève.",
         absences: (count: number, subject: string) => `${count} absences consécutives en ${subject}`,
         lastSession: (date: string) => `Dernière séance le ${date}`,
         emptyTitle: "Aucune alerte d'absence",

@@ -724,6 +724,8 @@ export type Database = {
           center_id: string | null
           created_at: string | null
           full_name: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
           id: string | null
           last_session_date: string | null
           level_name: string | null

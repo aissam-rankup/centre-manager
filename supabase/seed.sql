@@ -296,15 +296,8 @@ begin
   from public.invoices i
   where i.status = 'overdue';
 
-  insert into public.alerts (student_id, type, payload, created_at)
-  select
-    t.student_id,
-    'consecutive_absences',
-    jsonb_build_object('subject_id', t.subject_id, 'count', 3, 'last_session_date', max(a.session_date)),
-    (max(a.session_date)::timestamp + time '19:00') at time zone 'Africa/Casablanca'
-  from demo_absence_streaks t
-  join public.attendance a on a.student_id = t.student_id and a.subject_id = t.subject_id
-  group by t.student_id, t.subject_id;
+  -- Les alertes d'absences consécutives sont ouvertes par le trigger
+  -- attendance_after_write_absence_alerts (séries forcées ci-dessus comprises).
 
   -- -------------------------------------------------------------------
   -- Relances déjà effectuées (une partie des impayés)

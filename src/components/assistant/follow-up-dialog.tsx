@@ -71,7 +71,7 @@ export function FollowUpDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" aria-label={triggerVariant === "compact" ? `${L.dialog.trigger} — ${studentName}` : undefined}>
+        <Button variant="outline" aria-label={triggerVariant === "compact" ? `${L.dialog.trigger} (${L.types[defaultType].toLowerCase()}) — ${studentName}` : undefined}>
           <MessageSquarePlus aria-hidden />
           {triggerVariant === "compact" ? L.dialog.triggerShort : L.dialog.trigger}
         </Button>

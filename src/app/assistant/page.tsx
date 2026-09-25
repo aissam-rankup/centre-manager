@@ -146,7 +146,7 @@ function QueueRow({ item }: { item: FollowUpQueueItem }) {
 
 function AlertRow({ alert }: { alert: AbsenceAlertItem }) {
   return (
-    <li className="flex items-center gap-3 py-4 first:pt-0 last:pb-0">
+    <li className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
       <Link
         href={`${ROUTES.assistant.students}/${alert.studentId}`}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-[10px]"
@@ -164,6 +164,16 @@ function AlertRow({ alert }: { alert: AbsenceAlertItem }) {
           ) : null}
         </span>
       </Link>
+      <div className="flex items-center gap-1">
+        <ContactButtons phone={alert.guardianPhone} name={alert.guardianName ?? alert.fullName} />
+        <FollowUpDialog
+          studentId={alert.studentId}
+          studentName={alert.fullName}
+          invoiceId={null}
+          defaultType="absence"
+          triggerVariant="compact"
+        />
+      </div>
     </li>
   );
 }

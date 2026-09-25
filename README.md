@@ -145,6 +145,26 @@ Contenu du seed : 1 centre, 3 niveaux, 6 matières, 40 élèves, 72 inscriptions
 - **Retard** : une facture impayée dont l'échéance est dépassée est affichée « En retard ».
 - **Relances du jour** : élèves en retard, du plus ancien retard au plus récent. Un élève relancé aujourd'hui en sort jusqu'au lendemain.
 
+## Automatisations
+
+Une tâche **pg_cron** (`centromanager-daily-automations`) s'exécute chaque jour à 00:10 UTC (01:10 à Casablanca, 00:10 pendant le ramadan) :
+
+- **Factures** : pour chaque inscription active, la facture de la période en cours est créée au prix convenu (cycles du 1er et du 15), échéance au début de période + 5 jours. La tâche est idempotente : une facture par inscription et par période.
+- **Retards** : une facture « en attente » dont l'échéance est dépassée passe « en retard » et ouvre une alerte de paiement. Payer la facture ferme l'alerte et retire l'élève de la liste de relance.
+
+En continu, par triggers :
+
+- **Absences consécutives** : à la 3e absence de suite dans une matière, une alerte s'ouvre (le compteur suit ensuite : 4, 5…). Elle se ferme au retour de l'élève dans la matière, ou dès qu'une relance « absence » est enregistrée. Une série déjà traitée ne rouvre pas d'alerte.
+- **Reprise d'une inscription** : la période en cours est facturée aussitôt (mois complet), due 5 jours après la reprise.
+
+Lancer les tâches du jour à la main (Studio → SQL Editor, ou `psql`) :
+
+```sql
+select private.run_daily_automations();
+```
+
+Historique des exécutions : `select * from cron.job_run_details order by start_time desc;`
+
 ## Base de données
 
 | Commande | Effet |

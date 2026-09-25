@@ -52,6 +52,8 @@ export type AbsenceAlertItem = {
   subjectName: string;
   absenceCount: number;
   lastSessionDate: string | null;
+  guardianName: string | null;
+  guardianPhone: string | null;
 };
 
 export type AssistantDashboard = {
@@ -129,6 +131,8 @@ export async function getAssistantDashboard(): Promise<AssistantDashboard> {
               subjectName: row.subject_name ?? "",
               absenceCount: row.absence_count ?? 3,
               lastSessionDate: row.last_session_date,
+              guardianName: row.guardian_name,
+              guardianPhone: row.guardian_phone,
             },
           ]
         : [],
