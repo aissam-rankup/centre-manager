@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleCheckBig, Copy, KeyRound, Pencil, Power, PowerOff, UserPlus, Users } from "lucide-react";
+import { Camera, CircleCheckBig, Copy, KeyRound, Pencil, Power, PowerOff, UserPlus, Users } from "lucide-react";
 import { type ReactElement, useState, useTransition } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -14,11 +14,14 @@ import { DataTable, type DataTableColumn } from "@/components/shared/data-table"
 import { EmptyState } from "@/components/shared/empty-state";
 import { FormField } from "@/components/shared/form-field";
 import { PageHeader } from "@/components/shared/page-header";
+import { StaffPhotoDialog } from "@/components/shared/staff-photo-dialog";
+import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { createUser, setUserActive, updateUser } from "@/lib/actions/admin";
+import { removeUserPhoto, setUserPhoto } from "@/lib/actions/profile";
 import { LABELS } from "@/lib/constants/labels";
 import type { AdminUser } from "@/lib/data/admin";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
@@ -39,14 +42,17 @@ export function UsersBoard({ users, levels }: UsersBoardProps) {
       header: L.name,
       mobile: "title",
       cell: (user) => (
-        <span className="flex flex-col">
-          <span className="flex items-center gap-2 font-medium">
-            {user.fullName}
-            {user.isSelf ? (
-              <span className="rounded-full bg-brand/10 px-2 text-caption font-medium text-brand-ink">{L.you}</span>
-            ) : null}
+        <span className="flex items-center gap-3">
+          <StudentAvatar name={user.fullName} photoUrl={user.photoUrl} />
+          <span className="flex min-w-0 flex-col">
+            <span className="flex flex-wrap items-center gap-2 font-medium">
+              {user.fullName}
+              {user.isSelf ? (
+                <span className="rounded-full bg-brand/10 px-2 text-caption font-medium text-brand-ink">{L.you}</span>
+              ) : null}
+            </span>
+            <span className="text-caption text-muted-foreground md:hidden">{LABELS.roles[user.role]}</span>
           </span>
-          <span className="text-caption text-muted-foreground md:hidden">{LABELS.roles[user.role]}</span>
         </span>
       ),
     },
@@ -71,6 +77,19 @@ export function UsersBoard({ users, levels }: UsersBoardProps) {
             trigger={
               <Button variant="ghost" size="icon" aria-label={`${L.editUser} — ${user.fullName}`}>
                 <Pencil aria-hidden />
+              </Button>
+            }
+          />
+          <StaffPhotoDialog
+            title={LABELS.auth.photo.adminTitle(user.fullName)}
+            description={LABELS.auth.photo.adminDescription}
+            name={user.fullName}
+            currentUrl={user.photoUrl}
+            onSave={(data) => setUserPhoto(user.id, data)}
+            onRemove={() => removeUserPhoto(user.id)}
+            trigger={
+              <Button variant="ghost" size="icon" aria-label={LABELS.auth.photo.change(user.fullName)}>
+                <Camera aria-hidden />
               </Button>
             }
           />

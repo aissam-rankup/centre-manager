@@ -8,5 +8,6 @@ export function toShellUser(profile: SessionProfile): ShellUser {
     fullName: profile.fullName,
     roleLabel: LABELS.roles[profile.role],
     centerName: profile.centerName,
+    photoUrl: profile.photoUrl,
   };
 }

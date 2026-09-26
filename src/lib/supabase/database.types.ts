@@ -556,6 +556,7 @@ export type Database = {
           full_name: string
           id: string
           phone: string | null
+          photo_url: string | null
           role: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
@@ -565,6 +566,7 @@ export type Database = {
           full_name: string
           id: string
           phone?: string | null
+          photo_url?: string | null
           role: Database["public"]["Enums"]["user_role"]
         }
         Update: {
@@ -574,6 +576,7 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
+          photo_url?: string | null
           role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: [
@@ -1038,6 +1041,7 @@ export type Database = {
           id: string
           last_sign_in_at: string
           phone: string
+          photo_url: string
           role: Database["public"]["Enums"]["user_role"]
         }[]
       }
@@ -1116,6 +1120,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_my_photo: { Args: { p_path?: string }; Returns: undefined }
     }
     Enums: {
       alert_type: "consecutive_absences" | "overdue_payment"

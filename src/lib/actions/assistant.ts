@@ -9,7 +9,7 @@ import { requireStaff } from "@/lib/auth/session";
 import { LABELS } from "@/lib/constants/labels";
 import { searchStudentDirectory, type StudentListItem } from "@/lib/data/assistant";
 import { formatPhone } from "@/lib/phone";
-import { PHOTO_BUCKET, studentPhotoPath } from "@/lib/storage/photos";
+import { isJpeg, PHOTO_BUCKET, studentPhotoPath } from "@/lib/storage/photos";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -94,12 +94,6 @@ export async function recordFollowUp(input: unknown): Promise<ActionResult> {
 // ---------------------------------------------------------------------
 // Nouvel élève
 // ---------------------------------------------------------------------
-/** Signature JPEG (FF D8 FF) : les photos sont compressées en JPEG côté client. */
-async function isJpeg(file: File): Promise<boolean> {
-  const header = new Uint8Array(await file.slice(0, 3).arrayBuffer());
-  return header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
-}
-
 export async function createStudent(formData: FormData): Promise<ActionResult<{ studentId: string }>> {
   const S = LABELS.assistant.newStudent;
 

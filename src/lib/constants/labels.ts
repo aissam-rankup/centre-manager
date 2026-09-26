@@ -99,7 +99,22 @@ export const LABELS = {
     },
     userMenu: {
       label: "Menu du compte",
+      myPhoto: "Ma photo",
       signOut: "Se déconnecter",
+    },
+    photo: {
+      title: "Ma photo",
+      description: "Visible par l'équipe de votre centre.",
+      adminTitle: (name: string) => `Photo de ${name}`,
+      adminDescription: "Visible par l'équipe du centre.",
+      label: "Photo",
+      hint: "Prise avec l'appareil photo, ou choisie dans vos fichiers.",
+      save: "Enregistrer la photo",
+      remove: "Retirer la photo",
+      saved: "Photo enregistrée",
+      removed: "Photo retirée",
+      change: (name: string) => `Changer la photo — ${name}`,
+      uploadFailed: "La photo n'a pas pu être envoyée. Réessayez.",
     },
   },
   spaces: {

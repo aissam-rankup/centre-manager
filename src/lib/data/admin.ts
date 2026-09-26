@@ -1,7 +1,7 @@
 import "server-only";
 
 import { requireRole } from "@/lib/auth/session";
-import { signPhotoUrls } from "@/lib/storage/photos";
+import { signPhotoUrls, STAFF_PHOTO_BUCKET } from "@/lib/storage/photos";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -256,6 +256,7 @@ export type AdminUser = {
   lastSignInAt: string | null;
   subjectIds: string[];
   isSelf: boolean;
+  photoUrl: string | null;
 };
 
 export async function getUsers(): Promise<AdminUser[]> {
@@ -267,6 +268,12 @@ export async function getUsers(): Promise<AdminUser[]> {
   if (usersResult.error) throw usersResult.error;
   if (assignmentsResult.error) throw assignmentsResult.error;
 
+  const photos = await signPhotoUrls(
+    supabase,
+    usersResult.data.map((user) => user.photo_url),
+    STAFF_PHOTO_BUCKET,
+  );
+
   return usersResult.data.map((user) => ({
     id: user.id,
     fullName: user.full_name,
@@ -277,6 +284,7 @@ export async function getUsers(): Promise<AdminUser[]> {
     lastSignInAt: user.last_sign_in_at,
     subjectIds: assignmentsResult.data.filter((a) => a.teacher_id === user.id).map((a) => a.subject_id),
     isSelf: user.id === profile.id,
+    photoUrl: user.photo_url ? (photos.get(user.photo_url) ?? null) : null,
   }));
 }
 

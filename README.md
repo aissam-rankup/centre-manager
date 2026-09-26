@@ -164,6 +164,12 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 - **Élèves** : liste complète (recherche, niveau, statut de paiement), fiche avec modification, suppression définitive (photo comprise) et gestion des inscriptions (prix convenu, arrêt, reprise, ajout). Pour changer un élève de niveau, arrêter d'abord ses inscriptions au niveau actuel.
 - **Rapports** : effectifs par niveau et par matière, revenu mensuel (somme des prix convenus), classement des matières par taux d'absence (30 jours, 90 jours ou depuis le début). Export CSV compatible Excel (séparateur « ; », UTF-8).
 
+## Photos de l'équipe
+
+- Chaque utilisateur (admin, assistant, professeur) ajoute ou change sa photo depuis le menu du compte → **Ma photo** (caméra avant sur téléphone, ou fichier).
+- L'administrateur peut changer la photo de n'importe quel membre de son centre depuis **Utilisateurs** (bouton appareil photo).
+- Les photos sont compressées côté client (800 px, JPEG), stockées dans le bucket privé `staff-photos` (`{center_id}/{profile_id}/{horodatage}.jpg`) et servies par URL signée. Elles apparaissent dans l'en-tête et la liste des utilisateurs.
+
 ## Packs d'abonnement
 
 - **Catalogue** (admin, Niveaux et matières) : un pack appartient à un niveau, regroupe des matières cochées et a un prix mensuel unique. Un pack décoché « Proposer ce pack » n'est plus proposé ; les abonnés en cours continuent.

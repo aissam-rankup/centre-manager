@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { ROLE_HOME, ROUTES, type UserRole } from "@/lib/auth/routes";
+import { signPhotoUrls, STAFF_PHOTO_BUCKET } from "@/lib/storage/photos";
 import { createClient } from "@/lib/supabase/server";
 
 export type SessionProfile = {
@@ -14,6 +15,9 @@ export type SessionProfile = {
   active: boolean;
   centerId: string;
   centerName: string;
+  /** Chemin de la photo (bucket staff-photos) et son URL signée. */
+  photoPath: string | null;
+  photoUrl: string | null;
 };
 
 export type AuthState =
@@ -36,12 +40,14 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, full_name, role, active, center_id, centers(name)")
+    .select("id, full_name, role, active, center_id, photo_url, centers(name)")
     .eq("id", userId)
     .maybeSingle();
 
   if (error) throw error;
   if (!profile) return { status: "no-profile", email };
+
+  const photos = await signPhotoUrls(supabase, [profile.photo_url], STAFF_PHOTO_BUCKET);
 
   return {
     status: "authenticated",
@@ -54,6 +60,8 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
       centerId: profile.center_id,
       // Le centre n'est lisible que par un compte actif (RLS).
       centerName: profile.centers?.name ?? "",
+      photoPath: profile.photo_url,
+      photoUrl: profile.photo_url ? (photos.get(profile.photo_url) ?? null) : null,
     },
   };
 });

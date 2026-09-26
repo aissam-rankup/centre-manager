@@ -18,6 +18,12 @@ type PhotoCaptureProps = {
   name: string;
   value: CapturedPhoto | null;
   onChange: (photo: CapturedPhoto | null) => void;
+  /** Photo actuelle, affichée tant qu'aucune nouvelle n'est prise. */
+  currentUrl?: string | null;
+  label?: string;
+  hint?: string;
+  /** Caméra arrière (élève photographié) ou avant (selfie de l'équipe). */
+  capture?: "environment" | "user";
 };
 
 /**
@@ -25,7 +31,15 @@ type PhotoCaptureProps = {
  * puis compression côté client (800 px, qualité 0,8) avant tout envoi.
  * Sur ordinateur, le même bouton ouvre le sélecteur de fichiers.
  */
-export function PhotoCapture({ name, value, onChange }: PhotoCaptureProps) {
+export function PhotoCapture({
+  name,
+  value,
+  onChange,
+  currentUrl = null,
+  label = L.fields.photo,
+  hint = L.fields.photoHint,
+  capture = "environment",
+}: PhotoCaptureProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [compressing, setCompressing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,16 +76,16 @@ export function PhotoCapture({ name, value, onChange }: PhotoCaptureProps) {
 
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-      <StudentAvatar name={name || "?"} photoUrl={value?.previewUrl ?? null} size="profile" />
+      <StudentAvatar name={name || "?"} photoUrl={value?.previewUrl ?? currentUrl} size="profile" />
 
       <div className="flex flex-col items-center gap-2 sm:items-start">
-        <p className="font-medium">{L.fields.photo}</p>
-        <p className="text-caption text-muted-foreground">{L.fields.photoHint}</p>
+        <p className="font-medium">{label}</p>
+        <p className="text-caption text-muted-foreground">{hint}</p>
         <input
           ref={inputRef}
           type="file"
           accept="image/*"
-          capture="environment"
+          capture={capture}
           className="sr-only"
           tabIndex={-1}
           aria-hidden
@@ -81,12 +95,12 @@ export function PhotoCapture({ name, value, onChange }: PhotoCaptureProps) {
           <Button type="button" variant="outline" disabled={compressing} onClick={() => inputRef.current?.click()}>
             {compressing ? (
               <LoaderCircle className="animate-spin" aria-hidden />
-            ) : value ? (
+            ) : value || currentUrl ? (
               <RotateCcw aria-hidden />
             ) : (
               <Camera aria-hidden />
             )}
-            {compressing ? L.fields.compressing : value ? L.fields.retakePhoto : L.fields.takePhoto}
+            {compressing ? L.fields.compressing : value || currentUrl ? L.fields.retakePhoto : L.fields.takePhoto}
           </Button>
           {value && !compressing ? (
             <Button type="button" variant="ghost" onClick={() => replace(null)}>
