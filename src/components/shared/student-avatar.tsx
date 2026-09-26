@@ -1,9 +1,11 @@
 import { cn } from "@/lib/utils";
 
-export type AvatarSize = "list" | "profile" | "call";
+export type AvatarSize = "mini" | "list" | "profile" | "call";
 export type AvatarStatus = "upToDate" | "overdue" | "neutral";
 
 const SIZE_STYLES: Record<AvatarSize, { box: string; text: string; px: number }> = {
+  // Mention compacte d'un membre de l'équipe (planning).
+  mini: { box: "size-6", text: "text-[10px]", px: 24 },
   list: { box: "size-10", text: "text-caption", px: 40 },
   profile: { box: "size-24", text: "text-section", px: 96 },
   call: { box: "size-[200px]", text: "text-5xl", px: 200 },

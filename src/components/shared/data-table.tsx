@@ -94,7 +94,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={getRowId(row)} className="h-[52px] border-b last:border-b-0 hover:bg-muted/50">
+              <tr key={getRowId(row)} className="h-[52px] border-b transition-colors duration-150 last:border-b-0 hover:bg-muted/50">
                 {columns.map((column) => (
                   <td
                     key={column.id}

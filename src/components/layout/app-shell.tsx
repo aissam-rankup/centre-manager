@@ -89,7 +89,7 @@ function SidebarNav({ items }: { items: readonly NavItem[] }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex min-h-11 items-center gap-3 rounded-[10px] px-3 font-medium text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  "relative flex min-h-11 items-center gap-3 rounded-[10px] px-3 font-medium text-sidebar-muted transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                   active &&
                     "bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full before:bg-brand",
                 )}
@@ -129,7 +129,7 @@ function BottomNav({ items }: { items: readonly NavItem[] }) {
                 aria-label={item.shortLabel ? item.label : undefined}
                 className={cn(tabClass, active && "text-brand-ink")}
               >
-                <Icon className="size-6" aria-hidden />
+                <TabIcon icon={Icon} active={active} />
                 <span className="max-w-full truncate">{item.shortLabel ?? item.label}</span>
               </Link>
             </li>
@@ -139,7 +139,7 @@ function BottomNav({ items }: { items: readonly NavItem[] }) {
           <li className="min-w-0 flex-1">
             <Sheet>
               <SheetTrigger className={cn(tabClass, "w-full", hiddenActive && "text-brand-ink")}>
-                <Ellipsis className="size-6" aria-hidden />
+                <TabIcon icon={Ellipsis} active={hiddenActive} />
                 <span>{LABELS.common.more}</span>
               </SheetTrigger>
               <SheetContent side="bottom" className="rounded-t-2xl pb-[max(env(safe-area-inset-bottom),16px)]">
@@ -177,4 +177,18 @@ function BottomNav({ items }: { items: readonly NavItem[] }) {
 }
 
 const tabClass =
-  "flex min-h-16 w-full flex-col items-center justify-center gap-1 px-1 text-caption font-medium text-muted-foreground";
+  "flex min-h-16 w-full flex-col items-center justify-center gap-1 px-1 text-caption font-medium text-muted-foreground transition-colors duration-200";
+
+/** Icône d'onglet ; l'onglet actif est repéré par une pastille teintée (en plus de la couleur du texte). */
+function TabIcon({ icon: Icon, active }: { icon: NavItem["icon"]; active: boolean }) {
+  return (
+    <span
+      className={cn(
+        "flex h-8 w-14 items-center justify-center rounded-full transition-colors duration-200",
+        active && "bg-brand/10",
+      )}
+    >
+      <Icon className="size-6" aria-hidden />
+    </span>
+  );
+}

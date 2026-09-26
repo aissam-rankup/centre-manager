@@ -161,7 +161,10 @@ export function CallMode({ slot, students }: CallModeProps) {
           aria-valuenow={markedCount}
           aria-valuetext={L.marked(markedCount, total)}
         >
-          <div className="h-full rounded-full bg-success transition-[width] duration-300" style={{ width: `${progress}%` }} />
+          <div
+            className="h-full w-full origin-left rounded-full bg-success transition-transform duration-300 ease-(--ease-soft)"
+            style={{ transform: `scaleX(${progress / 100})` }}
+          />
         </div>
       </header>
 
@@ -184,7 +187,7 @@ export function CallMode({ slot, students }: CallModeProps) {
                 <ChevronLeft aria-hidden />
               </Button>
 
-              <div key={current.id} className="flex flex-1 animate-in flex-col items-center gap-4 text-center fade-in-0 duration-200">
+              <div key={current.id} className="flex flex-1 animate-enter flex-col items-center gap-4 text-center">
                 <p className="numeric text-caption font-normal text-muted-foreground" aria-live="polite">
                   {L.progress(index + 1, total)}
                 </p>

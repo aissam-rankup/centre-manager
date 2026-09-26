@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarPlus, CalendarRange, Clock, DoorOpen, Trash2, TriangleAlert, User } from "lucide-react";
+import { CalendarPlus, CalendarRange, Clock, DoorOpen, Trash2, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useWatch } from "react-hook-form";
 
@@ -10,6 +10,7 @@ import { useActionForm } from "@/components/admin/use-action-form";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FormField } from "@/components/shared/form-field";
 import { PageHeader } from "@/components/shared/page-header";
+import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -105,7 +106,7 @@ function SlotCard({ slot, data }: { slot: PlanningSlot; data: PlanningData }) {
         <button
           type="button"
           aria-label={`${L.editSlot} — ${slot.subjectName}, ${LABELS.days[slot.dayOfWeek]} ${slot.startTime}`}
-          className="flex w-full flex-col gap-1 rounded-[10px] border bg-card p-3 text-left shadow-soft transition-colors hover:bg-muted/60"
+          className="card-interactive flex w-full flex-col gap-1 rounded-[10px] border bg-card p-3 text-left shadow-soft"
         >
           <span className="numeric flex items-center gap-1.5 text-caption text-brand-ink">
             <Clock className="size-4" aria-hidden />
@@ -114,7 +115,7 @@ function SlotCard({ slot, data }: { slot: PlanningSlot; data: PlanningData }) {
           <span className="font-semibold">{slot.subjectName}</span>
           <span className="text-caption text-muted-foreground">{slot.levelName}</span>
           <span className="flex items-center gap-1.5 text-caption text-muted-foreground">
-            <User className="size-4 shrink-0" aria-hidden />
+            <StudentAvatar name={slot.teacherName} photoUrl={slot.teacherPhotoUrl} size="mini" className="border" />
             <span className="truncate">{slot.teacherName}</span>
           </span>
           <span className="flex items-center gap-1.5 text-caption text-muted-foreground">

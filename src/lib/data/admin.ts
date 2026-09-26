@@ -169,6 +169,8 @@ export type PlanningSlot = {
   levelName: string;
   teacherId: string;
   teacherName: string;
+  /** URL signée de la photo du professeur, si elle existe. */
+  teacherPhotoUrl: string | null;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
@@ -195,7 +197,7 @@ export async function getPlanningData(): Promise<PlanningData> {
       .order("day_of_week")
       .order("start_time"),
     supabase.from("subjects").select("id, name, level_id, levels(name, sort_order)"),
-    supabase.from("profiles").select("id, full_name, active").eq("role", "teacher").order("full_name"),
+    supabase.from("profiles").select("id, full_name, active, photo_url").eq("role", "teacher").order("full_name"),
     supabase.from("teacher_assignments").select("teacher_id, subject_id"),
   ]);
   for (const result of [slotsResult, subjectsResult, teachersResult, assignmentsResult]) {
@@ -203,6 +205,8 @@ export async function getPlanningData(): Promise<PlanningData> {
   }
 
   const teacherNames = new Map((teachersResult.data ?? []).map((t) => [t.id, t.full_name] as const));
+  const teacherPhotoPaths = new Map((teachersResult.data ?? []).map((t) => [t.id, t.photo_url] as const));
+  const teacherPhotos = await signPhotoUrls(supabase, [...teacherPhotoPaths.values()], STAFF_PHOTO_BUCKET);
   const assignments = new Map<string, string[]>();
   for (const row of assignmentsResult.data ?? []) {
     assignments.set(row.subject_id, [...(assignments.get(row.subject_id) ?? []), row.teacher_id]);
@@ -232,6 +236,7 @@ export async function getPlanningData(): Promise<PlanningData> {
       levelName: subjectById.get(slot.subject_id)?.levelName ?? "",
       teacherId: slot.teacher_id,
       teacherName: teacherNames.get(slot.teacher_id) ?? "",
+      teacherPhotoUrl: teacherPhotos.get(teacherPhotoPaths.get(slot.teacher_id) ?? "") ?? null,
       dayOfWeek: slot.day_of_week,
       startTime: slot.start_time.slice(0, 5),
       endTime: slot.end_time.slice(0, 5),

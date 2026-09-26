@@ -27,7 +27,7 @@ export default async function AssistantDashboardPage() {
     <div className="flex flex-col gap-8">
       <PageHeader title={L.title} description={dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} />
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
+      <div className="stagger grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
         <StatCard
           label={L.stats.unpaid}
           value={stats.unpaidCount}

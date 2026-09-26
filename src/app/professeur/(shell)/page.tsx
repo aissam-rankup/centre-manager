@@ -50,7 +50,7 @@ export default async function TeacherHomePage() {
             }
           />
         ) : (
-          <ul className="grid gap-4 md:grid-cols-2">
+          <ul className="stagger grid gap-4 md:grid-cols-2">
             {sessions.map((session, index) => (
               <SessionCard key={session.id} session={session} highlighted={index === firstTodo(sessions)} />
             ))}

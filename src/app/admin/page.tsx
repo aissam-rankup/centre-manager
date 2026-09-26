@@ -41,7 +41,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
         href={(value) => (value ? `${ROUTES.admin.home}?niveau=${value}` : ROUTES.admin.home)}
       />
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
+      <div className="stagger grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
         <StatCard
           label={L.stats.collected}
           value={<Money amount={data.collected} />}
