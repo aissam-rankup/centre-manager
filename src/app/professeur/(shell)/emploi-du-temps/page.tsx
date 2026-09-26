@@ -4,7 +4,9 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { StudentAvatar } from "@/components/shared/student-avatar";
 import { ROUTES } from "@/lib/auth/routes";
+import { requireRole } from "@/lib/auth/session";
 import { LABELS } from "@/lib/constants/labels";
 import { getTeacherSlots, type TeacherSlot, todayDayOfWeek } from "@/lib/data/teacher";
 import { cn } from "@/lib/utils";
@@ -17,7 +19,8 @@ export const metadata: Metadata = { title: L.title };
 const WEEK = [1, 2, 3, 4, 5, 6] as const;
 
 export default async function TeacherSchedulePage() {
-  const slots = await getTeacherSlots();
+  const [profile, slots] = await Promise.all([requireRole("teacher"), getTeacherSlots()]);
+  const teacher: SlotTeacher = { name: profile.fullName, photoUrl: profile.photoUrl };
   const today = todayDayOfWeek();
   const days: number[] = slots.some((slot) => slot.dayOfWeek === 0) ? [...WEEK, 0] : [...WEEK];
   const byDay = new Map(days.map((day) => [day, slots.filter((slot) => slot.dayOfWeek === day)]));
@@ -43,7 +46,7 @@ export default async function TeacherSchedulePage() {
                   <ul className="flex flex-col gap-2">
                     {(byDay.get(day) ?? []).map((slot) => (
                       <li key={slot.id}>
-                        <SlotCard slot={slot} isToday={day === today} />
+                        <SlotCard teacher={teacher} slot={slot} isToday={day === today} />
                       </li>
                     ))}
                   </ul>
@@ -82,7 +85,7 @@ export default async function TeacherSchedulePage() {
                     {(byDay.get(day) ?? []).length === 0 ? (
                       <p className="p-2 text-caption text-muted-foreground">{L.noSession}</p>
                     ) : (
-                      (byDay.get(day) ?? []).map((slot) => <SlotCard key={slot.id} slot={slot} isToday={day === today} compact />)
+                      (byDay.get(day) ?? []).map((slot) => <SlotCard key={slot.id} teacher={teacher} slot={slot} isToday={day === today} compact />)
                     )}
                   </div>
                 ))}
@@ -106,7 +109,19 @@ function DayHeading({ day, isToday, id }: { day: number; isToday: boolean; id?: 
   );
 }
 
-function SlotCard({ slot, isToday, compact = false }: { slot: TeacherSlot; isToday: boolean; compact?: boolean }) {
+type SlotTeacher = { name: string; photoUrl: string | null };
+
+function SlotCard({
+  slot,
+  teacher,
+  isToday,
+  compact = false,
+}: {
+  slot: TeacherSlot;
+  teacher: SlotTeacher;
+  isToday: boolean;
+  compact?: boolean;
+}) {
   const content = (
     <>
       <p className="numeric flex items-center gap-1.5 text-caption text-brand-ink">
@@ -115,6 +130,10 @@ function SlotCard({ slot, isToday, compact = false }: { slot: TeacherSlot; isTod
       </p>
       <p className="font-semibold">{slot.subjectName}</p>
       <p className="text-caption text-muted-foreground">{slot.levelName}</p>
+      <p className="flex items-center gap-1.5 text-caption text-muted-foreground">
+        <StudentAvatar name={teacher.name} photoUrl={teacher.photoUrl} size="mini" className="border" />
+        <span className="truncate">{teacher.name}</span>
+      </p>
       <p className="flex items-center gap-1.5 text-caption text-muted-foreground">
         <DoorOpen className="size-4" aria-hidden />
         {slot.room}
@@ -130,7 +149,7 @@ function SlotCard({ slot, isToday, compact = false }: { slot: TeacherSlot; isTod
 
   // Les séances du jour ouvrent directement l'appel.
   return isToday ? (
-    <Link href={ROUTES.teacher.call(slot.id)} className={cn(className, "transition-colors hover:bg-muted/60")}>
+    <Link href={ROUTES.teacher.call(slot.id)} className={cn(className, "card-interactive")}>
       {content}
     </Link>
   ) : (
