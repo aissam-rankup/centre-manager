@@ -499,6 +499,27 @@ export const LABELS = {
       emptyTitle: "Aucune séance aujourd'hui",
       emptyDescription: "Vos prochaines séances figurent dans votre emploi du temps.",
       seeSchedule: "Voir mon emploi du temps",
+      stats: {
+        sessionsToday: "Séances aujourd'hui",
+        sessionsTodayDetail: (done: number) => (done <= 1 ? `${done} appel fait` : `${done} appels faits`),
+        followedStudents: "Élèves suivis",
+        followedStudentsDetail: (subjects: number) => (subjects <= 1 ? `Dans ${subjects} matière` : `Dans ${subjects} matières`),
+        presenceRate: "Taux de présence",
+        presenceRateDetail: "30 derniers jours, toutes vos matières",
+      },
+      mySessions: "Mes séances du jour",
+      sessionDetail: (time: string, room: string) => `${time} · ${room}`,
+      students: {
+        title: "Mes élèves",
+        caption: "Élèves de vos matières",
+        name: "Nom",
+        level: "Niveau",
+        subject: "Matière",
+        lastStatus: "Dernière séance",
+        notMarked: "Pas encore d'appel",
+        emptyTitle: "Aucun élève",
+        emptyDescription: "Les élèves inscrits à vos matières apparaîtront ici.",
+      },
     },
     schedule: {
       title: "Mon emploi du temps",
@@ -558,6 +579,13 @@ export const LABELS = {
         absencesTodayHint: "Signalées par les professeurs",
         absenceAlerts: "Alertes d'absences",
         absenceAlertsHint: "3 absences consécutives ou plus",
+        overduePayments: "Paiements en retard",
+        overduePaymentsDetail: (students: string, amount: string) => `${students} · ${amount}`,
+        monthUnpaid: "Impayés du mois",
+        monthUnpaidDetail: (count: number) =>
+          count <= 1 ? `${count} facture du mois non réglée` : `${count} factures du mois non réglées`,
+        absencesTodayDetail: (alerts: number) =>
+          alerts <= 1 ? `${alerts} alerte d'absences ouverte` : `${alerts} alertes d'absences ouvertes`,
       },
       queue: {
         title: "Relances du jour",

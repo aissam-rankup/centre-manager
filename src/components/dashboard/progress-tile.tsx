@@ -78,7 +78,7 @@ export function ProgressTile({ index, ring, title, description, href, linkLabel,
       <span className="pointer-events-none absolute -bottom-5 left-10 size-[50px] rounded-full bg-white/[0.08]" aria-hidden />
       {ring}
       <div className="relative flex min-w-0 flex-1 flex-col gap-0.5">
-        <p className="truncate text-body font-semibold">{title}</p>
+        <p className="line-clamp-2 text-body font-semibold">{title}</p>
         <p className="text-[10px] leading-4 text-white/85">{description}</p>
         {href && linkLabel ? (
           <Link href={href} className="w-fit rounded-sm text-[10px] leading-4 underline underline-offset-2">

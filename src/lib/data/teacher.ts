@@ -108,6 +108,111 @@ export async function getTodaySessions(): Promise<TodaySession[]> {
 }
 
 // ---------------------------------------------------------------------
+// Tableau de bord
+// ---------------------------------------------------------------------
+export type TeacherStudentRow = {
+  /** Élève × matière. */
+  key: string;
+  studentId: string;
+  fullName: string;
+  photoUrl: string | null;
+  levelName: string;
+  subjectName: string;
+  /** Statut à la dernière séance saisie, ou null si aucun appel. */
+  lastStatus: AttendanceStatus | null;
+};
+
+export type TeacherDashboard = {
+  sessions: TodaySession[];
+  students: TeacherStudentRow[];
+  studentCount: number;
+  subjectCount: number;
+  /** Présence sur 30 jours (0 à 1), ou null sans appel. */
+  presenceRate: number | null;
+};
+
+export async function getTeacherDashboard(): Promise<TeacherDashboard> {
+  const [sessions, slots] = await Promise.all([getTodaySessions(), getTeacherSlots()]);
+  const supabase = await createClient();
+
+  const since = new Date(today());
+  since.setDate(since.getDate() - 30);
+
+  // La RLS limite les listes de classe, présences et élèves aux matières du professeur.
+  const [rostersResult, catalogResult, attendanceResult] = await Promise.all([
+    supabase.from("class_rosters").select("student_id, subject_id").eq("active", true),
+    supabase.from("subject_catalog").select("id, name"),
+    supabase.from("attendance").select("student_id, subject_id, session_date, status").order("session_date", { ascending: false }),
+  ]);
+  if (rostersResult.error) throw rostersResult.error;
+  if (catalogResult.error) throw catalogResult.error;
+  if (attendanceResult.error) throw attendanceResult.error;
+
+  const mySubjects = new Set(slots.map((slot) => slot.subjectId));
+  const rosters = rostersResult.data.filter(
+    (row): row is { student_id: string; subject_id: string } =>
+      Boolean(row.student_id && row.subject_id && mySubjects.has(row.subject_id)),
+  );
+  const studentIds = [...new Set(rosters.map((row) => row.student_id))];
+
+  const studentsResult = studentIds.length
+    ? await supabase.from("students").select("id, full_name, photo_url, levels(name)").in("id", studentIds)
+    : { data: [], error: null };
+  if (studentsResult.error) throw studentsResult.error;
+
+  const subjectNames = new Map(catalogResult.data.flatMap((s) => (s.id && s.name ? [[s.id, s.name] as const] : [])));
+  const students = new Map(studentsResult.data.map((s) => [s.id, s] as const));
+  const photos = await signPhotoUrls(supabase, studentsResult.data.map((s) => s.photo_url));
+
+  // Dernier statut par élève et matière (présences triées de la plus récente à la plus ancienne).
+  const lastStatus = new Map<string, AttendanceStatus>();
+  let present = 0;
+  let recorded = 0;
+  const sinceIso = toISODate(since);
+  for (const row of attendanceResult.data) {
+    if (!mySubjects.has(row.subject_id)) continue;
+    const key = `${row.student_id}:${row.subject_id}`;
+    if (!lastStatus.has(key)) lastStatus.set(key, row.status);
+    if (row.session_date >= sinceIso) {
+      recorded += 1;
+      if (row.status === "present") present += 1;
+    }
+  }
+
+  const rows: TeacherStudentRow[] = rosters
+    .flatMap((row) => {
+      const student = students.get(row.student_id);
+      if (!student) return [];
+      const key = `${row.student_id}:${row.subject_id}`;
+      return [
+        {
+          key,
+          studentId: row.student_id,
+          fullName: student.full_name,
+          photoUrl: student.photo_url ? (photos.get(student.photo_url) ?? null) : null,
+          levelName: student.levels?.name ?? "",
+          subjectName: subjectNames.get(row.subject_id) ?? "",
+          lastStatus: lastStatus.get(key) ?? null,
+        },
+      ];
+    })
+    // Absents d'abord, puis par nom.
+    .sort(
+      (a, b) =>
+        Number(b.lastStatus === "absent") - Number(a.lastStatus === "absent") ||
+        a.fullName.localeCompare(b.fullName, "fr"),
+    );
+
+  return {
+    sessions,
+    students: rows,
+    studentCount: studentIds.length,
+    subjectCount: mySubjects.size,
+    presenceRate: recorded > 0 ? present / recorded : null,
+  };
+}
+
+// ---------------------------------------------------------------------
 // Mode appel
 // ---------------------------------------------------------------------
 export type CallStudent = {

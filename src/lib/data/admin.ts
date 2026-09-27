@@ -1,7 +1,7 @@
 import "server-only";
 
 import { requireRole } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { type DashboardStudent, loadDashboardStudents, type SubjectPresence } from "@/lib/data/dashboard";
 import { signPhotoUrls, STAFF_PHOTO_BUCKET } from "@/lib/storage/photos";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
@@ -55,27 +55,7 @@ export type AdminDashboard = {
   presence: SubjectPresence[];
 };
 
-export type DashboardStudentStatus = "upToDate" | "overdue" | "followedUp";
-
-export type DashboardStudent = {
-  id: string;
-  fullName: string;
-  photoUrl: string | null;
-  levelName: string;
-  /** Matières suivies, ou « Pack … ». */
-  subjects: string;
-  status: DashboardStudentStatus;
-  guardianPhone: string | null;
-};
-
-export type SubjectPresence = {
-  subjectId: string;
-  subjectName: string;
-  levelName: string;
-  /** Taux de présence : 1 − taux d'absence. */
-  rate: number;
-  students: number;
-};
+export type { DashboardStudent, DashboardStudentStatus, SubjectPresence } from "@/lib/data/dashboard";
 
 function mapRates(
   rows: Database["public"]["Functions"]["admin_absence_rates"]["Returns"],
@@ -96,67 +76,17 @@ export async function getAdminDashboard(levelId: string | null): Promise<AdminDa
   const { supabase } = await adminClient();
   const level = levelId ?? undefined;
 
-  let directoryQuery = supabase
-    .from("student_directory")
-    .select("id, full_name, level_id, level_name, photo_url, guardian_phone, is_overdue")
-    .order("full_name");
-  if (levelId) directoryQuery = directoryQuery.eq("level_id", levelId);
-
-  const [revenueResult, ratesResult, levels, directoryResult, enrollmentsResult, packsResult, queueResult, reportResult] =
-    await Promise.all([
-      supabase.rpc("admin_month_revenue", { p_level_id: level }).single(),
-      supabase.rpc("admin_absence_rates", { p_level_id: level, p_days: 30 }),
-      getLevelOptions(),
-      directoryQuery,
-      supabase.from("enrollments").select("student_id, active, pack_enrollment_id, subjects(name)").eq("active", true),
-      supabase.from("pack_enrollments").select("student_id, packs(name)").eq("active", true),
-      supabase.from("follow_up_queue").select("student_id, oldest_due_date, last_follow_up_at, followed_up_today"),
-      supabase.rpc("admin_enrollment_report"),
-    ]);
-  for (const result of [revenueResult, ratesResult, directoryResult, enrollmentsResult, packsResult, queueResult, reportResult]) {
-    if (result.error) throw result.error;
-  }
-
-  // Matières suivies : le pack prime sur le détail de ses matières.
-  const subjectsByStudent = new Map<string, string[]>();
-  for (const row of enrollmentsResult.data ?? []) {
-    if (row.pack_enrollment_id || !row.subjects?.name) continue;
-    subjectsByStudent.set(row.student_id, [...(subjectsByStudent.get(row.student_id) ?? []), row.subjects.name]);
-  }
-  const packByStudent = new Map((packsResult.data ?? []).map((row) => [row.student_id, row.packs?.name ?? ""] as const));
-  const queue = new Map((queueResult.data ?? []).flatMap((row) => (row.student_id ? [[row.student_id, row] as const] : [])));
-
-  const directory = directoryResult.data ?? [];
-  const photos = await signPhotoUrls(supabase, directory.map((row) => row.photo_url));
-  const statusOrder: Record<DashboardStudentStatus, number> = { overdue: 0, followedUp: 1, upToDate: 2 };
-  const students: DashboardStudent[] = directory
-    .flatMap((row) => {
-      if (!row.id || !row.full_name) return [];
-      const pending = queue.get(row.id);
-      // « Relance faite » : une relance de paiement a eu lieu depuis l'échéance la plus ancienne.
-      const followedUp = Boolean(
-        pending?.last_follow_up_at && pending.oldest_due_date && pending.last_follow_up_at.slice(0, 10) >= pending.oldest_due_date,
-      );
-      const status: DashboardStudentStatus = !row.is_overdue ? "upToDate" : followedUp ? "followedUp" : "overdue";
-      const pack = packByStudent.get(row.id);
-      return [
-        {
-          id: row.id,
-          fullName: row.full_name,
-          photoUrl: row.photo_url ? (photos.get(row.photo_url) ?? null) : null,
-          levelName: row.level_name ?? "",
-          subjects: pack ? LABELS.packs.label(pack) : (subjectsByStudent.get(row.id) ?? []).sort((a, b) => a.localeCompare(b, "fr")).join(", "),
-          status,
-          guardianPhone: row.guardian_phone,
-        },
-      ];
-    })
-    .sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || a.fullName.localeCompare(b.fullName, "fr"));
-
-  const studentIds = new Set(students.map((student) => student.id));
-  const followUpsToday = (queueResult.data ?? []).filter(
-    (row) => row.student_id && studentIds.has(row.student_id) && !row.followed_up_today,
-  ).length;
+  const [revenueResult, ratesResult, levels, board, reportResult] = await Promise.all([
+    supabase.rpc("admin_month_revenue", { p_level_id: level }).single(),
+    supabase.rpc("admin_absence_rates", { p_level_id: level, p_days: 30 }),
+    getLevelOptions(),
+    loadDashboardStudents(supabase, levelId),
+    supabase.rpc("admin_enrollment_report"),
+  ]);
+  if (revenueResult.error) throw revenueResult.error;
+  if (ratesResult.error) throw ratesResult.error;
+  if (reportResult.error) throw reportResult.error;
+  const { students, followUpsToday } = board;
 
   const enrolledBySubject = new Map(
     (reportResult.data ?? []).flatMap((row) => (row.subject_id ? [[row.subject_id, row.active_enrollments ?? 0] as const] : [])),

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { requireStaff } from "@/lib/auth/session";
+import { type DashboardStudent, loadDashboardStudents, loadSubjectPresence, type SubjectPresence } from "@/lib/data/dashboard";
 import { LABELS } from "@/lib/constants/labels";
 import { toISODate, today } from "@/lib/format";
 import { signPhotoUrls } from "@/lib/storage/photos";
@@ -59,15 +60,20 @@ export type AbsenceAlertItem = {
 
 export type AssistantDashboard = {
   stats: DashboardStats;
+  /** Impayés des factures dont la période commence ce mois-ci. */
+  monthUnpaid: { amount: number; count: number };
   queue: FollowUpQueueItem[];
   alerts: AbsenceAlertItem[];
+  students: DashboardStudent[];
+  presence: SubjectPresence[];
 };
 
 export async function getAssistantDashboard(): Promise<AssistantDashboard> {
   await requireStaff();
   const supabase = await createClient();
 
-  const [statsResult, queueResult, alertsResult] = await Promise.all([
+  const monthStart = `${toISODate(today()).slice(0, 7)}-01`;
+  const [statsResult, queueResult, alertsResult, monthResult, board, presence] = await Promise.all([
     supabase.rpc("assistant_dashboard_stats").single(),
     supabase
       .from("follow_up_queue")
@@ -77,7 +83,11 @@ export async function getAssistantDashboard(): Promise<AssistantDashboard> {
       .order("overdue_amount", { ascending: false })
       .limit(50),
     supabase.from("open_absence_alerts").select("*").order("created_at", { ascending: false }).limit(50),
+    supabase.from("invoices").select("amount_due, amount_paid").neq("status", "paid").gte("period_start", monthStart),
+    loadDashboardStudents(supabase),
+    loadSubjectPresence(supabase),
   ]);
+  if (monthResult.error) throw monthResult.error;
 
   if (statsResult.error) throw statsResult.error;
   if (queueResult.error) throw queueResult.error;
@@ -100,6 +110,12 @@ export async function getAssistantDashboard(): Promise<AssistantDashboard> {
       absencesToday: s.absences_today,
       openAbsenceAlerts: s.open_absence_alerts,
     },
+    monthUnpaid: {
+      amount: monthResult.data.reduce((sum, row) => sum + Number(row.amount_due) - Number(row.amount_paid), 0),
+      count: monthResult.data.length,
+    },
+    students: board.students,
+    presence,
     queue: queueResult.data.flatMap((row) =>
       row.student_id && row.full_name && row.oldest_due_date
         ? [

@@ -1,14 +1,17 @@
-import { AlertTriangle, BellRing, CalendarX, CircleCheckBig, UserCheck, Wallet } from "lucide-react";
+import { CircleCheckBig, UserCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ContactButtons } from "@/components/assistant/contact-buttons";
 import { FollowUpDialog } from "@/components/assistant/follow-up-dialog";
+import { ProgressRing, ProgressTile } from "@/components/dashboard/progress-tile";
+import { ReminderCard } from "@/components/dashboard/reminder-card";
+import { SectionHeading } from "@/components/dashboard/section-heading";
+import { StatTile, StatTiles } from "@/components/dashboard/stat-tile";
+import { StudentBoard } from "@/components/dashboard/student-board";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Money } from "@/components/shared/money";
 import { PageHeader } from "@/components/shared/page-header";
-import { SectionCard } from "@/components/shared/section-card";
-import { StatCard } from "@/components/shared/stat-card";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { ROUTES } from "@/lib/auth/routes";
 import { LABELS } from "@/lib/constants/labels";
@@ -16,92 +19,117 @@ import { type AbsenceAlertItem, type FollowUpQueueItem, getAssistantDashboard } 
 import { formatDate, formatDateWithWeekday, formatMAD, today } from "@/lib/format";
 
 const L = LABELS.assistant.dashboard;
+const D = LABELS.dashboard;
 
 export const metadata: Metadata = { title: L.title };
 
 export default async function AssistantDashboardPage() {
-  const { stats, queue, alerts } = await getAssistantDashboard();
+  const { stats, monthUnpaid, queue, alerts, students, presence } = await getAssistantDashboard();
   const dateLabel = formatDateWithWeekday(today());
 
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader title={L.title} description={dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} />
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
+      {/* Colonne principale */}
+      <div className="flex min-w-0 flex-col gap-6">
+        <PageHeader title={L.title} description={dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} />
 
-      <div className="stagger grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
-        <StatCard
-          label={L.stats.unpaid}
-          value={stats.unpaidCount}
-          icon={Wallet}
-          tone="brand"
-          hint={L.stats.unpaidHint(formatMAD(stats.unpaidAmount))}
-        />
-        <StatCard
-          label={L.stats.overdue}
-          value={stats.overdueCount}
-          icon={AlertTriangle}
-          tone="danger"
-          hint={L.stats.overdueHint(LABELS.billing.studentsCount(stats.overdueStudents), formatMAD(stats.overdueAmount))}
-        />
-        <StatCard
-          label={L.stats.absencesToday}
-          value={stats.absencesToday}
-          icon={CalendarX}
-          tone="warning"
-          hint={L.stats.absencesTodayHint}
-        />
-        <StatCard
-          label={L.stats.absenceAlerts}
-          value={stats.openAbsenceAlerts}
-          icon={BellRing}
-          tone="warning"
-          hint={L.stats.absenceAlertsHint}
-        />
+        <section aria-labelledby="statistiques" className="flex flex-col gap-3">
+          <SectionHeading id="statistiques" title={D.statsTitle} href={ROUTES.assistant.students} />
+          <StatTiles>
+            <StatTile
+              value={stats.overdueCount}
+              label={L.stats.overduePayments}
+              detail={L.stats.overduePaymentsDetail(LABELS.billing.studentsCount(stats.overdueStudents), formatMAD(stats.overdueAmount))}
+              links={[{ href: "#relances", label: D.detail }]}
+            />
+            <StatTile
+              value={formatMAD(monthUnpaid.amount)}
+              label={L.stats.monthUnpaid}
+              detail={L.stats.monthUnpaidDetail(monthUnpaid.count)}
+              links={[{ href: ROUTES.assistant.students, label: D.detail }]}
+            />
+            <StatTile
+              value={stats.absencesToday}
+              label={L.stats.absencesToday}
+              detail={L.stats.absencesTodayDetail(stats.openAbsenceAlerts)}
+              links={[{ href: "#alertes", label: D.detail }]}
+            />
+          </StatTiles>
+        </section>
+
+        <section aria-labelledby="relances-titre" id="relances" className="flex scroll-mt-4 flex-col gap-3">
+          <SectionHeading id="relances-titre" title={L.queue.title} actions={<CountBadge count={queue.length} />} />
+          <div className="rounded-xl bg-card p-5 shadow-card md:p-6">
+            <p className="mb-4 text-caption text-muted-foreground">{L.queue.description}</p>
+            {queue.length === 0 ? (
+              <EmptyState icon={CircleCheckBig} title={L.queue.emptyTitle} description={L.queue.emptyDescription} />
+            ) : (
+              <ul className="flex flex-col divide-y divide-divider">
+                {queue.map((item) => (
+                  <QueueRow key={item.studentId} item={item} />
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+
+        <section aria-labelledby="alertes-titre" id="alertes" className="flex scroll-mt-4 flex-col gap-3">
+          <SectionHeading id="alertes-titre" title={L.alerts.title} actions={<CountBadge count={alerts.length} />} />
+          <div className="rounded-xl bg-card p-5 shadow-card md:p-6">
+            <p className="mb-4 text-caption text-muted-foreground">{L.alerts.description}</p>
+            {alerts.length === 0 ? (
+              <EmptyState icon={UserCheck} title={L.alerts.emptyTitle} description={L.alerts.emptyDescription} />
+            ) : (
+              <ul className="flex flex-col divide-y divide-divider">
+                {alerts.map((alert) => (
+                  <AlertRow key={alert.id} alert={alert} />
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+
+        <StudentBoard students={students} fileBase={ROUTES.assistant.students} seeAllHref={ROUTES.assistant.students} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-5">
-        <SectionCard
-          id="relances"
-          title={L.queue.title}
-          description={L.queue.description}
-          className="xl:col-span-3"
-          aside={<CountBadge count={queue.length} />}
-        >
-          {queue.length === 0 ? (
-            <EmptyState icon={CircleCheckBig} title={L.queue.emptyTitle} description={L.queue.emptyDescription} />
-          ) : (
-            <ul className="flex flex-col divide-y">
-              {queue.map((item) => (
-                <QueueRow key={item.studentId} item={item} />
-              ))}
-            </ul>
-          )}
-        </SectionCard>
+      {/* Colonne droite */}
+      <aside className="flex flex-col gap-6" aria-label={D.reminder.title}>
+        <section aria-labelledby="rappel" className="flex flex-col gap-3">
+          <SectionHeading id="rappel" title={D.reminder.title} href="#relances" />
+          <ReminderCard
+            title={D.reminder.cardTitle}
+            description={D.reminder.cardDescription(queue.length)}
+            href="#relances"
+            linkLabel={D.reminder.link}
+          />
+        </section>
 
-        <SectionCard
-          id="alertes"
-          title={L.alerts.title}
-          description={L.alerts.description}
-          className="xl:col-span-2"
-          aside={<CountBadge count={alerts.length} />}
-        >
-          {alerts.length === 0 ? (
-            <EmptyState icon={UserCheck} title={L.alerts.emptyTitle} description={L.alerts.emptyDescription} />
+        <section aria-labelledby="presences" className="flex flex-col gap-3">
+          <SectionHeading id="presences" title={D.presence.title} />
+          {presence.length === 0 ? (
+            <EmptyState icon={UserCheck} title={D.presence.emptyTitle} description={D.presence.emptyDescription} />
           ) : (
-            <ul className="flex flex-col divide-y">
-              {alerts.map((alert) => (
-                <AlertRow key={alert.id} alert={alert} />
+            <div className="stagger grid gap-3 md:grid-cols-2 lg:grid-cols-1">
+              {presence.map((subject, index) => (
+                <ProgressTile
+                  key={subject.subjectId}
+                  index={index}
+                  ring={<ProgressRing value={subject.rate} caption={D.presence.ring} />}
+                  title={subject.subjectName}
+                  description={D.presence.detail(subject.levelName, subject.students)}
+                />
               ))}
-            </ul>
+            </div>
           )}
-        </SectionCard>
-      </div>
+        </section>
+      </aside>
     </div>
   );
 }
 
 function CountBadge({ count }: { count: number }) {
   return (
-    <span className="numeric inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-muted px-2 text-caption">
+    <span className="numeric inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-primary-soft px-2 text-caption text-primary">
       {count}
     </span>
   );
@@ -112,11 +140,11 @@ function QueueRow({ item }: { item: FollowUpQueueItem }) {
     <li className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
       <Link
         href={`${ROUTES.assistant.students}/${item.studentId}`}
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-[10px]"
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-lg"
       >
         <StudentAvatar name={item.fullName} photoUrl={item.photoUrl} status="overdue" />
         <span className="flex min-w-0 flex-col">
-          <span className="truncate font-medium">{item.fullName}</span>
+          <span className="truncate font-medium text-heading">{item.fullName}</span>
           <span className="truncate text-caption text-muted-foreground">
             {item.levelName} ·{" "}
             {item.lastFollowUpAt ? L.queue.lastFollowUp(formatDate(item.lastFollowUpAt)) : L.queue.neverFollowedUp}
@@ -149,11 +177,11 @@ function AlertRow({ alert }: { alert: AbsenceAlertItem }) {
     <li className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
       <Link
         href={`${ROUTES.assistant.students}/${alert.studentId}`}
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-[10px]"
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-lg"
       >
         <StudentAvatar name={alert.fullName} photoUrl={alert.photoUrl} />
         <span className="flex min-w-0 flex-col">
-          <span className="truncate font-medium">{alert.fullName}</span>
+          <span className="truncate font-medium text-heading">{alert.fullName}</span>
           <span className="text-caption font-medium text-warning-ink">
             {L.alerts.absences(alert.absenceCount, alert.subjectName)}
           </span>

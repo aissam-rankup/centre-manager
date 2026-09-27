@@ -1,40 +1,67 @@
-import { CalendarDays, CalendarOff, ClipboardCheck, Clock, DoorOpen, PencilLine, Users } from "lucide-react";
+import { CalendarDays, CalendarOff, ClipboardCheck, PencilLine, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { ProgressRing, ProgressTile } from "@/components/dashboard/progress-tile";
+import { SectionHeading } from "@/components/dashboard/section-heading";
+import { StatTile, StatTiles } from "@/components/dashboard/stat-tile";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
 import { LABELS } from "@/lib/constants/labels";
-import { getTodaySessions, type TodaySession } from "@/lib/data/teacher";
-import { formatDateWithWeekday, today } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { getTeacherDashboard, type TeacherStudentRow, type TodaySession } from "@/lib/data/teacher";
+import { formatDateWithWeekday, formatPercent, today } from "@/lib/format";
 
 const L = LABELS.teacher.home;
+const S = L.students;
 
 export const metadata: Metadata = { title: L.title };
 
 export default async function TeacherHomePage() {
   const profile = await requireRole("teacher");
-  const sessions = await getTodaySessions();
+  const { sessions, students, studentCount, subjectCount, presenceRate } = await getTeacherDashboard();
   const dateLabel = formatDateWithWeekday(today());
   const firstName = profile.fullName.split(" ")[0] ?? profile.fullName;
+  const doneCount = sessions.filter((session) => isDone(session)).length;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader showTitle title={L.greeting(firstName)} description={dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} />
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
+      {/* Colonne principale */}
+      <div className="flex min-w-0 flex-col gap-6">
+        <PageHeader
+          showTitle
+          title={L.greeting(firstName)}
+          description={dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)}
+        />
 
-      <section aria-labelledby="seances-titre" className="flex flex-col gap-4">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 id="seances-titre" className="text-section">
-            {L.todaySessions}
-          </h2>
-          <span className="text-caption text-muted-foreground">{L.sessionsCount(sessions.length)}</span>
-        </div>
+        <section aria-labelledby="statistiques" className="flex flex-col gap-3">
+          <SectionHeading id="statistiques" title={LABELS.dashboard.statsTitle} href={ROUTES.teacher.schedule} />
+          <StatTiles>
+            <StatTile
+              value={sessions.length}
+              label={L.stats.sessionsToday}
+              detail={L.stats.sessionsTodayDetail(doneCount)}
+              links={[{ href: ROUTES.teacher.schedule, label: LABELS.dashboard.detail }]}
+            />
+            <StatTile value={studentCount} label={L.stats.followedStudents} detail={L.stats.followedStudentsDetail(subjectCount)} />
+            <StatTile
+              value={presenceRate === null ? LABELS.common.none : formatPercent(presenceRate)}
+              label={L.stats.presenceRate}
+              detail={L.stats.presenceRateDetail}
+            />
+          </StatTiles>
+        </section>
 
+        <StudentList students={students} />
+      </div>
+
+      {/* Colonne droite : mes séances du jour */}
+      <aside className="flex flex-col gap-3" aria-labelledby="seances-titre">
+        <SectionHeading id="seances-titre" title={L.mySessions} href={ROUTES.teacher.schedule} />
         {sessions.length === 0 ? (
           <EmptyState
             icon={CalendarOff}
@@ -50,85 +77,120 @@ export default async function TeacherHomePage() {
             }
           />
         ) : (
-          <ul className="stagger grid gap-4 md:grid-cols-2">
+          <ul className="stagger grid gap-3 md:grid-cols-2 lg:grid-cols-1">
             {sessions.map((session, index) => (
-              <SessionCard key={session.id} session={session} highlighted={index === firstTodo(sessions)} />
+              <li key={session.id}>
+                <SessionTile session={session} index={index} />
+              </li>
             ))}
           </ul>
         )}
-      </section>
+      </aside>
     </div>
   );
 }
 
-/** Première séance dont l'appel reste à faire : c'est la seule mise en avant (ambre). */
-function firstTodo(sessions: TodaySession[]): number {
-  return sessions.findIndex((session) => session.studentCount > 0 && session.markedCount < session.studentCount);
+function isDone(session: TodaySession): boolean {
+  return session.studentCount > 0 && session.markedCount >= session.studentCount;
 }
 
-function SessionCard({ session, highlighted }: { session: TodaySession; highlighted: boolean }) {
-  const done = session.studentCount > 0 && session.markedCount >= session.studentCount;
-  const partial = session.markedCount > 0 && !done;
+function SessionTile({ session, index }: { session: TodaySession; index: number }) {
+  const done = isDone(session);
+  const progress = session.studentCount > 0 ? session.markedCount / session.studentCount : 0;
 
   return (
-    <li>
-      <Card className={cn("h-full", highlighted && "border-highlight")}>
-        <CardContent className="flex h-full flex-col gap-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-col gap-1">
-              <h3 className="text-section">{session.subjectName}</h3>
-              <p className="text-muted-foreground">{session.levelName}</p>
-            </div>
-            <AttendanceBadge done={done} partial={partial} session={session} />
-          </div>
-
-          <div className="flex flex-wrap gap-x-4 gap-y-2 text-caption">
-            <Detail icon={Clock} label={LABELS.teacher.schedule.time(session.startTime, session.endTime)} />
-            <Detail icon={DoorOpen} label={session.room} />
-            <Detail icon={Users} label={L.studentsCount(session.studentCount)} />
-          </div>
-
-          <Button
-            asChild
-            size="call"
-            variant={done ? "outline" : highlighted ? "highlight" : "default"}
-            className="mt-auto w-full"
-          >
-            <Link href={ROUTES.teacher.call(session.id)}>
-              {done ? <PencilLine aria-hidden /> : <ClipboardCheck aria-hidden />}
-              {done ? L.editAttendance : L.takeAttendance}
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </li>
-  );
-}
-
-function Detail({ icon: Icon, label }: { icon: typeof Clock; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5 text-muted-foreground">
-      <Icon className="size-4 shrink-0" aria-hidden />
-      <span className="numeric font-normal whitespace-nowrap">{label}</span>
-    </div>
-  );
-}
-
-function AttendanceBadge({ done, partial, session }: { done: boolean; partial: boolean; session: TodaySession }) {
-  const label = done
-    ? L.attendanceDone
-    : partial
-      ? L.attendancePartial(session.markedCount, session.studentCount)
-      : L.attendanceTodo;
-  return (
-    <span
-      className={cn(
-        "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-caption font-medium whitespace-nowrap",
-        done ? "bg-success/10 text-success-ink" : "bg-warning/10 text-warning-ink",
-      )}
+    <ProgressTile
+      index={index}
+      ring={<ProgressRing value={progress} caption={done ? L.attendanceDone : L.attendanceTodo} />}
+      title={`${session.subjectName} · ${session.levelName}`}
+      description={`${L.sessionDetail(LABELS.teacher.schedule.time(session.startTime, session.endTime), session.room)} · ${L.studentsCount(session.studentCount)}`}
     >
-      <span className={cn("size-1.5 rounded-full", done ? "bg-success" : "bg-warning")} aria-hidden />
-      {label}
-    </span>
+      <Link
+        href={ROUTES.teacher.call(session.id)}
+        className="mt-2 inline-flex h-9 w-fit items-center gap-1.5 rounded-lg bg-white px-3 text-table font-medium text-heading shadow-card transition-transform duration-200 active:scale-[0.98]"
+      >
+        {done ? <PencilLine className="size-4" aria-hidden /> : <ClipboardCheck className="size-4" aria-hidden />}
+        {done ? L.editAttendance : L.takeAttendance}
+      </Link>
+    </ProgressTile>
   );
+}
+
+function StudentList({ students }: { students: TeacherStudentRow[] }) {
+  return (
+    <section aria-labelledby="mes-eleves" className="flex min-w-0 flex-col gap-3">
+      <SectionHeading id="mes-eleves" title={S.title} />
+      {students.length === 0 ? (
+        <EmptyState icon={Users} title={S.emptyTitle} description={S.emptyDescription} />
+      ) : (
+        <>
+          {/* Mobile : cartes */}
+          <ul className="flex flex-col gap-3 md:hidden" aria-label={S.caption}>
+            {students.map((student) => (
+              <li key={student.key} className="flex items-center gap-3 rounded-xl bg-card p-4 shadow-card">
+                <StudentAvatar name={student.fullName} photoUrl={student.photoUrl} />
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate font-medium text-heading">{student.fullName}</span>
+                  <span className="truncate text-caption text-muted-foreground">
+                    {student.levelName} · {student.subjectName}
+                  </span>
+                  <LastStatus status={student.lastStatus} />
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Desktop : tableau */}
+          <div className="hidden max-h-[520px] overflow-auto rounded-xl bg-card shadow-card md:block">
+            <table className="w-full border-collapse text-left text-table">
+              <caption className="sr-only">{S.caption}</caption>
+              <thead className="sticky top-0 z-10 bg-card">
+                <tr className="h-12 border-b border-divider">
+                  <th scope="col" className="px-3 pl-4 font-medium text-heading lg:px-4 lg:pl-6">
+                    {S.name}
+                  </th>
+                  <th scope="col" className="px-3 font-medium text-heading lg:px-4">
+                    {S.level}
+                  </th>
+                  <th scope="col" className="px-3 font-medium text-heading lg:px-4">
+                    {S.subject}
+                  </th>
+                  <th scope="col" className="px-3 pr-4 font-medium whitespace-nowrap text-heading lg:px-4">
+                    {S.lastStatus}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {students.map((student) => (
+                  <tr
+                    key={student.key}
+                    className="h-[52px] border-b border-divider transition-colors duration-150 last:border-b-0 hover:bg-row-hover"
+                  >
+                    <td className="px-3 pl-4 lg:px-4 lg:pl-6">
+                      <span className="flex items-center gap-3 font-medium text-heading">
+                        <StudentAvatar name={student.fullName} photoUrl={student.photoUrl} className="size-7 border" />
+                        <span className="truncate">{student.fullName}</span>
+                      </span>
+                    </td>
+                    <td className="max-w-[150px] truncate px-3 lg:px-4 xl:max-w-none" title={student.levelName}>
+                      {student.levelName}
+                    </td>
+                    <td className="px-3 lg:px-4">{student.subjectName}</td>
+                    <td className="px-3 pr-4 lg:px-4">
+                      <LastStatus status={student.lastStatus} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function LastStatus({ status }: { status: TeacherStudentRow["lastStatus"] }) {
+  if (!status) return <span className="text-caption text-subtle">{S.notMarked}</span>;
+  return <StatusBadge status={status} />;
 }
