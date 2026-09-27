@@ -30,7 +30,7 @@ export function AbsenceChart({ rates }: { rates: AbsenceRate[] }) {
       <div style={{ height: data.length * ROW_HEIGHT + 32 }} aria-hidden={showTable ? undefined : true}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }} barCategoryGap={12}>
-            <CartesianGrid horizontal={false} stroke="var(--border)" strokeDasharray="0" />
+            <CartesianGrid horizontal={false} stroke="var(--chart-grid)" strokeDasharray="0" />
             <XAxis
               type="number"
               domain={[0, Math.min(1, Math.ceil(max * 10) / 10)]}
@@ -47,7 +47,7 @@ export function AbsenceChart({ rates }: { rates: AbsenceRate[] }) {
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip cursor={{ fill: "var(--muted)" }} content={ChartTooltip} />
+            <Tooltip cursor={{ fill: "var(--row-hover)" }} content={ChartTooltip} />
             <Bar dataKey="rate" fill="var(--chart-1)" radius={[0, 4, 4, 0]} maxBarSize={20} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
@@ -93,7 +93,7 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
   const row = payload?.[0]?.payload as ChartRow | undefined;
   if (!active || !row) return null;
   return (
-    <div className="rounded-[10px] border bg-popover px-3 py-2 text-popover-foreground shadow-raised">
+    <div className="rounded-lg bg-popover px-3 py-2 text-popover-foreground shadow-raised">
       <p className="font-medium">{row.label}</p>
       <p className="numeric text-lg">{formatPercent(row.rate)}</p>
       <p className="text-caption text-muted-foreground">{L.tooltip(row.absentCount, row.totalCount)}</p>

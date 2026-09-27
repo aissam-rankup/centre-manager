@@ -1,20 +1,23 @@
-import { CircleCheck, Hourglass, TrendingUp, Users } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import { z } from "zod";
 
 import { AbsenceChart } from "@/components/admin/absence-chart";
 import { FilterChips } from "@/components/admin/filter-chips";
+import { ProgressRing, ProgressTile } from "@/components/dashboard/progress-tile";
+import { ReminderCard } from "@/components/dashboard/reminder-card";
+import { SectionHeading } from "@/components/dashboard/section-heading";
+import { StatTile, StatTiles } from "@/components/dashboard/stat-tile";
+import { StudentBoard } from "@/components/dashboard/student-board";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Money } from "@/components/shared/money";
 import { PageHeader } from "@/components/shared/page-header";
-import { SectionCard } from "@/components/shared/section-card";
-import { StatCard } from "@/components/shared/stat-card";
 import { ROUTES } from "@/lib/auth/routes";
 import { LABELS } from "@/lib/constants/labels";
 import { getAdminDashboard } from "@/lib/data/admin";
-import { formatMonth, formatPercent } from "@/lib/format";
+import { formatMAD, formatMonth, formatPercent } from "@/lib/format";
 
 const L = LABELS.admin.dashboard;
+const D = LABELS.dashboard;
 
 export const metadata: Metadata = { title: L.title };
 
@@ -31,54 +34,90 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
   const gapRatio = data.expected > 0 ? gap / data.expected : 0;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title={L.title} description={L.description(formatMonth(`${data.monthStart}`))} />
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
+      {/* Colonne principale */}
+      <div className="flex min-w-0 flex-col gap-6">
+        <PageHeader title={L.title} description={L.description(formatMonth(`${data.monthStart}`))} />
 
-      <FilterChips
-        label={L.filterLabel}
-        current={levelId}
-        options={[{ value: null, label: L.allLevels }, ...data.levels.map((level) => ({ value: level.id, label: level.name }))]}
-        href={(value) => (value ? `${ROUTES.admin.home}?niveau=${value}` : ROUTES.admin.home)}
-      />
+        <FilterChips
+          label={L.filterLabel}
+          current={levelId}
+          options={[{ value: null, label: L.allLevels }, ...data.levels.map((level) => ({ value: level.id, label: level.name }))]}
+          href={(value) => (value ? `${ROUTES.admin.home}?niveau=${value}` : ROUTES.admin.home)}
+        />
 
-      <div className="stagger grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
-        <StatCard
-          label={L.stats.collected}
-          value={<Money amount={data.collected} />}
-          icon={CircleCheck}
-          tone="success"
-          hint={L.stats.collectedHint(data.paidCount, data.invoiceCount)}
-        />
-        <StatCard
-          label={L.stats.expected}
-          value={<Money amount={data.expected} />}
-          icon={TrendingUp}
-          tone="brand"
-          hint={L.stats.expectedHint}
-        />
-        <StatCard
-          label={L.stats.gap}
-          value={<Money amount={gap} />}
-          icon={Hourglass}
-          tone="danger"
-          hint={L.stats.gapHint(formatPercent(gapRatio))}
-        />
-        <StatCard
-          label={L.stats.students}
-          value={data.studentCount}
-          icon={Users}
-          tone="primary"
-          hint={levelId ? L.stats.studentsHintLevel : L.stats.studentsHint}
-        />
+        <section aria-labelledby="statistiques" className="flex flex-col gap-3">
+          <SectionHeading id="statistiques" title={D.statsTitle} href={ROUTES.admin.reports} />
+          <StatTiles>
+            <StatTile
+              value={data.studentCount}
+              label={L.stats.activeStudents}
+              detail={levelId ? L.stats.studentsHintLevel : L.stats.studentsHint}
+              links={[{ href: ROUTES.admin.students, label: D.detail }]}
+            />
+            <StatTile
+              value={formatMAD(data.collected)}
+              label={L.stats.collectedMonth}
+              detail={L.stats.collectedHint(data.paidCount, data.invoiceCount)}
+              links={[{ href: ROUTES.admin.reports, label: D.detail }]}
+            />
+            <StatTile
+              value={formatMAD(gap)}
+              label={L.stats.shortfall}
+              detail={L.stats.shortfallDetail(formatPercent(gapRatio), formatMAD(data.expected))}
+              links={[{ href: `${ROUTES.admin.students}?statut=retard`, label: D.detail }]}
+            />
+          </StatTiles>
+        </section>
+
+        <StudentBoard students={data.students} fileBase={ROUTES.admin.students} seeAllHref={ROUTES.admin.students} />
+
+        <section aria-labelledby="absences" className="flex flex-col gap-3">
+          <SectionHeading id="absences" title={L.chart.title} href={`${ROUTES.admin.reports}#absences`} />
+          <div className="rounded-xl bg-card p-5 shadow-card md:p-6">
+            <p className="mb-4 text-caption text-muted-foreground">{L.chart.description}</p>
+            {data.absenceRates.length === 0 ? (
+              <EmptyState icon={TrendingUp} title={L.chart.emptyTitle} description={L.chart.emptyDescription} />
+            ) : (
+              <AbsenceChart rates={data.absenceRates} />
+            )}
+          </div>
+        </section>
       </div>
 
-      <SectionCard id="absences" title={L.chart.title} description={L.chart.description}>
-        {data.absenceRates.length === 0 ? (
-          <EmptyState icon={TrendingUp} title={L.chart.emptyTitle} description={L.chart.emptyDescription} />
-        ) : (
-          <AbsenceChart rates={data.absenceRates} />
-        )}
-      </SectionCard>
+      {/* Colonne droite : sous le contenu jusqu'à 1024 px, en grille de 2 sur tablette */}
+      <aside className="flex flex-col gap-6" aria-label={D.reminder.title}>
+        <section aria-labelledby="rappel" className="flex flex-col gap-3">
+          <SectionHeading id="rappel" title={D.reminder.title} href={`${ROUTES.admin.students}?statut=retard`} />
+          <ReminderCard
+            title={D.reminder.cardTitle}
+            description={D.reminder.cardDescription(data.followUpsToday)}
+            href={`${ROUTES.admin.students}?statut=retard`}
+            linkLabel={D.reminder.link}
+          />
+        </section>
+
+        <section aria-labelledby="presences" className="flex flex-col gap-3">
+          <SectionHeading id="presences" title={D.presence.title} href={`${ROUTES.admin.reports}#absences`} />
+          {data.presence.length === 0 ? (
+            <EmptyState icon={TrendingUp} title={D.presence.emptyTitle} description={D.presence.emptyDescription} />
+          ) : (
+            <div className="stagger grid gap-3 md:grid-cols-2 lg:grid-cols-1">
+              {data.presence.map((subject, index) => (
+                <ProgressTile
+                  key={subject.subjectId}
+                  index={index}
+                  ring={<ProgressRing value={subject.rate} caption={D.presence.ring} />}
+                  title={subject.subjectName}
+                  description={D.presence.detail(subject.levelName, subject.students)}
+                  href={`${ROUTES.admin.reports}#absences`}
+                  linkLabel={D.presence.link}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </aside>
     </div>
   );
 }

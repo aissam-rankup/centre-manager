@@ -41,6 +41,52 @@ export const LABELS = {
     absent: "Absent",
     absence: "Absence",
     followUp: "Relance à faire",
+    followedUp: "Relance faite",
+  },
+  dashboard: {
+    statsTitle: "Statistiques",
+    detail: "Voir le détail",
+    moreActions: (label: string) => `Actions — ${label}`,
+    students: {
+      title: "Liste des élèves",
+      caption: "Élèves du centre",
+      name: "Nom",
+      level: "Niveau",
+      subjects: "Matière",
+      status: "Statut",
+      phone: "Téléphone parent",
+      actions: "Actions",
+      sortBy: (column: string) => `Trier par ${column}`,
+      search: "Rechercher dans la liste",
+      searchPlaceholder: "Nom de l'élève",
+      openFile: "Voir la fiche",
+      call: "Appeler",
+      whatsapp: "WhatsApp",
+      rowActions: (name: string) => `Actions — ${name}`,
+      emptyTitle: "Aucun élève",
+      emptyDescription: "Les élèves inscrits apparaîtront ici.",
+      noMatch: "Aucun élève ne correspond à cette recherche.",
+    },
+    reminder: {
+      title: "Rappel",
+      cardTitle: "Relances du jour",
+      cardDescription: (count: number) =>
+        count === 0
+          ? "Aucun élève à relancer aujourd'hui."
+          : count === 1
+            ? "1 élève en retard à contacter aujourd'hui."
+            : `${count} élèves en retard à contacter aujourd'hui.`,
+      link: "Voir la liste",
+      dismiss: "Masquer le rappel",
+    },
+    presence: {
+      title: "Présences par matière",
+      ring: "présence",
+      detail: (level: string, students: number) => `${level} · ${students <= 1 ? `${students} élève` : `${students} élèves`}`,
+      link: "Voir les détails",
+      emptyTitle: "Aucune présence saisie",
+      emptyDescription: "Les taux apparaîtront après les premiers appels.",
+    },
   },
   roles: {
     admin: "Administrateur",
@@ -232,6 +278,10 @@ export const LABELS = {
         students: "Élèves",
         studentsHint: "Élèves inscrits au centre",
         studentsHintLevel: "Élèves de ce niveau",
+        activeStudents: "Élèves actifs",
+        collectedMonth: "Revenus encaissés ce mois",
+        shortfall: "Manque à gagner",
+        shortfallDetail: (percent: string, expected: string) => `${percent} des ${expected} attendus`,
       },
       chart: {
         title: "Taux d'absence par matière",

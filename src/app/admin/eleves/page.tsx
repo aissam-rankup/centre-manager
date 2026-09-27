@@ -8,9 +8,18 @@ import { StudentsBoard } from "./students-board";
 export const metadata: Metadata = { title: LABELS.admin.students.title };
 
 export default async function AdminStudentsPage({ searchParams }: PageProps<"/admin/eleves">) {
-  const { q } = await searchParams;
+  const { q, statut } = await searchParams;
   const [students, levels] = await Promise.all([getAdminStudents(), getLevelOptions()]);
   // « q » : recherche lancée depuis l'en-tête de l'application.
   const initialQuery = typeof q === "string" ? q : "";
-  return <StudentsBoard key={initialQuery} students={students} levels={levels} initialQuery={initialQuery} />;
+  const initialStatus = statut === "retard" ? "overdue" : statut === "a-jour" ? "upToDate" : "";
+  return (
+    <StudentsBoard
+      key={`${initialQuery}-${initialStatus}`}
+      students={students}
+      levels={levels}
+      initialQuery={initialQuery}
+      initialStatus={initialStatus}
+    />
+  );
 }

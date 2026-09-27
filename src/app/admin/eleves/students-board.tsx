@@ -59,12 +59,19 @@ const COLUMNS: readonly DataTableColumn<AdminStudentRow>[] = [
   },
 ];
 
-type StudentsBoardProps = { students: AdminStudentRow[]; levels: LevelOption[]; initialQuery?: string };
+type StatusFilter = "" | "overdue" | "upToDate";
 
-export function StudentsBoard({ students, levels, initialQuery = "" }: StudentsBoardProps) {
+type StudentsBoardProps = {
+  students: AdminStudentRow[];
+  levels: LevelOption[];
+  initialQuery?: string;
+  initialStatus?: StatusFilter;
+};
+
+export function StudentsBoard({ students, levels, initialQuery = "", initialStatus = "" }: StudentsBoardProps) {
   const [query, setQuery] = useState(initialQuery);
   const [levelId, setLevelId] = useState("");
-  const [status, setStatus] = useState<"" | "overdue" | "upToDate">("");
+  const [status, setStatus] = useState<StatusFilter>(initialStatus);
   const deferredQuery = useDeferredValue(query);
 
   const rows = useMemo(() => {

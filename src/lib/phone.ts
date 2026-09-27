@@ -26,6 +26,14 @@ export function formatPhone(value: string): string {
   return national.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }
 
+/** « +212 6 12 34 56 78 » */
+export function formatPhoneIntl(value: string): string {
+  const national = toNationalNumber(value);
+  if (!national) return value;
+  const rest = national.slice(1);
+  return `+212 ${rest.charAt(0)} ${rest.slice(1).replace(/(\d{2})(?=\d)/g, "$1 ")}`;
+}
+
 /** Lien « tel: » au format international. */
 export function toTelHref(value: string): string | null {
   const national = toNationalNumber(value);
