@@ -10,7 +10,7 @@ export function ChoiceItem({ children, className }: { children: ReactNode; class
   return (
     <label
       className={cn(
-        "flex min-h-11 cursor-pointer items-center gap-3 rounded-[10px] border bg-card px-3 py-2 transition-colors hover:bg-muted/60",
+        "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border bg-card px-3 py-2 transition-colors hover:bg-muted/60",
         "has-[[data-state=checked]]:border-brand has-[[data-state=checked]]:bg-brand/5",
         "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60",
         className,

@@ -74,7 +74,7 @@ export function ConfirmAction({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         {error ? (
-          <p role="alert" className="rounded-[10px] bg-danger/10 px-4 py-3 text-danger-ink">
+          <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
             {error}
           </p>
         ) : null}

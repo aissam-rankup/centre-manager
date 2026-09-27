@@ -312,7 +312,7 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
                 </fieldset>
               ) : null}
 
-              <div className="flex items-center justify-between rounded-[10px] bg-muted px-4 py-3" aria-live="polite">
+              <div className="flex items-center justify-between rounded-lg bg-muted px-4 py-3" aria-live="polite">
                 <span className="font-medium">{L.fields.total}</span>
                 <Money amount={monthlyTotal} className="text-xl" />
               </div>
@@ -362,7 +362,7 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
                 </span>
               </SummaryRow>
               <div className="pt-4">
-                <p className="rounded-[10px] bg-brand/10 px-4 py-3 text-brand-ink">
+                <p className="rounded-lg bg-brand/10 px-4 py-3 text-brand-ink">
                   {L.summary.firstInvoice(formatDate(firstDueIso), LABELS.billing.cycle[billingDay] ?? "")}
                 </p>
               </div>
@@ -370,7 +370,7 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
           ) : null}
 
           {serverError ? (
-            <p role="alert" className="rounded-[10px] bg-danger/10 px-4 py-3 text-danger-ink">
+            <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
               {serverError}
             </p>
           ) : null}
@@ -409,9 +409,9 @@ function Stepper({ current }: { current: number }) {
             <span
               className={cn(
                 "numeric flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-caption",
-                done && "border-success bg-success text-white",
-                active && "border-brand text-brand-ink",
-                !done && !active && "border-border text-muted-foreground",
+                done && "border-primary-soft bg-primary-soft text-primary",
+                active && "border-primary bg-primary text-primary-foreground",
+                !done && !active && "border-border bg-card text-muted-foreground",
               )}
             >
               {done ? <Check className="size-4" aria-hidden /> : index + 1}
@@ -420,7 +420,7 @@ function Stepper({ current }: { current: number }) {
               {label}
             </span>
             {index < STEP_COUNT - 1 ? (
-              <span className={cn("h-0.5 flex-1 rounded-full", done ? "bg-success" : "bg-border")} aria-hidden />
+              <span className={cn("h-0.5 flex-1 rounded-full transition-colors duration-300", done ? "bg-primary" : "bg-border")} aria-hidden />
             ) : null}
           </li>
         );

@@ -274,7 +274,7 @@ function NewUserDialog({ levels, trigger }: { levels: LevelWithSubjects[]; trigg
             </DialogTitle>
             <DialogDescription>{L.createdDescription}</DialogDescription>
           </DialogHeader>
-          <dl className="grid gap-3 rounded-[10px] bg-muted px-4 py-3">
+          <dl className="grid gap-3 rounded-lg bg-muted px-4 py-3">
             <div>
               <dt className="text-caption text-muted-foreground">{L.email}</dt>
               <dd className="font-medium break-all">{created.email}</dd>

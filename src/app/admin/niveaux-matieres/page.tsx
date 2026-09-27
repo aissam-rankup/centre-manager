@@ -64,7 +64,7 @@ export default async function AdminSubjectsPage() {
               }
             >
               {level.subjects.length === 0 ? (
-                <p className="rounded-[10px] border border-dashed px-4 py-3 text-muted-foreground">{L.noSubjects}</p>
+                <p className="rounded-lg border border-dashed px-4 py-3 text-muted-foreground">{L.noSubjects}</p>
               ) : (
                 <ul className="flex flex-col divide-y">
                   {level.subjects.map((subject) => (
@@ -127,7 +127,7 @@ function LevelPacks({ level }: { level: AdminLevel }) {
         <p className="text-caption text-muted-foreground">{L.packsHint}</p>
       </div>
       {level.packs.length === 0 ? (
-        <p className="rounded-[10px] border border-dashed px-4 py-3 text-muted-foreground">{L.noPacks}</p>
+        <p className="rounded-lg border border-dashed px-4 py-3 text-muted-foreground">{L.noPacks}</p>
       ) : (
         <ul className="flex flex-col divide-y">
           {level.packs.map((pack) => (

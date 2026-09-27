@@ -30,7 +30,7 @@ const COLUMNS: readonly DataTableColumn<AdminStudentRow>[] = [
     header: L.name,
     mobile: "title",
     cell: (student) => (
-      <Link href={`${ROUTES.admin.students}/${student.id}`} className="flex items-center gap-3 rounded-[10px]">
+      <Link href={`${ROUTES.admin.students}/${student.id}`} className="flex items-center gap-3 rounded-lg">
         <StudentAvatar name={student.fullName} photoUrl={student.photoUrl} status={student.isOverdue ? "overdue" : "upToDate"} />
         <span className="flex min-w-0 flex-col">
           <span className="truncate font-medium underline-offset-4 hover:underline">{student.fullName}</span>

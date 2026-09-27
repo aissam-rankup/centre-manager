@@ -42,7 +42,7 @@ export function LoginForm({ next }: { next: string | null }) {
       {serverError ? (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-[10px] bg-danger/10 px-4 py-3 text-danger-ink"
+          className="flex items-start gap-3 rounded-lg bg-danger/10 px-4 py-3 text-danger-ink"
         >
           <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden />
           <p>{serverError}</p>

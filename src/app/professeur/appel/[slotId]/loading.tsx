@@ -14,8 +14,8 @@ export default function CallLoading() {
         <Skeleton className="h-8 w-56" />
       </div>
       <div className="grid grid-cols-2 gap-3 border-t bg-card p-4">
-        <Skeleton className="h-16 rounded-[10px]" />
-        <Skeleton className="h-16 rounded-[10px]" />
+        <Skeleton className="h-16 rounded-lg" />
+        <Skeleton className="h-16 rounded-lg" />
       </div>
     </div>
   );

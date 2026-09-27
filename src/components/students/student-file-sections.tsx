@@ -37,14 +37,14 @@ export function StudentHeader({ student, actions }: { student: StudentFile; acti
             status={student.isOverdue ? "overdue" : "upToDate"}
           />
           <div className="flex min-w-0 flex-col items-center gap-2 sm:items-start">
-            <h1 className="text-title text-primary dark:text-foreground">{student.fullName}</h1>
+            <h1 className="text-title text-heading">{student.fullName}</h1>
             <p className="text-muted-foreground">{student.levelName}</p>
             <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />
             <p className="text-caption text-muted-foreground">{L.enrolledOn(formatDate(student.createdAt))}</p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 border-t pt-4 md:w-80 md:border-t-0 md:border-l md:pt-0 md:pl-6">
+        <div className="flex flex-col gap-4 border-t border-divider pt-4 md:w-80 md:border-t-0 md:border-l md:pt-0 md:pl-6">
           <div className="flex flex-col gap-1">
             <p className="text-caption text-muted-foreground">{L.guardian}</p>
             {student.guardianName || student.guardianPhone ? (
@@ -68,8 +68,8 @@ export function StudentHeader({ student, actions }: { student: StudentFile; acti
       </CardContent>
 
       {student.notes ? (
-        <CardContent className="border-t pt-4">
-          <div className="flex items-start gap-3 rounded-[10px] bg-muted px-4 py-3">
+        <CardContent className="border-t border-divider pt-4">
+          <div className="flex items-start gap-3 rounded-lg bg-muted px-4 py-3">
             <StickyNote className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
             <div className="flex flex-col gap-1">
               <p className="text-caption font-medium text-muted-foreground">{L.notes}</p>
@@ -233,7 +233,7 @@ export function AbsencesSection({ student }: { student: StudentFile }) {
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {student.absences.map((absence) => (
-            <li key={absence.id} className="flex items-center justify-between gap-3 rounded-[10px] border px-3 py-2">
+            <li key={absence.id} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
               <span className="truncate">{absence.subjectName}</span>
               <span className="numeric shrink-0 font-normal text-muted-foreground">{formatDate(absence.sessionDate)}</span>
             </li>

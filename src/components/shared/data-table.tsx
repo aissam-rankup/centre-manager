@@ -40,7 +40,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
       {/* Mobile : cartes */}
       <ul className="flex flex-col gap-3 md:hidden" aria-label={caption}>
         {rows.map((row) => (
-          <li key={getRowId(row)} className={cn("rounded-xl border bg-card p-4", variant === "card" && "shadow-soft")}>
+          <li key={getRowId(row)} className={cn("rounded-xl bg-card p-4", variant === "card" ? "shadow-card" : "border border-divider")}>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 {titleColumns.map((column) => (
@@ -54,7 +54,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
               ))}
             </div>
             {metaColumns.length > 0 ? (
-              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-3">
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-divider pt-3">
                 {metaColumns.map((column) => (
                   <div key={column.id} className={cn("flex min-w-0 flex-col", column.mobile === "wide" && "col-span-2")}>
                     <dt className="text-caption text-muted-foreground">{column.header}</dt>
@@ -71,19 +71,19 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
       <div
         className={cn(
           "hidden overflow-auto md:block md:max-h-[640px]",
-          variant === "card" ? "rounded-xl border bg-card shadow-soft" : "-mx-(--card-spacing)",
+          variant === "card" ? "rounded-xl bg-card shadow-card" : "-mx-(--card-spacing)",
         )}
       >
-        <table className="w-full border-collapse text-left">
+        <table className="w-full border-collapse text-left text-table">
           <caption className="sr-only">{caption}</caption>
           <thead className="sticky top-0 z-10 bg-card">
-            <tr className="h-11 border-b">
+            <tr className="h-12 border-b border-divider">
               {columns.map((column) => (
                 <th
                   key={column.id}
                   scope="col"
                   className={cn(
-                    "px-4 text-caption font-medium whitespace-nowrap text-muted-foreground",
+                    "px-4 text-table font-medium whitespace-nowrap text-heading",
                     column.align === "end" && "text-right",
                   )}
                 >
@@ -94,7 +94,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={getRowId(row)} className="h-[52px] border-b transition-colors duration-150 last:border-b-0 hover:bg-muted/50">
+              <tr key={getRowId(row)} className="h-[52px] border-b border-divider transition-colors duration-150 last:border-b-0 hover:bg-row-hover">
                 {columns.map((column) => (
                   <td
                     key={column.id}

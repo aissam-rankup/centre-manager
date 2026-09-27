@@ -17,7 +17,7 @@ export function EmptyState({ icon: Icon, title, description, action, tone = "neu
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed bg-card px-6 py-12 text-center",
+        "flex flex-col items-center justify-center gap-4 rounded-xl bg-card px-6 py-12 text-center shadow-card",
         className,
       )}
     >

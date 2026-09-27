@@ -11,6 +11,7 @@ import {
   PaymentsSection,
   StudentHeader,
 } from "@/components/students/student-file-sections";
+import { StudentTabs } from "@/components/students/student-tabs";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
@@ -21,6 +22,7 @@ import { getLevelsWithSubjects, getStudentFile } from "@/lib/data/assistant";
 import { EnrollmentsEditor, StudentAdminActions } from "./student-admin";
 
 const L = LABELS.assistant.student;
+const T = L.tabs;
 
 export async function generateMetadata({ params }: PageProps<"/admin/eleves/[id]">): Promise<Metadata> {
   const { id } = await params;
@@ -62,19 +64,21 @@ export default async function AdminStudentPage({ params }: PageProps<"/admin/ele
 
       <StudentHeader student={student} actions={<StudentAdminActions student={student} levels={levels} />} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <EnrollmentsEditor
-          studentId={student.id}
-          enrollments={student.enrollments}
-          packSubscriptions={student.packSubscriptions}
-          levelSubjects={levelCatalog?.subjects ?? []}
-          levelPacks={levelCatalog?.packs ?? []}
-        />
-        <FollowUpsSection student={student} />
-      </div>
+      <EnrollmentsEditor
+        studentId={student.id}
+        enrollments={student.enrollments}
+        packSubscriptions={student.packSubscriptions}
+        levelSubjects={levelCatalog?.subjects ?? []}
+        levelPacks={levelCatalog?.packs ?? []}
+      />
 
-      <PaymentsSection student={student} />
-      <AbsencesSection student={student} />
+      <StudentTabs
+        panels={[
+          { value: "paiements", label: T.payments, count: student.invoices.length, content: <PaymentsSection student={student} /> },
+          { value: "absences", label: T.absences, count: student.absences.length, content: <AbsencesSection student={student} /> },
+          { value: "relances", label: T.followUps, count: student.followUps.length, content: <FollowUpsSection student={student} /> },
+        ]}
+      />
     </div>
   );
 }

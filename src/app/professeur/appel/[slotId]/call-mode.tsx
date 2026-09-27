@@ -136,13 +136,13 @@ export function CallMode({ slot, students }: CallModeProps) {
   return (
     <div className="flex h-dvh flex-col bg-background">
       {/* En-tête : séance, progression, sortie */}
-      <header className="border-b bg-card px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3 md:px-6">
+      <header className="bg-background px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3 md:px-6">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
           <Button variant="ghost" size="icon" className="-ml-2" onClick={close} aria-label={L.close}>
             <X aria-hidden />
           </Button>
           <div className="flex min-w-0 flex-1 flex-col">
-            <h1 className="truncate text-body font-semibold">
+            <h1 className="truncate text-body font-semibold text-heading">
               {slot.subjectName} · {slot.levelName}
             </h1>
             <p className="numeric truncate text-caption font-normal text-muted-foreground">
@@ -154,7 +154,7 @@ export function CallMode({ slot, students }: CallModeProps) {
           </span>
         </div>
         <div
-          className="mx-auto mt-3 h-2 max-w-2xl overflow-hidden rounded-full bg-muted"
+          className="mx-auto mt-3 h-2 max-w-2xl overflow-hidden rounded-full bg-primary-soft"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={total}
@@ -162,7 +162,7 @@ export function CallMode({ slot, students }: CallModeProps) {
           aria-valuetext={L.marked(markedCount, total)}
         >
           <div
-            className="h-full w-full origin-left rounded-full bg-success transition-transform duration-300 ease-(--ease-soft)"
+            className="h-full w-full origin-left rounded-full bg-primary transition-transform duration-300 ease-(--ease-soft)"
             style={{ transform: `scaleX(${progress / 100})` }}
           />
         </div>
@@ -187,7 +187,7 @@ export function CallMode({ slot, students }: CallModeProps) {
                 <ChevronLeft aria-hidden />
               </Button>
 
-              <div key={current.id} className="flex flex-1 animate-enter flex-col items-center gap-4 text-center">
+              <div key={current.id} className="flex flex-1 animate-enter flex-col items-center gap-4 rounded-3xl bg-card px-6 py-8 text-center shadow-card">
                 <p className="numeric text-caption font-normal text-muted-foreground" aria-live="polite">
                   {L.progress(index + 1, total)}
                 </p>
@@ -214,28 +214,30 @@ export function CallMode({ slot, students }: CallModeProps) {
           </main>
 
           {/* Actions dans la zone du pouce */}
-          <footer className="border-t bg-card px-4 pt-4 pb-[max(env(safe-area-inset-bottom),16px)] md:px-6">
+          <footer className="bg-background px-4 pt-2 pb-[max(env(safe-area-inset-bottom),16px)] md:px-6">
             <div className="mx-auto flex max-w-2xl flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="danger"
-                  size="call"
-                  onClick={() => mark("absent")}
-                  aria-pressed={marks[current.id] === "absent"}
-                  aria-keyshortcuts="A"
-                >
-                  <X aria-hidden />
-                  {L.absent}
-                </Button>
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Button
                   variant="success"
                   size="call"
+                  className="w-full"
                   onClick={() => mark("present")}
                   aria-pressed={marks[current.id] === "present"}
                   aria-keyshortcuts="P"
                 >
                   <Check aria-hidden />
                   {L.present}
+                </Button>
+                <Button
+                  variant="danger"
+                  size="call"
+                  className="w-full"
+                  onClick={() => mark("absent")}
+                  aria-pressed={marks[current.id] === "absent"}
+                  aria-keyshortcuts="A"
+                >
+                  <X aria-hidden />
+                  {L.absent}
                 </Button>
               </div>
               <div className="flex items-center justify-between gap-3">
@@ -291,7 +293,7 @@ export function CallMode({ slot, students }: CallModeProps) {
           <footer className="border-t bg-card px-4 pt-4 pb-[max(env(safe-area-inset-bottom),16px)] md:px-6">
             <div className="mx-auto flex max-w-2xl flex-col gap-3">
               {error ? (
-                <p role="alert" className="rounded-[10px] bg-danger/10 px-4 py-3 text-danger-ink">
+                <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
                   {error}
                 </p>
               ) : null}

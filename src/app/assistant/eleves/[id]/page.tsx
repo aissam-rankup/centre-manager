@@ -14,9 +14,11 @@ import {
   StudentHeader,
   SubjectsSection,
 } from "@/components/students/student-file-sections";
+import { StudentTabs } from "@/components/students/student-tabs";
 import { getStudentFile, type StudentFile } from "@/lib/data/assistant";
 
 const L = LABELS.assistant.student;
+const T = L.tabs;
 
 async function loadStudent(id: string): Promise<StudentFile> {
   if (!z.uuid().safeParse(id).success) notFound();
@@ -46,13 +48,15 @@ export default async function StudentFilePage({ params }: PageProps<"/assistant/
 
       <StudentHeader student={student} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SubjectsSection student={student} />
-        <FollowUpsSection student={student} />
-      </div>
+      <SubjectsSection student={student} />
 
-      <PaymentsSection student={student} />
-      <AbsencesSection student={student} />
+      <StudentTabs
+        panels={[
+          { value: "paiements", label: T.payments, count: student.invoices.length, content: <PaymentsSection student={student} /> },
+          { value: "absences", label: T.absences, count: student.absences.length, content: <AbsencesSection student={student} /> },
+          { value: "relances", label: T.followUps, count: student.followUps.length, content: <FollowUpsSection student={student} /> },
+        ]}
+      />
     </div>
   );
 }

@@ -11,6 +11,12 @@ export function tileTone(index: number): string {
   return TILE_TONES[index % TILE_TONES.length] ?? TILE_TONES[0];
 }
 
+/** Couleur stable par matière (ordre des identifiants) : une matière garde sa couleur dans tout l'écran. */
+export function subjectTones(subjectIds: readonly string[]): Map<string, string> {
+  const unique = [...new Set(subjectIds)].sort();
+  return new Map(unique.map((id, index) => [id, tileTone(index)] as const));
+}
+
 type ProgressRingProps = {
   /** Valeur entre 0 et 1. */
   value: number;

@@ -14,7 +14,7 @@ export function Logo({ variant = "default", className }: LogoProps) {
     <span className={cn("inline-flex items-center gap-3", className)}>
       <span
         className={cn(
-          "flex size-9 items-center justify-center rounded-[10px]",
+          "flex size-9 items-center justify-center rounded-lg",
           variant === "sidebar" ? "bg-white/10 text-white" : "bg-primary text-primary-foreground",
         )}
       >

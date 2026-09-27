@@ -28,7 +28,7 @@ export function StatCard({ label, value, icon: Icon, tone = "primary", hint, cla
   return (
     <Card className={className}>
       <CardContent className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
-        <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-[10px]", TONE_STYLES[tone])}>
+        <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg", TONE_STYLES[tone])}>
           <Icon className="size-5" aria-hidden />
         </span>
         <div className="flex min-w-0 flex-col gap-1">
@@ -46,7 +46,7 @@ export function StatCardSkeleton({ className }: { className?: string }) {
   return (
     <Card className={className} aria-hidden>
       <CardContent className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
-        <Skeleton className="size-11 rounded-[10px]" />
+        <Skeleton className="size-11 rounded-lg" />
         <div className="flex w-full min-w-0 flex-1 flex-col gap-2">
           <Skeleton className="h-4 w-24 max-w-full" />
           <Skeleton className="h-8 w-32 max-w-full" />

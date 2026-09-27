@@ -164,7 +164,7 @@ export function NewTeacherForm({ levels }: { levels: LevelWithSubjects[] }) {
       </SectionCard>
 
       {serverError ? (
-        <p role="alert" className="rounded-[10px] bg-danger/10 px-4 py-3 text-danger-ink">
+        <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
           {serverError}
         </p>
       ) : null}
@@ -193,7 +193,7 @@ function CreatedCard({ created, onAnother }: { created: Created; onAnother: () =
     <Card>
       <CardContent className="flex flex-col gap-6">
         <div className="flex items-start gap-4">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-[10px] bg-success/10 text-success-ink">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success-ink">
             <CircleCheckBig className="size-6" aria-hidden />
           </span>
           <div className="flex flex-col gap-1">
@@ -203,7 +203,7 @@ function CreatedCard({ created, onAnother }: { created: Created; onAnother: () =
             <p className="text-muted-foreground">{S.description}</p>
           </div>
         </div>
-        <dl className="grid gap-3 rounded-[10px] bg-muted px-4 py-3 sm:grid-cols-2">
+        <dl className="grid gap-3 rounded-lg bg-muted px-4 py-3 sm:grid-cols-2">
           <div className="flex min-w-0 flex-col">
             <dt className="text-caption text-muted-foreground">{S.email}</dt>
             <dd className="truncate font-medium">{created.email}</dd>

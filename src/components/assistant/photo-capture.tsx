@@ -76,7 +76,19 @@ export function PhotoCapture({
 
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-      <StudentAvatar name={name || "?"} photoUrl={value?.previewUrl ?? currentUrl} size="profile" />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={compressing}
+        aria-label={value || currentUrl ? L.fields.retakePhoto : L.fields.takePhoto}
+        className="flex size-[120px] shrink-0 items-center justify-center rounded-full border-2 border-dashed border-primary bg-primary-soft p-1 text-primary transition-colors hover:bg-primary-soft/70"
+      >
+        {value || currentUrl ? (
+          <StudentAvatar name={name || "?"} photoUrl={value?.previewUrl ?? currentUrl} size="profile" className="size-full border-0" />
+        ) : (
+          <Camera className="size-8" aria-hidden />
+        )}
+      </button>
 
       <div className="flex flex-col items-center gap-2 sm:items-start">
         <p className="font-medium">{label}</p>

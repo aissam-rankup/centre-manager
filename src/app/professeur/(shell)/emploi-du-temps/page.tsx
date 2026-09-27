@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { subjectTones } from "@/components/dashboard/progress-tile";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
@@ -21,6 +22,7 @@ const WEEK = [1, 2, 3, 4, 5, 6] as const;
 export default async function TeacherSchedulePage() {
   const [profile, slots] = await Promise.all([requireRole("teacher"), getTeacherSlots()]);
   const teacher: SlotTeacher = { name: profile.fullName, photoUrl: profile.photoUrl };
+  const tones = subjectTones(slots.map((slot) => slot.subjectId));
   const today = todayDayOfWeek();
   const days: number[] = slots.some((slot) => slot.dayOfWeek === 0) ? [...WEEK, 0] : [...WEEK];
   const byDay = new Map(days.map((day) => [day, slots.filter((slot) => slot.dayOfWeek === day)]));
@@ -39,14 +41,14 @@ export default async function TeacherSchedulePage() {
               <section key={day} aria-labelledby={`jour-${day}`} className="flex flex-col gap-2">
                 <DayHeading day={day} isToday={day === today} id={`jour-${day}`} />
                 {(byDay.get(day) ?? []).length === 0 ? (
-                  <p className="rounded-[10px] border border-dashed px-4 py-3 text-caption text-muted-foreground">
+                  <p className="rounded-lg border border-dashed px-4 py-3 text-caption text-muted-foreground">
                     {L.noSession}
                   </p>
                 ) : (
                   <ul className="flex flex-col gap-2">
                     {(byDay.get(day) ?? []).map((slot) => (
                       <li key={slot.id}>
-                        <SlotCard teacher={teacher} slot={slot} isToday={day === today} />
+                        <SlotCard teacher={teacher} tone={tones.get(slot.subjectId) ?? ""} slot={slot} isToday={day === today} />
                       </li>
                     ))}
                   </ul>
@@ -85,7 +87,7 @@ export default async function TeacherSchedulePage() {
                     {(byDay.get(day) ?? []).length === 0 ? (
                       <p className="p-2 text-caption text-muted-foreground">{L.noSession}</p>
                     ) : (
-                      (byDay.get(day) ?? []).map((slot) => <SlotCard key={slot.id} teacher={teacher} slot={slot} isToday={day === today} compact />)
+                      (byDay.get(day) ?? []).map((slot) => <SlotCard key={slot.id} teacher={teacher} tone={tones.get(slot.subjectId) ?? ""} slot={slot} isToday={day === today} compact />)
                     )}
                   </div>
                 ))}
@@ -114,27 +116,30 @@ type SlotTeacher = { name: string; photoUrl: string | null };
 function SlotCard({
   slot,
   teacher,
+  tone,
   isToday,
   compact = false,
 }: {
   slot: TeacherSlot;
   teacher: SlotTeacher;
+  /** Classe de fond de la matière (bg-tile-n). */
+  tone: string;
   isToday: boolean;
   compact?: boolean;
 }) {
   const content = (
     <>
-      <p className="numeric flex items-center gap-1.5 text-caption text-brand-ink">
+      <p className="numeric flex items-center gap-1.5 text-caption font-medium">
         <Clock className="size-4" aria-hidden />
         {L.time(slot.startTime, slot.endTime)}
       </p>
       <p className="font-semibold">{slot.subjectName}</p>
-      <p className="text-caption text-muted-foreground">{slot.levelName}</p>
-      <p className="flex items-center gap-1.5 text-caption text-muted-foreground">
-        <StudentAvatar name={teacher.name} photoUrl={teacher.photoUrl} size="mini" className="border" />
+      <p className="text-caption text-white/85">{slot.levelName}</p>
+      <p className="flex items-center gap-1.5 text-caption text-white/85">
+        <StudentAvatar name={teacher.name} photoUrl={teacher.photoUrl} size="mini" className="border-white/60" />
         <span className="truncate">{teacher.name}</span>
       </p>
-      <p className="flex items-center gap-1.5 text-caption text-muted-foreground">
+      <p className="flex items-center gap-1.5 text-caption text-white/85">
         <DoorOpen className="size-4" aria-hidden />
         {slot.room}
       </p>
@@ -142,9 +147,11 @@ function SlotCard({
   );
 
   const className = cn(
-    "flex flex-col gap-1 rounded-[10px] border bg-card shadow-soft",
+    "flex flex-col gap-1 rounded-xl text-white shadow-card",
+    tone,
     compact ? "p-3" : "p-4",
-    isToday && "border-l-4 border-l-brand",
+    // Séance du jour : liseré violet autour de la carte (en plus du libellé « Aujourd'hui »).
+    isToday && "ring-2 ring-primary ring-offset-2 ring-offset-background",
   );
 
   // Les séances du jour ouvrent directement l'appel.

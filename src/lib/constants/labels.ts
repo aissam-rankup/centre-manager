@@ -626,6 +626,8 @@ export const LABELS = {
       noGuardian: "Aucun responsable renseigné",
       notes: "Notes",
       enrolledOn: (date: string) => `Inscrit le ${date}`,
+      tabsLabel: "Historique de l'élève",
+      tabs: { payments: "Paiements", absences: "Absences", followUps: "Relances" },
       sections: {
         subjects: "Matières payées",
         payments: "Historique des paiements",

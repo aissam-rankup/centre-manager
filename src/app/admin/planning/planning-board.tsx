@@ -10,6 +10,7 @@ import { useActionForm } from "@/components/admin/use-action-form";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FormField } from "@/components/shared/form-field";
 import { PageHeader } from "@/components/shared/page-header";
+import { subjectTones } from "@/components/dashboard/progress-tile";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,8 @@ const WEEK = [1, 2, 3, 4, 5, 6, 0] as const;
 export function PlanningBoard({ data }: { data: PlanningData }) {
   const [levelId, setLevelId] = useState<string | null>(null);
   const slots = levelId ? data.slots.filter((slot) => slot.levelId === levelId) : data.slots;
+  // Couleur par matière, stable quel que soit le filtre de niveau.
+  const tones = subjectTones(data.subjects.map((subject) => subject.id));
   // Le dimanche n'apparaît que s'il porte des créneaux.
   const days = WEEK.filter((day) => day !== 0 || data.slots.some((slot) => slot.dayOfWeek === 0));
 
@@ -85,7 +88,7 @@ export function PlanningBoard({ data }: { data: PlanningData }) {
                     {daySlots.length === 0 ? (
                       <p className="p-2 text-caption text-muted-foreground">{L.noSession}</p>
                     ) : (
-                      daySlots.map((slot) => <SlotCard key={slot.id} slot={slot} data={data} />)
+                      daySlots.map((slot) => <SlotCard key={slot.id} slot={slot} data={data} tone={tones.get(slot.subjectId) ?? ""} />)
                     )}
                   </div>
                 </section>
@@ -97,7 +100,7 @@ export function PlanningBoard({ data }: { data: PlanningData }) {
   );
 }
 
-function SlotCard({ slot, data }: { slot: PlanningSlot; data: PlanningData }) {
+function SlotCard({ slot, data, tone }: { slot: PlanningSlot; data: PlanningData; tone: string }) {
   return (
     <SlotDialog
       data={data}
@@ -106,19 +109,19 @@ function SlotCard({ slot, data }: { slot: PlanningSlot; data: PlanningData }) {
         <button
           type="button"
           aria-label={`${L.editSlot} — ${slot.subjectName}, ${LABELS.days[slot.dayOfWeek]} ${slot.startTime}`}
-          className="card-interactive flex w-full flex-col gap-1 rounded-[10px] border bg-card p-3 text-left shadow-soft"
+          className={cn("card-interactive flex w-full flex-col gap-1 rounded-xl p-3 text-left text-white shadow-card", tone)}
         >
-          <span className="numeric flex items-center gap-1.5 text-caption text-brand-ink">
+          <span className="numeric flex items-center gap-1.5 text-caption font-medium">
             <Clock className="size-4" aria-hidden />
             {LABELS.teacher.schedule.time(slot.startTime, slot.endTime)}
           </span>
           <span className="font-semibold">{slot.subjectName}</span>
-          <span className="text-caption text-muted-foreground">{slot.levelName}</span>
-          <span className="flex items-center gap-1.5 text-caption text-muted-foreground">
-            <StudentAvatar name={slot.teacherName} photoUrl={slot.teacherPhotoUrl} size="mini" className="border" />
+          <span className="text-caption text-white/85">{slot.levelName}</span>
+          <span className="flex items-center gap-1.5 text-caption text-white/85">
+            <StudentAvatar name={slot.teacherName} photoUrl={slot.teacherPhotoUrl} size="mini" className="border-white/60" />
             <span className="truncate">{slot.teacherName}</span>
           </span>
-          <span className="flex items-center gap-1.5 text-caption text-muted-foreground">
+          <span className="flex items-center gap-1.5 text-caption text-white/85">
             <DoorOpen className="size-4 shrink-0" aria-hidden />
             {slot.room}
           </span>
@@ -257,7 +260,7 @@ function SlotDialog({ data, slot, trigger }: { data: PlanningData; slot?: Planni
       </datalist>
 
       {conflicts.length > 0 ? (
-        <div role="alert" className="flex gap-3 rounded-[10px] bg-danger/10 px-4 py-3 text-danger-ink">
+        <div role="alert" className="flex gap-3 rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
           <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden />
           <div className="flex flex-col gap-1">
             <p className="font-semibold">{L.conflictTitle}</p>
