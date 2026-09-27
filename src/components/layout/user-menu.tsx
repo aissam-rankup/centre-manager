@@ -1,7 +1,8 @@
 "use client";
 
-import { Camera, LogOut } from "lucide-react";
-import { useState, useTransition } from "react";
+import { Camera, ChevronDown, LogOut, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useState, useSyncExternalStore, useTransition } from "react";
 
 import { StaffPhotoDialog } from "@/components/shared/staff-photo-dialog";
 import { StudentAvatar } from "@/components/shared/student-avatar";
@@ -26,20 +27,23 @@ export type ShellUser = {
   photoUrl: string | null;
 };
 
+const noop = () => () => {};
+
 export function UserMenu({ user }: { user: ShellUser }) {
   const [pending, startTransition] = useTransition();
   const [photoOpen, setPhotoOpen] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
+  // Le thème n'est connu qu'après hydratation : rendu serveur = thème clair.
+  const mounted = useSyncExternalStore(noop, () => true, () => false);
+  const isDark = mounted && resolvedTheme === "dark";
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="gap-3 px-2 lg:px-3" aria-label={LABELS.auth.userMenu.label}>
-            <StudentAvatar name={user.fullName} photoUrl={user.photoUrl} className="size-8 border-0" />
-            <span className="hidden flex-col items-start text-left leading-tight md:flex">
-              <span className="text-caption font-semibold text-foreground">{user.fullName}</span>
-              <span className="text-caption text-muted-foreground">{user.roleLabel}</span>
-            </span>
+          <Button variant="ghost" className="gap-1 px-1" aria-label={LABELS.auth.userMenu.label}>
+            <StudentAvatar name={user.fullName} photoUrl={user.photoUrl} className="size-9 border-0" />
+            <ChevronDown className="size-4 text-subtle" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
@@ -57,6 +61,10 @@ export function UserMenu({ user }: { user: ShellUser }) {
           <DropdownMenuItem className="min-h-11 gap-3" onSelect={() => setPhotoOpen(true)}>
             <Camera className="size-5" aria-hidden />
             {LABELS.auth.userMenu.myPhoto}
+          </DropdownMenuItem>
+          <DropdownMenuItem className="min-h-11 gap-3" onSelect={() => setTheme(isDark ? "light" : "dark")}>
+            {isDark ? <Sun className="size-5" aria-hidden /> : <Moon className="size-5" aria-hidden />}
+            {isDark ? LABELS.theme.toggleToLight : LABELS.theme.toggleToDark}
           </DropdownMenuItem>
           <DropdownMenuItem
             className="min-h-11 gap-3"

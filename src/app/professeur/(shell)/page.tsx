@@ -25,7 +25,7 @@ export default async function TeacherHomePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={L.greeting(firstName)} description={dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} />
+      <PageHeader showTitle title={L.greeting(firstName)} description={dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)} />
 
       <section aria-labelledby="seances-titre" className="flex flex-col gap-4">
         <div className="flex items-baseline justify-between gap-3">

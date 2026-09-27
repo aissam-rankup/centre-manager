@@ -14,9 +14,12 @@ const L = LABELS.assistant.search;
 
 export const metadata: Metadata = { title: L.title };
 
-export default async function AssistantStudentsPage() {
+export default async function AssistantStudentsPage({ searchParams }: PageProps<"/assistant/eleves">) {
+  // « q » : recherche lancée depuis l'en-tête de l'application.
+  const { q } = await searchParams;
+  const initialQuery = typeof q === "string" ? q : "";
   // Liste initiale rendue côté serveur : affichage immédiat, sans attendre la première frappe.
-  const initialResults = await searchStudentDirectory("");
+  const initialResults = await searchStudentDirectory(initialQuery);
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,7 +35,7 @@ export default async function AssistantStudentsPage() {
           </Button>
         }
       />
-      <StudentSearch initialResults={initialResults} />
+      <StudentSearch key={initialQuery} initialResults={initialResults} initialQuery={initialQuery} />
     </div>
   );
 }

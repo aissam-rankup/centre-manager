@@ -19,8 +19,10 @@ import type { StudentListItem } from "@/lib/data/assistant";
 const L = LABELS.assistant.search;
 const DEBOUNCE_MS = 200;
 
-export function StudentSearch({ initialResults }: { initialResults: StudentListItem[] }) {
-  const [query, setQuery] = useState("");
+type StudentSearchProps = { initialResults: StudentListItem[]; initialQuery?: string };
+
+export function StudentSearch({ initialResults, initialQuery = "" }: StudentSearchProps) {
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState(initialResults);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);

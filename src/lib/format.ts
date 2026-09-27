@@ -65,6 +65,11 @@ export function formatDateWithWeekday(date: Date | string): string {
   return format(inAppTimeZone(date), "EEEE dd/MM/yyyy", { locale: fr });
 }
 
+/** « 27 septembre 2026 » */
+export function formatLongDate(date: Date | string): string {
+  return format(inAppTimeZone(date), "d MMMM yyyy", { locale: fr });
+}
+
 /** « 2026-09-24 » — format des colonnes `date` Postgres, au fuseau de Casablanca. */
 export function toISODate(date: Date | string): string {
   return format(inAppTimeZone(date), "yyyy-MM-dd");

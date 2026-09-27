@@ -59,8 +59,10 @@ const COLUMNS: readonly DataTableColumn<AdminStudentRow>[] = [
   },
 ];
 
-export function StudentsBoard({ students, levels }: { students: AdminStudentRow[]; levels: LevelOption[] }) {
-  const [query, setQuery] = useState("");
+type StudentsBoardProps = { students: AdminStudentRow[]; levels: LevelOption[]; initialQuery?: string };
+
+export function StudentsBoard({ students, levels, initialQuery = "" }: StudentsBoardProps) {
+  const [query, setQuery] = useState(initialQuery);
   const [levelId, setLevelId] = useState("");
   const [status, setStatus] = useState<"" | "overdue" | "upToDate">("");
   const deferredQuery = useDeferredValue(query);

@@ -20,6 +20,9 @@ export const LABELS = {
     more: "Plus",
     openMenu: "Ouvrir le menu",
     skipToContent: "Aller au contenu principal",
+    searchStudent: "Rechercher un élève",
+    signOut: "Se déconnecter",
+    seeAll: "Voir tout",
     none: "—",
   },
   theme: {
