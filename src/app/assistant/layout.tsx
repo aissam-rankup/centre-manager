@@ -5,10 +5,12 @@ import { toShellUser } from "@/components/layout/space-helpers";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
 import { LABELS } from "@/lib/constants/labels";
+import { getNotifications } from "@/lib/data/notifications";
 import { formatLongDate } from "@/lib/format";
 
 export default async function AssistantLayout({ children }: { children: ReactNode }) {
   const profile = await requireRole("assistant");
+  const notifications = await getNotifications();
 
   return (
     <AppShell
@@ -17,6 +19,7 @@ export default async function AssistantLayout({ children }: { children: ReactNod
       spaceLabel={LABELS.spaces.assistant}
       todayLabel={formatLongDate(new Date())}
       searchHref={ROUTES.assistant.students}
+      notifications={{ items: notifications, fileBase: ROUTES.assistant.students }}
     >
       {children}
     </AppShell>

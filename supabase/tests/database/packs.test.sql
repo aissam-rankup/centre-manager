@@ -65,8 +65,8 @@ select results_eq(
 select results_eq(
   $$select count(*)::int, max(amount_due)::int, max(due_date) from public.invoices
     where student_id = 'f6000000-0000-4000-8000-000000000001'$$,
-  $$values (1, 350, private.today() + 5)$$,
-  'facturation : une seule facture au prix du pack, due 5 jours après');
+  $$values (1, 350, private.today())$$,
+  'facturation : une seule facture au prix du pack, due le jour de la souscription');
 select throws_ok(
   $$insert into public.pack_enrollments (student_id, pack_id, price_agreed)
     values ('f6000000-0000-4000-8000-000000000001', 'b6000000-0000-4000-8000-000000000001', 300)$$,

@@ -54,8 +54,8 @@ select is((select sum(price_agreed) from public.enrollments where student_id = '
   'création : prix convenu = tarif des matières');
 select is((select count(*)::int from public.invoices where student_id = 'f2000000-0000-4000-8000-000000000001'), 2,
   'création : première facture créée pour chaque inscription');
-select is((select min(due_date) from public.invoices where student_id = 'f2000000-0000-4000-8000-000000000001'), private.today() + 5,
-  'création : première facture due 5 jours après l''inscription');
+select is((select min(due_date) from public.invoices where student_id = 'f2000000-0000-4000-8000-000000000001'), private.today(),
+  'création : première facture due le jour de l''inscription');
 select is((select search_name from public.students where id = 'f2000000-0000-4000-8000-000000000001'), 'elodie amrani',
   'recherche : nom normalisé sans accents ni majuscules');
 select throws_ok(

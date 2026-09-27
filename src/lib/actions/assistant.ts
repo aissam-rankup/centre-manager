@@ -133,6 +133,7 @@ export async function createStudent(formData: FormData): Promise<ActionResult<{ 
     p_level_id: values.levelId,
     p_subject_ids: values.formula === "unit" ? values.subjectIds : [],
     p_pack_id: values.formula === "pack" ? values.packId : undefined,
+    p_billing_day: Number(values.billingDay),
     p_guardian_name: values.guardianName || undefined,
     p_guardian_phone: values.guardianPhone ? formatPhone(values.guardianPhone) : undefined,
     p_notes: values.notes || undefined,

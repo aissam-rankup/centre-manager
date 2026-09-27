@@ -39,6 +39,8 @@ export const newStudentSchema = z
     notes: optionalText(500, S.notesTooLong),
     levelId: z.string().min(1, S.levelRequired).pipe(z.uuid(S.levelRequired)),
     /** Matières à l'unité ou pack : jamais les deux. */
+    /** Jour du cycle de paiement : le 1er ou le 15 du mois. */
+    billingDay: z.enum(["1", "15"]),
     formula: z.enum(["unit", "pack"]),
     subjectIds: z.array(z.uuid()),
     packId: z.string(),
@@ -58,7 +60,7 @@ export type NewStudentInput = z.infer<typeof newStudentSchema>;
 export const NEW_STUDENT_STEP_FIELDS = [
   ["fullName"],
   ["guardianName", "guardianPhone", "notes"],
-  ["levelId", "formula", "subjectIds", "packId"],
+  ["levelId", "billingDay", "formula", "subjectIds", "packId"],
   [],
 ] as const satisfies readonly (readonly (keyof NewStudentInput)[])[];
 

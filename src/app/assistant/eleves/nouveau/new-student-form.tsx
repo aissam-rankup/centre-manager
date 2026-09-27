@@ -58,6 +58,8 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
       guardianPhone: "",
       notes: "",
       levelId: "",
+      // Proposition par défaut : le cycle le plus proche de la date du jour.
+      billingDay: Number(todayIso.slice(8, 10)) < 15 ? "1" : "15",
       formula: "unit",
       subjectIds: [],
       packId: "",
@@ -67,9 +69,9 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
   const { register, control, formState, setValue, trigger, getValues } = form;
   const errors = formState.errors;
 
-  const [fullName, levelId, formula, subjectIds, packId, guardianName, guardianPhone] = useWatch({
+  const [fullName, levelId, formula, subjectIds, packId, guardianName, guardianPhone, billingDayValue] = useWatch({
     control,
-    name: ["fullName", "levelId", "formula", "subjectIds", "packId", "guardianName", "guardianPhone"],
+    name: ["fullName", "levelId", "formula", "subjectIds", "packId", "guardianName", "guardianPhone", "billingDay"],
   });
 
   const level = levels.find((item) => item.id === levelId) ?? null;
@@ -89,13 +91,15 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
       .map((subject) => subject.name)
       .join(", ");
 
-  // Première facture : due 5 jours après l'inscription ; cycle selon le jour d'inscription.
-  const firstDueIso = useMemo(() => {
-    const [year, month, day] = todayIso.split("-").map(Number);
-    const due = new Date(Date.UTC(year ?? 0, (month ?? 1) - 1, (day ?? 1) + 5));
-    return due.toISOString().slice(0, 10);
-  }, [todayIso]);
-  const billingDay = Number(todayIso.slice(8, 10)) < 15 ? 1 : 15;
+  // Première facture : période du cycle en cours (comme en base), à régler le jour de l'inscription.
+  const billingDay = billingDayValue === "15" ? 15 : 1;
+  const firstPeriod = useMemo(() => {
+    const [year = 0, month = 1, day = 1] = todayIso.split("-").map(Number);
+    const startMonth = billingDay === 15 && day < 15 ? month - 2 : month - 1;
+    const start = new Date(Date.UTC(year, startMonth, billingDay));
+    const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, billingDay - 1));
+    return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+  }, [todayIso, billingDay]);
 
   const goTo = (target: number) => {
     stepChanged.current = true;
@@ -210,6 +214,27 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
                   )}
                 />
                 {errors.levelId ? <p className="text-caption text-danger-ink">{errors.levelId.message}</p> : null}
+              </fieldset>
+
+              <fieldset className="flex flex-col gap-2">
+                <legend className="font-medium">{L.fields.billingCycle}</legend>
+                <p className="mb-2 text-caption text-muted-foreground">{L.fields.billingCycleHint}</p>
+                <Controller
+                  control={control}
+                  name="billingDay"
+                  render={({ field }) => (
+                    <RadioGroup value={field.value} onValueChange={field.onChange} className="grid-cols-2">
+                      <ChoiceItem>
+                        <RadioGroupItem value="1" />
+                        {LABELS.billing.cycle[1]}
+                      </ChoiceItem>
+                      <ChoiceItem>
+                        <RadioGroupItem value="15" />
+                        {LABELS.billing.cycle[15]}
+                      </ChoiceItem>
+                    </RadioGroup>
+                  )}
+                />
               </fieldset>
 
               {level && level.packs.length > 0 ? (
@@ -363,7 +388,11 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
               </SummaryRow>
               <div className="pt-4">
                 <p className="rounded-lg bg-brand/10 px-4 py-3 text-brand-ink">
-                  {L.summary.firstInvoice(formatDate(firstDueIso), LABELS.billing.cycle[billingDay] ?? "")}
+                  {L.summary.firstInvoice(
+                    formatDate(firstPeriod.start),
+                    formatDate(firstPeriod.end),
+                    LABELS.billing.cycle[billingDay] ?? "",
+                  )}
                 </p>
               </div>
             </dl>

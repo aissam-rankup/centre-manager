@@ -52,7 +52,8 @@ export default async function AssistantDashboardPage() {
               value={stats.absencesToday}
               label={L.stats.absencesToday}
               detail={L.stats.absencesTodayDetail(stats.openAbsenceAlerts)}
-              links={[{ href: "#alertes", label: D.detail }]}
+              href={ROUTES.assistant.absences}
+              links={[{ href: ROUTES.assistant.absences, label: D.detail }]}
             />
           </StatTiles>
         </section>

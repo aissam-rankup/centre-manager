@@ -40,7 +40,7 @@ select is(
 select is(
   (select due_date from public.invoices
     where enrollment_id = 'b5000000-0000-4000-8000-000000000001' and period_start = '2026-03-01'),
-  '2026-03-06'::date, 'factures : échéance au début de période + 5 jours');
+  '2026-03-01'::date, 'factures : échéance le premier jour de la période');
 select is(
   (select count(*)::int from public.invoices
     where enrollment_id = 'b5000000-0000-4000-8000-000000000001' and period_start = '2026-02-01'),
@@ -92,8 +92,8 @@ select is(
   (select due_date from public.invoices
     where enrollment_id = 'b5000000-0000-4000-8000-000000000002'
       and period_start = private.billing_period_start(private.today(), 1::smallint)),
-  greatest(private.billing_period_start(private.today(), 1::smallint), private.today()) + 5,
-  'reprise : facture de la période en cours, due 5 jours après la reprise');
+  greatest(private.billing_period_start(private.today(), 1::smallint), private.today()),
+  'reprise : facture de la période en cours, due le jour de la reprise');
 
 -- ---------------------------------------------------------------------
 -- Absences consécutives

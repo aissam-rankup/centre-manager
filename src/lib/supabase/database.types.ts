@@ -672,6 +672,8 @@ export type Database = {
           id: string
           level_id: string
           notes: string | null
+          notes_updated_at: string | null
+          notes_updated_by: string | null
           photo_url: string | null
           search_name: string | null
         }
@@ -685,6 +687,8 @@ export type Database = {
           id?: string
           level_id: string
           notes?: string | null
+          notes_updated_at?: string | null
+          notes_updated_by?: string | null
           photo_url?: string | null
           search_name?: string | null
         }
@@ -698,6 +702,8 @@ export type Database = {
           id?: string
           level_id?: string
           notes?: string | null
+          notes_updated_at?: string | null
+          notes_updated_by?: string | null
           photo_url?: string | null
           search_name?: string | null
         }
@@ -722,6 +728,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "levels"
             referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "students_notes_updated_by_fkey"
+            columns: ["notes_updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1084,6 +1097,7 @@ export type Database = {
       }
       create_student: {
         Args: {
+          p_billing_day?: number
           p_full_name: string
           p_guardian_name?: string
           p_guardian_phone?: string

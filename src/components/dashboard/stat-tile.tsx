@@ -18,15 +18,30 @@ type StatTileProps = {
   detail?: string;
   /** Liens du menu « trois points » : uniquement des actions réelles. */
   links?: StatTileLink[];
+  /** Carte entièrement cliquable (ex. vers la liste des absents). */
+  href?: string;
   className?: string;
 };
 
 /** Carte de statistique : grand chiffre violet, libellé gris, menu d'actions. */
-export function StatTile({ value, label, detail, links = [], className }: StatTileProps) {
+export function StatTile({ value, label, detail, links = [], href, className }: StatTileProps) {
   return (
-    <div className={cn("relative flex flex-col gap-1 rounded-xl bg-card px-6 py-5 shadow-card", className)}>
+    <div
+      className={cn(
+        "relative flex flex-col gap-1 rounded-xl bg-card px-6 py-5 shadow-card",
+        href && "card-interactive",
+        className,
+      )}
+    >
       <p className="numeric pr-8 text-stat text-primary">{value}</p>
-      <p className="text-caption text-muted-foreground">{label}</p>
+      {href ? (
+        // Le lien couvre toute la carte ; le menu reste cliquable au-dessus.
+        <Link href={href} className="text-caption text-muted-foreground after:absolute after:inset-0 after:rounded-xl">
+          {label}
+        </Link>
+      ) : (
+        <p className="text-caption text-muted-foreground">{label}</p>
+      )}
       {detail ? <p className="text-caption text-subtle">{detail}</p> : null}
 
       {links.length > 0 ? (
@@ -35,7 +50,7 @@ export function StatTile({ value, label, detail, links = [], className }: StatTi
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-3 right-2 size-8 text-subtle"
+              className="absolute top-3 right-2 z-10 size-8 text-subtle"
               aria-label={LABELS.dashboard.moreActions(label)}
             >
               <MoreVertical className="size-4" aria-hidden />

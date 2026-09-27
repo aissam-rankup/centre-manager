@@ -6,12 +6,14 @@ import { usePathname } from "next/navigation";
 import { type ReactNode, useTransition } from "react";
 
 import { findActiveHref, type NavItem } from "@/components/layout/nav-types";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { type ShellUser, UserMenu } from "@/components/layout/user-menu";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NAVIGATION, type NavSpace } from "@/config/navigation";
 import { signOut } from "@/lib/auth/actions";
 import { LABELS } from "@/lib/constants/labels";
+import type { NotificationItem } from "@/lib/data/notifications";
 import { cn } from "@/lib/utils";
 
 /** Au-delà de 5 entrées, la barre du bas affiche 4 entrées et un bouton « Plus ». */
@@ -27,6 +29,8 @@ type AppShellProps = {
   todayLabel?: string;
   /** Page de la liste des élèves : active la recherche de l'en-tête. */
   searchHref?: string;
+  /** Cloche de notifications (admin, assistant) ; liens vers les fiches de « fileBase ». */
+  notifications?: { items: NotificationItem[]; fileBase: string };
   children: ReactNode;
 };
 
@@ -35,7 +39,7 @@ type AppShellProps = {
  * barre latérale violette à icônes (≥ 768 px), en-tête de 88 px,
  * barre de navigation violette en bas sur mobile.
  */
-export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, children }: AppShellProps) {
+export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, notifications, children }: AppShellProps) {
   const items = NAVIGATION[space];
   const home = items[0]?.href ?? "/";
   const pathname = usePathname();
@@ -61,7 +65,8 @@ export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, chil
                 {sectionTitle}
               </p>
               {user ? (
-                <div className="md:hidden">
+                <div className="flex items-center gap-1 md:hidden">
+                  {notifications ? <NotificationBell items={notifications.items} fileBase={notifications.fileBase} /> : null}
                   <UserMenu user={user} />
                 </div>
               ) : null}
@@ -71,6 +76,7 @@ export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, chil
 
             <div className="hidden shrink-0 items-center gap-4 md:flex">
               {todayLabel ? <span className="text-caption text-subtle">{todayLabel}</span> : null}
+              {notifications ? <NotificationBell items={notifications.items} fileBase={notifications.fileBase} /> : null}
               {user ? <UserMenu user={user} /> : null}
             </div>
           </header>

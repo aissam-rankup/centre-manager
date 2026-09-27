@@ -180,24 +180,30 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 
 ## Règles de facturation
 
-- **Deux cycles** : le 1er et le 15 du mois, déterminés par la date d'inscription (jour 1 à 14 : cycle du 1er ; jour 15 à 31 : cycle du 15).
-- **Période** : un mois complet à partir du jour du cycle (ex. du 15/09 au 14/10).
-- **Échéance** : début de période + 5 jours (le 6 ou le 20). La **première facture**, créée dès l'inscription, est due 5 jours après la date d'inscription.
+- **Cycle choisi à l'inscription** : le 1er ou le 15 du mois. Une matière ajoutée plus tard suit le cycle déjà en place pour l'élève.
+- **Première facture** : la période du cycle en cours (ex. inscrit le 20/09 au cycle du 1er : du 01/09 au 30/09), à régler le jour de l'inscription.
+- **Factures suivantes** : une par mois, le jour du cycle, au prix convenu.
+- **Retard** : une facture non réglée est en retard dès son jour d'échéance (plus de délai de grâce) ; l'élève entre dans les relances du jour.
 - **Paiement intégral** uniquement. Marquer une facture comme payée résout automatiquement l'alerte de retard liée.
-- **Retard** : une facture impayée dont l'échéance est dépassée est affichée « En retard ».
 - **Relances du jour** : élèves en retard, du plus ancien retard au plus récent. Un élève relancé aujourd'hui en sort jusqu'au lendemain.
+- Les factures créées avant cette règle gardent leur échéance d'origine.
+
+## Notifications et absences
+
+- **Cloche** (admin, assistant) : relances et notes de fiche des 14 derniers jours, alertes d'absences ouvertes ; le compteur indique les nouveautés depuis la dernière ouverture (mémorisé dans le navigateur). Chaque notification ouvre la fiche de l'élève.
+- **Absences** (menu, ou carte « Absences aujourd'hui ») : élèves absents du jour ou d'une date choisie, avec photo, niveau, matière, professeur, série d'absences en cours, contact et relance.
 
 ## Automatisations
 
 Une tâche **pg_cron** (`centromanager-daily-automations`) s'exécute chaque jour à 00:10 UTC (01:10 à Casablanca, 00:10 pendant le ramadan) :
 
-- **Factures** : pour chaque inscription active, la facture de la période en cours est créée au prix convenu (cycles du 1er et du 15), échéance au début de période + 5 jours. La tâche est idempotente : une facture par inscription et par période.
-- **Retards** : une facture « en attente » dont l'échéance est dépassée passe « en retard » et ouvre une alerte de paiement. Payer la facture ferme l'alerte et retire l'élève de la liste de relance.
+- **Factures** : pour chaque inscription active, la facture de la période en cours est créée au prix convenu (cycle du 1er ou du 15), due le premier jour de la période. La tâche est idempotente : une facture par inscription et par période.
+- **Retards** : une facture « en attente » arrivée à échéance (le jour même) passe « en retard » et ouvre une alerte de paiement. Payer la facture ferme l'alerte et retire l'élève de la liste de relance.
 
 En continu, par triggers :
 
 - **Absences consécutives** : à la 3e absence de suite dans une matière, une alerte s'ouvre (le compteur suit ensuite : 4, 5…). Elle se ferme au retour de l'élève dans la matière, ou dès qu'une relance « absence » est enregistrée. Une série déjà traitée ne rouvre pas d'alerte.
-- **Reprise d'une inscription** : la période en cours est facturée aussitôt (mois complet), due 5 jours après la reprise.
+- **Reprise d'une inscription** : la période en cours est facturée aussitôt (mois complet), due le jour de la reprise.
 
 Lancer les tâches du jour à la main (Studio → SQL Editor, ou `psql`) :
 

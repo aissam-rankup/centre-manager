@@ -10,6 +10,7 @@ export const ROUTES = {
     students: "/assistant/eleves",
     newStudent: "/assistant/eleves/nouveau",
     newTeacher: "/assistant/professeurs/nouveau",
+    absences: "/assistant/absences",
   },
   teacher: {
     home: "/professeur",
@@ -23,6 +24,7 @@ export const ROUTES = {
     schedule: "/admin/planning",
     users: "/admin/utilisateurs",
     reports: "/admin/rapports",
+    absences: "/admin/absences",
   },
 } as const;
 

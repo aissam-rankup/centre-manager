@@ -1,6 +1,7 @@
 import {
   BarChart3,
   BookOpen,
+  CalendarX,
   CalendarDays,
   CalendarRange,
   Component,
@@ -25,6 +26,7 @@ export const NAVIGATION: Record<NavSpace, readonly NavItem[]> = {
     { href: ROUTES.assistant.home, label: LABELS.nav.dashboard, shortLabel: LABELS.nav.short.dashboard, icon: LayoutDashboard },
     { href: ROUTES.assistant.students, label: LABELS.nav.students, icon: Users },
     { href: ROUTES.assistant.newStudent, label: LABELS.nav.newStudent, shortLabel: LABELS.nav.short.newStudent, icon: UserPlus },
+    { href: ROUTES.assistant.absences, label: LABELS.nav.absences, icon: CalendarX },
     { href: ROUTES.assistant.newTeacher, label: LABELS.nav.newTeacher, shortLabel: LABELS.nav.short.newTeacher, icon: GraduationCap },
   ],
   teacher: [
@@ -34,6 +36,7 @@ export const NAVIGATION: Record<NavSpace, readonly NavItem[]> = {
   admin: [
     { href: ROUTES.admin.home, label: LABELS.nav.dashboard, shortLabel: LABELS.nav.short.dashboard, icon: LayoutDashboard },
     { href: ROUTES.admin.students, label: LABELS.nav.students, icon: Users },
+    { href: ROUTES.admin.absences, label: LABELS.nav.absences, icon: CalendarX },
     { href: ROUTES.admin.subjects, label: LABELS.nav.subjects, shortLabel: LABELS.nav.short.subjects, icon: BookOpen },
     { href: ROUTES.admin.schedule, label: LABELS.nav.planning, icon: CalendarRange },
     { href: ROUTES.admin.users, label: LABELS.nav.users, icon: UserCog },
