@@ -5,11 +5,11 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-[10px] border border-transparent text-body font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-(--ease-soft) outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:not-aria-[haspopup]:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-danger [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
+  "group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-transparent text-table font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow,transform] duration-200 ease-(--ease-soft) outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:not-aria-[haspopup]:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-danger [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-primary-foreground hover:bg-primary-hover",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/70",
         outline: "border-border bg-card text-foreground hover:bg-muted",
         ghost: "text-foreground hover:bg-muted",
@@ -21,13 +21,13 @@ const buttonVariants = cva(
         danger: "bg-danger-strong text-white hover:bg-danger-strong/90",
       },
       size: {
-        default: "h-11 px-4",
-        icon: "size-11",
+        default: "h-10 px-4",
+        icon: "size-10",
         // Mode appel : 64 px de haut minimum.
         call: "min-h-16 gap-3 px-6 text-lg font-semibold [&_svg:not([class*='size-'])]:size-6",
       },
     },
-    compoundVariants: [{ variant: "link", className: "h-11" }],
+    compoundVariants: [{ variant: "link", className: "h-10" }],
     defaultVariants: {
       variant: "default",
       size: "default",

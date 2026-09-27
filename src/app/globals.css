@@ -5,40 +5,47 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CentroManager — tokens de design (Tailwind v4 : la configuration du thème vit dans @theme).
+ * CentroManager — design system « dashboard SaaS » (refonte).
  *
- * Les couleurs de la charte sont utilisées telles quelles pour les fonds, bordures,
- * points de statut, contours de photo et graphiques. Les variantes « -ink » sont des
- * nuances plus sombres de la même teinte, réservées au texte, pour garantir un
- * contraste d'au moins 4,5:1 (y compris sur un fond teinté à 10 %).
- * Les variantes « -strong » servent de fond aux boutons à texte blanc.
+ * Tous les tokens sont déclarés ici (Tailwind v4 : @theme) et consommés par
+ * shadcn/ui ; aucun composant ne porte de couleur en dur. Couleurs appliquées
+ * à la valeur exacte demandée, y compris pour le texte des statuts.
  */
 
 @theme inline {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Typographie */
+  /* Typographie (Poppins 400 / 500 / 600) */
   --text-title: 28px;
   --text-title--line-height: 36px;
-  --text-title--font-weight: 700;
-  --text-section: 20px;
-  --text-section--line-height: 28px;
+  --text-title--font-weight: 600;
+  --text-section: 16px;
+  --text-section--line-height: 24px;
   --text-section--font-weight: 600;
-  --text-body: 15px;
-  --text-body--line-height: 24px;
-  --text-caption: 13px;
+  --text-body: 14px;
+  --text-body--line-height: 22px;
+  --text-table: 13px;
+  --text-table--line-height: 20px;
+  --text-caption: 12px;
   --text-caption--line-height: 18px;
+  --text-stat: 32px;
+  --text-stat--line-height: 40px;
+  --text-stat--font-weight: 600;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-heading: var(--heading);
+  --color-subtle: var(--subtle);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -47,33 +54,44 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--danger-ink);
   --color-border: var(--border);
+  --color-divider: var(--divider);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-row-hover: var(--row-hover);
 
-  /* Bleu vif : liens, états actifs, focus */
+  /* Violet : liens, états actifs, focus */
   --color-brand: var(--brand);
   --color-brand-ink: var(--brand-ink);
-  /* Ambre : mise en avant, un seul usage par écran */
+  /* Orange : mise en avant */
   --color-highlight: var(--highlight);
   --color-highlight-ink: var(--highlight-ink);
   --color-highlight-foreground: var(--highlight-foreground);
-  /* Vert succès : à jour, présent */
+  /* Statuts */
   --color-success: var(--success);
   --color-success-ink: var(--success-ink);
   --color-success-strong: var(--success-strong);
-  /* Rouge alerte : retard de paiement, absent */
   --color-danger: var(--danger);
   --color-danger-ink: var(--danger-ink);
   --color-danger-strong: var(--danger-strong);
-  /* Orange attention : absence, relance à faire */
   --color-warning: var(--warning);
   --color-warning-ink: var(--warning-ink);
+
+  /* Cartes colorées (progression, séances), dans cet ordre */
+  --color-tile-1: var(--tile-1);
+  --color-tile-2: var(--tile-2);
+  --color-tile-3: var(--tile-3);
+  --color-tile-4: var(--tile-4);
+  --color-reminder-from: var(--reminder-from);
+  --color-reminder-to: var(--reminder-to);
+  --color-app-from: var(--app-from);
+  --color-app-to: var(--app-to);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-grid: var(--chart-grid);
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -85,124 +103,170 @@
   --color-sidebar-primary-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-ring: var(--ring);
 
-  /* Formes */
-  --radius-sm: 8px;
+  /* Formes : 12 boutons, 16 cartes, 24 barre latérale, 28 conteneur */
+  --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 12px;
-  --radius-xl: 12px;
+  --radius-xl: 16px;
   --radius-2xl: 16px;
   --radius-3xl: 24px;
-  --radius-4xl: 9999px;
+  --radius-4xl: 28px;
 
-  /* Ombre très douce */
-  --shadow-soft: 0 1px 2px rgb(17 24 39 / 0.04), 0 1px 3px rgb(17 24 39 / 0.04);
-  --shadow-raised: 0 4px 16px rgb(17 24 39 / 0.08);
+  /* Ombres : une pour les cartes, une au survol, une pour le conteneur */
+  --shadow-soft: var(--shadow-card-value);
+  --shadow-card: var(--shadow-card-value);
+  --shadow-raised: var(--shadow-raised-value);
+  --shadow-shell: var(--shadow-shell-value);
 }
 
 :root {
   --radius: 12px;
 
-  --background: #f6f7f9;
-  --foreground: #111827;
-  --card: #ffffff;
-  --card-foreground: #111827;
-  --popover: #ffffff;
-  --popover-foreground: #111827;
+  /* Fond d'application (dégradé) et surface du conteneur */
+  --app-from: #eaf1fc;
+  --app-to: #c9daf8;
+  --background: #f7f9fe;
 
-  /* Bleu nuit principal */
-  --primary: #1b2a4a;
+  /* Textes : titres, corps, secondaire, désactivé */
+  --heading: #3b3f5c;
+  --foreground: #5a6078;
+  --muted-foreground: #8a90a6;
+  --subtle: #a0a6b8;
+
+  --card: #ffffff;
+  --card-foreground: #5a6078;
+  --popover: #ffffff;
+  --popover-foreground: #5a6078;
+
+  /* Violet primaire */
+  --primary: #6c2bf5;
+  --primary-hover: #5a1fe0;
+  --primary-soft: #f3eeff;
   --primary-foreground: #ffffff;
 
-  --secondary: #eef0f4;
-  --secondary-foreground: #111827;
-  --muted: #eef0f4;
-  --muted-foreground: #6b7280;
-  /* Surface de survol des menus */
-  --accent: #eef0f4;
-  --accent-foreground: #111827;
+  --secondary: #f3eeff;
+  --secondary-foreground: #6c2bf5;
+  --muted: #f3f5fa;
+  --accent: #f3eeff;
+  --accent-foreground: #6c2bf5;
+  --row-hover: #f7f5ff;
 
-  --border: #e3e6eb;
-  --input: #e3e6eb;
-  --ring: #2f6bff;
+  --border: #eceff6;
+  --divider: #f1f3f8;
+  --input: #eceff6;
+  --ring: #6c2bf5;
 
-  --brand: #2f6bff;
-  --brand-ink: #185bff;
-  --highlight: #f2a649;
-  --highlight-ink: #a35f0c;
-  --highlight-foreground: #1b2a4a;
-  --success: #1f9d6b;
-  --success-ink: #187b54;
-  --success-strong: #187b54;
-  --danger: #d64545;
-  --danger-ink: #cb2d2d;
-  --danger-strong: #cb2d2d;
-  --warning: #e8833a;
-  --warning-ink: #af5514;
+  --brand: #6c2bf5;
+  --brand-ink: #6c2bf5;
+  --highlight: #ffa24c;
+  --highlight-ink: #ffa24c;
+  --highlight-foreground: #ffffff;
+  --success: #22c55e;
+  --success-ink: #22c55e;
+  --success-strong: #22c55e;
+  --danger: #ef4444;
+  --danger-ink: #ef4444;
+  --danger-strong: #ef4444;
+  --warning: #f5b000;
+  --warning-ink: #f5b000;
 
-  --chart-1: #2f6bff;
-  --chart-2: #1b2a4a;
-  --chart-3: #f2a649;
-  --chart-4: #1f9d6b;
-  --chart-5: #e8833a;
+  --tile-1: #ff6b6b;
+  --tile-2: #9b3bf5;
+  --tile-3: #3cc8dc;
+  --tile-4: #ffa24c;
+  --reminder-from: #2a1fe0;
+  --reminder-to: #4b35f0;
 
-  /* Barre latérale en bleu nuit */
-  --sidebar: #1b2a4a;
+  --chart-1: #6c2bf5;
+  --chart-2: #9b3bf5;
+  --chart-3: #3cc8dc;
+  --chart-4: #ff6b6b;
+  --chart-5: #ffa24c;
+  --chart-grid: #f1f3f8;
+
+  --sidebar: #6c2bf5;
   --sidebar-foreground: #ffffff;
-  --sidebar-muted: #c3cadb;
-  --sidebar-accent: #2a3b60;
+  --sidebar-muted: rgb(255 255 255 / 0.7);
+  --sidebar-accent: rgb(255 255 255 / 0.2);
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #2a3b60;
+  --sidebar-border: rgb(255 255 255 / 0.2);
+
+  --shadow-card-value: 0 8px 24px rgb(120 130 200 / 0.1);
+  --shadow-raised-value: 0 14px 32px rgb(120 130 200 / 0.18);
+  --shadow-shell-value: 0 30px 60px rgb(60 80 180 / 0.15);
 }
 
-/* Thème sombre dérivé des mêmes teintes — contrastes vérifiés à 4,5:1 minimum. */
+/* Thème sombre dérivé : même violet, surfaces nuit, textes clairs. */
 .dark {
-  --background: #0d1526;
-  --foreground: #e7eaf0;
-  --card: #141e33;
-  --card-foreground: #e7eaf0;
-  --popover: #18233b;
-  --popover-foreground: #e7eaf0;
+  --app-from: #0c0a1d;
+  --app-to: #1b1540;
+  --background: #12101f;
 
-  --primary: #8daeff;
-  --primary-foreground: #0d1526;
+  --heading: #eeeef8;
+  --foreground: #c5c7db;
+  --muted-foreground: #9a9db8;
+  --subtle: #7d809c;
 
-  --secondary: #1d2944;
-  --secondary-foreground: #e7eaf0;
-  --muted: #1d2944;
-  --muted-foreground: #9ca3af;
-  --accent: #1d2944;
-  --accent-foreground: #e7eaf0;
+  --card: #1b1830;
+  --card-foreground: #c5c7db;
+  --popover: #221e3a;
+  --popover-foreground: #c5c7db;
 
-  --border: #27324a;
-  --input: #2f3b56;
-  --ring: #628fff;
+  --primary: #7c45f7;
+  --primary-hover: #8b5cf8;
+  --primary-soft: #2a2350;
+  --primary-foreground: #ffffff;
 
-  --brand: #2f6bff;
-  --brand-ink: #628fff;
-  --highlight: #f2a649;
-  --highlight-ink: #f2a649;
-  --highlight-foreground: #1b2a4a;
-  --success: #1f9d6b;
-  --success-ink: #22ac75;
-  --success-strong: #187b54;
-  --danger: #d64545;
-  --danger-ink: #e07171;
-  --danger-strong: #cb2d2d;
-  --warning: #e8833a;
-  --warning-ink: #e8833a;
+  --secondary: #2a2350;
+  --secondary-foreground: #c9b5ff;
+  --muted: #221e3a;
+  --accent: #2a2350;
+  --accent-foreground: #c9b5ff;
+  --row-hover: #241f40;
 
-  --chart-1: #5a88ff; /* validé : bande de luminosité et contraste sur fond sombre */
-  --chart-2: #8daeff;
-  --chart-3: #f2a649;
-  --chart-4: #22ac75;
-  --chart-5: #e8833a;
+  --border: #2c2848;
+  --divider: #26223f;
+  --input: #34305a;
+  --ring: #9b73ff;
 
-  --sidebar: #0a1120;
-  --sidebar-foreground: #e7eaf0;
-  --sidebar-muted: #9ca3af;
-  --sidebar-accent: #1d2944;
+  --brand: #9b73ff;
+  --brand-ink: #b69aff;
+  --highlight: #ffa24c;
+  --highlight-ink: #ffa24c;
+  --highlight-foreground: #ffffff;
+  --success: #22c55e;
+  --success-ink: #22c55e;
+  --success-strong: #22c55e;
+  --danger: #ef4444;
+  --danger-ink: #f26b6b;
+  --danger-strong: #ef4444;
+  --warning: #f5b000;
+  --warning-ink: #f5b000;
+
+  --tile-1: #ff6b6b;
+  --tile-2: #9b3bf5;
+  --tile-3: #3cc8dc;
+  --tile-4: #ffa24c;
+  --reminder-from: #2a1fe0;
+  --reminder-to: #4b35f0;
+
+  --chart-1: #9b73ff;
+  --chart-2: #b69aff;
+  --chart-3: #3cc8dc;
+  --chart-4: #ff6b6b;
+  --chart-5: #ffa24c;
+  --chart-grid: #2c2848;
+
+  --sidebar: #5a1fe0;
+  --sidebar-foreground: #ffffff;
+  --sidebar-muted: rgb(255 255 255 / 0.7);
+  --sidebar-accent: rgb(255 255 255 / 0.2);
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1d2944;
+  --sidebar-border: rgb(255 255 255 / 0.2);
+
+  --shadow-card-value: 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-raised-value: 0 14px 32px rgb(0 0 0 / 0.45);
+  --shadow-shell-value: 0 30px 60px rgb(0 0 0 / 0.5);
 }
 
 @layer base {
@@ -216,6 +280,11 @@
   body {
     @apply bg-background text-body text-foreground antialiased;
   }
+  h1,
+  h2,
+  h3 {
+    color: var(--heading);
+  }
   /* Focus visible sur tous les éléments interactifs */
   :focus-visible {
     outline: 2px solid var(--ring);
@@ -227,12 +296,9 @@
   }
 }
 
-@utility shadow-soft {
-  box-shadow: var(--shadow-soft);
-}
-
-@utility shadow-raised {
-  box-shadow: var(--shadow-raised);
+/* Fond d'application : dégradé diagonal bleu très clair. */
+@utility bg-app {
+  background-image: linear-gradient(135deg, var(--app-from), var(--app-to));
 }
 
 /* Montants et chiffres : chiffres tabulaires, graisse 600 */
@@ -301,8 +367,8 @@
   @media (hover: hover) {
     &:hover {
       transform: translateY(-2px);
-      box-shadow: var(--shadow-raised);
-      border-color: color-mix(in oklab, var(--brand) 35%, var(--border));
+      box-shadow: var(--shadow-raised-value);
+      border-color: color-mix(in oklab, var(--primary) 30%, var(--border));
     }
   }
   &:active {
