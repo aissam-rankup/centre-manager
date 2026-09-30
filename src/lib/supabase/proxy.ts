@@ -8,12 +8,16 @@ import type { Database } from "@/lib/supabase/database.types";
 
 /** Claims ajoutés par le hook public.custom_access_token_hook. */
 const appClaimsSchema = z.object({
-  user_role: z.enum(["admin", "assistant", "teacher"]).optional(),
+  user_role: z.enum(["admin", "assistant", "teacher", "super_admin"]).optional(),
   profile_active: z.boolean().optional(),
 });
 
 /** Chemins accessibles sans session. */
 const PUBLIC_PATHS: readonly string[] = [ROUTES.login];
+
+function isPlatformPath(pathname: string): boolean {
+  return pathname === ROUTES.platform.home || pathname.startsWith(`${ROUTES.platform.home}/`);
+}
 
 /**
  * Rafraîchit la session Supabase (cookies), impose une session sur toutes les pages
@@ -55,6 +59,16 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
     return redirect;
   };
+
+  // Console de la plateforme : 404 pour tout autre visiteur (anonyme compris),
+  // afin de ne pas révéler son existence. La garde serveur requireSuperAdmin
+  // revérifie le rôle en base (le JWT peut être en retard).
+  if (isPlatformPath(pathname) && appClaimsSchema.safeParse(claims ?? {}).data?.user_role !== "super_admin") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/_introuvable";
+    url.search = "";
+    return NextResponse.rewrite(url, { status: 404 });
+  }
 
   if (!claims) {
     if (PUBLIC_PATHS.includes(pathname)) return response;

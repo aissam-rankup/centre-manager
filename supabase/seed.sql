@@ -1,7 +1,7 @@
 -- =====================================================================
 -- CentroManager — seed de démonstration (local uniquement)
 --
--- 3 centres de types différents (plateforme) ; le centre principal :
+-- 1 super-admin (console /platform) · 3 centres de types différents ; le centre principal :
 -- 1 centre · 3 niveaux · 6 matières · 1 admin · 1 assistant · 3 professeurs
 -- 40 élèves · planning hebdomadaire · 4 semaines de présences
 -- factures par cycle (1er ou 15 du mois) depuis l'inscription, dont certaines en retard.
@@ -370,6 +370,10 @@ declare
   v_today date := private.today();
   v_level uuid;
 begin
+  -- Propriétaire de la plateforme (console /platform), sans centre.
+  perform pg_temp.create_demo_user('20000000-0000-4000-8000-000000000099', null,
+    'superadmin@centro.demo', 'Aissam Errachdi', 'super_admin', null);
+
   -- Centre de formation, en période d'essai, facturé à l'année.
   insert into public.centers (id, name, slug, center_type, price, billing_interval, current_period_end,
                               owner_contact_name, owner_contact_phone, owner_contact_email)

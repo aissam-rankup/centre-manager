@@ -25,6 +25,8 @@ export type ShellUser = {
   centerName: string;
   /** URL signée de la photo du compte, si elle existe. */
   photoUrl: string | null;
+  /** « Ma photo » (comptes de centre ; faux pour le super-admin, sans centre). */
+  canEditPhoto?: boolean;
 };
 
 const noop = () => () => {};
@@ -58,10 +60,12 @@ export function UserMenu({ user }: { user: ShellUser }) {
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="min-h-11 gap-3" onSelect={() => setPhotoOpen(true)}>
-            <Camera className="size-5" aria-hidden />
-            {LABELS.auth.userMenu.myPhoto}
-          </DropdownMenuItem>
+          {user.canEditPhoto !== false ? (
+            <DropdownMenuItem className="min-h-11 gap-3" onSelect={() => setPhotoOpen(true)}>
+              <Camera className="size-5" aria-hidden />
+              {LABELS.auth.userMenu.myPhoto}
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem className="min-h-11 gap-3" onSelect={() => setTheme(isDark ? "light" : "dark")}>
             {isDark ? <Sun className="size-5" aria-hidden /> : <Moon className="size-5" aria-hidden />}
             {isDark ? LABELS.theme.toggleToLight : LABELS.theme.toggleToDark}

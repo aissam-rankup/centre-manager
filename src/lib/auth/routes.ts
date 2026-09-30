@@ -1,10 +1,17 @@
 import type { Database } from "@/lib/supabase/database.types";
 
 export type UserRole = Database["public"]["Enums"]["user_role"];
+/** Rôles rattachés à un centre. */
+export type CenterRole = Exclude<UserRole, "super_admin">;
 
 export const ROUTES = {
   login: "/connexion",
   inactive: "/compte-inactif",
+  platform: {
+    home: "/platform",
+    centers: "/platform/centres",
+    billing: "/platform/facturation",
+  },
   assistant: {
     home: "/assistant",
     students: "/assistant/eleves",
@@ -33,8 +40,7 @@ export const ROLE_HOME: Record<UserRole, string> = {
   admin: ROUTES.admin.home,
   assistant: ROUTES.assistant.home,
   teacher: ROUTES.teacher.home,
-  // Console de la plateforme (phase 2).
-  super_admin: "/platform",
+  super_admin: ROUTES.platform.home,
 };
 
 /** Paramètre de requête portant la page demandée avant la connexion. */

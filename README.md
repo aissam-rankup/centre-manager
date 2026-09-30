@@ -90,8 +90,11 @@ Mot de passe commun : **`CentroDemo2026!`**
 | Professeur — Mathématiques (3 niveaux) | prof1@centro.demo | Rachid Benali |
 | Professeur — Physique-Chimie (2ème BAC) | prof2@centro.demo | Laila Chakir |
 | Professeur — Anglais (TC), Français (1ère BAC) | prof3@centro.demo | Youssef Amrani |
+| Super-admin (console `/platform`, sans centre) | superadmin@centro.demo | Aissam Errachdi |
+| Admin — Institut Formation Pro (centre de formation, essai, facturé à l'année) | admin-formation@centro.demo | Hicham Alaoui |
+| Admin — Auto-école Atlas (marque blanche, en retard) | admin-atlas@centro.demo | Samira Ouazzani |
 
-Contenu du seed : 1 centre, 3 niveaux, 6 matières, 3 packs « Toutes matières », 42 élèves (dont 2 en pack), 72 inscriptions à l'unité, 12 créneaux hebdomadaires, 4 semaines de présences, factures du mois précédent et du mois en cours (dont une partie en retard), alertes et relances. Les dates sont calculées à partir du jour du `db:reset`.
+Contenu du seed : 3 centres de types différents (voir la console `/platform`) ; le centre principal compte 3 niveaux, 6 matières, 3 packs « Toutes matières », 42 élèves (dont 2 en pack), 72 inscriptions à l'unité, 12 créneaux hebdomadaires, 4 semaines de présences, factures du mois précédent et du mois en cours (dont une partie en retard), alertes et relances. Les dates sont calculées à partir du jour du `db:reset`.
 
 ## Authentification et espaces
 
@@ -143,6 +146,16 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 3. **Variables d'environnement** : importer un fichier `.env` avec les 3 variables Supabase (modèle `.env.hostinger`, non versionné). Les `NEXT_PUBLIC_*` sont intégrées au build : les renseigner **avant** le premier déploiement, et redéployer après toute modification.
 4. `NEXT_PUBLIC_APP_URL` est facultative : l'application fonctionne sur le domaine temporaire Hostinger sans elle. Si les enregistrements sont refusés (« Invalid Server Actions request »), la renseigner avec l'URL publique exacte et redéployer.
 5. Chaque `git push` sur `main` redéploie automatiquement.
+
+## Console de la plateforme (super-admin)
+
+- **Rôle `super_admin`** : propriétaire de la plateforme, rattaché à aucun centre. Un compte de centre ne peut ni le voir, ni le créer, ni être promu super-admin (contrainte en base).
+- **`/platform`** : tableau de bord (centres par statut, revenu mensuel récurrent, encaissé du mois, élèves et comptes, centres en retard de paiement avec contact du directeur), liste des centres (recherche, filtres statut / type / formule), fiche centre (informations, abonnement, paiements, marque blanche, historique, comptes), facturation (encaissé par mois, prévisionnel et écart du mois en cours).
+- **404, jamais 403** : tout autre visiteur (anonyme compris) reçoit une page introuvable (proxy, puis garde serveur `requireSuperAdmin` qui relit le rôle en base).
+- **Lectures** : uniquement via les fonctions `platform_*` (SECURITY DEFINER, refus `42501` pour tout autre compte). Les colonnes plateforme de `centers` (tarif, échéance, contact, notes) sont illisibles pour les comptes de centre (privilèges par colonne) ; `subscriptions`, `subscription_payments` et `platform_events` leur sont fermées.
+- **Tarif** : montant par mois ou par an ; un paiement couvre un mois ou un an à partir de l'échéance en cours, repousse l'échéance et remet le centre en actif. Un paiement n'est jamais modifié ni supprimé.
+- **Journal `platform_events`** : création, statut, échéance, tarif, formule, vocabulaire, marque et paiements, tracés par trigger (acteur nul = automatique). Append-only.
+- **Mise en production du compte** : créer l'utilisateur dans Supabase (Authentication → Users), puis exécuter `supabase/scripts/first-super-admin.sql` avec son email.
 
 ## Mode appel (professeur)
 

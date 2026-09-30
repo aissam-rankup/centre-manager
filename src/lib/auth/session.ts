@@ -1,9 +1,9 @@
 import "server-only";
 
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
-import { ROLE_HOME, ROUTES, type UserRole } from "@/lib/auth/routes";
+import { type CenterRole, ROLE_HOME, ROUTES, type UserRole } from "@/lib/auth/routes";
 import { signPhotoUrls, STAFF_PHOTO_BUCKET } from "@/lib/storage/photos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,12 +13,16 @@ export type SessionProfile = {
   fullName: string;
   role: UserRole;
   active: boolean;
-  centerId: string;
+  /** Nul pour le super-admin, qui n'appartient à aucun centre. */
+  centerId: string | null;
   centerName: string;
   /** Chemin de la photo (bucket staff-photos) et son URL signée. */
   photoPath: string | null;
   photoUrl: string | null;
 };
+
+/** Compte d'un centre (admin, assistant, professeur). */
+export type CenterProfile = SessionProfile & { centerId: string };
 
 export type AuthState =
   | { status: "anonymous" }
@@ -70,16 +74,28 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
  * Garde d'un espace : compte connecté, actif et du rôle attendu.
  * Un compte d'un autre rôle est renvoyé vers son propre espace.
  */
-export async function requireRole(role: UserRole | readonly UserRole[]): Promise<SessionProfile> {
+export async function requireRole(role: CenterRole | readonly CenterRole[]): Promise<CenterProfile> {
   const allowed: readonly UserRole[] = typeof role === "string" ? [role] : role;
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
   if (state.status === "no-profile" || !state.profile.active) redirect(ROUTES.inactive);
   if (!allowed.includes(state.profile.role)) redirect(ROLE_HOME[state.profile.role]);
+  const { centerId } = state.profile;
+  if (!centerId) redirect(ROUTES.inactive);
+  return { ...state.profile, centerId };
+}
+
+/**
+ * Garde de la console /platform : tout autre visiteur (anonyme compris)
+ * reçoit une 404, pour ne pas révéler l'existence de la console.
+ */
+export async function requireSuperAdmin(): Promise<SessionProfile> {
+  const state = await getAuthState();
+  if (state.status !== "authenticated" || !state.profile.active || state.profile.role !== "super_admin") notFound();
   return state.profile;
 }
 
 /** Garde des données de l'accueil : administrateur ou assistant. */
-export function requireStaff(): Promise<SessionProfile> {
+export function requireStaff(): Promise<CenterProfile> {
   return requireRole(["admin", "assistant"]);
 }

@@ -719,7 +719,7 @@ export type Database = {
       profiles: {
         Row: {
           active: boolean
-          center_id: string
+          center_id: string | null
           created_at: string
           full_name: string
           id: string
@@ -729,7 +729,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
-          center_id: string
+          center_id?: string | null
           created_at?: string
           full_name: string
           id: string
@@ -739,7 +739,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
-          center_id?: string
+          center_id?: string | null
           created_at?: string
           full_name?: string
           id?: string
@@ -1405,6 +1405,130 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      platform_billing_months: {
+        Args: never
+        Returns: {
+          collected: number
+          expected: number
+          month: string
+        }[]
+      }
+      platform_center: {
+        Args: { p_center_id: string }
+        Returns: {
+          activated_at: string
+          auto_renew: boolean
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
+          branding: Json
+          cancelled_at: string
+          center_id: string
+          center_type: string
+          center_type_label: string
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          custom_terms: Json
+          days_remaining: number
+          grace_days: number
+          name: string
+          notes: string
+          owner_contact_email: string
+          owner_contact_name: string
+          owner_contact_phone: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          price: number
+          slug: string
+          status: Database["public"]["Enums"]["center_status"]
+          students_count: number
+          subscription_started_at: string
+          users_count: number
+        }[]
+      }
+      platform_center_events: {
+        Args: { p_center_id: string }
+        Returns: {
+          action: string
+          actor_name: string
+          event_id: number
+          occurred_at: string
+          payload: Json
+        }[]
+      }
+      platform_center_users: {
+        Args: { p_center_id: string }
+        Returns: {
+          active: boolean
+          created_at: string
+          email: string
+          full_name: string
+          last_sign_in_at: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }[]
+      }
+      platform_centers: {
+        Args: never
+        Returns: {
+          activated_at: string
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
+          center_id: string
+          center_type: string
+          center_type_label: string
+          created_at: string
+          current_period_end: string
+          days_remaining: number
+          name: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          price: number
+          slug: string
+          status: Database["public"]["Enums"]["center_status"]
+          students_count: number
+        }[]
+      }
+      platform_overdue_centers: {
+        Args: never
+        Returns: {
+          amount_due: number
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
+          center_id: string
+          current_period_end: string
+          days_overdue: number
+          name: string
+          owner_contact_email: string
+          owner_contact_name: string
+          owner_contact_phone: string
+          status: Database["public"]["Enums"]["center_status"]
+        }[]
+      }
+      platform_overview: {
+        Args: never
+        Returns: {
+          active_count: number
+          cancelled_count: number
+          collected_this_month: number
+          monthly_recurring_revenue: number
+          past_due_count: number
+          students_count: number
+          suspended_count: number
+          trial_count: number
+          users_count: number
+        }[]
+      }
+      platform_payments: {
+        Args: { p_center_id?: string }
+        Returns: {
+          amount: number
+          center_id: string
+          center_name: string
+          method: Database["public"]["Enums"]["subscription_payment_method"]
+          paid_at: string
+          payment_id: string
+          period_covered_end: string
+          period_covered_start: string
+          recorded_by_name: string
+          reference: string
+        }[]
       }
       set_my_photo: { Args: { p_path?: string }; Returns: undefined }
     }
