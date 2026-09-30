@@ -1,6 +1,7 @@
 -- =====================================================================
 -- CentroManager — seed de démonstration (local uniquement)
 --
+-- 3 centres de types différents (plateforme) ; le centre principal :
 -- 1 centre · 3 niveaux · 6 matières · 1 admin · 1 assistant · 3 professeurs
 -- 40 élèves · planning hebdomadaire · 4 semaines de présences
 -- factures par cycle (1er ou 15 du mois) depuis l'inscription, dont certaines en retard.
@@ -81,7 +82,9 @@ begin
   -- -------------------------------------------------------------------
   -- Centre et comptes
   -- -------------------------------------------------------------------
-  insert into public.centers (id, name) values (c_center, 'Centre Al Wiam — Casablanca');
+  insert into public.centers (id, name, slug, center_type, monthly_price, owner_contact_name, owner_contact_phone, owner_contact_email)
+  values (c_center, 'Centre Al Wiam — Casablanca', 'al-wiam', 'soutien_scolaire', 490,
+          'Nadia Berrada', '06 61 12 34 56', 'direction@alwiam.demo');
 
   perform pg_temp.create_demo_user(c_admin, c_center, 'admin@centro.demo', 'Nadia Berrada', 'admin', '06 61 12 34 56');
   perform pg_temp.create_demo_user(c_assistant, c_center, 'accueil@centro.demo', 'Karim Lahlou', 'assistant', '06 62 23 45 67');
@@ -346,5 +349,57 @@ begin
   select n.id, p.id, v_today - 2, p.monthly_price
   from new_students n
   join public.packs p on p.level_id = n.level_id;
+
+  -- -------------------------------------------------------------------
+  -- Abonnement du centre principal : deux mois payés, échéance dans ~20 jours.
+  -- -------------------------------------------------------------------
+  insert into public.subscription_payments (center_id, amount, paid_at, period_covered_start, period_covered_end, method, reference)
+  values
+    (c_center, 490, v_today - 40, v_today - 40, (v_today - 40 + interval '1 month')::date, 'bank_transfer', 'VIR-2026-001'),
+    (c_center, 490, v_today - 12, (v_today - 40 + interval '1 month')::date, (v_today - 40 + interval '2 months')::date, 'cash', null);
+end;
+$$;
+
+-- =====================================================================
+-- Deux autres centres de démonstration (types différents)
+-- =====================================================================
+do $$
+declare
+  c_formation constant uuid := '10000000-0000-4000-8000-000000000002';
+  c_atlas     constant uuid := '10000000-0000-4000-8000-000000000003';
+  v_today date := private.today();
+  v_level uuid;
+begin
+  -- Centre de formation, en période d'essai.
+  insert into public.centers (id, name, slug, center_type, monthly_price, current_period_end,
+                              owner_contact_name, owner_contact_phone, owner_contact_email)
+  values (c_formation, 'Institut Formation Pro — Rabat', 'formation-pro', 'centre_formation', 390, v_today + 10,
+          'Hicham Alaoui', '06 70 11 22 33', 'contact@formationpro.demo');
+  perform pg_temp.create_demo_user('20000000-0000-4000-8000-000000000021', c_formation,
+    'admin-formation@centro.demo', 'Hicham Alaoui', 'admin', '06 70 11 22 33');
+  insert into public.levels (center_id, name, sort_order) values (c_formation, 'Promotion Développement web 2026', 1) returning id into v_level;
+  insert into public.subjects (center_id, level_id, name, monthly_price) values
+    (c_formation, v_level, 'Module HTML / CSS', 600),
+    (c_formation, v_level, 'Module JavaScript', 700);
+
+  -- Auto-école en marque blanche, échéance dépassée de 3 jours.
+  insert into public.centers (id, name, slug, center_type, monthly_price,
+                              owner_contact_name, owner_contact_phone, owner_contact_email)
+  values (c_atlas, 'Auto-école Atlas — Marrakech', 'atlas', 'auto_ecole', 690,
+          'Samira Ouazzani', '06 75 44 55 66', 'direction@atlas.demo');
+  update public.subscriptions set plan = 'white_label' where center_id = c_atlas;
+  insert into public.center_branding (center_id, brand_name, primary_color, secondary_color, accent_color,
+                                      email_sender_name, support_email, support_phone)
+  values (c_atlas, 'Atlas Conduite', '#0f766e', '#134e4a', '#f59e0b',
+          'Atlas Conduite', 'contact@atlas.demo', '05 24 33 44 55');
+  insert into public.subscription_payments (center_id, amount, paid_at, period_covered_start, period_covered_end, method, reference)
+  values (c_atlas, 690, v_today - 33, (v_today - 3 - interval '1 month')::date, v_today - 3, 'card', 'CB-88412');
+  update public.centers set status = 'past_due' where id = c_atlas;
+  perform pg_temp.create_demo_user('20000000-0000-4000-8000-000000000031', c_atlas,
+    'admin-atlas@centro.demo', 'Samira Ouazzani', 'admin', '06 75 44 55 66');
+  insert into public.levels (center_id, name, sort_order) values (c_atlas, 'Permis B', 1) returning id into v_level;
+  insert into public.subjects (center_id, level_id, name, monthly_price) values
+    (c_atlas, v_level, 'Code de la route', 300),
+    (c_atlas, v_level, 'Conduite', 900);
 end;
 $$;

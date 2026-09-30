@@ -112,6 +112,7 @@ export const LABELS = {
   },
   roles: {
     admin: "Administrateur",
+    super_admin: "Propriétaire de la plateforme",
     assistant: "Assistant",
     teacher: "Professeur",
   },

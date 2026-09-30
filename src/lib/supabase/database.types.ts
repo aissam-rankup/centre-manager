@@ -131,23 +131,153 @@ export type Database = {
           },
         ]
       }
-      centers: {
+      center_branding: {
         Row: {
-          created_at: string
-          id: string
-          name: string
+          accent_color: string | null
+          brand_name: string | null
+          center_id: string
+          custom_domain: string | null
+          domain_verified: boolean
+          email_sender_name: string | null
+          favicon_url: string | null
+          login_background_url: string | null
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          support_email: string | null
+          support_phone: string | null
+          updated_at: string
         }
         Insert: {
-          created_at?: string
-          id?: string
-          name: string
+          accent_color?: string | null
+          brand_name?: string | null
+          center_id: string
+          custom_domain?: string | null
+          domain_verified?: boolean
+          email_sender_name?: string | null
+          favicon_url?: string | null
+          login_background_url?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          support_email?: string | null
+          support_phone?: string | null
+          updated_at?: string
         }
         Update: {
-          created_at?: string
-          id?: string
-          name?: string
+          accent_color?: string | null
+          brand_name?: string | null
+          center_id?: string
+          custom_domain?: string | null
+          domain_verified?: boolean
+          email_sender_name?: string | null
+          favicon_url?: string | null
+          login_background_url?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          support_email?: string | null
+          support_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_branding_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: true
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      center_types: {
+        Row: {
+          code: string
+          is_custom: boolean
+          label: string
+          sort_order: number
+          terms: Json
+        }
+        Insert: {
+          code: string
+          is_custom?: boolean
+          label: string
+          sort_order?: number
+          terms: Json
+        }
+        Update: {
+          code?: string
+          is_custom?: boolean
+          label?: string
+          sort_order?: number
+          terms?: Json
         }
         Relationships: []
+      }
+      centers: {
+        Row: {
+          activated_at: string | null
+          cancelled_at: string | null
+          center_type: string
+          created_at: string
+          current_period_end: string | null
+          custom_terms: Json
+          grace_days: number
+          id: string
+          monthly_price: number | null
+          name: string
+          notes: string | null
+          owner_contact_email: string | null
+          owner_contact_name: string | null
+          owner_contact_phone: string | null
+          slug: string
+          status: Database["public"]["Enums"]["center_status"]
+        }
+        Insert: {
+          activated_at?: string | null
+          cancelled_at?: string | null
+          center_type?: string
+          created_at?: string
+          current_period_end?: string | null
+          custom_terms?: Json
+          grace_days?: number
+          id?: string
+          monthly_price?: number | null
+          name: string
+          notes?: string | null
+          owner_contact_email?: string | null
+          owner_contact_name?: string | null
+          owner_contact_phone?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["center_status"]
+        }
+        Update: {
+          activated_at?: string | null
+          cancelled_at?: string | null
+          center_type?: string
+          created_at?: string
+          current_period_end?: string | null
+          custom_terms?: Json
+          grace_days?: number
+          id?: string
+          monthly_price?: number | null
+          name?: string
+          notes?: string | null
+          owner_contact_email?: string | null
+          owner_contact_name?: string | null
+          owner_contact_phone?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["center_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centers_center_type_fkey"
+            columns: ["center_type"]
+            isOneToOne: false
+            referencedRelation: "center_types"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       enrollments: {
         Row: {
@@ -548,6 +678,41 @@ export type Database = {
           },
         ]
       }
+      platform_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          center_id: string | null
+          id: number
+          occurred_at: string
+          payload: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          center_id?: string | null
+          id?: never
+          occurred_at?: string
+          payload?: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          center_id?: string | null
+          id?: never
+          occurred_at?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_events_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           active: boolean
@@ -777,6 +942,107 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "levels"
             referencedColumns: ["id", "center_id"]
+          },
+        ]
+      }
+      subscription_payments: {
+        Row: {
+          amount: number
+          center_id: string
+          created_at: string
+          id: string
+          method: Database["public"]["Enums"]["subscription_payment_method"]
+          paid_at: string
+          period_covered_end: string | null
+          period_covered_start: string | null
+          recorded_by: string | null
+          reference: string | null
+        }
+        Insert: {
+          amount: number
+          center_id: string
+          created_at?: string
+          id?: string
+          method: Database["public"]["Enums"]["subscription_payment_method"]
+          paid_at?: string
+          period_covered_end?: string | null
+          period_covered_start?: string | null
+          recorded_by?: string | null
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          center_id?: string
+          created_at?: string
+          id?: string
+          method?: Database["public"]["Enums"]["subscription_payment_method"]
+          paid_at?: string
+          period_covered_end?: string | null
+          period_covered_start?: string | null
+          recorded_by?: string | null
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_payments_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_payments_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          auto_renew: boolean
+          center_id: string
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          monthly_amount: number
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          started_at: string
+          status: Database["public"]["Enums"]["center_status"]
+        }
+        Insert: {
+          auto_renew?: boolean
+          center_id: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          monthly_amount?: number
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["center_status"]
+        }
+        Update: {
+          auto_renew?: boolean
+          center_id?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          monthly_amount?: number
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["center_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: true
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1139,10 +1405,13 @@ export type Database = {
     Enums: {
       alert_type: "consecutive_absences" | "overdue_payment"
       attendance_status: "present" | "absent"
+      center_status: "trial" | "active" | "past_due" | "suspended" | "cancelled"
       follow_up_channel: "phone" | "whatsapp" | "in_person"
       follow_up_type: "payment" | "absence"
       invoice_status: "pending" | "paid" | "overdue"
-      user_role: "admin" | "assistant" | "teacher"
+      subscription_payment_method: "bank_transfer" | "cash" | "card"
+      subscription_plan: "standard" | "white_label"
+      user_role: "admin" | "assistant" | "teacher" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1272,10 +1541,13 @@ export const Constants = {
     Enums: {
       alert_type: ["consecutive_absences", "overdue_payment"],
       attendance_status: ["present", "absent"],
+      center_status: ["trial", "active", "past_due", "suspended", "cancelled"],
       follow_up_channel: ["phone", "whatsapp", "in_person"],
       follow_up_type: ["payment", "absence"],
       invoice_status: ["pending", "paid", "overdue"],
-      user_role: ["admin", "assistant", "teacher"],
+      subscription_payment_method: ["bank_transfer", "cash", "card"],
+      subscription_plan: ["standard", "white_label"],
+      user_role: ["admin", "assistant", "teacher", "super_admin"],
     },
   },
 } as const

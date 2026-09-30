@@ -33,6 +33,8 @@ export const ROLE_HOME: Record<UserRole, string> = {
   admin: ROUTES.admin.home,
   assistant: ROUTES.assistant.home,
   teacher: ROUTES.teacher.home,
+  // Console de la plateforme (phase 2).
+  super_admin: "/platform",
 };
 
 /** Paramètre de requête portant la page demandée avant la connexion. */
