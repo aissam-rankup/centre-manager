@@ -8,8 +8,17 @@ import { DEFAULT_VOCABULARY, type VocabularyTerms } from "@/lib/vocabulary";
 const LabelsContext = createContext<AppLabels>(labelsFor(DEFAULT_VOCABULARY));
 
 /** Fournit les libellés dans le vocabulaire du centre à tous les Client Components. */
-export function LabelsProvider({ terms, children }: { terms: VocabularyTerms; children: ReactNode }) {
-  const labels = useMemo(() => labelsFor(terms), [terms]);
+export function LabelsProvider({
+  terms,
+  brandName = null,
+  children,
+}: {
+  terms: VocabularyTerms;
+  /** Marque blanche : nom affiché à la place de celui de la plateforme. */
+  brandName?: string | null;
+  children: ReactNode;
+}) {
+  const labels = useMemo(() => labelsFor(terms, brandName), [terms, brandName]);
   return <LabelsContext.Provider value={labels}>{children}</LabelsContext.Provider>;
 }
 

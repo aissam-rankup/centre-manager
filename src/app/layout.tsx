@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { brandMetadata, getDocumentBrand } from "@/lib/branding";
 import { LABELS } from "@/lib/constants/labels";
 
 import "./globals.css";
@@ -16,13 +17,19 @@ const poppins = Poppins({
   display: "swap",
 });
 
-export const metadata: Metadata = {
+const PLATFORM_METADATA: Metadata = {
   title: {
     default: LABELS.app.name,
     template: `%s · ${LABELS.app.name}`,
   },
   description: LABELS.app.metaDescription,
 };
+
+/** Onglet et favicon : marque du centre (marque blanche) de l'adresse ou du compte, sinon la plateforme. */
+export async function generateMetadata(): Promise<Metadata> {
+  const brand = await getDocumentBrand();
+  return brand.whiteLabel ? { ...PLATFORM_METADATA, ...brandMetadata(brand) } : PLATFORM_METADATA;
+}
 
 export const viewport: Viewport = {
   width: "device-width",

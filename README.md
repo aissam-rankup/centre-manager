@@ -167,6 +167,19 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 - **Accès support (lecture seule)** : depuis la fiche d'un centre, motif obligatoire, 1 heure ; le super-admin consulte l'espace administration du centre avec un bandeau permanent ; toute écriture est refusée en base (trigger sur chaque table métier et policies de stockage) ; ouverture et fermeture journalisées.
 - **Courriels Auth en français** : modèles `supabase/templates/invite.html` et `recovery.html` (liens vers `/bienvenue?token_hash=…`). En production : les coller dans Supabase → Authentication → Email Templates (Invite user, Reset password) et ajouter `https://<domaine>/bienvenue` aux Redirect URLs.
 
+## Marque blanche
+
+- **Formules** : `standard` (interface aux couleurs de CentroManager, aucun réglage de marque modifiable par le centre) ; `white_label` (nom, logo, favicon, couleurs, fond de connexion, expéditeur et contact de support du client ; la marque de la plateforme n'apparaît plus côté centre). Seul le super-admin change la formule.
+- **Réglages** : console → fiche du centre → « Modifier la marque » (tout, domaine compris) ; administrateur d'un centre en marque blanche → menu « Marque » (tout sauf le domaine). Images dans le bucket public `center-branding/<center_id>/` (2 Mo, PNG, JPEG, WebP, SVG, ICO).
+- **Application côté serveur, sans clignotement** : les couleurs deviennent des variables CSS (`--primary`, `--sidebar`, `--ring`, `--reminder-*`, `--highlight`…) rendues avec la page (`BrandStyle`) ; titre d'onglet, favicon, logo de la barre latérale et de l'écran de connexion, et « CentroManager » dans les libellés remplacés par la marque. Aucune couleur de marque n'est écrite dans les composants.
+- **Adresses** (variable `PLATFORM_ROOT_DOMAIN`, ex. `centromanager.ma`) : chaque centre est servi sur `<slug>.<domaine racine>` ; un centre en marque blanche aussi sur son domaine personnalisé vérifié. L'écran de connexion prend la marque de l'adresse et refuse un compte d'un autre centre. La console `/platform` renvoie une 404 depuis l'adresse d'un centre. Sans `PLATFORM_ROOT_DOMAIN`, tout est servi sur un seul domaine (cas du domaine temporaire Hostinger).
+- **Domaine personnalisé — procédure** :
+  1. Le super-admin saisit le domaine (ex. `app.moncentre.ma`) dans la marque du centre.
+  2. Le client crée chez son registraire un enregistrement **CNAME** `app` → cible de la plateforme (`PLATFORM_CNAME_TARGET`, par défaut le domaine racine). Pour un domaine racine (sans sous-domaine), un enregistrement **A** vers la même adresse IP.
+  3. Côté hébergement (Hostinger) : ajouter le domaine au site (domaine parqué / alias) et activer le certificat SSL ; côté Supabase : ajouter `https://app.moncentre.ma/bienvenue` aux Redirect URLs.
+  4. Le super-admin clique « Vérifier le domaine » : le CNAME (ou les adresses A) est contrôlé ; le domaine n'est actif qu'une fois vérifié. Tout changement de domaine le remet à vérifier.
+- **Courriels d'accès** (invitation, mot de passe) : les modèles Supabase affichent `.Data.brand_name` quand le centre est en marque blanche (métadonnée posée à l'envoi depuis la console).
+
 ## Vocabulaire par type d'établissement
 
 - **Types** (`center_types`) : soutien scolaire, centre de formation, institut de langue, auto-école, soutien universitaire, personnalisé. Chaque terme (apprenant, groupe, cours, encadrant, séance) a un singulier, un pluriel et un genre ; le type « Personnalisé » reçoit ses termes du super-admin (`centers.custom_terms`).

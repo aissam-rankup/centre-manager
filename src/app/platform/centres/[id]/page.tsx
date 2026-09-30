@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { CenterActions, type CenterActionsData, ResendInvitationButton } from "@/components/platform/center-actions";
+import { BrandingDialog } from "@/components/branding/branding-dialog";
 import { CenterStatusBadge } from "@/components/platform/center-status-badge";
 import { DaysRemaining } from "@/components/platform/days-remaining";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
@@ -21,6 +22,7 @@ import {
   type PlatformPayment,
 } from "@/lib/data/platform";
 import { formatDate, formatDateTime, toISODate, today } from "@/lib/format";
+import { dnsTarget, getBrandingSettings } from "@/lib/branding";
 import { formatPhone, toTelHref } from "@/lib/phone";
 import { customTermsSchema, EMPTY_TERMS } from "@/lib/validation/platform";
 
@@ -127,7 +129,7 @@ function eventReason(event: PlatformEvent): string | null {
 export default async function PlatformCenterPage({ params }: PageProps<"/platform/centres/[id]">) {
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const [file, types] = await Promise.all([getPlatformCenterFile(id), getCenterTypes()]);
+  const [file, types, brandingSettings] = await Promise.all([getPlatformCenterFile(id), getCenterTypes(), getBrandingSettings(id)]);
   if (!file) notFound();
   const { center, users, events, payments } = file;
   const tel = center.owner_contact_phone ? toTelHref(center.owner_contact_phone) : null;
@@ -248,7 +250,18 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
       </SectionCard>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title={L.branding}>
+        <SectionCard
+          title={L.branding}
+          aside={
+            center.plan === "white_label" && brandingSettings ? (
+              <BrandingDialog
+                defaults={{ centerId: center.center_id, ...brandingSettings.values }}
+                domainVerified={brandingSettings.domainVerified}
+                dnsTarget={dnsTarget()}
+              />
+            ) : null
+          }
+        >
           {center.plan !== "white_label" ? (
             <p className="text-muted-foreground">{L.brandingStandard}</p>
           ) : !branding ? (

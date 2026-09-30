@@ -1477,6 +1477,35 @@ export type Database = {
           unpaid_count: number
         }[]
       }
+      center_branding_settings: {
+        Args: { p_center_id: string }
+        Returns: {
+          accent_color: string
+          brand_name: string
+          custom_domain: string
+          domain_verified: boolean
+          editable: boolean
+          email_sender_name: string
+          favicon_url: string
+          login_background_url: string
+          logo_url: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          primary_color: string
+          secondary_color: string
+          support_email: string
+          support_phone: string
+        }[]
+      }
+      center_for_host: {
+        Args: { p_domain?: string; p_slug?: string }
+        Returns: {
+          branding: Json
+          center_id: string
+          name: string
+          slug: string
+          white_label: boolean
+        }[]
+      }
       create_student: {
         Args: {
           p_billing_day?: number
@@ -1520,6 +1549,7 @@ export type Database = {
         Args: never
         Returns: {
           blocked: boolean
+          branding: Json
           center_id: string
           center_name: string
           contact_email: string
@@ -1527,6 +1557,7 @@ export type Database = {
           contact_phone: string
           current_period_end: string
           days_before_suspension: number
+          plan: Database["public"]["Enums"]["subscription_plan"]
           status: Database["public"]["Enums"]["center_status"]
           support_expires_at: string
           support_mode: boolean
@@ -1701,6 +1732,10 @@ export type Database = {
         }
         Returns: string
       }
+      platform_set_domain_verified: {
+        Args: { p_center_id: string; p_verified: boolean }
+        Returns: undefined
+      }
       platform_set_due_date: {
         Args: { p_center_id: string; p_due_date: string; p_reason?: string }
         Returns: undefined
@@ -1785,6 +1820,23 @@ export type Database = {
         Returns: undefined
       }
       set_my_photo: { Args: { p_path?: string }; Returns: undefined }
+      update_center_branding: {
+        Args: {
+          p_accent_color: string
+          p_brand_name: string
+          p_center_id: string
+          p_custom_domain?: string
+          p_email_sender_name: string
+          p_favicon_url: string
+          p_login_background_url: string
+          p_logo_url: string
+          p_primary_color: string
+          p_secondary_color: string
+          p_support_email: string
+          p_support_phone: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       alert_type: "consecutive_absences" | "overdue_payment"

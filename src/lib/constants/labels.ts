@@ -137,6 +137,7 @@ const TEXTS = {
     platformCenters: "Centres",
     platformBilling: "Facturation",
     platformSettings: "Réglages",
+    branding: "Marque",
     short: {
       dashboard: "Accueil",
       subjects: "Matières",
@@ -168,6 +169,7 @@ const TEXTS = {
       rateLimited: "Trop de tentatives. Patientez quelques minutes, puis réessayez.",
       unavailable: "Connexion impossible pour le moment. Vérifiez votre connexion internet, puis réessayez.",
       inactive: "Ce compte est désactivé. Contactez l'administrateur de votre centre.",
+      wrongCenter: "Ce compte n'appartient pas à ce centre. Connectez-vous depuis l'adresse de votre centre.",
     },
     inactive: {
       title: "Compte inactif",
@@ -194,6 +196,56 @@ const TEXTS = {
       change: (name: string) => `Changer la photo — ${name}`,
       uploadFailed: "La photo n'a pas pu être envoyée. Réessayez.",
     },
+  },
+  branding: {
+    title: "Marque",
+    description: "Nom, logo et couleurs de votre interface, de l'écran de connexion et des courriels.",
+    standardOnly: "Formule standard : l'interface est aux couleurs de la plateforme. La marque blanche s'active sur demande.",
+    identity: "Identité",
+    brandName: "Nom de marque",
+    brandNameHint: "Affiché dans l'onglet du navigateur, l'écran de connexion et les courriels.",
+    images: "Images",
+    logo: "Logo",
+    logoHint: "PNG, SVG ou WebP, fond transparent de préférence, 2 Mo maximum.",
+    favicon: "Icône d'onglet (favicon)",
+    faviconHint: "Carré, PNG ou ICO, 64 × 64 px conseillés.",
+    loginBackground: "Fond de l'écran de connexion",
+    loginBackgroundHint: "Image paysage, 1920 × 1080 px conseillés.",
+    choose: "Choisir une image",
+    replace: "Remplacer",
+    remove: "Retirer",
+    uploading: "Envoi…",
+    uploadFailed: "L'image n'a pas pu être envoyée (format PNG, JPEG, WebP, SVG ou ICO, 2 Mo maximum).",
+    colors: "Couleurs",
+    primary: "Couleur principale",
+    primaryHint: "Barre latérale, boutons, liens, focus.",
+    secondary: "Couleur secondaire",
+    secondaryHint: "Dégradés et fond de l'application.",
+    accent: "Couleur d'accent",
+    accentHint: "Mises en avant et indicateurs.",
+    colorInvalid: "Couleur au format #RRGGBB.",
+    preview: "Aperçu",
+    previewButton: "Bouton principal",
+    emails: "Courriels",
+    senderName: "Nom de l'expéditeur",
+    supportEmail: "Adresse de réponse et de support",
+    supportPhone: "Téléphone de support",
+    domain: "Domaine personnalisé",
+    domainHint: (target: string) =>
+      `Le client crée un enregistrement CNAME de son domaine (ex. app.moncentre.ma) vers ${target}, puis vous vérifiez.`,
+    domainInvalid: "Domaine invalide (ex. app.moncentre.ma).",
+    domainVerified: "Domaine vérifié",
+    domainPending: "En attente de vérification",
+    verify: "Vérifier le domaine",
+    verifying: "Vérification…",
+    verifiedOk: "Domaine vérifié : il pointe bien vers la plateforme.",
+    verifiedKo: (target: string) => `Le domaine ne pointe pas encore vers ${target} (la propagation DNS peut prendre quelques heures).`,
+    noTarget: "Cible DNS non configurée : définissez PLATFORM_CNAME_TARGET ou PLATFORM_ROOT_DOMAIN.",
+    save: "Enregistrer la marque",
+    saving: "Enregistrement…",
+    saved: "Marque enregistrée",
+    edit: "Modifier la marque",
+    optional: "facultatif",
   },
   platform: {
     brand: "CentroManager",
@@ -1315,12 +1367,18 @@ export const LABELS: Omit<AppLabels, CenterNamespaces> = TEXTS;
 
 const cache = new Map<string, AppLabels>();
 
-/** Libellés complets dans le vocabulaire d'un centre. */
-export function labelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY): AppLabels {
-  const key = JSON.stringify(terms);
+/**
+ * Libellés complets dans le vocabulaire d'un centre ; en marque blanche,
+ * le nom de la plateforme est remplacé par celui de la marque du centre.
+ */
+export function labelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName?: string | null): AppLabels {
+  const key = JSON.stringify([terms, brandName ?? null]);
   let labels = cache.get(key);
   if (!labels) {
-    labels = translateTree(TEXTS, translator(terms));
+    const vocabulary = translator(terms);
+    const platformName = TEXTS.app.name;
+    const translate = brandName && brandName !== platformName ? (text: string) => vocabulary(text).replaceAll(platformName, brandName) : vocabulary;
+    labels = translateTree(TEXTS, translate);
     cache.set(key, labels);
   }
   return labels;

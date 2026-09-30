@@ -33,6 +33,10 @@ type AppShellProps = {
   notifications?: { items: NotificationItem[]; fileBase: string };
   /** Bandeaux permanents en haut de page (retard de paiement, mode support). */
   banners?: ReactNode;
+  /** Logo de la marque du centre (marque blanche) ; icône de la plateforme sinon. */
+  logoUrl?: string | null;
+  /** Entrée « Marque » (administrateur d'un centre en marque blanche). */
+  brandingEditable?: boolean;
   children: ReactNode;
 };
 
@@ -41,9 +45,20 @@ type AppShellProps = {
  * barre latérale violette à icônes (≥ 768 px), en-tête de 88 px,
  * barre de navigation violette en bas sur mobile.
  */
-export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, notifications, banners, children }: AppShellProps) {
+export function AppShell({
+  space,
+  user,
+  spaceLabel,
+  todayLabel,
+  searchHref,
+  notifications,
+  banners,
+  logoUrl = null,
+  brandingEditable = false,
+  children,
+}: AppShellProps) {
   const LABELS = useLabels();
-  const items = navigationFor(LABELS)[space];
+  const items = navigationFor(LABELS, { brandingEditable })[space];
   const home = items[0]?.href ?? "/";
   const pathname = usePathname();
   const activeHref = findActiveHref(items, pathname);
@@ -59,7 +74,7 @@ export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, noti
       </a>
 
       <div className="flex min-h-dvh bg-background md:h-[calc(100dvh-32px)] md:min-h-0 md:overflow-hidden md:rounded-4xl md:shadow-shell lg:h-[calc(100dvh-64px)]">
-        <Sidebar items={items} activeHref={activeHref} home={home} label={spaceLabel} withSignOut={Boolean(user)} />
+        <Sidebar items={items} activeHref={activeHref} home={home} label={spaceLabel} withSignOut={Boolean(user)} logoUrl={logoUrl} />
 
         <div className="flex min-w-0 flex-1 flex-col">
           {banners}
@@ -126,9 +141,10 @@ type SidebarProps = {
   home: string;
   label?: string;
   withSignOut: boolean;
+  logoUrl: string | null;
 };
 
-function Sidebar({ items, activeHref, home, label, withSignOut }: SidebarProps) {
+function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl }: SidebarProps) {
   const LABELS = useLabels();
   const [pending, startTransition] = useTransition();
 
@@ -138,7 +154,13 @@ function Sidebar({ items, activeHref, home, label, withSignOut }: SidebarProps) 
       className="hidden w-[72px] shrink-0 flex-col items-center rounded-3xl bg-sidebar pt-5 pb-10 text-sidebar-foreground md:flex"
     >
       <Link href={home} className="flex size-10 items-center justify-center rounded-lg" aria-label={LABELS.app.name}>
-        <GraduationCap className="size-6" aria-hidden />
+        {logoUrl ? (
+          // Logo du client (marque blanche) : image externe du bucket public, taille fixe.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoUrl} alt="" className="size-10 rounded-lg bg-white object-contain p-1" />
+        ) : (
+          <GraduationCap className="size-6" aria-hidden />
+        )}
       </Link>
 
       <nav aria-label={LABELS.nav.mainLabel} className="mt-[20px] flex flex-col items-center gap-2">

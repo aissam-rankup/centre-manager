@@ -4,6 +4,7 @@ import { cache } from "react";
 
 import { describeDatabaseError } from "@/lib/actions/result";
 import { getAuthState } from "@/lib/auth/session";
+import { getSessionBrand } from "@/lib/branding";
 import { type AppLabels, labelsFor } from "@/lib/constants/labels";
 import { DEFAULT_VOCABULARY, translator, type Translator, type VocabularyTerms } from "@/lib/vocabulary";
 
@@ -14,7 +15,10 @@ export const getVocabularyTerms = cache(async (): Promise<VocabularyTerms> => {
 });
 
 /** Libellés de l'interface dans le vocabulaire du centre (Server Components, Server Actions). */
-export const getLabels = cache(async (): Promise<AppLabels> => labelsFor(await getVocabularyTerms()));
+export const getLabels = cache(async (): Promise<AppLabels> => {
+  const brand = await getSessionBrand();
+  return labelsFor(await getVocabularyTerms(), brand.whiteLabel ? brand.name : null);
+});
 
 /** Résolution du vocabulaire pour un texte libre (ex. message d'erreur de la base). */
 export const getTranslator = cache(async (): Promise<Translator> => translator(await getVocabularyTerms()));

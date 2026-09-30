@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { NEXT_PARAM, ROLE_HOME, ROUTES } from "@/lib/auth/routes";
 import { publicEnv } from "@/lib/env";
+import { resolveHost } from "@/lib/hosts";
 import type { Database } from "@/lib/supabase/database.types";
 
 /** Claims ajoutés par le hook public.custom_access_token_hook. */
@@ -66,7 +67,9 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // Console de la plateforme : 404 pour tout autre visiteur (anonyme compris),
   // afin de ne pas révéler son existence. La garde serveur requireSuperAdmin
   // revérifie le rôle en base (le JWT peut être en retard).
-  if (isPlatformPath(pathname) && appClaimsSchema.safeParse(claims ?? {}).data?.user_role !== "super_admin") {
+  // Jamais accessible depuis l'adresse d'un centre (sous-domaine ou domaine personnalisé).
+  const clientHost = resolveHost(request.headers.get("host")).kind !== "platform";
+  if (isPlatformPath(pathname) && (clientHost || appClaimsSchema.safeParse(claims ?? {}).data?.user_role !== "super_admin")) {
     const url = request.nextUrl.clone();
     url.pathname = "/_introuvable";
     url.search = "";

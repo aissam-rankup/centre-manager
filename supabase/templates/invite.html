@@ -1,6 +1,7 @@
+<!-- Marque blanche : .Data.brand_name (métadonnée du compte) remplace « CentroManager ». -->
 <!-- CentroManager — invitation d'un compte (Supabase Auth → Email Templates → Invite user). -->
 <div style="font-family: Arial, Helvetica, sans-serif; color: #3b3f5c; max-width: 520px; margin: 0 auto; padding: 24px;">
-  <h1 style="font-size: 22px; color: #6c2bf5; margin: 0 0 16px;">Bienvenue sur CentroManager</h1>
+  <h1 style="font-size: 22px; color: #6c2bf5; margin: 0 0 16px;">Bienvenue sur {{ if .Data.brand_name }}{{ .Data.brand_name }}{{ else }}CentroManager{{ end }}</h1>
   <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
     Un compte a été créé pour vous. Cliquez sur le bouton ci-dessous pour choisir votre mot de passe et accéder à votre espace.
   </p>

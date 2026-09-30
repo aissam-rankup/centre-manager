@@ -38,6 +38,7 @@ export const ROUTES = {
     users: "/admin/utilisateurs",
     reports: "/admin/rapports",
     absences: "/admin/absences",
+    branding: "/admin/marque",
   },
 } as const;
 

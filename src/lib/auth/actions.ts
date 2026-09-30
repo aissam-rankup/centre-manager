@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { destinationAfterLogin, ROUTES } from "@/lib/auth/routes";
 import { loginSchema } from "@/lib/auth/schemas";
+import { getHostCenter } from "@/lib/branding";
 import { LABELS } from "@/lib/constants/labels";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,13 +32,20 @@ export async function signIn(input: unknown, next: string | null): Promise<Login
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, active")
+    .select("role, active, center_id")
     .eq("id", data.user.id)
     .maybeSingle();
 
   if (!profile || !profile.active) {
     await supabase.auth.signOut();
     return { error: L.inactive };
+  }
+
+  // Adresse d'un centre (sous-domaine ou domaine personnalisé) : seuls ses comptes s'y connectent.
+  const hostCenter = await getHostCenter();
+  if (hostCenter && profile.center_id !== hostCenter.centerId) {
+    await supabase.auth.signOut();
+    return { error: L.wrongCenter };
   }
 
   redirect(destinationAfterLogin(profile.role, next));

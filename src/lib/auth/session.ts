@@ -5,6 +5,7 @@ import { cache } from "react";
 
 import { type CenterRole, ROLE_HOME, ROUTES, type UserRole } from "@/lib/auth/routes";
 import type { Database } from "@/lib/supabase/database.types";
+import { type BrandingData, parseBranding } from "@/lib/branding-data";
 import { parseVocabularyTerms, type VocabularyTerms } from "@/lib/vocabulary";
 import { signPhotoUrls, STAFF_PHOTO_BUCKET } from "@/lib/storage/photos";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +26,9 @@ export type SessionProfile = {
   blocked: boolean;
   /** Échéance de l'abonnement : administrateur du centre (et support) uniquement. */
   billing: { dueDate: string; suspensionDate: string; daysBeforeSuspension: number } | null;
+  /** Formule et marque appliquée (formule marque blanche uniquement). */
+  plan: "standard" | "white_label" | null;
+  branding: BrandingData | null;
   /** Vocabulaire de l'interface (type d'établissement du centre). */
   vocabulary: VocabularyTerms;
   /** Super-admin connecté en support (lecture seule) sur ce centre. */
@@ -96,6 +100,8 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
           : null,
       support,
       vocabulary: parseVocabularyTerms(center?.vocabulary),
+      plan: center?.plan ?? null,
+      branding: parseBranding(center?.branding),
       photoPath: profile.photo_url,
       photoUrl: profile.photo_url ? (photos.get(profile.photo_url) ?? null) : null,
     },
@@ -130,7 +136,7 @@ export async function requireSuperAdmin(): Promise<SessionProfile> {
   const { profile } = state;
   // En support, le rôle affiché est « admin » : le vrai rôle reste super-admin.
   if (profile.role !== "super_admin" && !profile.support) notFound();
-  return { ...profile, role: "super_admin", centerId: null, centerName: "", support: null, billing: null };
+  return { ...profile, role: "super_admin", centerId: null, centerName: "", support: null, billing: null, plan: null, branding: null };
 }
 
 /** Garde des données de l'accueil : administrateur ou assistant. */

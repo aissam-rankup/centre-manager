@@ -225,6 +225,13 @@ export async function resendInvitation(input: unknown): Promise<ActionResult<{ p
   });
   if (logError) return failure(describeDatabaseError(logError));
 
+  // Marque blanche : le courriel porte le nom de marque du centre (modèles Auth : .Data.brand_name).
+  const { data: branding } = await supabase.rpc("center_branding_settings", { p_center_id: centerId }).maybeSingle();
+  const brandName = branding?.plan === "white_label" ? branding.brand_name : null;
+  await service.auth.admin.updateUserById(userId, {
+    user_metadata: { ...user.user.user_metadata, brand_name: brandName },
+  });
+
   const redirectTo = await welcomeUrl();
   const { error } = passwordLink
     ? await service.auth.resetPasswordForEmail(user.user.email, { redirectTo })

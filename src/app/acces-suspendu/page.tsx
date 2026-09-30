@@ -2,12 +2,14 @@ import { Lock, Mail, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { BrandStyle } from "@/components/layout/brand-style";
 import { Logo } from "@/components/layout/logo";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { refreshAccess, signOut } from "@/lib/auth/actions";
 import { ROUTES } from "@/lib/auth/routes";
 import { getAuthState } from "@/lib/auth/session";
+import { getSessionBrand } from "@/lib/branding";
 import { LABELS } from "@/lib/constants/labels";
 import { getSuspensionContact } from "@/lib/data/access";
 import { formatPhone, toTelHref } from "@/lib/phone";
@@ -25,11 +27,13 @@ export default async function SuspendedPage() {
   const contact = await getSuspensionContact();
   const tel = contact.phone ? toTelHref(contact.phone) : null;
   const cancelled = profile.centerStatus === "cancelled";
+  const brand = await getSessionBrand();
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
+      <BrandStyle brand={brand} />
       <header className="flex h-16 items-center px-4 md:px-6">
-        <Logo />
+        <Logo name={brand.name} logoUrl={brand.logoUrl} />
       </header>
       <main className="flex flex-1 items-center justify-center px-4 pb-16">
         {profile.blocked ? (
