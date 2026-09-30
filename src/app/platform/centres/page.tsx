@@ -1,4 +1,4 @@
-import { Building2, Search } from "lucide-react";
+import { Building2, Plus, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -136,6 +136,13 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
         title={L.title}
         description={L.description}
         actions={
+          <>
+          <Button asChild>
+            <Link href={ROUTES.platform.newCenter}>
+              <Plus aria-hidden />
+              {P.newCenter.open}
+            </Link>
+          </Button>
           <form action={ROUTES.platform.centers} role="search" className="flex w-full gap-2 sm:w-auto">
             {filters.statut ? <input type="hidden" name="statut" value={filters.statut} /> : null}
             {filters.type ? <input type="hidden" name="type" value={filters.type} /> : null}
@@ -155,6 +162,7 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
               <Search aria-hidden />
             </Button>
           </form>
+          </>
         }
       />
 

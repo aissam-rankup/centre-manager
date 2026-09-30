@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { CenterActions, type CenterActionsData, ResendInvitationButton } from "@/components/platform/center-actions";
 import { CenterStatusBadge } from "@/components/platform/center-status-badge";
 import { DaysRemaining } from "@/components/platform/days-remaining";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
@@ -13,13 +14,15 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { LABELS } from "@/lib/constants/labels";
 import {
+  getCenterTypes,
   getPlatformCenterFile,
   type PlatformCenterUser,
   type PlatformEvent,
   type PlatformPayment,
 } from "@/lib/data/platform";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { formatDate, formatDateTime, toISODate, today } from "@/lib/format";
 import { formatPhone, toTelHref } from "@/lib/phone";
+import { customTermsSchema, EMPTY_TERMS } from "@/lib/validation/platform";
 
 const P = LABELS.platform;
 const L = P.center;
@@ -47,7 +50,7 @@ const PAYMENT_COLUMNS: readonly DataTableColumn<PlatformPayment>[] = [
   { id: "by", header: L.recordedBy, cell: (row) => row.recorded_by_name ?? L.automatic },
 ];
 
-const USER_COLUMNS: readonly DataTableColumn<PlatformCenterUser>[] = [
+const userColumns = (centerId: string, canInvite: boolean): readonly DataTableColumn<PlatformCenterUser>[] => [
   { id: "name", header: L.userName, mobile: "title", cell: (row) => <span className="font-medium text-heading">{row.full_name}</span> },
   { id: "email", header: L.userEmail, mobile: "wide", cell: (row) => <span className="break-all">{row.email}</span> },
   { id: "role", header: L.userRole, cell: (row) => LABELS.roles[row.role] },
@@ -62,7 +65,19 @@ const USER_COLUMNS: readonly DataTableColumn<PlatformCenterUser>[] = [
   {
     id: "last",
     header: L.lastSignIn,
-    cell: (row) => (row.last_sign_in_at ? <span className="numeric">{formatDateTime(row.last_sign_in_at)}</span> : L.never),
+    cell: (row) => (
+      <span className="flex flex-wrap items-center gap-2">
+        {row.last_sign_in_at ? <span className="numeric">{formatDateTime(row.last_sign_in_at)}</span> : L.never}
+        {canInvite ? (
+          <ResendInvitationButton
+            centerId={centerId}
+            userId={row.user_id}
+            name={row.full_name}
+            signedIn={row.confirmed || Boolean(row.last_sign_in_at)}
+          />
+        ) : null}
+      </span>
+    ),
   },
 ];
 
@@ -96,19 +111,46 @@ function eventDetail(event: PlatformEvent): string | null {
       return to ? `${from ? `${formatDate(from)} → ` : ""}${formatDate(to)}` : null;
     case "subscription.payment_recorded":
       return typeof payload.amount === "number" ? `${payload.amount} ${LABELS.currency.code}` : null;
+    case "center.admin_invited":
+      return typeof payload.email === "string" ? payload.email : null;
     default:
       return null;
   }
 }
 
+function eventReason(event: PlatformEvent): string | null {
+  const payload = event.payload;
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return null;
+  return typeof payload.reason === "string" ? payload.reason : null;
+}
+
 export default async function PlatformCenterPage({ params }: PageProps<"/platform/centres/[id]">) {
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const file = await getPlatformCenterFile(id);
+  const [file, types] = await Promise.all([getPlatformCenterFile(id), getCenterTypes()]);
   if (!file) notFound();
   const { center, users, events, payments } = file;
   const tel = center.owner_contact_phone ? toTelHref(center.owner_contact_phone) : null;
   const branding = center.branding;
+  const terms = customTermsSchema.safeParse(center.custom_terms);
+  const actionsData: CenterActionsData = {
+    centerId: center.center_id,
+    status: center.status,
+    name: center.name,
+    slug: center.slug,
+    centerType: center.center_type,
+    customTerms: terms.success ? terms.data : EMPTY_TERMS,
+    ownerName: center.owner_contact_name ?? "",
+    ownerPhone: center.owner_contact_phone ?? "",
+    ownerEmail: center.owner_contact_email ?? "",
+    notes: center.notes ?? "",
+    plan: center.plan ?? "standard",
+    price: center.price,
+    billingInterval: center.billing_interval,
+    graceDays: center.grace_days,
+    dueDate: center.current_period_end,
+    todayIso: toISODate(today()),
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -126,6 +168,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
         <p className="text-muted-foreground">
           {center.center_type_label} · {center.plan ? P.plan[center.plan] : P.notSet}
         </p>
+        <CenterActions data={actionsData} types={types} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -253,12 +296,14 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
             <ol className="flex max-h-[420px] flex-col divide-y divide-divider overflow-y-auto">
               {events.map((event) => {
                 const detail = eventDetail(event);
+                const reason = eventReason(event);
                 return (
                   <li key={event.event_id} className="flex flex-col gap-0.5 py-3">
                     <span className="font-medium text-heading">
                       {eventLabel(event.action)}
                       {detail ? <span className="font-normal text-foreground"> · {detail}</span> : null}
                     </span>
+                    {reason ? <span className="text-caption text-foreground">{P.reason(reason)}</span> : null}
                     <span className="text-caption text-muted-foreground">
                       {formatDateTime(event.occurred_at)} · {event.actor_name ?? L.automatic}
                     </span>
@@ -274,7 +319,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
         {users.length === 0 ? (
           <p className="text-muted-foreground">{L.usersEmpty}</p>
         ) : (
-          <DataTable columns={USER_COLUMNS} rows={users} getRowId={(row) => row.user_id} caption={L.usersTitle} variant="plain" />
+          <DataTable columns={userColumns(center.center_id, center.status !== "cancelled")} rows={users} getRowId={(row) => row.user_id} caption={L.usersTitle} variant="plain" />
         )}
       </SectionCard>
     </div>

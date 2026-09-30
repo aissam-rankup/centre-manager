@@ -7,9 +7,12 @@ export type CenterRole = Exclude<UserRole, "super_admin">;
 export const ROUTES = {
   login: "/connexion",
   inactive: "/compte-inactif",
+  /** Accueil des comptes invités : choix du mot de passe. */
+  welcome: "/bienvenue",
   platform: {
     home: "/platform",
     centers: "/platform/centres",
+    newCenter: "/platform/centres/nouveau",
     billing: "/platform/facturation",
   },
   assistant: {

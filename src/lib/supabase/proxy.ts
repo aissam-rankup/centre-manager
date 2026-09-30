@@ -14,6 +14,8 @@ const appClaimsSchema = z.object({
 
 /** Chemins accessibles sans session. */
 const PUBLIC_PATHS: readonly string[] = [ROUTES.login];
+/** Chemins ouverts avec ou sans session, sans redirection (accueil des invités). */
+const OPEN_PATHS: readonly string[] = [ROUTES.welcome];
 
 function isPlatformPath(pathname: string): boolean {
   return pathname === ROUTES.platform.home || pathname.startsWith(`${ROUTES.platform.home}/`);
@@ -69,6 +71,8 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     url.search = "";
     return NextResponse.rewrite(url, { status: 404 });
   }
+
+  if (OPEN_PATHS.includes(pathname)) return response;
 
   if (!claims) {
     if (PUBLIC_PATHS.includes(pathname)) return response;

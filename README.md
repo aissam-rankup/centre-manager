@@ -156,6 +156,12 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 - **Tarif** : montant par mois ou par an ; un paiement couvre un mois ou un an à partir de l'échéance en cours, repousse l'échéance et remet le centre en actif. Un paiement n'est jamais modifié ni supprimé.
 - **Journal `platform_events`** : création, statut, échéance, tarif, formule, vocabulaire, marque et paiements, tracés par trigger (acteur nul = automatique). Append-only.
 - **Mise en production du compte** : créer l'utilisateur dans Supabase (Authentication → Users), puis exécuter `supabase/scripts/first-super-admin.sql` avec son email.
+- **Actions de la console** (fonctions `platform_*`, toutes journalisées) :
+  - **création d'un centre** en 4 étapes (identité, type d'établissement et vocabulaire, formule / tarif / durée / activation / première échéance, compte administrateur) ; l'administrateur reçoit une **invitation par courriel** et choisit son mot de passe sur `/bienvenue` ;
+  - enregistrer un paiement (un mois ou un an, remet le centre en service), modifier l'échéance (un centre en retard repasse actif si elle redevient future), formule et tarif, informations et vocabulaire ;
+  - suspendre, réactiver, résilier (motif obligatoire, journalisé ; la résiliation est définitive) ;
+  - renvoyer l'invitation, ou envoyer un lien de mot de passe à un compte déjà confirmé.
+- **Courriels Auth en français** : modèles `supabase/templates/invite.html` et `recovery.html` (liens vers `/bienvenue?token_hash=…`). En production : les coller dans Supabase → Authentication → Email Templates (Invite user, Reset password) et ajouter `https://<domaine>/bienvenue` aux Redirect URLs.
 
 ## Mode appel (professeur)
 

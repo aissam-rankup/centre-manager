@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
+import { type CustomTermsInput, customTermsSchema } from "@/lib/validation/platform";
 
 type Fn<Name extends keyof Database["public"]["Functions"]> = Database["public"]["Functions"][Name]["Returns"];
 
@@ -69,13 +70,18 @@ export async function getPlatformCenters(): Promise<PlatformCenterRow[]> {
   return data;
 }
 
-export type CenterTypeOption = { code: string; label: string };
+export type CenterTypeOption = { code: string; label: string; isCustom: boolean; terms: CustomTermsInput };
 
 export async function getCenterTypes(): Promise<CenterTypeOption[]> {
   const supabase = await platformClient();
-  const { data, error } = await supabase.from("center_types").select("code, label").order("sort_order");
+  const { data, error } = await supabase.from("center_types").select("code, label, is_custom, terms").order("sort_order");
   if (error) throw error;
-  return data;
+  return data.map((row) => ({
+    code: row.code,
+    label: row.label,
+    isCustom: row.is_custom,
+    terms: customTermsSchema.parse(row.terms),
+  }));
 }
 
 export type PlatformCenterFile = {

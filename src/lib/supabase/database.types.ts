@@ -1459,6 +1459,7 @@ export type Database = {
         Args: { p_center_id: string }
         Returns: {
           active: boolean
+          confirmed: boolean
           created_at: string
           email: string
           full_name: string
@@ -1485,6 +1486,37 @@ export type Database = {
           status: Database["public"]["Enums"]["center_status"]
           students_count: number
         }[]
+      }
+      platform_create_center: {
+        Args: {
+          p_activation_date: string
+          p_admin_full_name: string
+          p_admin_phone: string
+          p_admin_user_id: string
+          p_billing_interval: Database["public"]["Enums"]["billing_interval"]
+          p_center_type: string
+          p_custom_terms: Json
+          p_first_period_end: string
+          p_grace_days: number
+          p_name: string
+          p_notes: string
+          p_owner_contact_email: string
+          p_owner_contact_name: string
+          p_owner_contact_phone: string
+          p_plan: Database["public"]["Enums"]["subscription_plan"]
+          p_price: number
+          p_slug: string
+          p_status: Database["public"]["Enums"]["center_status"]
+        }
+        Returns: string
+      }
+      platform_log_invitation: {
+        Args: {
+          p_center_id: string
+          p_password_link?: boolean
+          p_user_id: string
+        }
+        Returns: undefined
       }
       platform_overdue_centers: {
         Args: never
@@ -1529,6 +1561,52 @@ export type Database = {
           recorded_by_name: string
           reference: string
         }[]
+      }
+      platform_record_payment: {
+        Args: {
+          p_amount: number
+          p_center_id: string
+          p_method: Database["public"]["Enums"]["subscription_payment_method"]
+          p_paid_at: string
+          p_reference?: string
+        }
+        Returns: string
+      }
+      platform_set_due_date: {
+        Args: { p_center_id: string; p_due_date: string; p_reason?: string }
+        Returns: undefined
+      }
+      platform_set_pricing: {
+        Args: {
+          p_billing_interval: Database["public"]["Enums"]["billing_interval"]
+          p_center_id: string
+          p_grace_days: number
+          p_plan: Database["public"]["Enums"]["subscription_plan"]
+          p_price: number
+        }
+        Returns: undefined
+      }
+      platform_set_status: {
+        Args: {
+          p_center_id: string
+          p_reason: string
+          p_status: Database["public"]["Enums"]["center_status"]
+        }
+        Returns: undefined
+      }
+      platform_update_center: {
+        Args: {
+          p_center_id: string
+          p_center_type: string
+          p_custom_terms: Json
+          p_name: string
+          p_notes: string
+          p_owner_contact_email: string
+          p_owner_contact_name: string
+          p_owner_contact_phone: string
+          p_slug: string
+        }
+        Returns: undefined
       }
       set_my_photo: { Args: { p_path?: string }; Returns: undefined }
     }

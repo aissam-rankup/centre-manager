@@ -256,7 +256,9 @@ returns table (
   role public.user_role,
   active boolean,
   created_at timestamptz,
-  last_sign_in_at timestamptz
+  last_sign_in_at timestamptz,
+  -- Invitation ouverte (ou compte créé confirmé) : un lien de mot de passe remplace l'invitation.
+  confirmed boolean
 )
 language plpgsql
 stable
@@ -266,7 +268,8 @@ as $$
 begin
   perform private.require_super_admin();
   return query
-  select p.id, p.full_name, u.email::text, p.role, p.active, p.created_at, u.last_sign_in_at
+  select p.id, p.full_name, u.email::text, p.role, p.active, p.created_at, u.last_sign_in_at,
+         u.email_confirmed_at is not null
   from public.profiles p
   join auth.users u on u.id = p.id
   where p.center_id = p_center_id
