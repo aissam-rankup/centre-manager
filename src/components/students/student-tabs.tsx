@@ -8,10 +8,10 @@ import { useLabels } from "@/lib/i18n/client";
 type Panel = { value: string; label: string; count: number; content: ReactNode };
 
 /** Onglets de la fiche élève : Paiements / Absences / Relances (clavier : flèches). */
-export function StudentTabs({ panels }: { panels: Panel[] }) {
+export function StudentTabs({ panels, defaultValue }: { panels: Panel[]; defaultValue?: string }) {
   const LABELS = useLabels();
   return (
-    <Tabs.Root defaultValue={panels[0]?.value} className="flex flex-col gap-4">
+    <Tabs.Root defaultValue={panels.some((panel) => panel.value === defaultValue) ? defaultValue : panels[0]?.value} className="flex flex-col gap-4">
       <Tabs.List
         aria-label={LABELS.assistant.student.tabsLabel}
         className="no-scrollbar flex w-full gap-1 overflow-x-auto rounded-xl bg-card p-1 shadow-card sm:w-fit"

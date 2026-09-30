@@ -139,7 +139,9 @@ async function StudentList({ students }: { students: TeacherStudentRow[] }) {
               <li key={student.key} className="flex items-center gap-3 rounded-xl bg-card p-4 shadow-card">
                 <StudentAvatar name={student.fullName} photoUrl={student.photoUrl} />
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="truncate font-medium text-heading">{student.fullName}</span>
+                  <Link href={ROUTES.teacher.student(student.studentId)} className="truncate rounded-sm font-medium text-heading hover:text-primary">
+                    {student.fullName}
+                  </Link>
                   <span className="truncate text-caption text-muted-foreground">
                     {student.levelName} · {student.subjectName}
                   </span>
@@ -178,7 +180,9 @@ async function StudentList({ students }: { students: TeacherStudentRow[] }) {
                     <td className="px-3 pl-4 lg:px-4 lg:pl-6">
                       <span className="flex items-center gap-3 font-medium text-heading">
                         <StudentAvatar name={student.fullName} photoUrl={student.photoUrl} className="size-7 border" />
-                        <span className="truncate">{student.fullName}</span>
+                        <Link href={ROUTES.teacher.student(student.studentId)} className="truncate rounded-sm hover:text-primary">
+                          {student.fullName}
+                        </Link>
                       </span>
                     </td>
                     <td className="max-w-[150px] truncate px-3 lg:px-4 xl:max-w-none" title={student.levelName}>

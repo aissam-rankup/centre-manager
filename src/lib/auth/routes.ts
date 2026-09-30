@@ -29,6 +29,8 @@ export const ROUTES = {
     home: "/professeur",
     schedule: "/professeur/emploi-du-temps",
     call: (slotId: string) => `/professeur/appel/${slotId}`,
+    /** Fiche d'assiduité d'un élève (matières du professeur). */
+    student: (studentId: string) => `/professeur/eleves/${studentId}`,
   },
   admin: {
     home: "/admin",

@@ -167,6 +167,14 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 - **Accès support (lecture seule)** : depuis la fiche d'un centre, motif obligatoire, 1 heure ; le super-admin consulte l'espace administration du centre avec un bandeau permanent ; toute écriture est refusée en base (trigger sur chaque table métier et policies de stockage) ; ouverture et fermeture journalisées.
 - **Courriels Auth en français** : modèles `supabase/templates/invite.html` et `recovery.html` (liens vers `/bienvenue?token_hash=…`). En production : les coller dans Supabase → Authentication → Email Templates (Invite user, Reset password) et ajouter `https://<domaine>/bienvenue` aux Redirect URLs.
 
+## Fiche d'assiduité
+
+- **Où** : onglet « Absences » de la fiche élève (admin, assistant) ; pour un professeur, `/professeur/eleves/<id>` depuis « Mes élèves », limité à ses matières (filtrage en base : `public.student_attendance`).
+- **Contenu** : nombre d'absences et taux de présence (global et par matière), séries d'absences consécutives (calculées sur tout l'historique de la matière) avec l'alerte de la 3ᵉ absence signalée, liste des séances manquées de la plus récente à la plus ancienne (date, jour, horaire du créneau, matière, professeur, motif), relances d'absence envoyées au responsable (admin, assistant).
+- **Filtres** (dans l'adresse) : `periode=mois|trimestre|tout`, `matiere=<id>`.
+- **Motif** : saisi sur chaque absence (`attendance.note`, 300 caractères) par l'administrateur, l'assistant ou le professeur de la matière.
+- **Export PDF** : `/fiches/assiduite/<id>` (mêmes filtres), généré côté serveur (`@react-pdf/renderer`), au nom, au logo (PNG ou JPEG) et à la couleur du centre, dans son vocabulaire.
+
 ## Marque blanche
 
 - **Formules** : `standard` (interface aux couleurs de CentroManager, aucun réglage de marque modifiable par le centre) ; `white_label` (nom, logo, favicon, couleurs, fond de connexion, expéditeur et contact de support du client ; la marque de la plateforme n'apparaît plus côté centre). Seul le super-admin change la formule.

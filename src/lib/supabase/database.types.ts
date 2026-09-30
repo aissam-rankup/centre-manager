@@ -62,6 +62,7 @@ export type Database = {
         Row: {
           id: string
           marked_at: string
+          note: string | null
           session_date: string
           status: Database["public"]["Enums"]["attendance_status"]
           student_id: string
@@ -71,6 +72,7 @@ export type Database = {
         Insert: {
           id?: string
           marked_at?: string
+          note?: string | null
           session_date: string
           status: Database["public"]["Enums"]["attendance_status"]
           student_id: string
@@ -80,6 +82,7 @@ export type Database = {
         Update: {
           id?: string
           marked_at?: string
+          note?: string | null
           session_date?: string
           status?: Database["public"]["Enums"]["attendance_status"]
           student_id?: string
@@ -1819,7 +1822,36 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_attendance_note: {
+        Args: { p_attendance_id: string; p_note: string }
+        Returns: undefined
+      }
       set_my_photo: { Args: { p_path?: string }; Returns: undefined }
+      student_absence_follow_ups: {
+        Args: { p_student_id: string }
+        Returns: {
+          author_name: string
+          channel: Database["public"]["Enums"]["follow_up_channel"]
+          created_at: string
+          follow_up_id: string
+          note: string
+        }[]
+      }
+      student_attendance: {
+        Args: { p_student_id: string }
+        Returns: {
+          attendance_id: string
+          end_time: string
+          level_name: string
+          note: string
+          session_date: string
+          start_time: string
+          status: Database["public"]["Enums"]["attendance_status"]
+          subject_id: string
+          subject_name: string
+          teacher_name: string
+        }[]
+      }
       update_center_branding: {
         Args: {
           p_accent_color: string

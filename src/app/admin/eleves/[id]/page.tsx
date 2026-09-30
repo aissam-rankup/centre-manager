@@ -6,12 +6,14 @@ import { z } from "zod";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import {
-  AbsencesSection,
   FollowUpsSection,
   PaymentsSection,
   StudentHeader,
 } from "@/components/students/student-file-sections";
 import { StudentTabs } from "@/components/students/student-tabs";
+import { AttendanceSheet } from "@/components/attendance/attendance-sheet";
+import { parseAttendanceFilters } from "@/lib/attendance";
+import { getAttendanceData } from "@/lib/data/attendance";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
@@ -27,12 +29,15 @@ export async function generateMetadata({ params }: PageProps<"/admin/eleves/[id]
   return { title: student?.fullName ?? (await getLabels()).assistant.student.notFoundTitle };
 }
 
-export default async function AdminStudentPage({ params }: PageProps<"/admin/eleves/[id]">) {
+export default async function AdminStudentPage({ params, searchParams }: PageProps<"/admin/eleves/[id]">) {
   const LABELS = await getLabels();
   const L = LABELS.assistant.student;
   const T = L.tabs;
   await requireRole("admin");
   const { id } = await params;
+  const query = await searchParams;
+  const filters = parseAttendanceFilters(query);
+  const tab = typeof query.onglet === "string" ? query.onglet : undefined;
   if (!z.uuid().safeParse(id).success) notFound();
 
   const [student, levels, catalog] = await Promise.all([getStudentFile(id), getLevelOptions(), getLevelsWithSubjects()]);
@@ -73,9 +78,18 @@ export default async function AdminStudentPage({ params }: PageProps<"/admin/ele
       />
 
       <StudentTabs
+        defaultValue={tab}
         panels={[
           { value: "paiements", label: T.payments, count: student.invoices.length, content: <PaymentsSection student={student} /> },
-          { value: "absences", label: T.absences, count: student.absences.length, content: <AbsencesSection student={student} /> },
+          { value: "absences", label: T.absences, count: student.absences.length, content: (
+              <AttendanceSheet
+                data={await getAttendanceData(student.id)}
+                filters={filters}
+                basePath={`${ROUTES.admin.students}/${student.id}`}
+                keep={{ onglet: "absences" }}
+              />
+            ),
+          },
           { value: "relances", label: T.followUps, count: student.followUps.length, content: <FollowUpsSection student={student} /> },
         ]}
       />

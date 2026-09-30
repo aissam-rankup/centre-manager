@@ -12,6 +12,8 @@ const appHost = (() => {
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
+  // Moteur PDF (fiches d'assiduité) : chargé tel quel par Node, sans passer par le bundler.
+  serverExternalPackages: ["@react-pdf/renderer"],
   experimental: {
     serverActions: {
       // Photo élève (2 Mo max côté serveur, ~150 Ko en pratique après compression) + marge multipart.
