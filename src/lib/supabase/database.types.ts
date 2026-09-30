@@ -217,6 +217,7 @@ export type Database = {
       centers: {
         Row: {
           activated_at: string | null
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
           cancelled_at: string | null
           center_type: string
           created_at: string
@@ -224,17 +225,18 @@ export type Database = {
           custom_terms: Json
           grace_days: number
           id: string
-          monthly_price: number | null
           name: string
           notes: string | null
           owner_contact_email: string | null
           owner_contact_name: string | null
           owner_contact_phone: string | null
+          price: number | null
           slug: string
           status: Database["public"]["Enums"]["center_status"]
         }
         Insert: {
           activated_at?: string | null
+          billing_interval?: Database["public"]["Enums"]["billing_interval"]
           cancelled_at?: string | null
           center_type?: string
           created_at?: string
@@ -242,17 +244,18 @@ export type Database = {
           custom_terms?: Json
           grace_days?: number
           id?: string
-          monthly_price?: number | null
           name: string
           notes?: string | null
           owner_contact_email?: string | null
           owner_contact_name?: string | null
           owner_contact_phone?: string | null
+          price?: number | null
           slug: string
           status?: Database["public"]["Enums"]["center_status"]
         }
         Update: {
           activated_at?: string | null
+          billing_interval?: Database["public"]["Enums"]["billing_interval"]
           cancelled_at?: string | null
           center_type?: string
           created_at?: string
@@ -260,12 +263,12 @@ export type Database = {
           custom_terms?: Json
           grace_days?: number
           id?: string
-          monthly_price?: number | null
           name?: string
           notes?: string | null
           owner_contact_email?: string | null
           owner_contact_name?: string | null
           owner_contact_phone?: string | null
+          price?: number | null
           slug?: string
           status?: Database["public"]["Enums"]["center_status"]
         }
@@ -1001,37 +1004,40 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          amount: number
           auto_renew: boolean
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
           center_id: string
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
           id: string
-          monthly_amount: number
           plan: Database["public"]["Enums"]["subscription_plan"]
           started_at: string
           status: Database["public"]["Enums"]["center_status"]
         }
         Insert: {
+          amount?: number
           auto_renew?: boolean
+          billing_interval?: Database["public"]["Enums"]["billing_interval"]
           center_id: string
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
-          monthly_amount?: number
           plan?: Database["public"]["Enums"]["subscription_plan"]
           started_at?: string
           status?: Database["public"]["Enums"]["center_status"]
         }
         Update: {
+          amount?: number
           auto_renew?: boolean
+          billing_interval?: Database["public"]["Enums"]["billing_interval"]
           center_id?: string
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
-          monthly_amount?: number
           plan?: Database["public"]["Enums"]["subscription_plan"]
           started_at?: string
           status?: Database["public"]["Enums"]["center_status"]
@@ -1405,6 +1411,7 @@ export type Database = {
     Enums: {
       alert_type: "consecutive_absences" | "overdue_payment"
       attendance_status: "present" | "absent"
+      billing_interval: "month" | "year"
       center_status: "trial" | "active" | "past_due" | "suspended" | "cancelled"
       follow_up_channel: "phone" | "whatsapp" | "in_person"
       follow_up_type: "payment" | "absence"
@@ -1541,6 +1548,7 @@ export const Constants = {
     Enums: {
       alert_type: ["consecutive_absences", "overdue_payment"],
       attendance_status: ["present", "absent"],
+      billing_interval: ["month", "year"],
       center_status: ["trial", "active", "past_due", "suspended", "cancelled"],
       follow_up_channel: ["phone", "whatsapp", "in_person"],
       follow_up_type: ["payment", "absence"],

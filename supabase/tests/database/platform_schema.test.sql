@@ -5,7 +5,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(22);
+select plan(24);
 
 insert into auth.users (id, email) values
   ('a8000000-0000-4000-8000-000000000001', 'admin-p15@test.local'),
@@ -40,7 +40,7 @@ select throws_ok(
   '23514', null, 'vocabulaire incomplet refusé (pluriel et genre obligatoires)');
 
 -- Paiement : période d'un mois, centre actif, échéance repoussée.
-update public.centers set current_period_end = '2026-10-10', monthly_price = 400
+update public.centers set current_period_end = '2026-10-10', price = 400
 where id = 'c8000000-0000-4000-8000-000000000001';
 insert into public.subscription_payments (center_id, amount, paid_at, method)
 values ('c8000000-0000-4000-8000-000000000001', 400, '2026-10-08', 'cash');
@@ -49,7 +49,7 @@ select is((select period_covered_start || ' ' || period_covered_end from public.
   '2026-10-10 2026-11-10', 'paiement : un mois à partir de l''échéance en cours');
 select is((select status::text || ' ' || current_period_end from public.centers where id = 'c8000000-0000-4000-8000-000000000001'),
   'active 2026-11-10', 'paiement : centre actif, échéance repoussée d''un mois');
-select is((select status::text || ' ' || current_period_end || ' ' || monthly_amount from public.subscriptions
+select is((select status::text || ' ' || current_period_end || ' ' || amount from public.subscriptions
            where center_id = 'c8000000-0000-4000-8000-000000000001'),
   'active 2026-11-10 400.00', 'abonnement synchronisé avec le centre');
 select is((select array_agg(action order by id)::text from public.platform_events
@@ -62,6 +62,18 @@ select throws_ok(
 select throws_ok(
   $$update public.platform_events set action = 'x.y'$$,
   '42501', null, 'journal : jamais modifié');
+
+-- Facturation annuelle : un paiement couvre un an.
+update public.centers set billing_interval = 'year', price = 4000, current_period_end = '2026-10-10'
+where id = 'c8000000-0000-4000-8000-000000000002';
+insert into public.subscription_payments (center_id, amount, paid_at, method)
+values ('c8000000-0000-4000-8000-000000000002', 4000, '2026-10-01', 'bank_transfer');
+select is((select period_covered_end::text from public.subscription_payments
+           where center_id = 'c8000000-0000-4000-8000-000000000002'),
+  '2027-10-10', 'formule annuelle : un an couvert');
+select is((select billing_interval::text || ' ' || amount from public.subscriptions
+           where center_id = 'c8000000-0000-4000-8000-000000000002'),
+  'year 4000.00', 'abonnement : durée et montant synchronisés');
 
 update public.centers set status = 'cancelled' where id = 'c8000000-0000-4000-8000-000000000002';
 select throws_ok(
@@ -82,7 +94,7 @@ select throws_ok(
   $$update public.centers set status = 'active' where id = 'c8000000-0000-4000-8000-000000000001'$$,
   '42501', null, 'admin : ne change pas son statut');
 select throws_ok(
-  $$select notes, monthly_price from public.centers$$,
+  $$select notes, price from public.centers$$,
   '42501', null, 'admin : notes internes et tarif illisibles');
 select throws_ok($$select 1 from public.subscriptions$$, '42501', null, 'admin : abonnements illisibles');
 select throws_ok($$select 1 from public.platform_events$$, '42501', null, 'admin : journal illisible');

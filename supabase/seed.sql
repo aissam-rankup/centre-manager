@@ -82,7 +82,7 @@ begin
   -- -------------------------------------------------------------------
   -- Centre et comptes
   -- -------------------------------------------------------------------
-  insert into public.centers (id, name, slug, center_type, monthly_price, owner_contact_name, owner_contact_phone, owner_contact_email)
+  insert into public.centers (id, name, slug, center_type, price, owner_contact_name, owner_contact_phone, owner_contact_email)
   values (c_center, 'Centre Al Wiam — Casablanca', 'al-wiam', 'soutien_scolaire', 490,
           'Nadia Berrada', '06 61 12 34 56', 'direction@alwiam.demo');
 
@@ -370,10 +370,10 @@ declare
   v_today date := private.today();
   v_level uuid;
 begin
-  -- Centre de formation, en période d'essai.
-  insert into public.centers (id, name, slug, center_type, monthly_price, current_period_end,
+  -- Centre de formation, en période d'essai, facturé à l'année.
+  insert into public.centers (id, name, slug, center_type, price, billing_interval, current_period_end,
                               owner_contact_name, owner_contact_phone, owner_contact_email)
-  values (c_formation, 'Institut Formation Pro — Rabat', 'formation-pro', 'centre_formation', 390, v_today + 10,
+  values (c_formation, 'Institut Formation Pro — Rabat', 'formation-pro', 'centre_formation', 3900, 'year', v_today + 10,
           'Hicham Alaoui', '06 70 11 22 33', 'contact@formationpro.demo');
   perform pg_temp.create_demo_user('20000000-0000-4000-8000-000000000021', c_formation,
     'admin-formation@centro.demo', 'Hicham Alaoui', 'admin', '06 70 11 22 33');
@@ -383,7 +383,7 @@ begin
     (c_formation, v_level, 'Module JavaScript', 700);
 
   -- Auto-école en marque blanche, échéance dépassée de 3 jours.
-  insert into public.centers (id, name, slug, center_type, monthly_price,
+  insert into public.centers (id, name, slug, center_type, price,
                               owner_contact_name, owner_contact_phone, owner_contact_email)
   values (c_atlas, 'Auto-école Atlas — Marrakech', 'atlas', 'auto_ecole', 690,
           'Samira Ouazzani', '06 75 44 55 66', 'direction@atlas.demo');

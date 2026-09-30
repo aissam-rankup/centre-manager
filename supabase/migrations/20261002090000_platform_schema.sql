@@ -29,6 +29,8 @@ alter type public.user_role add value if not exists 'super_admin';
 
 create type public.center_status as enum ('trial', 'active', 'past_due', 'suspended', 'cancelled');
 create type public.subscription_plan as enum ('standard', 'white_label');
+-- Durée facturée : un mois ou une année (choisie par le super-admin).
+create type public.billing_interval as enum ('month', 'year');
 create type public.subscription_payment_method as enum ('bank_transfer', 'cash', 'card');
 
 -- ---------------------------------------------------------------------
@@ -141,7 +143,9 @@ alter table public.centers
   add column activated_at timestamptz,
   add column current_period_end date,
   add column grace_days smallint not null default 5 check (grace_days between 0 and 60),
-  add column monthly_price numeric(10, 2) check (monthly_price >= 0),
+  -- Tarif par durée facturée (mois ou année), en MAD ; nul tant qu'il n'est pas fixé.
+  add column price numeric(10, 2) check (price >= 0),
+  add column billing_interval public.billing_interval not null default 'month',
   add column center_type text not null default 'soutien_scolaire' references public.center_types (code),
   -- Surcharge du vocabulaire (type « Personnalisé » surtout).
   add column custom_terms jsonb not null default '{}' check (private.valid_terms(custom_terms, false)),
@@ -252,7 +256,8 @@ create table public.subscriptions (
   id uuid primary key default gen_random_uuid(),
   center_id uuid not null unique references public.centers (id) on delete cascade,
   plan public.subscription_plan not null default 'standard',
-  monthly_amount numeric(10, 2) not null default 0 check (monthly_amount >= 0),
+  amount numeric(10, 2) not null default 0 check (amount >= 0),
+  billing_interval public.billing_interval not null default 'month',
   started_at date not null default private.today(),
   current_period_start date,
   current_period_end date,
@@ -335,8 +340,8 @@ set search_path = ''
 as $$
 begin
   if tg_op = 'INSERT' then
-    insert into public.subscriptions (center_id, monthly_amount, current_period_end, status)
-    values (new.id, coalesce(new.monthly_price, 0), new.current_period_end, new.status)
+    insert into public.subscriptions (center_id, amount, billing_interval, current_period_end, status)
+    values (new.id, coalesce(new.price, 0), new.billing_interval, new.current_period_end, new.status)
     on conflict (center_id) do nothing;
     perform private.log_platform_event(new.id, 'center.created',
       jsonb_build_object('name', new.name, 'slug', new.slug, 'status', new.status, 'center_type', new.center_type));
@@ -344,12 +349,13 @@ begin
   end if;
 
   update public.subscriptions s
-  set monthly_amount = coalesce(new.monthly_price, 0),
+  set amount = coalesce(new.price, 0),
+      billing_interval = new.billing_interval,
       current_period_end = new.current_period_end,
       status = new.status
   where s.center_id = new.id
-    and (s.monthly_amount, s.current_period_end, s.status)
-        is distinct from (coalesce(new.monthly_price, 0), new.current_period_end, new.status);
+    and (s.amount, s.billing_interval, s.current_period_end, s.status)
+        is distinct from (coalesce(new.price, 0), new.billing_interval, new.current_period_end, new.status);
 
   if new.status is distinct from old.status then
     perform private.log_platform_event(new.id, 'center.status_changed',
@@ -363,9 +369,9 @@ begin
     perform private.log_platform_event(new.id, 'center.vocabulary_changed',
       jsonb_build_object('from', old.center_type, 'to', new.center_type));
   end if;
-  if (new.monthly_price, new.grace_days) is distinct from (old.monthly_price, old.grace_days) then
+  if (new.price, new.billing_interval, new.grace_days) is distinct from (old.price, old.billing_interval, old.grace_days) then
     perform private.log_platform_event(new.id, 'center.pricing_changed',
-      jsonb_build_object('monthly_price', new.monthly_price, 'grace_days', new.grace_days));
+      jsonb_build_object('price', new.price, 'billing_interval', new.billing_interval, 'grace_days', new.grace_days));
   end if;
   if (new.slug, new.name) is distinct from (old.slug, old.name) then
     perform private.log_platform_event(new.id, 'center.identity_changed',
@@ -425,7 +431,7 @@ create trigger subscriptions_after_update
 after update on public.subscriptions
 for each row execute function private.subscriptions_after_update();
 
--- Paiement d'abonnement : période couverte d'un mois à partir de
+-- Paiement d'abonnement : période couverte d'un mois (ou d'un an) à partir de
 -- l'échéance en cours (ou de la date de paiement si aucune échéance),
 -- échéance repoussée, centre remis en service. Un centre annulé
 -- n'encaisse plus de paiement.
@@ -444,7 +450,8 @@ begin
   end if;
 
   new.period_covered_start := coalesce(new.period_covered_start, v_center.current_period_end, new.paid_at);
-  new.period_covered_end := coalesce(new.period_covered_end, (new.period_covered_start + interval '1 month')::date);
+  new.period_covered_end := coalesce(new.period_covered_end, (new.period_covered_start
+    + case v_center.billing_interval when 'year' then interval '1 year' else interval '1 month' end)::date);
   new.recorded_by := coalesce(new.recorded_by, (select auth.uid()));
   return new;
 end;
@@ -508,8 +515,8 @@ before insert or update on public.center_branding
 for each row execute function private.center_branding_before_write();
 
 -- Abonnements des centres existants.
-insert into public.subscriptions (center_id, monthly_amount, started_at, current_period_end, status)
-select c.id, coalesce(c.monthly_price, 0), (c.created_at at time zone 'Africa/Casablanca')::date, c.current_period_end, c.status
+insert into public.subscriptions (center_id, amount, billing_interval, started_at, current_period_end, status)
+select c.id, coalesce(c.price, 0), c.billing_interval, (c.created_at at time zone 'Africa/Casablanca')::date, c.current_period_end, c.status
 from public.centers c
 on conflict (center_id) do nothing;
 
