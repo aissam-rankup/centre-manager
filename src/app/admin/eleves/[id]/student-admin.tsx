@@ -23,23 +23,23 @@ import {
   updateStudent,
 } from "@/lib/actions/admin";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { LevelOption } from "@/lib/data/admin";
 import type { LevelWithSubjects, StudentEnrollment, StudentFile, StudentPackSubscription } from "@/lib/data/assistant";
 import { formatMAD } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { studentUpdateSchema } from "@/lib/validation/admin";
-
-const L = LABELS.admin.students;
-const F = LABELS.assistant.newStudent.fields;
+import { adminSchemas } from "@/lib/validation/admin";
 
 // ---------------------------------------------------------------------
 // Modifier / supprimer l'élève
 // ---------------------------------------------------------------------
 export function StudentAdminActions({ student, levels }: { student: StudentFile; levels: LevelOption[] }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.students;
+  const F = LABELS.assistant.newStudent.fields;
   const router = useRouter();
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
-    schema: studentUpdateSchema,
+    schema: adminSchemas(LABELS).studentUpdateSchema,
     defaultValues: {
       id: student.id,
       fullName: student.fullName,
@@ -128,6 +128,8 @@ export function EnrollmentsEditor({
   levelSubjects,
   levelPacks,
 }: EnrollmentsEditorProps) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.students;
   const E = L.enrollments;
   const standalone = enrollments.filter((enrollment) => !enrollment.packEnrollmentId);
   const covered = enrollments.filter((enrollment) => enrollment.packEnrollmentId && enrollment.active);
@@ -182,6 +184,8 @@ export function EnrollmentsEditor({
 }
 
 function PackRow({ subscription }: { subscription: StudentPackSubscription }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.students;
   const E = L.enrollments;
   const [price, setPrice] = useState(String(subscription.priceAgreed));
   const [pending, startTransition] = useTransition();
@@ -237,6 +241,8 @@ function PackRow({ subscription }: { subscription: StudentPackSubscription }) {
 }
 
 function SubscribePack({ studentId, packs }: { studentId: string; packs: LevelWithSubjects["packs"] }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.students;
   const E = L.enrollments;
   const [packId, setPackId] = useState("");
   const [pending, startTransition] = useTransition();
@@ -277,6 +283,8 @@ function SubscribePack({ studentId, packs }: { studentId: string; packs: LevelWi
 }
 
 function EnrollmentRow({ enrollment }: { enrollment: StudentEnrollment }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.students;
   const E = L.enrollments;
   const [price, setPrice] = useState(String(enrollment.priceAgreed));
   const [pending, startTransition] = useTransition();
@@ -328,6 +336,8 @@ function EnrollmentRow({ enrollment }: { enrollment: StudentEnrollment }) {
 }
 
 function AddEnrollment({ studentId, subjects }: { studentId: string; subjects: LevelWithSubjects["subjects"] }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.students;
   const E = L.enrollments;
   const [subjectId, setSubjectId] = useState("");
   const [pending, startTransition] = useTransition();

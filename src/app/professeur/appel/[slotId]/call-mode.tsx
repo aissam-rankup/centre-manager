@@ -9,11 +9,10 @@ import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { saveAttendance } from "@/lib/actions/teacher";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { CallStudent, TeacherSlot } from "@/lib/data/teacher";
 import { cn } from "@/lib/utils";
 
-const L = LABELS.teacher.call;
 type Mark = "present" | "absent";
 type Marks = Record<string, Mark | null>;
 
@@ -26,6 +25,8 @@ type CallModeProps = {
 };
 
 export function CallMode({ slot, students }: CallModeProps) {
+  const LABELS = useLabels();
+  const L = LABELS.teacher.call;
   const router = useRouter();
   const initialMarks = useMemo<Marks>(
     () => Object.fromEntries(students.map((student) => [student.id, student.status])),
@@ -316,6 +317,8 @@ export function CallMode({ slot, students }: CallModeProps) {
 }
 
 function MarkBadge({ mark }: { mark: Mark | null }) {
+  const LABELS = useLabels();
+  const L = LABELS.teacher.call;
   const tone = mark === "present" ? "success" : mark === "absent" ? "danger" : "neutral";
   return <CountPill tone={tone}>{mark ? L[mark] : L.notMarked}</CountPill>;
 }

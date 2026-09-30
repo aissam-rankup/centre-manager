@@ -7,16 +7,20 @@ import { z } from "zod";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getCallSheet } from "@/lib/data/teacher";
 
 import { CallMode } from "./call-mode";
 
-const L = LABELS.teacher.call;
 
-export const metadata: Metadata = { title: LABELS.teacher.home.takeAttendance };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  return { title: LABELS.teacher.home.takeAttendance };
+}
 
 export default async function CallPage({ params }: PageProps<"/professeur/appel/[slotId]">) {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.call;
   const { slotId } = await params;
   const sheet = z.uuid().safeParse(slotId).success ? await getCallSheet(slotId) : null;
 
@@ -27,7 +31,9 @@ export default async function CallPage({ params }: PageProps<"/professeur/appel/
   return <CallMode slot={sheet.slot} students={sheet.students} />;
 }
 
-function Fallback({ icon, title, description }: { icon: typeof Users; title: string; description: string }): ReactNode {
+async function Fallback({ icon, title, description }: { icon: typeof Users; title: string; description: string }): Promise<ReactNode> {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.call;
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background p-4">
       <EmptyState

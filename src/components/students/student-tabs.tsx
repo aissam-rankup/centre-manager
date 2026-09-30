@@ -3,12 +3,13 @@
 import { Tabs } from "radix-ui";
 import type { ReactNode } from "react";
 
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 
 type Panel = { value: string; label: string; count: number; content: ReactNode };
 
 /** Onglets de la fiche élève : Paiements / Absences / Relances (clavier : flèches). */
 export function StudentTabs({ panels }: { panels: Panel[] }) {
+  const LABELS = useLabels();
   return (
     <Tabs.Root defaultValue={panels[0]?.value} className="flex flex-col gap-4">
       <Tabs.List

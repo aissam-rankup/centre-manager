@@ -8,15 +8,20 @@ import { Money } from "@/components/shared/money";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { type AdminLevel, getLevelsWithStats } from "@/lib/data/admin";
 
-const L = LABELS.admin.subjects;
-const C = LABELS.admin.common;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.subjects;
+  return { title: L.title };
+}
 
 export default async function AdminSubjectsPage() {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.subjects;
+  const C = LABELS.admin.common;
   const levels = await getLevelsWithStats();
   const nextSortOrder = Math.max(0, ...levels.map((level) => level.sortOrder)) + 1;
 
@@ -117,7 +122,10 @@ export default async function AdminSubjectsPage() {
   );
 }
 
-function LevelPacks({ level }: { level: AdminLevel }) {
+async function LevelPacks({ level }: { level: AdminLevel }) {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.subjects;
+  const C = LABELS.admin.common;
   const subjectName = new Map(level.subjects.map((subject) => [subject.id, subject.name]));
 
   return (

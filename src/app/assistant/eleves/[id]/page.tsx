@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import {
   AbsencesSection,
   FollowUpsSection,
@@ -16,9 +16,6 @@ import {
 } from "@/components/students/student-file-sections";
 import { StudentTabs } from "@/components/students/student-tabs";
 import { getStudentFile, type StudentFile } from "@/lib/data/assistant";
-
-const L = LABELS.assistant.student;
-const T = L.tabs;
 
 async function loadStudent(id: string): Promise<StudentFile> {
   if (!z.uuid().safeParse(id).success) notFound();
@@ -30,10 +27,13 @@ async function loadStudent(id: string): Promise<StudentFile> {
 export async function generateMetadata({ params }: PageProps<"/assistant/eleves/[id]">): Promise<Metadata> {
   const { id } = await params;
   const student = z.uuid().safeParse(id).success ? await getStudentFile(id) : null;
-  return { title: student?.fullName ?? L.notFoundTitle };
+  return { title: student?.fullName ?? (await getLabels()).assistant.student.notFoundTitle };
 }
 
 export default async function StudentFilePage({ params }: PageProps<"/assistant/eleves/[id]">) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.student;
+  const T = L.tabs;
   const { id } = await params;
   const student = await loadStudent(id);
 

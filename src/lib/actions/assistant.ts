@@ -3,23 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { type ActionResult, describeDatabaseError, failure, success } from "@/lib/actions/result";
+import { type ActionResult, failure, success } from "@/lib/actions/result";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireStaff } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { searchStudentDirectory, type StudentListItem } from "@/lib/data/assistant";
 import { formatPhone } from "@/lib/phone";
 import { isJpeg, PHOTO_BUCKET, studentPhotoPath } from "@/lib/storage/photos";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import {
-  followUpSchema,
-  newStudentSchema,
-  newTeacherSchema,
-  PHOTO_MAX_BYTES,
-} from "@/lib/validation/assistant";
+import { assistantSchemas, PHOTO_MAX_BYTES } from "@/lib/validation/assistant";
 
-const E = LABELS.actions.errors;
+/** Schémas dans le vocabulaire du centre connecté. */
+async function assistantSchemasNow() {
+  return assistantSchemas(await getLabels());
+}
 
 /** Première erreur de chaque champ, pour l'affichage sous les champs du formulaire. */
 function fieldErrorsOf(error: z.ZodError): Record<string, string> {
@@ -39,6 +37,8 @@ function revalidateAssistant() {
 // Recherche instantanée
 // ---------------------------------------------------------------------
 export async function searchStudents(query: string): Promise<ActionResult<StudentListItem[]>> {
+  const LABELS = await getLabels();
+  const E = LABELS.actions.errors;
   const parsed = z.string().max(100).safeParse(query);
   if (!parsed.success) return failure(E.invalid);
   try {
@@ -52,6 +52,8 @@ export async function searchStudents(query: string): Promise<ActionResult<Studen
 // Paiement intégral
 // ---------------------------------------------------------------------
 export async function markInvoicePaid(invoiceId: string): Promise<ActionResult> {
+  const LABELS = await getLabels();
+  const E = LABELS.actions.errors;
   const parsed = z.uuid().safeParse(invoiceId);
   if (!parsed.success) return failure(E.invalid);
 
@@ -59,7 +61,7 @@ export async function markInvoicePaid(invoiceId: string): Promise<ActionResult> 
   const supabase = await createClient();
   const { error } = await supabase.rpc("mark_invoice_paid", { p_invoice_id: parsed.data });
   if (error) {
-    return failure(error.code === "P0002" ? LABELS.assistant.student.payments.alreadyPaid : describeDatabaseError(error));
+    return failure(error.code === "P0002" ? LABELS.assistant.student.payments.alreadyPaid : await describeCenterError(error));
   }
 
   revalidateAssistant();
@@ -70,7 +72,9 @@ export async function markInvoicePaid(invoiceId: string): Promise<ActionResult> 
 // Relance
 // ---------------------------------------------------------------------
 export async function recordFollowUp(input: unknown): Promise<ActionResult> {
-  const parsed = followUpSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const E = LABELS.actions.errors;
+  const parsed = (await assistantSchemasNow()).followUpSchema.safeParse(input);
   if (!parsed.success) return failure(E.invalid, fieldErrorsOf(parsed.error));
 
   const profile = await requireStaff();
@@ -85,7 +89,7 @@ export async function recordFollowUp(input: unknown): Promise<ActionResult> {
     note: note || null,
     created_by: profile.id,
   });
-  if (error) return failure(describeDatabaseError(error));
+  if (error) return failure(await describeCenterError(error));
 
   revalidateAssistant();
   return success();
@@ -95,6 +99,8 @@ export async function recordFollowUp(input: unknown): Promise<ActionResult> {
 // Nouvel élève
 // ---------------------------------------------------------------------
 export async function createStudent(formData: FormData): Promise<ActionResult<{ studentId: string }>> {
+  const LABELS = await getLabels();
+  const E = LABELS.actions.errors;
   const S = LABELS.assistant.newStudent;
 
   let raw: unknown;
@@ -103,7 +109,7 @@ export async function createStudent(formData: FormData): Promise<ActionResult<{ 
   } catch {
     return failure(E.invalid);
   }
-  const parsed = newStudentSchema.safeParse(raw);
+  const parsed = (await assistantSchemasNow()).newStudentSchema.safeParse(raw);
   if (!parsed.success) return failure(E.invalid, fieldErrorsOf(parsed.error));
 
   const photo = formData.get("photo");
@@ -143,7 +149,7 @@ export async function createStudent(formData: FormData): Promise<ActionResult<{ 
   if (error) {
     // Photo orpheline : l'assistant n'a pas le droit de supprimer, on nettoie côté serveur.
     if (photoPath) await createAdminClient().storage.from(PHOTO_BUCKET).remove([photoPath]);
-    return failure(describeDatabaseError(error));
+    return failure(await describeCenterError(error));
   }
 
   revalidateAssistant();
@@ -154,9 +160,11 @@ export async function createStudent(formData: FormData): Promise<ActionResult<{ 
 // Nouveau professeur
 // ---------------------------------------------------------------------
 export async function createTeacher(input: unknown): Promise<ActionResult<{ email: string }>> {
+  const LABELS = await getLabels();
+  const E = LABELS.actions.errors;
   const T = LABELS.assistant.newTeacher;
 
-  const parsed = newTeacherSchema.safeParse(input);
+  const parsed = (await assistantSchemasNow()).newTeacherSchema.safeParse(input);
   if (!parsed.success) return failure(E.invalid, fieldErrorsOf(parsed.error));
 
   const profile = await requireStaff();
@@ -168,7 +176,7 @@ export async function createTeacher(input: unknown): Promise<ActionResult<{ emai
     .from("subjects")
     .select("id, level_id")
     .in("id", values.subjectIds);
-  if (subjectsError) return failure(describeDatabaseError(subjectsError));
+  if (subjectsError) return failure(await describeCenterError(subjectsError));
   if (subjects.length !== new Set(values.subjectIds).size) return failure(E.invalid);
 
   // Seule la création du compte Auth utilise la clé service_role.
@@ -207,7 +215,7 @@ export async function createTeacher(input: unknown): Promise<ActionResult<{ emai
   if (writeError) {
     // Annulation : suppression du compte Auth (le profil suit par cascade).
     await admin.auth.admin.deleteUser(userId);
-    return failure(describeDatabaseError(writeError));
+    return failure(await describeCenterError(writeError));
   }
 
   revalidateAssistant();

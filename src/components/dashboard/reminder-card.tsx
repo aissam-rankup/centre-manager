@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 
 type ReminderCardProps = {
   title: string;
@@ -15,6 +15,7 @@ type ReminderCardProps = {
 
 /** Carte de rappel : dégradé bleu-violet, texte blanc, masquable pour la visite en cours. */
 export function ReminderCard({ title, description, href, linkLabel }: ReminderCardProps) {
+  const LABELS = useLabels();
   const [open, setOpen] = useState(true);
   if (!open) return null;
 

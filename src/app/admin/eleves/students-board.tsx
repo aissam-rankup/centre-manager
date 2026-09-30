@@ -13,51 +13,53 @@ import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import type { AppLabels } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { AdminStudentRow, LevelOption } from "@/lib/data/admin";
 import { formatPhone } from "@/lib/phone";
-
-const L = LABELS.admin.students;
 
 /** Minuscules, sans accents : même logique que la recherche en base. */
 function normalize(value: string): string {
   return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
 }
 
-const COLUMNS: readonly DataTableColumn<AdminStudentRow>[] = [
-  {
-    id: "name",
-    header: L.name,
-    mobile: "title",
-    cell: (student) => (
-      <Link href={`${ROUTES.admin.students}/${student.id}`} className="flex items-center gap-3 rounded-lg">
-        <StudentAvatar name={student.fullName} photoUrl={student.photoUrl} status={student.isOverdue ? "overdue" : "upToDate"} />
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate font-medium underline-offset-4 hover:underline">{student.fullName}</span>
-          <span className="truncate text-caption text-muted-foreground md:hidden">{student.levelName}</span>
-        </span>
-      </Link>
-    ),
-  },
-  { id: "level", header: L.level, mobile: "hidden", cell: (student) => student.levelName },
-  {
-    id: "guardian",
-    header: L.guardian,
-    cell: (student) =>
-      student.guardianPhone ? (
-        <span className="numeric font-normal">{formatPhone(student.guardianPhone)}</span>
-      ) : (
-        LABELS.common.none
+function columns(LABELS: AppLabels): readonly DataTableColumn<AdminStudentRow>[] {
+  const L = LABELS.admin.students;
+  return [
+    {
+      id: "name",
+      header: L.name,
+      mobile: "title",
+      cell: (student) => (
+        <Link href={`${ROUTES.admin.students}/${student.id}`} className="flex items-center gap-3 rounded-lg">
+          <StudentAvatar name={student.fullName} photoUrl={student.photoUrl} status={student.isOverdue ? "overdue" : "upToDate"} />
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate font-medium underline-offset-4 hover:underline">{student.fullName}</span>
+            <span className="truncate text-caption text-muted-foreground md:hidden">{student.levelName}</span>
+          </span>
+        </Link>
       ),
-  },
-  { id: "unpaid", header: L.unpaid, align: "end", cell: (student) => <Money amount={student.unpaidAmount} /> },
-  {
-    id: "status",
-    header: L.status,
-    mobile: "aside",
-    cell: (student) => <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />,
-  },
-];
+    },
+    { id: "level", header: L.level, mobile: "hidden", cell: (student) => student.levelName },
+    {
+      id: "guardian",
+      header: L.guardian,
+      cell: (student) =>
+        student.guardianPhone ? (
+          <span className="numeric font-normal">{formatPhone(student.guardianPhone)}</span>
+        ) : (
+          LABELS.common.none
+        ),
+    },
+    { id: "unpaid", header: L.unpaid, align: "end", cell: (student) => <Money amount={student.unpaidAmount} /> },
+    {
+      id: "status",
+      header: L.status,
+      mobile: "aside",
+      cell: (student) => <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />,
+    },
+  ];
+}
 
 type StatusFilter = "" | "overdue" | "upToDate";
 
@@ -69,6 +71,8 @@ type StudentsBoardProps = {
 };
 
 export function StudentsBoard({ students, levels, initialQuery = "", initialStatus = "" }: StudentsBoardProps) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.students;
   const [query, setQuery] = useState(initialQuery);
   const [levelId, setLevelId] = useState("");
   const [status, setStatus] = useState<StatusFilter>(initialStatus);
@@ -136,7 +140,7 @@ export function StudentsBoard({ students, levels, initialQuery = "", initialStat
       {rows.length === 0 ? (
         <EmptyState icon={SearchX} title={L.emptyTitle} description={L.emptyDescription} />
       ) : (
-        <DataTable columns={COLUMNS} rows={rows} getRowId={(student) => student.id} caption={L.caption} />
+        <DataTable columns={columns(LABELS)} rows={rows} getRowId={(student) => student.id} caption={L.caption} />
       )}
     </div>
   );

@@ -12,16 +12,21 @@ import { StudentBoard } from "@/components/dashboard/student-board";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getAdminDashboard } from "@/lib/data/admin";
 import { formatMAD, formatMonth, formatPercent } from "@/lib/format";
 
-const L = LABELS.admin.dashboard;
-const D = LABELS.dashboard;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.dashboard;
+  return { title: L.title };
+}
 
 export default async function AdminDashboardPage({ searchParams }: PageProps<"/admin">) {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.dashboard;
+  const D = LABELS.dashboard;
   const params = await searchParams;
   const raw = typeof params.niveau === "string" ? params.niveau : null;
   const requestedLevel = raw && z.uuid().safeParse(raw).success ? raw : null;

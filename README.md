@@ -167,6 +167,14 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 - **Accès support (lecture seule)** : depuis la fiche d'un centre, motif obligatoire, 1 heure ; le super-admin consulte l'espace administration du centre avec un bandeau permanent ; toute écriture est refusée en base (trigger sur chaque table métier et policies de stockage) ; ouverture et fermeture journalisées.
 - **Courriels Auth en français** : modèles `supabase/templates/invite.html` et `recovery.html` (liens vers `/bienvenue?token_hash=…`). En production : les coller dans Supabase → Authentication → Email Templates (Invite user, Reset password) et ajouter `https://<domaine>/bienvenue` aux Redirect URLs.
 
+## Vocabulaire par type d'établissement
+
+- **Types** (`center_types`) : soutien scolaire, centre de formation, institut de langue, auto-école, soutien universitaire, personnalisé. Chaque terme (apprenant, groupe, cours, encadrant, séance) a un singulier, un pluriel et un genre ; le type « Personnalisé » reçoit ses termes du super-admin (`centers.custom_terms`).
+- **Couche de présentation uniquement** : tables et colonnes inchangées.
+- **Rédaction** : les libellés sont écrits dans le vocabulaire par défaut (élève, niveau, matière, professeur, séance). `src/lib/vocabulary.ts` remplace chaque forme (article, élision « l'élève », contraction « du niveau / de la matière », « ce / cet / cette », « Nouveau / Nouvel / Nouvelle », « aucun / aucune », « tous les / toutes les », accords courants du participe) par la même forme du terme du centre.
+- **Accès aux libellés** : `LABELS` (`src/lib/constants/labels.ts`) ne contient que les groupes neutres ; les groupes métier (`admin`, `assistant`, `teacher`, `dashboard`, `nav`, `roles`, `spaces`, `billing`, `absencesPage`) ne sont accessibles que par `getLabels()` (Server Components, Server Actions) ou `useLabels()` (Client Components, sous `LabelsProvider`). Toute lecture statique d'un libellé métier est une erreur de compilation.
+- **Validation et erreurs** : schémas Zod construits avec les libellés du centre (`adminSchemas(labels)`, `assistantSchemas(labels)`) ; messages d'erreur de la base traduits par `describeCenterError()`.
+
 ## Mode appel (professeur)
 
 - L'accueil du professeur liste ses séances du jour, avec l'état de l'appel.

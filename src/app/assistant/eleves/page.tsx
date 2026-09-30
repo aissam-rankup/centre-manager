@@ -5,16 +5,21 @@ import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { searchStudentDirectory } from "@/lib/data/assistant";
 
 import { StudentSearch } from "./student-search";
 
-const L = LABELS.assistant.search;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.search;
+  return { title: L.title };
+}
 
 export default async function AssistantStudentsPage({ searchParams }: PageProps<"/assistant/eleves">) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.search;
   // « q » : recherche lancée depuis l'en-tête de l'application.
   const { q } = await searchParams;
   const initialQuery = typeof q === "string" ? q : "";

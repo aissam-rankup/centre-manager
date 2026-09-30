@@ -14,16 +14,21 @@ import { Money } from "@/components/shared/money";
 import { PageHeader } from "@/components/shared/page-header";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { type AbsenceAlertItem, type FollowUpQueueItem, getAssistantDashboard } from "@/lib/data/assistant";
 import { formatDate, formatDateWithWeekday, formatMAD, today } from "@/lib/format";
 
-const L = LABELS.assistant.dashboard;
-const D = LABELS.dashboard;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.dashboard;
+  return { title: L.title };
+}
 
 export default async function AssistantDashboardPage() {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.dashboard;
+  const D = LABELS.dashboard;
   const { stats, monthUnpaid, queue, alerts, students, presence } = await getAssistantDashboard();
   const dateLabel = formatDateWithWeekday(today());
 
@@ -136,7 +141,9 @@ function CountBadge({ count }: { count: number }) {
   );
 }
 
-function QueueRow({ item }: { item: FollowUpQueueItem }) {
+async function QueueRow({ item }: { item: FollowUpQueueItem }) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.dashboard;
   return (
     <li className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
       <Link
@@ -173,7 +180,9 @@ function QueueRow({ item }: { item: FollowUpQueueItem }) {
   );
 }
 
-function AlertRow({ alert }: { alert: AbsenceAlertItem }) {
+async function AlertRow({ alert }: { alert: AbsenceAlertItem }) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.dashboard;
   return (
     <li className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
       <Link

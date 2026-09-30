@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 
 type FormDialogProps = {
   open: boolean;
@@ -39,11 +39,13 @@ export function FormDialog({
   description,
   pending,
   error,
-  submitLabel = LABELS.admin.common.save,
+  submitLabel,
   submitDisabled = false,
   onSubmit,
   children,
 }: FormDialogProps) {
+  const LABELS = useLabels();
+  submitLabel ??= LABELS.admin.common.save;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>

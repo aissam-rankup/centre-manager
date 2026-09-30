@@ -14,25 +14,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { createTeacher } from "@/lib/actions/assistant";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
 import { generatePassword } from "@/lib/password";
-import { type NewTeacherInput, newTeacherSchema } from "@/lib/validation/assistant";
-
-const L = LABELS.assistant.newTeacher;
+import { assistantSchemas, type NewTeacherInput } from "@/lib/validation/assistant";
 
 const EMPTY: NewTeacherInput = { fullName: "", phone: "", email: "", password: "", subjectIds: [] };
 
 type Created = { email: string; password: string };
 
 export function NewTeacherForm({ levels }: { levels: LevelWithSubjects[] }) {
+  const LABELS = useLabels();
+  const L = LABELS.assistant.newTeacher;
   const [created, setCreated] = useState<Created | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const form = useForm<NewTeacherInput>({
-    resolver: zodResolver(newTeacherSchema),
+    resolver: zodResolver(assistantSchemas(LABELS).newTeacherSchema),
     defaultValues: EMPTY,
     mode: "onTouched",
   });
@@ -178,6 +178,8 @@ export function NewTeacherForm({ levels }: { levels: LevelWithSubjects[] }) {
 }
 
 function CreatedCard({ created, onAnother }: { created: Created; onAnother: () => void }) {
+  const LABELS = useLabels();
+  const L = LABELS.assistant.newTeacher;
   const S = L.success;
 
   const copy = async () => {

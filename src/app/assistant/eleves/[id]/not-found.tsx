@@ -4,11 +4,12 @@ import Link from "next/link";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 
-const L = LABELS.assistant.student;
 
-export default function StudentNotFound() {
+export default async function StudentNotFound() {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.student;
   return (
     <EmptyState
       icon={UserX}

@@ -20,15 +20,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { createStudent } from "@/lib/actions/assistant";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
 import { formatDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
-import { NEW_STUDENT_STEP_FIELDS, type NewStudentInput, newStudentSchema } from "@/lib/validation/assistant";
-
-const L = LABELS.assistant.newStudent;
-const STEP_COUNT = L.steps.length;
+import { assistantSchemas, NEW_STUDENT_STEP_FIELDS, type NewStudentInput } from "@/lib/validation/assistant";
 
 type NewStudentFormProps = {
   levels: LevelWithSubjects[];
@@ -37,6 +34,9 @@ type NewStudentFormProps = {
 };
 
 export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
+  const LABELS = useLabels();
+  const L = LABELS.assistant.newStudent;
+  const STEP_COUNT = L.steps.length;
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [photo, setPhoto] = useState<CapturedPhoto | null>(null);
@@ -51,7 +51,7 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
   }, [step]);
 
   const form = useForm<NewStudentInput>({
-    resolver: zodResolver(newStudentSchema),
+    resolver: zodResolver(assistantSchemas(LABELS).newStudentSchema),
     defaultValues: {
       fullName: "",
       guardianName: "",
@@ -428,6 +428,9 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
 }
 
 function Stepper({ current }: { current: number }) {
+  const LABELS = useLabels();
+  const L = LABELS.assistant.newStudent;
+  const STEP_COUNT = L.steps.length;
   return (
     <ol className="flex items-center gap-2" aria-label={L.progress(current + 1, STEP_COUNT)}>
       {L.steps.map((label, index) => {
@@ -459,6 +462,8 @@ function Stepper({ current }: { current: number }) {
 }
 
 function SummaryRow({ label, onEdit, children }: { label: string; onEdit: () => void; children: React.ReactNode }) {
+  const LABELS = useLabels();
+  const L = LABELS.assistant.newStudent;
   return (
     <div className="flex items-start gap-4 py-4 first:pt-0">
       <div className="flex min-w-0 flex-1 flex-col gap-2">

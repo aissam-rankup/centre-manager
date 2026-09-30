@@ -1531,6 +1531,7 @@ export type Database = {
           support_expires_at: string
           support_mode: boolean
           suspension_date: string
+          vocabulary: Json
         }[]
       }
       platform_billing_months: {

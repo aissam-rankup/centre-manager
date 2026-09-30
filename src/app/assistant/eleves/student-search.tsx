@@ -13,15 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { searchStudents } from "@/lib/actions/assistant";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { StudentListItem } from "@/lib/data/assistant";
 
-const L = LABELS.assistant.search;
 const DEBOUNCE_MS = 200;
 
 type StudentSearchProps = { initialResults: StudentListItem[]; initialQuery?: string };
 
 export function StudentSearch({ initialResults, initialQuery = "" }: StudentSearchProps) {
+  const LABELS = useLabels();
+  const L = LABELS.assistant.search;
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState(initialResults);
   const [error, setError] = useState<string | null>(null);

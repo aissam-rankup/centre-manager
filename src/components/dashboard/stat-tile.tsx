@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 export type StatTileLink = { href: string; label: string };
@@ -25,6 +25,7 @@ type StatTileProps = {
 
 /** Carte de statistique : grand chiffre violet, libellé gris, menu d'actions. */
 export function StatTile({ value, label, detail, links = [], href, className }: StatTileProps) {
+  const LABELS = useLabels();
   return (
     <div
       className={cn(

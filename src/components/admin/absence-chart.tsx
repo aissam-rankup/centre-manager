@@ -5,11 +5,10 @@ import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, type TooltipContentProps, XAxis, YAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { AbsenceRate } from "@/lib/data/admin";
 import { formatPercent } from "@/lib/format";
 
-const L = LABELS.admin.dashboard.chart;
 
 /** Hauteur par barre : barres fines, étiquettes lisibles. */
 const ROW_HEIGHT = 44;
@@ -21,6 +20,8 @@ type ChartRow = AbsenceRate & { label: string };
  * (une seule couleur validée, pas de légende), infobulle au survol et vue tableau.
  */
 export function AbsenceChart({ rates }: { rates: AbsenceRate[] }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.dashboard.chart;
   const [showTable, setShowTable] = useState(false);
   const data: ChartRow[] = rates.map((rate) => ({ ...rate, label: `${rate.subjectName} · ${rate.levelName}` }));
   const max = Math.max(0.1, ...rates.map((rate) => rate.rate));
@@ -90,6 +91,8 @@ export function AbsenceChart({ rates }: { rates: AbsenceRate[] }) {
 }
 
 function ChartTooltip({ active, payload }: TooltipContentProps) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.dashboard.chart;
   const row = payload?.[0]?.payload as ChartRow | undefined;
   if (!active || !row) return null;
   return (

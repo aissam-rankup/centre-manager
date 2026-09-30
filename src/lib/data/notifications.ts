@@ -1,7 +1,7 @@
 import "server-only";
 
 import { requireRole } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
 export type NotificationKind = "followUp" | "note" | "absenceAlert";
@@ -28,6 +28,7 @@ const LIMIT = 30;
  * des 14 derniers jours, alertes d'absences ouvertes ; les plus récentes d'abord.
  */
 export async function getNotifications(): Promise<NotificationItem[]> {
+  const LABELS = await getLabels();
   await requireRole(["admin", "assistant"]);
   const supabase = await createClient();
   const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();

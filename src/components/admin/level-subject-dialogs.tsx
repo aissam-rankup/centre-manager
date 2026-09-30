@@ -12,11 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { savePack, saveLevel, saveSubject } from "@/lib/actions/admin";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import { formatMAD } from "@/lib/format";
-import { levelSchema, packSchema, subjectSchema } from "@/lib/validation/admin";
-
-const L = LABELS.admin.subjects;
+import { adminSchemas } from "@/lib/validation/admin";
 
 type LevelDialogProps = {
   trigger: ReactElement;
@@ -25,8 +23,10 @@ type LevelDialogProps = {
 };
 
 export function LevelDialog({ trigger, level, nextSortOrder }: LevelDialogProps) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.subjects;
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
-    schema: levelSchema,
+    schema: adminSchemas(LABELS).levelSchema,
     defaultValues: { id: level?.id ?? null, name: level?.name ?? "", sortOrder: level?.sortOrder ?? nextSortOrder },
     action: saveLevel,
     successMessage: level ? LABELS.admin.common.saved : LABELS.admin.common.created,
@@ -61,8 +61,10 @@ type SubjectDialogProps = {
 };
 
 export function SubjectDialog({ trigger, levelId, levelName, subject }: SubjectDialogProps) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.subjects;
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
-    schema: subjectSchema,
+    schema: adminSchemas(LABELS).subjectSchema,
     defaultValues: { id: subject?.id ?? null, levelId, name: subject?.name ?? "", monthlyPrice: subject?.monthlyPrice ?? 0 },
     action: saveSubject,
     successMessage: subject ? LABELS.admin.common.saved : LABELS.admin.common.created,
@@ -106,8 +108,10 @@ type PackDialogProps = {
 };
 
 export function PackDialog({ trigger, levelId, levelName, subjects, pack }: PackDialogProps) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.subjects;
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
-    schema: packSchema,
+    schema: adminSchemas(LABELS).packSchema,
     defaultValues: {
       id: pack?.id ?? null,
       levelId,

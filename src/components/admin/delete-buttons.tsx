@@ -4,16 +4,17 @@ import type { ReactElement } from "react";
 
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import { deleteLevel, deletePack, deleteSlot, deleteSubject } from "@/lib/actions/admin";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 
-const C = LABELS.admin.common;
-const L = LABELS.admin.subjects;
 
 /**
  * Boutons de suppression confirmée. Les Server Actions sont liées ici, côté client,
  * pour pouvoir être déclenchées depuis des pages rendues par le serveur.
  */
 export function DeleteLevelButton({ levelId, name, children }: { levelId: string; name: string; children: ReactElement }) {
+  const LABELS = useLabels();
+  const C = LABELS.admin.common;
+  const L = LABELS.admin.subjects;
   return (
     <ConfirmAction
       trigger={children}
@@ -27,6 +28,9 @@ export function DeleteLevelButton({ levelId, name, children }: { levelId: string
 }
 
 export function DeleteSubjectButton({ subjectId, name, children }: { subjectId: string; name: string; children: ReactElement }) {
+  const LABELS = useLabels();
+  const C = LABELS.admin.common;
+  const L = LABELS.admin.subjects;
   return (
     <ConfirmAction
       trigger={children}
@@ -40,6 +44,8 @@ export function DeleteSubjectButton({ subjectId, name, children }: { subjectId: 
 }
 
 export function DeleteSlotButton({ slotId, label, children }: { slotId: string; label: string; children: ReactElement }) {
+  const LABELS = useLabels();
+  const C = LABELS.admin.common;
   return (
     <ConfirmAction
       trigger={children}
@@ -53,6 +59,9 @@ export function DeleteSlotButton({ slotId, label, children }: { slotId: string; 
 }
 
 export function DeletePackButton({ packId, name, children }: { packId: string; name: string; children: ReactElement }) {
+  const LABELS = useLabels();
+  const C = LABELS.admin.common;
+  const L = LABELS.admin.subjects;
   return (
     <ConfirmAction
       trigger={children}

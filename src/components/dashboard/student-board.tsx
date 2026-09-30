@@ -10,22 +10,24 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LABELS } from "@/lib/constants/labels";
+import type { AppLabels } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { DashboardStudent, DashboardStudentStatus } from "@/lib/data/admin";
 import { formatPhoneIntl, toTelHref, toWhatsAppHref } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
-const L = LABELS.dashboard.students;
-
 type SortKey = "fullName" | "levelName" | "subjects" | "status";
 const STATUS_RANK: Record<DashboardStudentStatus, number> = { overdue: 0, followedUp: 1, upToDate: 2 };
 /** « wide » : colonne affichée à partir de 1280 px (tablette : tableau lisible sans défilement). */
-const COLUMNS: { key: SortKey; label: string; wide?: boolean }[] = [
-  { key: "fullName", label: L.name },
-  { key: "levelName", label: L.level },
-  { key: "subjects", label: L.subjects, wide: true },
-  { key: "status", label: L.status },
-];
+function columns(LABELS: AppLabels): { key: SortKey; label: string; wide?: boolean }[] {
+  const L = LABELS.dashboard.students;
+  return [
+    { key: "fullName", label: L.name },
+    { key: "levelName", label: L.level },
+    { key: "subjects", label: L.subjects, wide: true },
+    { key: "status", label: L.status },
+  ];
+}
 
 type StudentBoardProps = {
   students: DashboardStudent[];
@@ -40,6 +42,8 @@ type StudentBoardProps = {
  * recherche dans la liste, menu d'actions réelles par ligne ; cartes sous 768 px.
  */
 export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardProps) {
+  const LABELS = useLabels();
+  const L = LABELS.dashboard.students;
   const [sort, setSort] = useState<{ key: SortKey; direction: 1 | -1 }>({ key: "status", direction: 1 });
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -130,7 +134,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
               <caption className="sr-only">{L.caption}</caption>
               <thead className="sticky top-0 z-10 bg-card">
                 <tr className="h-12 border-b border-divider">
-                  {COLUMNS.map((column) => {
+                  {columns(LABELS).map((column) => {
                     const active = sort.key === column.key;
                     return (
                       <th
@@ -200,6 +204,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
 }
 
 function PhoneLink({ phone }: { phone: string | null }) {
+  const LABELS = useLabels();
   const href = phone ? toTelHref(phone) : null;
   if (!phone) return <span className="text-subtle">{LABELS.common.none}</span>;
   return href ? (
@@ -212,6 +217,8 @@ function PhoneLink({ phone }: { phone: string | null }) {
 }
 
 function RowMenu({ student, fileBase }: { student: DashboardStudent; fileBase: string }) {
+  const LABELS = useLabels();
+  const L = LABELS.dashboard.students;
   const tel = student.guardianPhone ? toTelHref(student.guardianPhone) : null;
   const whatsapp = student.guardianPhone ? toWhatsAppHref(student.guardianPhone) : null;
 

@@ -16,15 +16,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { saveSlot } from "@/lib/actions/admin";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { PlanningData, PlanningSlot } from "@/lib/data/admin";
 import { cn } from "@/lib/utils";
-import { slotSchema } from "@/lib/validation/admin";
+import { adminSchemas } from "@/lib/validation/admin";
 
-const L = LABELS.admin.planning;
 const WEEK = [1, 2, 3, 4, 5, 6, 0] as const;
 
 export function PlanningBoard({ data }: { data: PlanningData }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.planning;
   const [levelId, setLevelId] = useState<string | null>(null);
   const slots = levelId ? data.slots.filter((slot) => slot.levelId === levelId) : data.slots;
   // Couleur par matière, stable quel que soit le filtre de niveau.
@@ -101,6 +102,8 @@ export function PlanningBoard({ data }: { data: PlanningData }) {
 }
 
 function SlotCard({ slot, data, tone }: { slot: PlanningSlot; data: PlanningData; tone: string }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.planning;
   return (
     <SlotDialog
       data={data}
@@ -137,8 +140,10 @@ function overlaps(startA: string, endA: string, startB: string, endB: string): b
 }
 
 function SlotDialog({ data, slot, trigger }: { data: PlanningData; slot?: PlanningSlot; trigger: React.ReactElement }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.planning;
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
-    schema: slotSchema,
+    schema: adminSchemas(LABELS).slotSchema,
     defaultValues: {
       id: slot?.id ?? null,
       subjectId: slot?.subjectId ?? "",
@@ -175,7 +180,7 @@ function SlotDialog({ data, slot, trigger }: { data: PlanningData; slot?: Planni
         if (teacherId && other.teacherId === teacherId) messages.push(L.conflictTeacher(other.teacherName, label));
         return messages;
       });
-  }, [data.slots, slot?.id, dayOfWeek, startTime, endTime, room, teacherId]);
+  }, [data.slots, slot?.id, dayOfWeek, startTime, endTime, room, teacherId, L, LABELS]);
 
   return (
     <FormDialog

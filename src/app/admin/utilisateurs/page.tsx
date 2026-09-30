@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getUsers } from "@/lib/data/admin";
 import { getLevelsWithSubjects } from "@/lib/data/assistant";
 
 import { UsersBoard } from "./users-board";
 
-export const metadata: Metadata = { title: LABELS.admin.users.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  return { title: LABELS.admin.users.title };
+}
 
 export default async function AdminUsersPage() {
   const [users, levels] = await Promise.all([getUsers(), getLevelsWithSubjects()]);

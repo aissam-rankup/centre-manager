@@ -279,7 +279,9 @@ returns table (
   support_expires_at timestamptz,
   contact_name text,
   contact_phone text,
-  contact_email text
+  contact_email text,
+  -- Vocabulaire de l'interface : termes du type, surchargés par les termes personnalisés.
+  vocabulary jsonb
 )
 language sql
 stable
@@ -307,9 +309,11 @@ as $$
          case when t.sees_billing then c.current_period_end + c.grace_days end,
          case when t.sees_billing then (c.current_period_end + c.grace_days - private.today())::integer end,
          exists (select 1 from support), (select support.expires_at from support),
-         s.support_name, s.support_phone, s.support_email
+         s.support_name, s.support_phone, s.support_email,
+         ty.terms || c.custom_terms
   from target t
   join public.centers c on c.id = t.center_id
+  join public.center_types ty on ty.code = c.center_type
   cross join public.platform_settings s;
 $$;
 

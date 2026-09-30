@@ -16,9 +16,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { markInvoicePaid } from "@/lib/actions/assistant";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 
-const L = LABELS.assistant.student.payments;
 
 type MarkPaidButtonProps = {
   invoiceId: string;
@@ -29,6 +28,8 @@ type MarkPaidButtonProps = {
 };
 
 export function MarkPaidButton({ invoiceId, amountLabel, subjectName, periodLabel }: MarkPaidButtonProps) {
+  const LABELS = useLabels();
+  const L = LABELS.assistant.student.payments;
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 

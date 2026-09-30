@@ -1,9 +1,11 @@
+import { DEFAULT_VOCABULARY, translateTree, translator, type VocabularyTerms } from "@/lib/vocabulary";
+
 /**
  * Libellés de l'interface — source unique de vérité.
  * Aucun texte affiché ne doit être écrit en dur dans un composant.
  * Ton : professionnel et direct, phrases courtes.
  */
-export const LABELS = {
+const TEXTS = {
   app: {
     name: "CentroManager",
     metaDescription: "Abonnements, paiements et présences de votre centre de langue ou de soutien scolaire.",
@@ -20,7 +22,6 @@ export const LABELS = {
     more: "Plus",
     openMenu: "Ouvrir le menu",
     skipToContent: "Aller au contenu principal",
-    searchStudent: "Rechercher un élève",
     signOut: "Se déconnecter",
     seeAll: "Voir tout",
     show: "Afficher",
@@ -118,6 +119,7 @@ export const LABELS = {
   },
   nav: {
     mainLabel: "Navigation principale",
+    searchStudent: "Rechercher un élève",
     styleguideTokens: "Charte",
     styleguideComponents: "Composants",
     styleguideStates: "États",
@@ -230,7 +232,7 @@ export const LABELS = {
       mrr: "Revenu mensuel récurrent",
       mrrDetail: "Centres actifs et en retard, formules annuelles ramenées au mois",
       collected: "Encaissé ce mois-ci",
-      students: "Élèves sur la plateforme",
+      students: "Apprenants sur la plateforme",
       users: "Comptes utilisateurs",
       overdueTitle: "Centres en retard de paiement",
       overdueDescription: "Échéance dépassée, du retard le plus ancien au plus récent.",
@@ -283,7 +285,7 @@ export const LABELS = {
       activatedAt: "Activation",
       dueDate: "Échéance",
       remaining: "Délai",
-      students: "Élèves",
+      students: "Apprenants",
       price: "Tarif",
       count: (n: number) => `${n} centre${n > 1 ? "s" : ""}`,
       empty: "Aucun centre",
@@ -311,7 +313,7 @@ export const LABELS = {
       autoRenew: "Renouvellement automatique",
       yes: "Oui",
       no: "Non",
-      students: "Élèves",
+      students: "Apprenants",
       users: "Comptes",
       payments: "Historique des paiements",
       paymentsEmpty: "Aucun paiement enregistré.",
@@ -1298,3 +1300,28 @@ export const LABELS = {
     },
   },
 } as const;
+
+/**
+ * Groupes contenant des termes métier (élève, niveau, matière, professeur,
+ * séance) : ils suivent le vocabulaire du centre et se lisent uniquement via
+ * getLabels() (serveur) ou useLabels() (client).
+ */
+type CenterNamespaces = "absencesPage" | "dashboard" | "roles" | "nav" | "spaces" | "billing" | "admin" | "teacher" | "assistant";
+
+export type AppLabels = typeof TEXTS;
+
+/** Libellés neutres, identiques pour tous les centres. */
+export const LABELS: Omit<AppLabels, CenterNamespaces> = TEXTS;
+
+const cache = new Map<string, AppLabels>();
+
+/** Libellés complets dans le vocabulaire d'un centre. */
+export function labelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY): AppLabels {
+  const key = JSON.stringify(terms);
+  let labels = cache.get(key);
+  if (!labels) {
+    labels = translateTree(TEXTS, translator(terms));
+    cache.set(key, labels);
+  }
+  return labels;
+}

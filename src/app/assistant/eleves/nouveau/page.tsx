@@ -3,17 +3,22 @@ import type { Metadata } from "next";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getLevelsWithSubjects } from "@/lib/data/assistant";
 import { toISODate, today } from "@/lib/format";
 
 import { NewStudentForm } from "./new-student-form";
 
-const L = LABELS.assistant.newStudent;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.newStudent;
+  return { title: L.title };
+}
 
 export default async function NewStudentPage() {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.newStudent;
   const levels = await getLevelsWithSubjects();
 
   return (

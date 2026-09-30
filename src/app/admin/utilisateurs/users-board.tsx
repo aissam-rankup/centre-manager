@@ -22,20 +22,21 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { createUser, setUserActive, updateUser } from "@/lib/actions/admin";
 import { removeUserPhoto, setUserPhoto } from "@/lib/actions/profile";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { AdminUser } from "@/lib/data/admin";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
 import { formatDateTime } from "@/lib/format";
 import { generatePassword } from "@/lib/password";
 import { cn } from "@/lib/utils";
-import { type UserCreateInput, userCreateSchema, userUpdateSchema } from "@/lib/validation/admin";
+import { adminSchemas, type UserCreateInput } from "@/lib/validation/admin";
 
-const L = LABELS.admin.users;
 const ROLES = ["admin", "assistant", "teacher"] as const;
 
 type UsersBoardProps = { users: AdminUser[]; levels: LevelWithSubjects[] };
 
 export function UsersBoard({ users, levels }: UsersBoardProps) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.users;
   const columns: DataTableColumn<AdminUser>[] = [
     {
       id: "name",
@@ -126,6 +127,8 @@ export function UsersBoard({ users, levels }: UsersBoardProps) {
 }
 
 function ActiveBadge({ active }: { active: boolean }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.users;
   return (
     <span
       className={cn(
@@ -140,6 +143,8 @@ function ActiveBadge({ active }: { active: boolean }) {
 }
 
 function ToggleActiveButton({ user }: { user: AdminUser }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.users;
   if (!user.active) {
     return (
       <ConfirmAction
@@ -177,8 +182,10 @@ function ToggleActiveButton({ user }: { user: AdminUser }) {
 // Modification
 // ---------------------------------------------------------------------
 function EditUserDialog({ user, levels, trigger }: { user: AdminUser; levels: LevelWithSubjects[]; trigger: ReactElement }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.users;
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
-    schema: userUpdateSchema,
+    schema: adminSchemas(LABELS).userUpdateSchema,
     defaultValues: {
       id: user.id,
       fullName: user.fullName,
@@ -230,12 +237,14 @@ function EditUserDialog({ user, levels, trigger }: { user: AdminUser; levels: Le
 const EMPTY: UserCreateInput = { fullName: "", role: "assistant", phone: "", email: "", password: "", subjectIds: [] };
 
 function NewUserDialog({ levels, trigger }: { levels: LevelWithSubjects[]; trigger: ReactElement }) {
+  const LABELS = useLabels();
+  const L = LABELS.admin.users;
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ email: string; password: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const form = useForm<UserCreateInput>({ resolver: zodResolver(userCreateSchema), defaultValues: EMPTY });
+  const form = useForm<UserCreateInput>({ resolver: zodResolver(adminSchemas(LABELS).userCreateSchema), defaultValues: EMPTY });
   const errors = form.formState.errors;
   const role = useWatch({ control: form.control, name: "role" });
 

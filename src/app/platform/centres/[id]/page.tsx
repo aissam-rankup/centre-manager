@@ -12,7 +12,7 @@ import { Money } from "@/components/shared/money";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { LABELS, labelsFor } from "@/lib/constants/labels";
 import {
   getCenterTypes,
   getPlatformCenterFile,
@@ -53,7 +53,7 @@ const PAYMENT_COLUMNS: readonly DataTableColumn<PlatformPayment>[] = [
 const userColumns = (centerId: string, canInvite: boolean): readonly DataTableColumn<PlatformCenterUser>[] => [
   { id: "name", header: L.userName, mobile: "title", cell: (row) => <span className="font-medium text-heading">{row.full_name}</span> },
   { id: "email", header: L.userEmail, mobile: "wide", cell: (row) => <span className="break-all">{row.email}</span> },
-  { id: "role", header: L.userRole, cell: (row) => LABELS.roles[row.role] },
+  { id: "role", header: L.userRole, cell: (row) => labelsFor().roles[row.role] },
   {
     id: "state",
     header: L.userState,

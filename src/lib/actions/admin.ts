@@ -3,40 +3,33 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { type ActionResult, describeDatabaseError, failure, success } from "@/lib/actions/result";
+import { type ActionResult, failure, success } from "@/lib/actions/result";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { formatPhone } from "@/lib/phone";
 import { PHOTO_BUCKET } from "@/lib/storage/photos";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import {
-  enrollmentCreateSchema,
-  enrollmentUpdateSchema,
-  levelSchema,
-  packSchema,
-  packSubscriptionCreateSchema,
-  packSubscriptionUpdateSchema,
-  slotSchema,
-  studentUpdateSchema,
-  subjectSchema,
-  userCreateSchema,
-  userUpdateSchema,
-} from "@/lib/validation/admin";
+import { adminSchemas } from "@/lib/validation/admin";
 
-const E = LABELS.admin.errors;
+/** Schémas dans le vocabulaire du centre connecté. */
+async function adminSchemasNow() {
+  return adminSchemas(await getLabels());
+}
 
 type DatabaseError = { code?: string; message?: string };
 
 /** Erreurs propres à l'administration, puis traduction générique. */
-function describeAdminError(error: DatabaseError): string {
+async function describeAdminError(error: DatabaseError): Promise<string> {
+  const LABELS = await getLabels();
+  const E = LABELS.admin.errors;
   if (error.code === "23503") return E.inUse;
   if (error.code === "23505") return E.duplicate;
   if (error.code === "23P01") {
     return error.message?.includes("schedule_slots_no_room_overlap") ? E.roomConflict : E.teacherConflict;
   }
-  return describeDatabaseError(error);
+  return await describeCenterError(error);
 }
 
 function fieldErrorsOf(error: z.ZodError): Record<string, string> {
@@ -63,7 +56,9 @@ const idSchema = z.uuid();
 // Niveaux
 // ---------------------------------------------------------------------
 export async function saveLevel(input: unknown): Promise<ActionResult> {
-  const parsed = levelSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const E = LABELS.admin.errors;
+  const parsed = (await adminSchemasNow()).levelSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { profile, supabase } = await admin();
   const { id, name, sortOrder } = parsed.data;
@@ -71,17 +66,18 @@ export async function saveLevel(input: unknown): Promise<ActionResult> {
   const { error } = id
     ? await supabase.from("levels").update({ name, sort_order: sortOrder }).eq("id", id)
     : await supabase.from("levels").insert({ center_id: profile.centerId, name, sort_order: sortOrder });
-  if (error) return failure(describeAdminError(error), error.code === "23505" ? { name: E.duplicate } : undefined);
+  if (error) return failure(await describeAdminError(error), error.code === "23505" ? { name: E.duplicate } : undefined);
 
   revalidateAdmin();
   return success();
 }
 
 export async function deleteLevel(levelId: string): Promise<ActionResult> {
+  const LABELS = await getLabels();
   if (!idSchema.safeParse(levelId).success) return failure(LABELS.actions.errors.invalid);
   const { supabase } = await admin();
   const { error } = await supabase.from("levels").delete().eq("id", levelId);
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
   revalidateAdmin();
   return success();
 }
@@ -90,7 +86,9 @@ export async function deleteLevel(levelId: string): Promise<ActionResult> {
 // Matières
 // ---------------------------------------------------------------------
 export async function saveSubject(input: unknown): Promise<ActionResult> {
-  const parsed = subjectSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const E = LABELS.admin.errors;
+  const parsed = (await adminSchemasNow()).subjectSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { profile, supabase } = await admin();
   const { id, levelId, name, monthlyPrice } = parsed.data;
@@ -100,17 +98,18 @@ export async function saveSubject(input: unknown): Promise<ActionResult> {
     : await supabase
         .from("subjects")
         .insert({ center_id: profile.centerId, level_id: levelId, name, monthly_price: monthlyPrice });
-  if (error) return failure(describeAdminError(error), error.code === "23505" ? { name: E.duplicate } : undefined);
+  if (error) return failure(await describeAdminError(error), error.code === "23505" ? { name: E.duplicate } : undefined);
 
   revalidateAdmin();
   return success();
 }
 
 export async function deleteSubject(subjectId: string): Promise<ActionResult> {
+  const LABELS = await getLabels();
   if (!idSchema.safeParse(subjectId).success) return failure(LABELS.actions.errors.invalid);
   const { supabase } = await admin();
   const { error } = await supabase.from("subjects").delete().eq("id", subjectId);
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
   revalidateAdmin();
   return success();
 }
@@ -119,7 +118,9 @@ export async function deleteSubject(subjectId: string): Promise<ActionResult> {
 // Packs
 // ---------------------------------------------------------------------
 export async function savePack(input: unknown): Promise<ActionResult> {
-  const parsed = packSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const E = LABELS.admin.errors;
+  const parsed = (await adminSchemasNow()).packSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { profile, supabase } = await admin();
   const { id, levelId, name, monthlyPrice, active, subjectIds } = parsed.data;
@@ -127,14 +128,14 @@ export async function savePack(input: unknown): Promise<ActionResult> {
   let packId = id;
   if (packId) {
     const { error } = await supabase.from("packs").update({ name, monthly_price: monthlyPrice, active }).eq("id", packId);
-    if (error) return failure(describeAdminError(error), error.code === "23505" ? { name: E.duplicate } : undefined);
+    if (error) return failure(await describeAdminError(error), error.code === "23505" ? { name: E.duplicate } : undefined);
   } else {
     const { data, error } = await supabase
       .from("packs")
       .insert({ center_id: profile.centerId, level_id: levelId, name, monthly_price: monthlyPrice, active })
       .select("id")
       .single();
-    if (error) return failure(describeAdminError(error), error.code === "23505" ? { name: E.duplicate } : undefined);
+    if (error) return failure(await describeAdminError(error), error.code === "23505" ? { name: E.duplicate } : undefined);
     packId = data.id;
   }
 
@@ -143,7 +144,7 @@ export async function savePack(input: unknown): Promise<ActionResult> {
     .from("pack_subjects")
     .select("subject_id")
     .eq("pack_id", packId);
-  if (currentError) return failure(describeAdminError(currentError));
+  if (currentError) return failure(await describeAdminError(currentError));
   const existing = new Set(current.map((row) => row.subject_id));
   const wanted = new Set(subjectIds);
   const toAdd = subjectIds.filter((subjectId) => !existing.has(subjectId));
@@ -153,11 +154,11 @@ export async function savePack(input: unknown): Promise<ActionResult> {
     const { error } = await supabase
       .from("pack_subjects")
       .insert(toAdd.map((subjectId) => ({ pack_id: packId, subject_id: subjectId })));
-    if (error) return failure(describeAdminError(error));
+    if (error) return failure(await describeAdminError(error));
   }
   if (toRemove.length > 0) {
     const { error } = await supabase.from("pack_subjects").delete().eq("pack_id", packId).in("subject_id", toRemove);
-    if (error) return failure(describeAdminError(error));
+    if (error) return failure(await describeAdminError(error));
   }
 
   revalidateAdmin();
@@ -166,16 +167,18 @@ export async function savePack(input: unknown): Promise<ActionResult> {
 }
 
 export async function deletePack(packId: string): Promise<ActionResult> {
+  const LABELS = await getLabels();
   if (!idSchema.safeParse(packId).success) return failure(LABELS.actions.errors.invalid);
   const { supabase } = await admin();
   const { error } = await supabase.from("packs").delete().eq("id", packId);
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
   revalidateAdmin();
   return success();
 }
 
 export async function subscribePack(input: unknown): Promise<ActionResult> {
-  const parsed = packSubscriptionCreateSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const parsed = (await adminSchemasNow()).packSubscriptionCreateSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { supabase } = await admin();
 
@@ -184,14 +187,14 @@ export async function subscribePack(input: unknown): Promise<ActionResult> {
     .select("monthly_price")
     .eq("id", parsed.data.packId)
     .maybeSingle();
-  if (packError) return failure(describeAdminError(packError));
+  if (packError) return failure(await describeAdminError(packError));
   if (!pack) return failure(LABELS.actions.errors.notFound);
 
   // Prix convenu = prix du pack ; matières et première facture créées par trigger.
   const { error } = await supabase
     .from("pack_enrollments")
     .insert({ student_id: parsed.data.studentId, pack_id: parsed.data.packId, price_agreed: pack.monthly_price });
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
 
   revalidateAdmin();
   revalidatePath(ROUTES.assistant.home, "layout");
@@ -199,13 +202,14 @@ export async function subscribePack(input: unknown): Promise<ActionResult> {
 }
 
 export async function updatePackSubscription(input: unknown): Promise<ActionResult> {
-  const parsed = packSubscriptionUpdateSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const parsed = (await adminSchemasNow()).packSubscriptionUpdateSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { supabase } = await admin();
   const { id, priceAgreed, active } = parsed.data;
 
   const { error } = await supabase.from("pack_enrollments").update({ price_agreed: priceAgreed, active }).eq("id", id);
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
 
   revalidateAdmin();
   revalidatePath(ROUTES.assistant.home, "layout");
@@ -216,7 +220,8 @@ export async function updatePackSubscription(input: unknown): Promise<ActionResu
 // Planning
 // ---------------------------------------------------------------------
 export async function saveSlot(input: unknown): Promise<ActionResult> {
-  const parsed = slotSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const parsed = (await adminSchemasNow()).slotSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { profile, supabase } = await admin();
   const { id, subjectId, teacherId, dayOfWeek, startTime, endTime, room } = parsed.data;
@@ -226,7 +231,7 @@ export async function saveSlot(input: unknown): Promise<ActionResult> {
     .select("level_id")
     .eq("id", subjectId)
     .maybeSingle();
-  if (subjectError) return failure(describeAdminError(subjectError));
+  if (subjectError) return failure(await describeAdminError(subjectError));
   if (!subject) return failure(LABELS.actions.errors.notFound);
 
   const values = {
@@ -241,7 +246,7 @@ export async function saveSlot(input: unknown): Promise<ActionResult> {
   const { error } = id
     ? await supabase.from("schedule_slots").update(values).eq("id", id)
     : await supabase.from("schedule_slots").insert({ ...values, center_id: profile.centerId });
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
 
   revalidateAdmin();
   revalidatePath(ROUTES.teacher.home, "layout");
@@ -249,10 +254,11 @@ export async function saveSlot(input: unknown): Promise<ActionResult> {
 }
 
 export async function deleteSlot(slotId: string): Promise<ActionResult> {
+  const LABELS = await getLabels();
   if (!idSchema.safeParse(slotId).success) return failure(LABELS.actions.errors.invalid);
   const { supabase } = await admin();
   const { error } = await supabase.from("schedule_slots").delete().eq("id", slotId);
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
   revalidateAdmin();
   revalidatePath(ROUTES.teacher.home, "layout");
   return success();
@@ -269,7 +275,8 @@ async function assignmentRows(supabase: Awaited<ReturnType<typeof createClient>>
 }
 
 export async function createUser(input: unknown): Promise<ActionResult<{ email: string }>> {
-  const parsed = userCreateSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const parsed = (await adminSchemasNow()).userCreateSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { profile, supabase } = await admin();
   const values = parsed.data;
@@ -304,7 +311,7 @@ export async function createUser(input: unknown): Promise<ActionResult<{ email: 
   }
   if (writeError) {
     await service.auth.admin.deleteUser(userId);
-    return failure(describeAdminError(writeError));
+    return failure(await describeAdminError(writeError));
   }
 
   revalidateAdmin();
@@ -312,7 +319,8 @@ export async function createUser(input: unknown): Promise<ActionResult<{ email: 
 }
 
 export async function updateUser(input: unknown): Promise<ActionResult> {
-  const parsed = userUpdateSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const parsed = (await adminSchemasNow()).userUpdateSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { supabase } = await admin();
   const { id, fullName, phone, role, subjectIds } = parsed.data;
@@ -321,7 +329,7 @@ export async function updateUser(input: unknown): Promise<ActionResult> {
     .from("profiles")
     .update({ full_name: fullName, phone: phone ? formatPhone(phone) : null, role })
     .eq("id", id);
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
 
   if (role === "teacher") {
     // Affectations : ajout des nouvelles, retrait de celles décochées.
@@ -329,19 +337,19 @@ export async function updateUser(input: unknown): Promise<ActionResult> {
       .from("teacher_assignments")
       .select("id, subject_id")
       .eq("teacher_id", id);
-    if (currentError) return failure(describeAdminError(currentError));
+    if (currentError) return failure(await describeAdminError(currentError));
 
     const toRemove = current.filter((a) => !subjectIds.includes(a.subject_id)).map((a) => a.id);
     const toAdd = subjectIds.filter((subjectId) => !current.some((a) => a.subject_id === subjectId));
 
     if (toRemove.length > 0) {
       const { error: removeError } = await supabase.from("teacher_assignments").delete().in("id", toRemove);
-      if (removeError) return failure(describeAdminError(removeError));
+      if (removeError) return failure(await describeAdminError(removeError));
     }
     if (toAdd.length > 0) {
       const { rows, error: rowsError } = await assignmentRows(supabase, id, toAdd);
       const insertError = rowsError ?? (await supabase.from("teacher_assignments").insert(rows)).error;
-      if (insertError) return failure(describeAdminError(insertError));
+      if (insertError) return failure(await describeAdminError(insertError));
     }
   }
 
@@ -350,12 +358,13 @@ export async function updateUser(input: unknown): Promise<ActionResult> {
 }
 
 export async function setUserActive(userId: string, active: boolean): Promise<ActionResult> {
+  const LABELS = await getLabels();
   if (!idSchema.safeParse(userId).success) return failure(LABELS.actions.errors.invalid);
   const { supabase } = await admin();
 
   // La RLS et le trigger empêchent de se désactiver soi-même.
   const { error } = await supabase.from("profiles").update({ active }).eq("id", userId);
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
 
   // Bloque aussi la connexion et le renouvellement de session côté Auth.
   await createAdminClient().auth.admin.updateUserById(userId, { ban_duration: active ? "none" : "876000h" });
@@ -368,7 +377,8 @@ export async function setUserActive(userId: string, active: boolean): Promise<Ac
 // Élèves
 // ---------------------------------------------------------------------
 export async function updateStudent(input: unknown): Promise<ActionResult> {
-  const parsed = studentUpdateSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const parsed = (await adminSchemasNow()).studentUpdateSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { supabase } = await admin();
   const { id, fullName, levelId, guardianName, guardianPhone, notes } = parsed.data;
@@ -383,7 +393,7 @@ export async function updateStudent(input: unknown): Promise<ActionResult> {
       notes: notes || null,
     })
     .eq("id", id);
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
 
   revalidateAdmin();
   revalidatePath(ROUTES.assistant.home, "layout");
@@ -391,12 +401,13 @@ export async function updateStudent(input: unknown): Promise<ActionResult> {
 }
 
 export async function deleteStudent(studentId: string): Promise<ActionResult> {
+  const LABELS = await getLabels();
   if (!idSchema.safeParse(studentId).success) return failure(LABELS.actions.errors.invalid);
   const { supabase } = await admin();
 
   const { data: student } = await supabase.from("students").select("photo_url").eq("id", studentId).maybeSingle();
   const { error } = await supabase.from("students").delete().eq("id", studentId);
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
   if (student?.photo_url) await supabase.storage.from(PHOTO_BUCKET).remove([student.photo_url]);
 
   revalidateAdmin();
@@ -405,13 +416,14 @@ export async function deleteStudent(studentId: string): Promise<ActionResult> {
 }
 
 export async function updateEnrollment(input: unknown): Promise<ActionResult> {
-  const parsed = enrollmentUpdateSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const parsed = (await adminSchemasNow()).enrollmentUpdateSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { supabase } = await admin();
   const { id, priceAgreed, active } = parsed.data;
 
   const { error } = await supabase.from("enrollments").update({ price_agreed: priceAgreed, active }).eq("id", id);
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
 
   revalidateAdmin();
   revalidatePath(ROUTES.assistant.home, "layout");
@@ -419,7 +431,8 @@ export async function updateEnrollment(input: unknown): Promise<ActionResult> {
 }
 
 export async function addEnrollment(input: unknown): Promise<ActionResult> {
-  const parsed = enrollmentCreateSchema.safeParse(input);
+  const LABELS = await getLabels();
+  const parsed = (await adminSchemasNow()).enrollmentCreateSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { supabase } = await admin();
 
@@ -428,7 +441,7 @@ export async function addEnrollment(input: unknown): Promise<ActionResult> {
     .select("monthly_price")
     .eq("id", parsed.data.subjectId)
     .maybeSingle();
-  if (subjectError) return failure(describeAdminError(subjectError));
+  if (subjectError) return failure(await describeAdminError(subjectError));
   if (!subject) return failure(LABELS.actions.errors.notFound);
 
   // Une inscription existante (même arrêtée) se reprend : pas de seconde inscription à la même matière.
@@ -438,7 +451,7 @@ export async function addEnrollment(input: unknown): Promise<ActionResult> {
     .eq("student_id", parsed.data.studentId)
     .eq("subject_id", parsed.data.subjectId)
     .is("pack_enrollment_id", null);
-  if (existingError) return failure(describeAdminError(existingError));
+  if (existingError) return failure(await describeAdminError(existingError));
   if ((count ?? 0) > 0) return failure(LABELS.admin.students.enrollments.alreadyEnrolled);
 
   // Prix convenu = tarif de la matière ; la première facture est créée par trigger.
@@ -447,7 +460,7 @@ export async function addEnrollment(input: unknown): Promise<ActionResult> {
     subject_id: parsed.data.subjectId,
     price_agreed: subject.monthly_price,
   });
-  if (error) return failure(describeAdminError(error));
+  if (error) return failure(await describeAdminError(error));
 
   revalidateAdmin();
   revalidatePath(ROUTES.assistant.home, "layout");

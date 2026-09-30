@@ -3,16 +3,21 @@ import type { Metadata } from "next";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getLevelsWithSubjects } from "@/lib/data/assistant";
 
 import { NewTeacherForm } from "./new-teacher-form";
 
-const L = LABELS.assistant.newTeacher;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.newTeacher;
+  return { title: L.title };
+}
 
 export default async function NewTeacherPage() {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.newTeacher;
   const levels = (await getLevelsWithSubjects()).filter((level) => level.subjects.length > 0);
 
   return (

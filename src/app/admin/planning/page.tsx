@@ -3,16 +3,21 @@ import type { Metadata } from "next";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getPlanningData } from "@/lib/data/admin";
 
 import { PlanningBoard } from "./planning-board";
 
-const L = LABELS.admin.planning;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.planning;
+  return { title: L.title };
+}
 
 export default async function AdminPlanningPage() {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.planning;
   const data = await getPlanningData();
 
   return (

@@ -11,19 +11,20 @@ import { SectionCard } from "@/components/shared/section-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { LABELS } from "@/lib/constants/labels";
+import type { AppLabels } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import type { StudentFile, StudentInvoice } from "@/lib/data/assistant";
 import { formatDate, formatDateTime, formatMAD } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 
 /** Sections de la fiche élève, partagées par les espaces Accueil et Admin. */
 
-const L = LABELS.assistant.student;
-
 // ---------------------------------------------------------------------
 // En-tête
 // ---------------------------------------------------------------------
-export function StudentHeader({ student, actions }: { student: StudentFile; actions?: ReactNode }) {
+export async function StudentHeader({ student, actions }: { student: StudentFile; actions?: ReactNode }) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.student;
   const guardianLabel = student.guardianName ?? student.fullName;
 
   return (
@@ -85,7 +86,9 @@ export function StudentHeader({ student, actions }: { student: StudentFile; acti
 // ---------------------------------------------------------------------
 // Matières payées
 // ---------------------------------------------------------------------
-export function SubjectsSection({ student }: { student: StudentFile }) {
+export async function SubjectsSection({ student }: { student: StudentFile }) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.student;
   // Les matières d'un pack sont listées sous le pack, qui porte le prix et la facture.
   const standalone = student.enrollments.filter((enrollment) => !enrollment.packEnrollmentId);
   const packs = student.packSubscriptions;
@@ -132,7 +135,9 @@ type SubscriptionRowProps = {
   active: boolean;
 };
 
-function SubscriptionRow({ title, detail, billingDay, nextDueDate, price, active }: SubscriptionRowProps) {
+async function SubscriptionRow({ title, detail, billingDay, nextDueDate, price, active }: SubscriptionRowProps) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.student;
   return (
     <li className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
       <div className="flex min-w-0 flex-col gap-0.5">
@@ -154,56 +159,61 @@ function SubscriptionRow({ title, detail, billingDay, nextDueDate, price, active
 // ---------------------------------------------------------------------
 // Paiements
 // ---------------------------------------------------------------------
-function periodLabel(invoice: StudentInvoice): string {
+function periodLabel(invoice: StudentInvoice, LABELS: AppLabels): string {
   return LABELS.billing.period(formatDate(invoice.periodStart), formatDate(invoice.periodEnd));
 }
 
-const PAYMENT_COLUMNS: readonly DataTableColumn<StudentInvoice>[] = [
-  {
-    id: "subject",
-    header: L.payments.subject,
-    mobile: "title",
-    cell: (invoice) => (
-      <span className="flex flex-col">
-        <span className="font-medium">{invoice.subjectName}</span>
-        <span className="text-caption text-muted-foreground md:hidden">{periodLabel(invoice)}</span>
-      </span>
-    ),
-  },
-  { id: "period", header: L.payments.period, mobile: "hidden", cell: (invoice) => periodLabel(invoice) },
-  { id: "amount", header: L.payments.amount, align: "end", cell: (invoice) => <Money amount={invoice.amountDue} /> },
-  {
-    id: "dueDate",
-    header: L.payments.dueDate,
-    cell: (invoice) => <span className="numeric font-normal">{formatDate(invoice.dueDate)}</span>,
-  },
-  { id: "status", header: L.payments.status, mobile: "aside", cell: (invoice) => <StatusBadge status={invoice.status} /> },
-  {
-    id: "action",
-    header: L.payments.paidOn,
-    className: "whitespace-nowrap",
-    cell: (invoice) =>
-      invoice.status === "paid" ? (
-        <span className="numeric font-normal">{invoice.paidAt ? formatDate(invoice.paidAt) : LABELS.common.none}</span>
-      ) : (
-        <MarkPaidButton
-          invoiceId={invoice.id}
-          amountLabel={formatMAD(invoice.amountDue)}
-          subjectName={invoice.subjectName}
-          periodLabel={periodLabel(invoice)}
-        />
+function paymentColumns(LABELS: AppLabels): readonly DataTableColumn<StudentInvoice>[] {
+  const L = LABELS.assistant.student;
+  return [
+    {
+      id: "subject",
+      header: L.payments.subject,
+      mobile: "title",
+      cell: (invoice) => (
+        <span className="flex flex-col">
+          <span className="font-medium">{invoice.subjectName}</span>
+          <span className="text-caption text-muted-foreground md:hidden">{periodLabel(invoice, LABELS)}</span>
+        </span>
       ),
-  },
-];
+    },
+    { id: "period", header: L.payments.period, mobile: "hidden", cell: (invoice) => periodLabel(invoice, LABELS) },
+    { id: "amount", header: L.payments.amount, align: "end", cell: (invoice) => <Money amount={invoice.amountDue} /> },
+    {
+      id: "dueDate",
+      header: L.payments.dueDate,
+      cell: (invoice) => <span className="numeric font-normal">{formatDate(invoice.dueDate)}</span>,
+    },
+    { id: "status", header: L.payments.status, mobile: "aside", cell: (invoice) => <StatusBadge status={invoice.status} /> },
+    {
+      id: "action",
+      header: L.payments.paidOn,
+      className: "whitespace-nowrap",
+      cell: (invoice) =>
+        invoice.status === "paid" ? (
+          <span className="numeric font-normal">{invoice.paidAt ? formatDate(invoice.paidAt) : LABELS.common.none}</span>
+        ) : (
+          <MarkPaidButton
+            invoiceId={invoice.id}
+            amountLabel={formatMAD(invoice.amountDue)}
+            subjectName={invoice.subjectName}
+            periodLabel={periodLabel(invoice, LABELS)}
+          />
+        ),
+    },
+  ];
+}
 
-export function PaymentsSection({ student }: { student: StudentFile }) {
+export async function PaymentsSection({ student }: { student: StudentFile }) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.student;
   return (
     <SectionCard id="paiements" title={L.sections.payments}>
       {student.invoices.length === 0 ? (
         <EmptyState icon={Receipt} title={L.payments.emptyTitle} description={L.payments.emptyDescription} />
       ) : (
         <DataTable
-          columns={PAYMENT_COLUMNS}
+          columns={paymentColumns(LABELS)}
           rows={student.invoices}
           getRowId={(invoice) => invoice.id}
           caption={L.payments.caption}
@@ -217,7 +227,9 @@ export function PaymentsSection({ student }: { student: StudentFile }) {
 // ---------------------------------------------------------------------
 // Absences
 // ---------------------------------------------------------------------
-export function AbsencesSection({ student }: { student: StudentFile }) {
+export async function AbsencesSection({ student }: { student: StudentFile }) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.student;
   return (
     <SectionCard
       id="absences"
@@ -247,7 +259,9 @@ export function AbsencesSection({ student }: { student: StudentFile }) {
 // ---------------------------------------------------------------------
 // Relances
 // ---------------------------------------------------------------------
-export function FollowUpsSection({ student }: { student: StudentFile }) {
+export async function FollowUpsSection({ student }: { student: StudentFile }) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.student;
   return (
     <SectionCard id="relances" title={L.sections.followUps}>
       {student.followUps.length === 0 ? (

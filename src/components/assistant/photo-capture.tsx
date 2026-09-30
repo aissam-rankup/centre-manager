@@ -5,11 +5,9 @@ import { useRef, useState } from "react";
 
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import { compressImage } from "@/lib/image/compress";
 import { PHOTO_MAX_BYTES } from "@/lib/validation/assistant";
-
-const L = LABELS.assistant.newStudent;
 
 /** Photo compressée et son URL d'aperçu local (créée une seule fois). */
 export type CapturedPhoto = { blob: Blob; previewUrl: string };
@@ -36,10 +34,14 @@ export function PhotoCapture({
   value,
   onChange,
   currentUrl = null,
-  label = L.fields.photo,
-  hint = L.fields.photoHint,
+  label,
+  hint,
   capture = "environment",
 }: PhotoCaptureProps) {
+  const LABELS = useLabels();
+  const L = LABELS.assistant.newStudent;
+  label ??= L.fields.photo;
+  hint ??= L.fields.photoHint;
   const inputRef = useRef<HTMLInputElement>(null);
   const [compressing, setCompressing] = useState(false);
   const [error, setError] = useState<string | null>(null);

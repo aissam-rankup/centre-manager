@@ -21,10 +21,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { recordFollowUp } from "@/lib/actions/assistant";
-import { LABELS } from "@/lib/constants/labels";
-import { type FollowUpInput, followUpSchema } from "@/lib/validation/assistant";
+import { useLabels } from "@/lib/i18n/client";
+import { assistantSchemas, type FollowUpInput } from "@/lib/validation/assistant";
 
-const L = LABELS.followUp;
 const CHANNELS = ["phone", "whatsapp", "in_person"] as const;
 const TYPES = ["payment", "absence"] as const;
 
@@ -45,11 +44,13 @@ export function FollowUpDialog({
   defaultType,
   triggerVariant = "default",
 }: FollowUpDialogProps) {
+  const LABELS = useLabels();
+  const L = LABELS.followUp;
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const form = useForm<FollowUpInput>({
-    resolver: zodResolver(followUpSchema),
+    resolver: zodResolver(assistantSchemas(LABELS).followUpSchema),
     defaultValues: { studentId, invoiceId, type: defaultType, channel: "phone", note: "" },
   });
 

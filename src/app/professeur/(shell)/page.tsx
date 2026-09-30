@@ -12,16 +12,20 @@ import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getTeacherDashboard, type TeacherStudentRow, type TodaySession } from "@/lib/data/teacher";
 import { formatDateWithWeekday, formatPercent, today } from "@/lib/format";
 
-const L = LABELS.teacher.home;
-const S = L.students;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.home;
+  return { title: L.title };
+}
 
 export default async function TeacherHomePage() {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.home;
   const profile = await requireRole("teacher");
   const { sessions, students, studentCount, subjectCount, presenceRate } = await getTeacherDashboard();
   const dateLabel = formatDateWithWeekday(today());
@@ -94,7 +98,9 @@ function isDone(session: TodaySession): boolean {
   return session.studentCount > 0 && session.markedCount >= session.studentCount;
 }
 
-function SessionTile({ session, index }: { session: TodaySession; index: number }) {
+async function SessionTile({ session, index }: { session: TodaySession; index: number }) {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.home;
   const done = isDone(session);
   const progress = session.studentCount > 0 ? session.markedCount / session.studentCount : 0;
 
@@ -116,7 +122,10 @@ function SessionTile({ session, index }: { session: TodaySession; index: number 
   );
 }
 
-function StudentList({ students }: { students: TeacherStudentRow[] }) {
+async function StudentList({ students }: { students: TeacherStudentRow[] }) {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.home;
+  const S = L.students;
   return (
     <section aria-labelledby="mes-eleves" className="flex min-w-0 flex-col gap-3">
       <SectionHeading id="mes-eleves" title={S.title} />
@@ -190,7 +199,10 @@ function StudentList({ students }: { students: TeacherStudentRow[] }) {
   );
 }
 
-function LastStatus({ status }: { status: TeacherStudentRow["lastStatus"] }) {
+async function LastStatus({ status }: { status: TeacherStudentRow["lastStatus"] }) {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.home;
+  const S = L.students;
   if (!status) return <span className="text-caption text-subtle">{S.notMarked}</span>;
   return <StatusBadge status={status} />;
 }

@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getAdminStudents, getLevelOptions } from "@/lib/data/admin";
 
 import { StudentsBoard } from "./students-board";
 
-export const metadata: Metadata = { title: LABELS.admin.students.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  return { title: LABELS.admin.students.title };
+}
 
 export default async function AdminStudentsPage({ searchParams }: PageProps<"/admin/eleves">) {
   const { q, statut } = await searchParams;

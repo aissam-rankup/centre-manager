@@ -15,22 +15,22 @@ import { StudentTabs } from "@/components/students/student-tabs";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getLevelOptions } from "@/lib/data/admin";
 import { getLevelsWithSubjects, getStudentFile } from "@/lib/data/assistant";
 
 import { EnrollmentsEditor, StudentAdminActions } from "./student-admin";
 
-const L = LABELS.assistant.student;
-const T = L.tabs;
-
 export async function generateMetadata({ params }: PageProps<"/admin/eleves/[id]">): Promise<Metadata> {
   const { id } = await params;
   const student = z.uuid().safeParse(id).success ? await getStudentFile(id) : null;
-  return { title: student?.fullName ?? L.notFoundTitle };
+  return { title: student?.fullName ?? (await getLabels()).assistant.student.notFoundTitle };
 }
 
 export default async function AdminStudentPage({ params }: PageProps<"/admin/eleves/[id]">) {
+  const LABELS = await getLabels();
+  const L = LABELS.assistant.student;
+  const T = L.tabs;
   await requireRole("admin");
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();

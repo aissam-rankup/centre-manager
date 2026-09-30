@@ -9,7 +9,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import type { AppLabels } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import {
   type AbsenceRate,
   getReports,
@@ -20,83 +21,100 @@ import {
 } from "@/lib/data/admin";
 import { formatPercent } from "@/lib/format";
 
-const L = LABELS.admin.reports;
 const PERIODS: readonly ReportPeriod[] = ["30", "90", "all"];
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.reports;
+  return { title: L.title };
+}
 
-const LEVEL_COLUMNS: readonly DataTableColumn<LevelReportRow>[] = [
-  { id: "level", header: L.level, mobile: "title", cell: (row) => <span className="font-medium">{row.levelName}</span> },
-  { id: "students", header: L.students, align: "end", cell: (row) => <span className="numeric">{row.students}</span> },
-  { id: "enrollments", header: L.enrollments, align: "end", cell: (row) => <span className="numeric">{row.enrollments}</span> },
-];
+function levelColumns(LABELS: AppLabels): readonly DataTableColumn<LevelReportRow>[] {
+  const L = LABELS.admin.reports;
+  return [
+    { id: "level", header: L.level, mobile: "title", cell: (row) => <span className="font-medium">{row.levelName}</span> },
+    { id: "students", header: L.students, align: "end", cell: (row) => <span className="numeric">{row.students}</span> },
+    { id: "enrollments", header: L.enrollments, align: "end", cell: (row) => <span className="numeric">{row.enrollments}</span> },
+  ];
+}
 
-const SUBJECT_COLUMNS: readonly DataTableColumn<SubjectReportRow>[] = [
-  {
-    id: "subject",
-    header: L.subject,
-    mobile: "title",
-    cell: (row) => (
-      <span className="flex flex-col">
-        <span className="font-medium">{row.subjectName}</span>
-        <span className="text-caption text-muted-foreground md:hidden">{row.levelName}</span>
-      </span>
-    ),
-  },
-  { id: "level", header: L.level, mobile: "hidden", cell: (row) => row.levelName },
-  { id: "enrollments", header: L.enrollments, align: "end", cell: (row) => <span className="numeric">{row.enrollments}</span> },
-  { id: "price", header: L.price, align: "end", cell: (row) => <Money amount={row.monthlyPrice} /> },
-  {
-    id: "revenue",
-    header: L.monthlyRevenue,
-    align: "end",
-    cell: (row) => <Money amount={row.monthlyRevenue} />,
-  },
-];
+function subjectColumns(LABELS: AppLabels): readonly DataTableColumn<SubjectReportRow>[] {
+  const L = LABELS.admin.reports;
+  return [
+    {
+      id: "subject",
+      header: L.subject,
+      mobile: "title",
+      cell: (row) => (
+        <span className="flex flex-col">
+          <span className="font-medium">{row.subjectName}</span>
+          <span className="text-caption text-muted-foreground md:hidden">{row.levelName}</span>
+        </span>
+      ),
+    },
+    { id: "level", header: L.level, mobile: "hidden", cell: (row) => row.levelName },
+    { id: "enrollments", header: L.enrollments, align: "end", cell: (row) => <span className="numeric">{row.enrollments}</span> },
+    { id: "price", header: L.price, align: "end", cell: (row) => <Money amount={row.monthlyPrice} /> },
+    {
+      id: "revenue",
+      header: L.monthlyRevenue,
+      align: "end",
+      cell: (row) => <Money amount={row.monthlyRevenue} />,
+    },
+  ];
+}
 
-const PACK_COLUMNS: readonly DataTableColumn<PackReportRow>[] = [
-  {
-    id: "pack",
-    header: L.pack,
-    mobile: "title",
-    cell: (row) => (
-      <span className="flex flex-col">
-        <span className="font-medium">{row.packName}</span>
-        <span className="text-caption text-muted-foreground md:hidden">{row.levelName}</span>
-      </span>
-    ),
-  },
-  { id: "level", header: L.level, mobile: "hidden", cell: (row) => row.levelName },
-  { id: "subscribers", header: L.subscribers, align: "end", cell: (row) => <span className="numeric">{row.subscribers}</span> },
-  { id: "price", header: L.price, align: "end", cell: (row) => <Money amount={row.monthlyPrice} /> },
-  { id: "revenue", header: L.packRevenue, align: "end", cell: (row) => <Money amount={row.monthlyRevenue} /> },
-];
+function packColumns(LABELS: AppLabels): readonly DataTableColumn<PackReportRow>[] {
+  const L = LABELS.admin.reports;
+  return [
+    {
+      id: "pack",
+      header: L.pack,
+      mobile: "title",
+      cell: (row) => (
+        <span className="flex flex-col">
+          <span className="font-medium">{row.packName}</span>
+          <span className="text-caption text-muted-foreground md:hidden">{row.levelName}</span>
+        </span>
+      ),
+    },
+    { id: "level", header: L.level, mobile: "hidden", cell: (row) => row.levelName },
+    { id: "subscribers", header: L.subscribers, align: "end", cell: (row) => <span className="numeric">{row.subscribers}</span> },
+    { id: "price", header: L.price, align: "end", cell: (row) => <Money amount={row.monthlyPrice} /> },
+    { id: "revenue", header: L.packRevenue, align: "end", cell: (row) => <Money amount={row.monthlyRevenue} /> },
+  ];
+}
 
 type RankedRate = AbsenceRate & { rank: number };
 
-const ABSENCE_COLUMNS: readonly DataTableColumn<RankedRate>[] = [
-  { id: "rank", header: L.rank, mobile: "hidden", cell: (row) => <span className="numeric">{row.rank}</span> },
-  {
-    id: "subject",
-    header: L.subject,
-    mobile: "title",
-    cell: (row) => (
-      <span className="flex flex-col">
-        <span className="font-medium">
-          <span className="numeric md:hidden">{row.rank}. </span>
-          {row.subjectName}
+function absenceColumns(LABELS: AppLabels): readonly DataTableColumn<RankedRate>[] {
+  const L = LABELS.admin.reports;
+  return [
+    { id: "rank", header: L.rank, mobile: "hidden", cell: (row) => <span className="numeric">{row.rank}</span> },
+    {
+      id: "subject",
+      header: L.subject,
+      mobile: "title",
+      cell: (row) => (
+        <span className="flex flex-col">
+          <span className="font-medium">
+            <span className="numeric md:hidden">{row.rank}. </span>
+            {row.subjectName}
+          </span>
+          <span className="text-caption text-muted-foreground md:hidden">{row.levelName}</span>
         </span>
-        <span className="text-caption text-muted-foreground md:hidden">{row.levelName}</span>
-      </span>
-    ),
-  },
-  { id: "level", header: L.level, mobile: "hidden", cell: (row) => row.levelName },
-  { id: "absences", header: L.absences, align: "end", cell: (row) => <span className="numeric font-normal">{row.absentCount}</span> },
-  { id: "records", header: L.records, align: "end", cell: (row) => <span className="numeric font-normal">{row.totalCount}</span> },
-  { id: "rate", header: L.rate, align: "end", mobile: "aside", cell: (row) => <span className="numeric">{formatPercent(row.rate)}</span> },
-];
+      ),
+    },
+    { id: "level", header: L.level, mobile: "hidden", cell: (row) => row.levelName },
+    { id: "absences", header: L.absences, align: "end", cell: (row) => <span className="numeric font-normal">{row.absentCount}</span> },
+    { id: "records", header: L.records, align: "end", cell: (row) => <span className="numeric font-normal">{row.totalCount}</span> },
+    { id: "rate", header: L.rate, align: "end", mobile: "aside", cell: (row) => <span className="numeric">{formatPercent(row.rate)}</span> },
+  ];
+}
 
-function ExportButton({ type, period }: { type: string; period: ReportPeriod }) {
+async function ExportButton({ type, period }: { type: string; period: ReportPeriod }) {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.reports;
   return (
     <Button asChild variant="outline">
       <a href={`${ROUTES.admin.reports}/export?type=${type}&periode=${period}`} download>
@@ -108,6 +126,8 @@ function ExportButton({ type, period }: { type: string; period: ReportPeriod }) 
 }
 
 export default async function AdminReportsPage({ searchParams }: PageProps<"/admin/rapports">) {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.reports;
   const params = await searchParams;
   const period: ReportPeriod = PERIODS.find((value) => value === params.periode) ?? "30";
   const reports = await getReports(period);
@@ -125,7 +145,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
         <>
           <div className="grid gap-6 xl:grid-cols-2">
             <SectionCard id="niveaux" title={L.byLevel} aside={<ExportButton type="niveaux" period={period} />}>
-              <DataTable columns={LEVEL_COLUMNS} rows={reports.byLevel} getRowId={(row) => row.levelId} caption={L.byLevel} variant="plain" />
+              <DataTable columns={levelColumns(LABELS)} rows={reports.byLevel} getRowId={(row) => row.levelId} caption={L.byLevel} variant="plain" />
             </SectionCard>
             <SectionCard
               id="matieres"
@@ -133,13 +153,13 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
               description={L.bySubjectHint}
               aside={<ExportButton type="matieres" period={period} />}
             >
-              <DataTable columns={SUBJECT_COLUMNS} rows={reports.bySubject} getRowId={(row) => row.subjectId} caption={L.bySubject} variant="plain" />
+              <DataTable columns={subjectColumns(LABELS)} rows={reports.bySubject} getRowId={(row) => row.subjectId} caption={L.bySubject} variant="plain" />
             </SectionCard>
           </div>
 
           {reports.byPack.length > 0 ? (
             <SectionCard id="packs" title={L.byPack} description={L.byPackHint} aside={<ExportButton type="packs" period={period} />}>
-              <DataTable columns={PACK_COLUMNS} rows={reports.byPack} getRowId={(row) => row.packId} caption={L.byPack} variant="plain" />
+              <DataTable columns={packColumns(LABELS)} rows={reports.byPack} getRowId={(row) => row.packId} caption={L.byPack} variant="plain" />
             </SectionCard>
           ) : null}
 
@@ -158,7 +178,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
             {ranking.length === 0 ? (
               <EmptyState icon={BarChart3} title={L.emptyTitle} description={L.emptyDescription} />
             ) : (
-              <DataTable columns={ABSENCE_COLUMNS} rows={ranking} getRowId={(row) => row.subjectId} caption={L.absenceRanking} variant="plain" />
+              <DataTable columns={absenceColumns(LABELS)} rows={ranking} getRowId={(row) => row.subjectId} caption={L.absenceRanking} variant="plain" />
             )}
           </SectionCard>
         </>

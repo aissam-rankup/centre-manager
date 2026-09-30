@@ -3,18 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { type ActionResult, describeDatabaseError, failure, success } from "@/lib/actions/result";
+import { type ActionResult, failure, success } from "@/lib/actions/result";
 import { requireRole } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { isJpeg, STAFF_PHOTO_BUCKET, staffPhotoPath } from "@/lib/storage/photos";
 import { createClient } from "@/lib/supabase/server";
 import { PHOTO_MAX_BYTES } from "@/lib/validation/assistant";
 
-const P = LABELS.auth.photo;
-const V = LABELS.assistant.newStudent.validation;
-
 /** Photo envoyée par le formulaire : JPEG compressé côté client, 2 Mo maximum. */
 async function readPhoto(formData: FormData): Promise<File | string> {
+  const LABELS = await getLabels();
+  const V = LABELS.assistant.newStudent.validation;
   const photo = formData.get("photo");
   if (!(photo instanceof File) || photo.size === 0) return V.photoInvalid;
   if (photo.size > PHOTO_MAX_BYTES) return V.photoTooLarge;
@@ -26,6 +25,8 @@ async function readPhoto(formData: FormData): Promise<File | string> {
 // Sa propre photo (tous les rôles)
 // ---------------------------------------------------------------------
 export async function updateMyPhoto(formData: FormData): Promise<ActionResult> {
+  const LABELS = await getLabels();
+  const P = LABELS.auth.photo;
   const photo = await readPhoto(formData);
   if (typeof photo === "string") return failure(photo);
 
@@ -41,7 +42,7 @@ export async function updateMyPhoto(formData: FormData): Promise<ActionResult> {
   const { error } = await supabase.rpc("set_my_photo", { p_path: path });
   if (error) {
     await supabase.storage.from(STAFF_PHOTO_BUCKET).remove([path]);
-    return failure(describeDatabaseError(error));
+    return failure(await describeCenterError(error));
   }
 
   // L'ancienne photo n'est plus référencée.
@@ -56,7 +57,7 @@ export async function removeMyPhoto(): Promise<ActionResult> {
   const supabase = await createClient();
 
   const { error } = await supabase.rpc("set_my_photo", {});
-  if (error) return failure(describeDatabaseError(error));
+  if (error) return failure(await describeCenterError(error));
   if (profile.photoPath) await supabase.storage.from(STAFF_PHOTO_BUCKET).remove([profile.photoPath]);
 
   revalidatePath("/", "layout");
@@ -73,6 +74,8 @@ async function currentPhotoPath(userId: string): Promise<string | null | undefin
 }
 
 export async function setUserPhoto(userId: string, formData: FormData): Promise<ActionResult> {
+  const LABELS = await getLabels();
+  const P = LABELS.auth.photo;
   if (!z.uuid().safeParse(userId).success) return failure(LABELS.actions.errors.invalid);
   const photo = await readPhoto(formData);
   if (typeof photo === "string") return failure(photo);
@@ -91,7 +94,7 @@ export async function setUserPhoto(userId: string, formData: FormData): Promise<
   const { error } = await supabase.from("profiles").update({ photo_url: path }).eq("id", userId);
   if (error) {
     await supabase.storage.from(STAFF_PHOTO_BUCKET).remove([path]);
-    return failure(describeDatabaseError(error));
+    return failure(await describeCenterError(error));
   }
   if (previous) await supabase.storage.from(STAFF_PHOTO_BUCKET).remove([previous]);
 
@@ -100,6 +103,7 @@ export async function setUserPhoto(userId: string, formData: FormData): Promise<
 }
 
 export async function removeUserPhoto(userId: string): Promise<ActionResult> {
+  const LABELS = await getLabels();
   if (!z.uuid().safeParse(userId).success) return failure(LABELS.actions.errors.invalid);
   await requireRole("admin");
   const supabase = await createClient();
@@ -107,7 +111,7 @@ export async function removeUserPhoto(userId: string): Promise<ActionResult> {
   if (previous === undefined) return failure(LABELS.actions.errors.notFound);
 
   const { error } = await supabase.from("profiles").update({ photo_url: null }).eq("id", userId);
-  if (error) return failure(describeDatabaseError(error));
+  if (error) return failure(await describeCenterError(error));
   if (previous) await supabase.storage.from(STAFF_PHOTO_BUCKET).remove([previous]);
 
   revalidatePath("/", "layout");

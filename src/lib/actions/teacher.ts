@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
-import { type ActionResult, describeDatabaseError, failure, success } from "@/lib/actions/result";
+import { type ActionResult, failure, success } from "@/lib/actions/result";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { todayDayOfWeek } from "@/lib/data/teacher";
 import { toISODate, today } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -16,6 +16,7 @@ import { attendanceSchema } from "@/lib/validation/teacher";
  * La RLS garantit en plus : matière du professeur, élève inscrit, date du jour.
  */
 export async function saveAttendance(input: unknown): Promise<ActionResult> {
+  const LABELS = await getLabels();
   const parsed = attendanceSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid);
 
@@ -29,7 +30,7 @@ export async function saveAttendance(input: unknown): Promise<ActionResult> {
     .select("id, subject_id, day_of_week")
     .eq("id", slotId)
     .maybeSingle();
-  if (slotError) return failure(describeDatabaseError(slotError));
+  if (slotError) return failure(await describeCenterError(slotError));
   if (!slot) return failure(LABELS.actions.errors.notFound);
   if (slot.day_of_week !== todayDayOfWeek()) return failure(LABELS.teacher.call.errors.notToday);
 
@@ -44,7 +45,7 @@ export async function saveAttendance(input: unknown): Promise<ActionResult> {
     })),
     { onConflict: "student_id,subject_id,session_date" },
   );
-  if (error) return failure(describeDatabaseError(error));
+  if (error) return failure(await describeCenterError(error));
 
   revalidatePath(ROUTES.teacher.home, "layout");
   revalidatePath(ROUTES.assistant.home);

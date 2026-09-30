@@ -8,18 +8,23 @@ import { subjectTones } from "@/components/dashboard/progress-tile";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getTeacherSlots, type TeacherSlot, todayDayOfWeek } from "@/lib/data/teacher";
 import { cn } from "@/lib/utils";
 
-const L = LABELS.teacher.schedule;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.schedule;
+  return { title: L.title };
+}
 
 /** Semaine du lundi au samedi ; le dimanche n'apparaît que s'il porte des séances. */
 const WEEK = [1, 2, 3, 4, 5, 6] as const;
 
 export default async function TeacherSchedulePage() {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.schedule;
   const [profile, slots] = await Promise.all([requireRole("teacher"), getTeacherSlots()]);
   const teacher: SlotTeacher = { name: profile.fullName, photoUrl: profile.photoUrl };
   const tones = subjectTones(slots.map((slot) => slot.subjectId));
@@ -100,7 +105,9 @@ export default async function TeacherSchedulePage() {
   );
 }
 
-function DayHeading({ day, isToday, id }: { day: number; isToday: boolean; id?: string }) {
+async function DayHeading({ day, isToday, id }: { day: number; isToday: boolean; id?: string }) {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.schedule;
   return (
     <h2 id={id} className="flex items-center gap-2 text-body font-semibold">
       {LABELS.days[day]}
@@ -113,7 +120,7 @@ function DayHeading({ day, isToday, id }: { day: number; isToday: boolean; id?: 
 
 type SlotTeacher = { name: string; photoUrl: string | null };
 
-function SlotCard({
+async function SlotCard({
   slot,
   teacher,
   tone,
@@ -127,6 +134,8 @@ function SlotCard({
   isToday: boolean;
   compact?: boolean;
 }) {
+  const LABELS = await getLabels();
+  const L = LABELS.teacher.schedule;
   const content = (
     <>
       <p className="numeric flex items-center gap-1.5 text-caption font-medium">

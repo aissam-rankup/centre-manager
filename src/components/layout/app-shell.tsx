@@ -10,9 +10,9 @@ import { NotificationBell } from "@/components/layout/notification-bell";
 import { type ShellUser, UserMenu } from "@/components/layout/user-menu";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { NAVIGATION, type NavSpace } from "@/config/navigation";
+import { navigationFor, type NavSpace } from "@/config/navigation";
 import { signOut } from "@/lib/auth/actions";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { NotificationItem } from "@/lib/data/notifications";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +42,8 @@ type AppShellProps = {
  * barre de navigation violette en bas sur mobile.
  */
 export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, notifications, banners, children }: AppShellProps) {
-  const items = NAVIGATION[space];
+  const LABELS = useLabels();
+  const items = navigationFor(LABELS)[space];
   const home = items[0]?.href ?? "/";
   const pathname = usePathname();
   const activeHref = findActiveHref(items, pathname);
@@ -99,15 +100,16 @@ export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, noti
 // Recherche d'élève (admin, assistant) : ouvre la liste filtrée.
 // ---------------------------------------------------------------------
 function HeaderSearch({ action }: { action: string }) {
+  const LABELS = useLabels();
   return (
     <form action={action} role="search" className="md:flex md:flex-1 md:justify-center">
       <label className="relative flex h-9 w-full items-center md:w-[300px]">
-        <span className="sr-only">{LABELS.common.searchStudent}</span>
+        <span className="sr-only">{LABELS.nav.searchStudent}</span>
         <Search className="pointer-events-none absolute left-3.5 size-3.5 text-subtle" aria-hidden />
         <input
           type="search"
           name="q"
-          placeholder={LABELS.common.searchStudent}
+          placeholder={LABELS.nav.searchStudent}
           className="h-full w-full rounded-full border border-border bg-card pr-4 pl-9 text-table text-foreground outline-none placeholder:text-caption placeholder:text-subtle focus-visible:border-primary"
         />
       </label>
@@ -127,6 +129,7 @@ type SidebarProps = {
 };
 
 function Sidebar({ items, activeHref, home, label, withSignOut }: SidebarProps) {
+  const LABELS = useLabels();
   const [pending, startTransition] = useTransition();
 
   return (
@@ -192,6 +195,7 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
 // Barre de navigation violette en bas (< 768 px)
 // ---------------------------------------------------------------------
 function BottomNav({ items, activeHref }: { items: readonly NavItem[]; activeHref: string | null }) {
+  const LABELS = useLabels();
   const overflow = items.length > MAX_BOTTOM_ITEMS;
   const visible = overflow ? items.slice(0, MAX_BOTTOM_ITEMS - 1) : items;
   const hidden = overflow ? items.slice(MAX_BOTTOM_ITEMS - 1) : [];

@@ -1,15 +1,16 @@
 import type { NextRequest } from "next/server";
 
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { toCsv } from "@/lib/csv";
 import { getReports, type ReportPeriod } from "@/lib/data/admin";
 import { toISODate, today } from "@/lib/format";
 
-const L = LABELS.admin.reports;
 const PERIODS: readonly ReportPeriod[] = ["30", "90", "all"];
 
 /** Export CSV d'un rapport : ?type=niveaux|matieres|packs|absences&periode=30|90|all (admin uniquement). */
 export async function GET(request: NextRequest) {
+  const LABELS = await getLabels();
+  const L = LABELS.admin.reports;
   const type = request.nextUrl.searchParams.get("type");
   const rawPeriod = request.nextUrl.searchParams.get("periode");
   const period: ReportPeriod = PERIODS.find((value) => value === rawPeriod) ?? "30";

@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 
 import { AbsencesView } from "@/components/absences/absences-view";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { getAbsencesOn } from "@/lib/data/absences";
 import { toISODate, today } from "@/lib/format";
 
-export const metadata: Metadata = { title: LABELS.absencesPage.title };
+export async function generateMetadata(): Promise<Metadata> {
+  const LABELS = await getLabels();
+  return { title: LABELS.absencesPage.title };
+}
 
 /** Absences du jour (ou de la date choisie, jamais dans le futur). */
 export default async function AbsencesPage({ searchParams }: PageProps<"/admin/absences">) {

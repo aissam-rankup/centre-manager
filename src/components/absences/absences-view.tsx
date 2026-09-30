@@ -9,11 +9,10 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import type { AbsenceRow } from "@/lib/data/absences";
 import { formatDate } from "@/lib/format";
 
-const L = LABELS.absencesPage;
 
 type AbsencesViewProps = {
   rows: AbsenceRow[];
@@ -26,7 +25,9 @@ type AbsencesViewProps = {
 };
 
 /** Élèves absents à une date : profil, matière, série en cours, contact et relance. */
-export function AbsencesView({ rows, dateIso, todayIso, basePath, fileBase }: AbsencesViewProps) {
+export async function AbsencesView({ rows, dateIso, todayIso, basePath, fileBase }: AbsencesViewProps) {
+  const LABELS = await getLabels();
+  const L = LABELS.absencesPage;
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
