@@ -9,5 +9,7 @@ export function toShellUser(profile: SessionProfile): ShellUser {
     roleLabel: LABELS.roles[profile.role],
     centerName: profile.centerName,
     photoUrl: profile.photoUrl,
+    // Pas de photo à déposer en support (lecture seule).
+    canEditPhoto: !profile.support,
   };
 }

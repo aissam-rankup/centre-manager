@@ -161,6 +161,10 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
   - enregistrer un paiement (un mois ou un an, remet le centre en service), modifier l'échéance (un centre en retard repasse actif si elle redevient future), formule et tarif, informations et vocabulaire ;
   - suspendre, réactiver, résilier (motif obligatoire, journalisé ; la résiliation est définitive) ;
   - renvoyer l'invitation, ou envoyer un lien de mot de passe à un compte déjà confirmé.
+- **Cycle de vie (job quotidien, 00:10 UTC)** : échéance dépassée → *en retard* (centre utilisable, bandeau pour son administrateur seulement, avec la date de suspension) ; échéance + délai de grâce dépassés → *suspendu*. Un paiement remet le centre en service immédiatement. Un centre résilié n'est jamais modifié.
+- **Blocage côté serveur** : centre suspendu ou résilié → `private.auth_center_id()` et `auth_role()` renvoient NULL, donc toutes les policies métier refusent lectures et écritures ; le proxy (claim `center_status` du JWT) et la garde serveur `requireRole` (statut relu en base) redirigent vers `/acces-suspendu` (explication + contact réglé dans **Console → Réglages**). Les données ne sont jamais supprimées.
+- **Rappels par courriel** : le job prépare chaque jour les rappels J-7, J-1, jour J, suspension et le récapitulatif du propriétaire dans `platform_notifications` (visibles dans la console). **L'envoi n'est pas encore branché** : il le sera quand un service de courriel sera choisi.
+- **Accès support (lecture seule)** : depuis la fiche d'un centre, motif obligatoire, 1 heure ; le super-admin consulte l'espace administration du centre avec un bandeau permanent ; toute écriture est refusée en base (trigger sur chaque table métier et policies de stockage) ; ouverture et fermeture journalisées.
 - **Courriels Auth en français** : modèles `supabase/templates/invite.html` et `recovery.html` (liens vers `/bienvenue?token_hash=…`). En production : les coller dans Supabase → Authentication → Email Templates (Invite user, Reset password) et ajouter `https://<domaine>/bienvenue` aux Redirect URLs.
 
 ## Mode appel (professeur)

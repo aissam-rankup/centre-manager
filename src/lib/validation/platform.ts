@@ -160,6 +160,13 @@ export const centerStatusSchema = z.object({
 });
 export type CenterStatusInput = z.infer<typeof centerStatusSchema>;
 
+export const platformSettingsSchema = z.object({
+  name: optionalText(120),
+  phone: optionalPhone,
+  email: optionalEmail,
+});
+export type PlatformSettingsInput = z.infer<typeof platformSettingsSchema>;
+
 export const resendInvitationSchema = z.object({ centerId, userId: z.uuid() });
 
 /** « 1 200,50 » → 1200.5 */

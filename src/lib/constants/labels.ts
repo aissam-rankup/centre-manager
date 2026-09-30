@@ -134,6 +134,7 @@ export const LABELS = {
     absences: "Absences",
     platformCenters: "Centres",
     platformBilling: "Facturation",
+    platformSettings: "Réglages",
     short: {
       dashboard: "Accueil",
       subjects: "Matières",
@@ -244,6 +245,23 @@ export const LABELS = {
       callLabel: (name: string) => `Appeler le directeur de ${name}`,
       emailLabel: (name: string) => `Écrire au directeur de ${name}`,
       openCenter: "Voir la fiche",
+      upcomingTitle: "Échéances des 7 prochains jours",
+      upcomingEmpty: "Aucune échéance dans les 7 prochains jours.",
+      dueOn: (date: string) => `Échéance le ${date}`,
+      remindersTitle: "Rappels préparés",
+      remindersDescription:
+        "Courriels préparés chaque nuit (J-7, J-1, jour J, suspension). L'envoi automatique sera activé avec le service de courriel.",
+      remindersEmpty: "Aucun rappel préparé récemment.",
+      reminderKinds: {
+        due_in_7: "Échéance dans 7 jours",
+        due_in_1: "Échéance demain",
+        due_today: "Échéance aujourd'hui",
+        suspended: "Accès suspendu",
+        owner_digest: "Récapitulatif",
+      },
+      reminderPending: "À envoyer",
+      reminderSent: "Envoyé",
+      noRecipient: "Sans courriel",
     },
     centers: {
       title: "Centres",
@@ -341,7 +359,10 @@ export const LABELS = {
       "branding.updated": "Marque blanche modifiée",
       "center.details_changed": "Informations modifiées",
       "center.admin_invited": "Administrateur invité",
+      "platform.settings_changed": "Réglages modifiés",
       "center.password_link_sent": "Lien de mot de passe envoyé",
+      "support.started": "Accès support ouvert",
+      "support.ended": "Accès support fermé",
     },
     eventFallback: "Action",
     reason: (text: string) => `Motif : ${text}`,
@@ -464,8 +485,14 @@ export const LABELS = {
         suspended: "Suspendre le centre",
         cancelled: "Résilier le centre",
       },
+      support: "Accès support (lecture seule)",
+      supportTitle: "Accès support en lecture seule",
+      supportDescription:
+        "Vous consultez l'espace administration du centre pendant 1 heure, sans pouvoir rien modifier. L'accès est journalisé et un bandeau reste affiché.",
+      supportSubmit: "Ouvrir l'accès support",
       statusDescription: {
-        active: "Les comptes du centre retrouvent l'accès immédiatement.",
+        active:
+          "Les comptes du centre retrouvent l'accès immédiatement. Si l'échéance est dépassée, prolongez-la : sinon le contrôle quotidien suspendra à nouveau le centre.",
         suspended: "La connexion sera bloquée pour tous les comptes du centre. Les données sont conservées.",
         cancelled:
           "Action définitive : le centre ne pourra plus être réactivé. Les données restent exportables pendant 90 jours.",
@@ -475,6 +502,17 @@ export const LABELS = {
         suspended: "Centre suspendu",
         cancelled: "Centre résilié",
       },
+    },
+    settings: {
+      title: "Réglages de la plateforme",
+      description: "Contact affiché aux centres suspendus pour régulariser leur abonnement.",
+      contactTitle: "Contact de régularisation",
+      name: "Nom affiché",
+      namePlaceholder: "Service client CentroManager",
+      phone: "Téléphone",
+      email: "Courriel",
+      saved: "Réglages enregistrés",
+      updatedAt: (date: string) => `Dernière modification : ${date}`,
     },
     billing: {
       title: "Facturation",
@@ -508,6 +546,30 @@ export const LABELS = {
     weak: "Mot de passe trop faible : choisissez-en un plus long ou plus varié.",
     failed: "Enregistrement impossible. Réessayez.",
     signedInAs: (email: string) => `Compte : ${email}`,
+  },
+  suspended: {
+    title: "Accès suspendu",
+    description: (center: string) =>
+      `L'accès${center ? ` à ${center}` : ""} est suspendu : l'abonnement n'est pas réglé. Vos données sont conservées et l'accès sera rétabli dès la régularisation.`,
+    cancelledTitle: "Abonnement résilié",
+    cancelledDescription: (center: string) =>
+      `L'abonnement${center ? ` de ${center}` : ""} a été résilié. Les données restent disponibles à l'export pendant 90 jours sur demande.`,
+    contact: (name: string | null) => (name ? `Pour régulariser, contactez ${name} :` : "Pour régulariser, contactez-nous :"),
+    retry: "J'ai régularisé, réessayer",
+    restoredTitle: "Accès rétabli",
+    restoredDescription: "Votre centre est de nouveau actif.",
+    continue: "Continuer",
+  },
+  pastDueBanner: {
+    message: (days: number, date: string) =>
+      days > 0
+        ? `Abonnement en retard de paiement : l'accès sera suspendu dans ${days} jour${days > 1 ? "s" : ""} (le ${date}).`
+        : `Abonnement en retard de paiement : l'accès sera suspendu aujourd'hui.`,
+    due: (date: string) => `Échéance du ${date}.`,
+  },
+  supportBanner: {
+    message: (center: string, time: string) => `Mode support — lecture seule — ${center} (jusqu'à ${time}).`,
+    leave: "Quitter le mode support",
   },
   spaces: {
     assistant: "Espace accueil",

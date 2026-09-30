@@ -18,6 +18,7 @@ import {
   dueDateSchema,
   newCenterSchema,
   parseAmount,
+  platformSettingsSchema,
   resendInvitationSchema,
   subscriptionPaymentSchema,
   termsToSave,
@@ -231,4 +232,19 @@ export async function resendInvitation(input: unknown): Promise<ActionResult<{ p
   if (error) return failure(E.inviteFailed);
   revalidatePlatform(centerId);
   return success({ passwordLink });
+}
+
+export async function updatePlatformSettings(input: unknown): Promise<ActionResult> {
+  const parsed = platformSettingsSchema.safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
+  const supabase = await platform();
+  const v = parsed.data;
+  const { error } = await supabase.rpc("platform_update_settings", {
+    p_support_name: v.name,
+    p_support_phone: phoneOrNull(v.phone) ?? "",
+    p_support_email: v.email,
+  });
+  if (error) return failure(describeDatabaseError(error));
+  revalidatePath(ROUTES.platform.settings);
+  return success();
 }

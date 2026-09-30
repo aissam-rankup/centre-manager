@@ -9,11 +9,14 @@ export const ROUTES = {
   inactive: "/compte-inactif",
   /** Accueil des comptes invités : choix du mot de passe. */
   welcome: "/bienvenue",
+  /** Centre suspendu ou résilié : écran explicatif et contact. */
+  suspended: "/acces-suspendu",
   platform: {
     home: "/platform",
     centers: "/platform/centres",
     newCenter: "/platform/centres/nouveau",
     billing: "/platform/facturation",
+    settings: "/platform/reglages",
   },
   assistant: {
     home: "/assistant",

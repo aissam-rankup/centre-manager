@@ -25,7 +25,8 @@ type PostgresLikeError = { code?: string; message?: string };
 export function describeDatabaseError(error: PostgresLikeError): string {
   switch (error.code) {
     case "42501":
-      return LABELS.actions.errors.forbidden;
+      // Mode support du super-admin : message explicite (lecture seule).
+      return error.message?.startsWith("Mode support") ? error.message : LABELS.actions.errors.forbidden;
     case "22023":
     case "23514":
     case "P0002":

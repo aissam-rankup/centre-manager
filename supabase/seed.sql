@@ -407,3 +407,8 @@ begin
     (c_atlas, v_level, 'Conduite', 900);
 end;
 $$;
+
+-- Contact affiché sur l'écran de suspension (réglages de la plateforme).
+update public.platform_settings
+set support_name = 'Service client CentroManager', support_phone = '05 22 00 00 00', support_email = 'support@centro.demo'
+where id = 1;

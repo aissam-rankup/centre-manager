@@ -55,6 +55,11 @@ export function formatDate(date: Date | string): string {
   return format(inAppTimeZone(date), "dd/MM/yyyy", { locale: fr });
 }
 
+/** « 14:30 » */
+export function formatTime(date: Date | string): string {
+  return format(inAppTimeZone(date), "HH:mm", { locale: fr });
+}
+
 /** « 24/09/2026 14:30 » */
 export function formatDateTime(date: Date | string): string {
   return format(inAppTimeZone(date), "dd/MM/yyyy HH:mm", { locale: fr });

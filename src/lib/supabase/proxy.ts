@@ -10,12 +10,13 @@ import type { Database } from "@/lib/supabase/database.types";
 const appClaimsSchema = z.object({
   user_role: z.enum(["admin", "assistant", "teacher", "super_admin"]).optional(),
   profile_active: z.boolean().optional(),
+  center_status: z.enum(["trial", "active", "past_due", "suspended", "cancelled"]).nullable().optional(),
 });
 
 /** Chemins accessibles sans session. */
 const PUBLIC_PATHS: readonly string[] = [ROUTES.login];
 /** Chemins ouverts avec ou sans session, sans redirection (accueil des invités). */
-const OPEN_PATHS: readonly string[] = [ROUTES.welcome];
+const OPEN_PATHS: readonly string[] = [ROUTES.welcome, ROUTES.suspended];
 
 function isPlatformPath(pathname: string): boolean {
   return pathname === ROUTES.platform.home || pathname.startsWith(`${ROUTES.platform.home}/`);
@@ -78,6 +79,13 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     if (PUBLIC_PATHS.includes(pathname)) return response;
     const next = pathname === "/" ? undefined : `${pathname}${search}`;
     return redirectTo(ROUTES.login, next ? { [NEXT_PARAM]: next } : undefined);
+  }
+
+  // Centre suspendu ou résilié (d'après le jeton) : écran dédié, sans passer par
+  // les espaces. La garde serveur et la RLS relisent le statut en base.
+  const appClaims = appClaimsSchema.safeParse(claims).data;
+  if (appClaims?.center_status === "suspended" || appClaims?.center_status === "cancelled") {
+    return redirectTo(ROUTES.suspended);
   }
 
   // Accueil et page de connexion : envoi direct vers l'espace du rôle.

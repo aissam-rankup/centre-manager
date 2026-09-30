@@ -31,6 +31,8 @@ type AppShellProps = {
   searchHref?: string;
   /** Cloche de notifications (admin, assistant) ; liens vers les fiches de « fileBase ». */
   notifications?: { items: NotificationItem[]; fileBase: string };
+  /** Bandeaux permanents en haut de page (retard de paiement, mode support). */
+  banners?: ReactNode;
   children: ReactNode;
 };
 
@@ -39,7 +41,7 @@ type AppShellProps = {
  * barre latérale violette à icônes (≥ 768 px), en-tête de 88 px,
  * barre de navigation violette en bas sur mobile.
  */
-export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, notifications, children }: AppShellProps) {
+export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, notifications, banners, children }: AppShellProps) {
   const items = NAVIGATION[space];
   const home = items[0]?.href ?? "/";
   const pathname = usePathname();
@@ -59,6 +61,7 @@ export function AppShell({ space, user, spaceLabel, todayLabel, searchHref, noti
         <Sidebar items={items} activeHref={activeHref} home={home} label={spaceLabel} withSignOut={Boolean(user)} />
 
         <div className="flex min-w-0 flex-1 flex-col">
+          {banners}
           <header className="flex flex-col gap-3 px-4 pt-4 md:h-[88px] md:flex-row md:items-center md:gap-6 md:px-8 md:pt-0">
             <div className="flex items-center gap-3">
               <p className="min-w-0 flex-1 truncate text-title text-heading" aria-hidden>

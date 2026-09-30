@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   LayoutPanelTop,
   Palette,
+  Settings,
   UserPlus,
   Users,
   UserCog,
@@ -48,6 +49,7 @@ export const NAVIGATION: Record<NavSpace, readonly NavItem[]> = {
     { href: ROUTES.platform.home, label: LABELS.nav.dashboard, shortLabel: LABELS.nav.short.dashboard, icon: LayoutDashboard },
     { href: ROUTES.platform.centers, label: LABELS.nav.platformCenters, icon: Building2 },
     { href: ROUTES.platform.billing, label: LABELS.nav.platformBilling, icon: Wallet },
+    { href: ROUTES.platform.settings, label: LABELS.nav.platformSettings, icon: Settings },
   ],
   styleguide: [
     { href: "/charte", label: LABELS.nav.styleguideTokens, icon: Palette },

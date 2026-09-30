@@ -21,6 +21,9 @@ export type PlatformCenterUser = Fn<"platform_center_users">[number];
 export type PlatformEvent = Fn<"platform_center_events">[number];
 export type PlatformPayment = Fn<"platform_payments">[number];
 export type BillingMonth = Fn<"platform_billing_months">[number];
+export type UpcomingDue = Fn<"platform_upcoming_due">[number];
+export type PreparedNotification = Fn<"platform_upcoming_notifications">[number];
+export type PlatformSettings = Fn<"platform_settings_get">[number];
 
 /** Marque blanche (colonnes de center_branding utiles à la fiche). */
 const brandingSchema = z
@@ -50,17 +53,33 @@ async function platformClient() {
   return createClient();
 }
 
-export type PlatformDashboard = { overview: PlatformOverview; overdue: OverdueCenter[] };
+export type PlatformDashboard = {
+  overview: PlatformOverview;
+  overdue: OverdueCenter[];
+  upcoming: UpcomingDue[];
+  notifications: PreparedNotification[];
+};
 
 export async function getPlatformDashboard(): Promise<PlatformDashboard> {
   const supabase = await platformClient();
-  const [overview, overdue] = await Promise.all([
+  const [overview, overdue, upcoming, notifications] = await Promise.all([
     supabase.rpc("platform_overview").single(),
     supabase.rpc("platform_overdue_centers"),
+    supabase.rpc("platform_upcoming_due"),
+    supabase.rpc("platform_upcoming_notifications", {}),
   ]);
   if (overview.error) throw overview.error;
   if (overdue.error) throw overdue.error;
-  return { overview: overview.data, overdue: overdue.data };
+  if (upcoming.error) throw upcoming.error;
+  if (notifications.error) throw notifications.error;
+  return { overview: overview.data, overdue: overdue.data, upcoming: upcoming.data, notifications: notifications.data };
+}
+
+export async function getPlatformSettings(): Promise<PlatformSettings> {
+  const supabase = await platformClient();
+  const { data, error } = await supabase.rpc("platform_settings_get").single();
+  if (error) throw error;
+  return data;
 }
 
 export async function getPlatformCenters(): Promise<PlatformCenterRow[]> {

@@ -1,10 +1,11 @@
-import { CircleCheck, Mail, Phone } from "lucide-react";
+import { CalendarClock, CircleCheck, Mail, MailCheck, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SectionHeading } from "@/components/dashboard/section-heading";
 import { StatTile, StatTiles } from "@/components/dashboard/stat-tile";
 import { CenterStatusBadge } from "@/components/platform/center-status-badge";
+import { DaysRemaining } from "@/components/platform/days-remaining";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Money } from "@/components/shared/money";
 import { PageHeader } from "@/components/shared/page-header";
@@ -17,11 +18,12 @@ import { formatPhone, toTelHref } from "@/lib/phone";
 
 const L = LABELS.platform.dashboard;
 const STATUSES: readonly CenterStatus[] = ["trial", "active", "past_due", "suspended", "cancelled"];
+const REMINDER_KINDS: Record<string, string> = L.reminderKinds;
 
 export const metadata: Metadata = { title: L.title };
 
 export default async function PlatformDashboardPage() {
-  const { overview, overdue } = await getPlatformDashboard();
+  const { overview, overdue, upcoming, notifications } = await getPlatformDashboard();
   const statusCounts: Record<CenterStatus, number> = {
     trial: overview.trial_count,
     active: overview.active_count,
@@ -136,6 +138,59 @@ export default async function PlatformDashboardPage() {
           </ul>
         )}
       </section>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <section aria-labelledby="echeances" className="flex flex-col gap-4">
+          <SectionHeading id="echeances" title={L.upcomingTitle} />
+          {upcoming.length === 0 ? (
+            <EmptyState icon={CalendarClock} title={L.upcomingEmpty} />
+          ) : (
+            <ul className="flex flex-col divide-y divide-divider rounded-xl bg-card shadow-card">
+              {upcoming.map((center) => (
+                <li key={center.center_id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3">
+                  <Link
+                    href={`${ROUTES.platform.centers}/${center.center_id}`}
+                    className="min-w-0 flex-1 truncate rounded-sm font-medium text-heading hover:text-primary"
+                  >
+                    {center.name}
+                  </Link>
+                  <span className="text-caption text-muted-foreground">{L.dueOn(formatDate(center.current_period_end))}</span>
+                  <DaysRemaining days={center.days_remaining} className="text-caption" />
+                  <span className="text-caption">
+                    <Money amount={center.price} /> {LABELS.platform.intervalShort[center.billing_interval]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section aria-labelledby="rappels" className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <SectionHeading id="rappels" title={L.remindersTitle} />
+            <p className="text-caption text-muted-foreground">{L.remindersDescription}</p>
+          </div>
+          {notifications.length === 0 ? (
+            <EmptyState icon={MailCheck} title={L.remindersEmpty} />
+          ) : (
+            <ul className="flex max-h-[360px] flex-col divide-y divide-divider overflow-y-auto rounded-xl bg-card shadow-card">
+              {notifications.map((item) => (
+                <li key={item.notification_id} className="flex flex-col gap-0.5 px-5 py-3">
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="truncate font-medium text-heading">{item.center_name ?? "—"}</span>
+                    <span className={item.sent_at ? "text-caption text-success-ink" : "text-caption text-warning-ink"}>
+                      {item.sent_at ? L.reminderSent : L.reminderPending}
+                    </span>
+                  </span>
+                  <span className="text-caption text-muted-foreground">
+                    {REMINDER_KINDS[item.kind] ?? item.kind} · {formatDate(item.scheduled_for)} ·{" "}
+                    {item.recipient ?? L.noRecipient}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

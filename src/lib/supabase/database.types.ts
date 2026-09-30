@@ -716,6 +716,71 @@ export type Database = {
           },
         ]
       }
+      platform_notifications: {
+        Row: {
+          center_id: string | null
+          created_at: string
+          id: number
+          kind: string
+          payload: Json
+          recipient: string | null
+          scheduled_for: string
+          sent_at: string | null
+        }
+        Insert: {
+          center_id?: string | null
+          created_at?: string
+          id?: never
+          kind: string
+          payload?: Json
+          recipient?: string | null
+          scheduled_for: string
+          sent_at?: string | null
+        }
+        Update: {
+          center_id?: string | null
+          created_at?: string
+          id?: never
+          kind?: string
+          payload?: Json
+          recipient?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_notifications_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_settings: {
+        Row: {
+          id: number
+          support_email: string | null
+          support_name: string | null
+          support_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          support_email?: string | null
+          support_name?: string | null
+          support_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          support_email?: string | null
+          support_name?: string | null
+          support_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           active: boolean
@@ -1047,6 +1112,51 @@ export type Database = {
             foreignKeyName: "subscriptions_center_id_fkey"
             columns: ["center_id"]
             isOneToOne: true
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_sessions: {
+        Row: {
+          actor_id: string
+          center_id: string
+          ended_at: string | null
+          expires_at: string
+          id: string
+          reason: string
+          started_at: string
+        }
+        Insert: {
+          actor_id: string
+          center_id: string
+          ended_at?: string | null
+          expires_at: string
+          id?: string
+          reason: string
+          started_at?: string
+        }
+        Update: {
+          actor_id?: string
+          center_id?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          reason?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_sessions_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_sessions_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
             referencedRelation: "centers"
             referencedColumns: ["id"]
           },
@@ -1406,6 +1516,23 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      my_center_access: {
+        Args: never
+        Returns: {
+          blocked: boolean
+          center_id: string
+          center_name: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          current_period_end: string
+          days_before_suspension: number
+          status: Database["public"]["Enums"]["center_status"]
+          support_expires_at: string
+          support_mode: boolean
+          suspension_date: string
+        }[]
+      }
       platform_billing_months: {
         Args: never
         Returns: {
@@ -1510,6 +1637,7 @@ export type Database = {
         }
         Returns: string
       }
+      platform_end_support: { Args: never; Returns: undefined }
       platform_log_invitation: {
         Args: {
           p_center_id: string
@@ -1594,6 +1722,45 @@ export type Database = {
         }
         Returns: undefined
       }
+      platform_settings_get: {
+        Args: never
+        Returns: {
+          support_email: string
+          support_name: string
+          support_phone: string
+          updated_at: string
+        }[]
+      }
+      platform_start_support: {
+        Args: { p_center_id: string; p_reason: string }
+        Returns: string
+      }
+      platform_upcoming_due: {
+        Args: never
+        Returns: {
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
+          center_id: string
+          current_period_end: string
+          days_remaining: number
+          name: string
+          owner_contact_email: string
+          owner_contact_phone: string
+          price: number
+          status: Database["public"]["Enums"]["center_status"]
+        }[]
+      }
+      platform_upcoming_notifications: {
+        Args: { p_from?: string }
+        Returns: {
+          center_id: string
+          center_name: string
+          kind: string
+          notification_id: number
+          recipient: string
+          scheduled_for: string
+          sent_at: string
+        }[]
+      }
       platform_update_center: {
         Args: {
           p_center_id: string
@@ -1605,6 +1772,14 @@ export type Database = {
           p_owner_contact_name: string
           p_owner_contact_phone: string
           p_slug: string
+        }
+        Returns: undefined
+      }
+      platform_update_settings: {
+        Args: {
+          p_support_email: string
+          p_support_name: string
+          p_support_phone: string
         }
         Returns: undefined
       }

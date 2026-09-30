@@ -5,6 +5,7 @@ import {
   Ban,
   CalendarClock,
   CircleCheck,
+  LifeBuoy,
   LoaderCircle,
   type LucideIcon,
   Pencil,
@@ -31,6 +32,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import type { ActionResult } from "@/lib/actions/result";
@@ -42,6 +44,7 @@ import {
   updateCenterPricing,
   updateCenterStatus,
 } from "@/lib/actions/platform";
+import { startSupport } from "@/lib/actions/support";
 import { LABELS } from "@/lib/constants/labels";
 import type { BillingInterval, CenterStatus, CenterTypeOption, SubscriptionPlan } from "@/lib/data/platform";
 import {
@@ -461,11 +464,77 @@ function StatusDialog({ centerId, status }: { centerId: string; status: ManualSt
   );
 }
 
+// ---------------------------------------------------------------------
+// Accès support (lecture seule)
+// ---------------------------------------------------------------------
+function SupportDialog({ centerId }: { centerId: string }) {
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <ActionDialog
+      trigger={A.support}
+      icon={LifeBuoy}
+      title={A.supportTitle}
+      description={A.supportDescription}
+      submitLabel={A.supportSubmit}
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) {
+          setReason("");
+          setError(null);
+        }
+      }}
+      pending={pending}
+      onSubmit={() => {
+        if (!reason.trim()) {
+          setError(P.validation.reasonRequired);
+          return;
+        }
+        startTransition(async () => {
+          // Succès : redirection vers l'espace administration du centre.
+          const result = await startSupport({ centerId, reason });
+          if (result && !result.ok) toast.error(result.error);
+        });
+      }}
+    >
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="support-reason">{A.reason}</Label>
+        <Textarea
+          id="support-reason"
+          rows={2}
+          value={reason}
+          placeholder={A.reasonPlaceholder}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? "support-reason-erreur" : undefined}
+          onChange={(event) => setReason(event.target.value)}
+        />
+        {error ? (
+          <p id="support-reason-erreur" className="text-caption text-danger-ink">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    </ActionDialog>
+  );
+}
+
 /** Boutons d'action de la fiche centre, selon son statut. */
 export function CenterActions({ data, types }: { data: CenterActionsData; types: CenterTypeOption[] }) {
-  if (data.status === "cancelled") return null;
+  // Centre résilié : consultation seule (export des données sur demande).
+  if (data.status === "cancelled") {
+    return (
+      <div className="flex flex-wrap gap-2">
+        <SupportDialog centerId={data.centerId} />
+      </div>
+    );
+  }
   return (
     <div className="flex flex-wrap gap-2">
+      <SupportDialog centerId={data.centerId} />
       <PaymentDialog data={data} />
       <DueDateDialog data={data} />
       <PricingDialog data={data} />

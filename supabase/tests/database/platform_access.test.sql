@@ -31,7 +31,7 @@ select throws_ok(
 select is(
   public.custom_access_token_hook(jsonb_build_object(
     'user_id', 'a9000000-0000-4000-8000-000000000001', 'claims', '{"sub":"x"}'::jsonb)) -> 'claims',
-  '{"sub":"x","center_id":null,"user_role":"super_admin","profile_active":true}'::jsonb,
+  '{"sub":"x","center_id":null,"center_status":null,"user_role":"super_admin","profile_active":true}'::jsonb,
   'hook JWT : super-admin sans centre');
 
 set local role authenticated;
