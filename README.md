@@ -196,6 +196,36 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 - **Accès aux libellés** : `LABELS` (`src/lib/constants/labels.ts`) ne contient que les groupes neutres ; les groupes métier (`admin`, `assistant`, `teacher`, `dashboard`, `nav`, `roles`, `spaces`, `billing`, `absencesPage`) ne sont accessibles que par `getLabels()` (Server Components, Server Actions) ou `useLabels()` (Client Components, sous `LabelsProvider`). Toute lecture statique d'un libellé métier est une erreur de compilation.
 - **Validation et erreurs** : schémas Zod construits avec les libellés du centre (`adminSchemas(labels)`, `assistantSchemas(labels)`) ; messages d'erreur de la base traduits par `describeCenterError()`.
 
+## Isolation multi-centres (tests)
+
+`supabase/tests/database/tenant_isolation.test.sql`, sans liste de tables écrite à la main :
+
+- le centre A est créé, toutes les tables sont photographiées (clés primaires), puis un centre B complet est créé : la différence donne les lignes de B ;
+- **pour chaque table**, l'admin, l'assistant et le professeur de A, le super-admin hors support et le visiteur anonyme voient **zéro** ligne de B ; l'admin de B voit bien les siennes (contrôle positif) ;
+- une nouvelle table sans données de B dans le jeu fait échouer le test de couverture ;
+- contrôles structurels : RLS active sur toutes les tables, aucun droit anonyme sur les tables, une seule fonction appelable sans session (`center_for_host`) ;
+- fonctions appelées avec des identifiants de B (assiduité, relances, motif, marque, fiche plateforme, photo), tentatives de modification et de suppression sur B sans effet.
+
+## Recette (phase 8)
+
+| Contrôle | Résultat |
+| --- | --- |
+| Tests base de données (pgTAP, 16 fichiers) | 379 / 379 |
+| TypeScript strict, lint, build Hostinger (webpack) | OK |
+| Parcours de toutes les pages par rôle (admin, assistant, professeur, super-admin, centre en marque blanche) et accès interdits (redirection ou 404) | 34 / 34 |
+| Parcours manuels : création de centre et invitation, paiement, suspension et réactivation, blocage à la suspension, accès support en lecture seule, vocabulaire (auto-école, centre de formation), marque blanche (couleurs, logo, adresse), fiche d'assiduité et PDF | OK |
+
+**Non livré ou à brancher** : envoi réel des courriels (rappels préparés dans `platform_notifications`, service d'envoi à choisir) ; export des données d'un centre résilié ; reçus de paiement et listes de présence imprimables (seule la fiche d'assiduité existe en PDF).
+
+## Mise en production de la plateforme (migrations 015 à 020)
+
+1. Supabase → SQL Editor : exécuter **dans l'ordre** `20261002090000_platform_schema.sql`, `20261003090000_platform_access.sql`, `20261004090000_platform_actions.sql`, `20261005090000_platform_lifecycle.sql`, `20261006090000_white_label.sql`, `20261007090000_attendance_sheet.sql`. Le centre existant passe en *actif*, formule standard, sans échéance.
+2. Authentication → Users : créer le compte du propriétaire (invitation ou création confirmée), puis exécuter `supabase/scripts/first-super-admin.sql` avec son email.
+3. Authentication → URL Configuration : ajouter `https://<domaine>/bienvenue` aux Redirect URLs. Email Templates : coller `supabase/templates/invite.html` (Invite user) et `recovery.html` (Reset password).
+4. Hostinger : aucune nouvelle variable obligatoire. Pour les adresses de centre : `PLATFORM_ROOT_DOMAIN` (et éventuellement `PLATFORM_CNAME_TARGET`) une fois un vrai domaine configuré.
+5. Pousser `main` : Hostinger reconstruit le site (`npm run build`).
+6. Console `/platform` → Réglages : saisir le contact de régularisation ; fiche de Centre PRO : fixer tarif, durée et échéance.
+
 ## Mode appel (professeur)
 
 - L'accueil du professeur liste ses séances du jour, avec l'état de l'appel.

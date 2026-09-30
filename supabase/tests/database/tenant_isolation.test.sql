@@ -1,0 +1,269 @@
+-- =====================================================================
+-- Isolation multi-centres (phase 8) — exécuter avec : npm run db:test
+--
+-- Méthode générique, sans liste de tables écrite à la main :
+--  1. le centre A et ses comptes sont créés, puis toutes les tables du
+--     schéma public sont photographiées (clés primaires) ;
+--  2. un centre B complet est créé (une ligne au moins dans chaque table
+--     de données de centre) ; la différence donne les lignes de B ;
+--  3. pour CHAQUE table, chaque rôle du centre A (admin, assistant,
+--     professeur), le super-admin hors support et le visiteur anonyme
+--     doivent voir zéro ligne de B.
+-- Une nouvelle table sans données de B dans ce jeu fait échouer le test
+-- de couverture : il faut alors compléter le jeu de B.
+-- Plus : contrôles structurels (RLS partout, aucun droit anonyme) et
+-- appels de fonctions avec des identifiants de B.
+-- =====================================================================
+begin;
+
+create extension if not exists pgtap with schema extensions;
+
+select no_plan();
+
+-- Tables globales (référentiel ou réglage de la plateforme), sans données de centre.
+create schema isolation_test;
+create table isolation_test.global_tables (tbl text primary key);
+insert into isolation_test.global_tables values ('center_types'), ('platform_settings');
+
+-- ---------------------------------------------------------------------
+-- Contrôles structurels
+-- ---------------------------------------------------------------------
+select is(
+  (select coalesce(string_agg(c.relname, ', '), '') from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relrowsecurity),
+  '', 'RLS activée sur toutes les tables du schéma public');
+select is(
+  (select coalesce(string_agg(table_name || ':' || privilege_type, ', '), '') from information_schema.role_table_grants
+   where grantee = 'anon' and table_schema = 'public'),
+  '', 'aucun droit du rôle anonyme sur les tables');
+select is(
+  (select string_agg(p.proname, ', ' order by p.proname) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')),
+  'center_for_host', 'une seule fonction appelable sans session (écran de connexion)');
+
+-- ---------------------------------------------------------------------
+-- Centre A et comptes
+-- ---------------------------------------------------------------------
+insert into auth.users (id, email) values
+  ('a0000000-0000-4000-8000-00000000000a', 'admin-a@iso.test'),
+  ('a0000000-0000-4000-8000-00000000000b', 'assistant-a@iso.test'),
+  ('a0000000-0000-4000-8000-00000000000c', 'prof-a@iso.test'),
+  ('a0000000-0000-4000-8000-00000000000d', 'owner@iso.test'),
+  ('b0000000-0000-4000-8000-00000000000a', 'admin-b@iso.test'),
+  ('b0000000-0000-4000-8000-00000000000b', 'assistant-b@iso.test'),
+  ('b0000000-0000-4000-8000-00000000000c', 'prof-b@iso.test');
+insert into public.centers (id, name, slug) values ('ca000000-0000-4000-8000-000000000001', 'Centre A', 'iso-a');
+insert into public.profiles (id, center_id, full_name, role) values
+  ('a0000000-0000-4000-8000-00000000000a', 'ca000000-0000-4000-8000-000000000001', 'Admin A', 'admin'),
+  ('a0000000-0000-4000-8000-00000000000b', 'ca000000-0000-4000-8000-000000000001', 'Assistant A', 'assistant'),
+  ('a0000000-0000-4000-8000-00000000000c', 'ca000000-0000-4000-8000-000000000001', 'Prof A', 'teacher'),
+  ('a0000000-0000-4000-8000-00000000000d', null, 'Propriétaire', 'super_admin');
+insert into public.levels (id, center_id, name) values ('1a000000-0000-4000-8000-000000000001', 'ca000000-0000-4000-8000-000000000001', 'Niveau A');
+insert into public.subjects (id, center_id, level_id, name, monthly_price) values
+  ('2a000000-0000-4000-8000-000000000001', 'ca000000-0000-4000-8000-000000000001', '1a000000-0000-4000-8000-000000000001', 'Maths A', 300);
+insert into public.teacher_assignments (teacher_id, subject_id, level_id) values
+  ('a0000000-0000-4000-8000-00000000000c', '2a000000-0000-4000-8000-000000000001', '1a000000-0000-4000-8000-000000000001');
+
+-- Photographie : clés primaires de toutes les lignes existantes.
+create table isolation_test.pk (tbl text primary key, key_expr text not null);
+insert into isolation_test.pk
+select c.relname,
+       'jsonb_build_object(' || string_agg(format('%L, x.%I', a.attname, a.attname), ', ' order by array_position(i.indkey, a.attnum)) || ')'
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'public'
+join pg_index i on i.indrelid = c.oid and i.indisprimary
+join pg_attribute a on a.attrelid = c.oid and a.attnum = any (i.indkey)
+where c.relkind = 'r'
+group by c.relname;
+
+create table isolation_test.baseline (tbl text, key jsonb);
+do $$
+declare
+  r record;
+begin
+  for r in select * from isolation_test.pk loop
+    execute format('insert into isolation_test.baseline select %L, %s from public.%I x', r.tbl, r.key_expr, r.tbl);
+  end loop;
+end;
+$$;
+
+select is(
+  (select count(*)::int from pg_tables t where t.schemaname = 'public' and t.tablename not in (select tbl from isolation_test.pk)),
+  0, 'chaque table a une clé primaire (comparaison possible)');
+
+-- ---------------------------------------------------------------------
+-- Centre B complet (une ligne dans chaque table de données de centre)
+-- ---------------------------------------------------------------------
+insert into public.centers (id, name, slug, owner_contact_email, current_period_end)
+values ('cb000000-0000-4000-8000-000000000001', 'Centre B', 'iso-b', 'dir@b.test', private.today() + 7);
+update public.subscriptions set plan = 'white_label' where center_id = 'cb000000-0000-4000-8000-000000000001';
+insert into public.center_branding (center_id, brand_name, primary_color) values ('cb000000-0000-4000-8000-000000000001', 'Marque B', '#0f766e');
+insert into public.subscription_payments (center_id, amount, method) values ('cb000000-0000-4000-8000-000000000001', 500, 'cash');
+insert into public.profiles (id, center_id, full_name, role) values
+  ('b0000000-0000-4000-8000-00000000000a', 'cb000000-0000-4000-8000-000000000001', 'Admin B', 'admin'),
+  ('b0000000-0000-4000-8000-00000000000b', 'cb000000-0000-4000-8000-000000000001', 'Assistant B', 'assistant'),
+  ('b0000000-0000-4000-8000-00000000000c', 'cb000000-0000-4000-8000-000000000001', 'Prof B', 'teacher');
+insert into public.levels (id, center_id, name) values ('1b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 'Niveau B');
+insert into public.subjects (id, center_id, level_id, name, monthly_price) values
+  ('2b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', '1b000000-0000-4000-8000-000000000001', 'Maths B', 300),
+  ('2b000000-0000-4000-8000-000000000002', 'cb000000-0000-4000-8000-000000000001', '1b000000-0000-4000-8000-000000000001', 'Anglais B', 250);
+insert into public.packs (id, center_id, level_id, name, monthly_price) values
+  ('3b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', '1b000000-0000-4000-8000-000000000001', 'Pack B', 450);
+insert into public.pack_subjects (pack_id, subject_id) values
+  ('3b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001'),
+  ('3b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000002');
+insert into public.teacher_assignments (teacher_id, subject_id, level_id) values
+  ('b0000000-0000-4000-8000-00000000000c', '2b000000-0000-4000-8000-000000000001', '1b000000-0000-4000-8000-000000000001');
+insert into public.schedule_slots (center_id, subject_id, level_id, teacher_id, day_of_week, start_time, end_time, room) values
+  ('cb000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', '1b000000-0000-4000-8000-000000000001',
+   'b0000000-0000-4000-8000-00000000000c', 2, '17:00', '18:30', 'Salle B');
+insert into public.students (id, center_id, full_name, level_id, notes) values
+  ('4b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 'Élève B1', '1b000000-0000-4000-8000-000000000001', 'Note B'),
+  ('4b000000-0000-4000-8000-000000000002', 'cb000000-0000-4000-8000-000000000001', 'Élève B2', '1b000000-0000-4000-8000-000000000001', null);
+-- Inscription (facture créée par trigger) et abonnement pack (inscriptions et facture par trigger).
+insert into public.enrollments (student_id, subject_id, price_agreed) values
+  ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 300);
+insert into public.pack_enrollments (student_id, pack_id, price_agreed) values
+  ('4b000000-0000-4000-8000-000000000002', '3b000000-0000-4000-8000-000000000001', 450);
+-- Trois absences consécutives : alerte créée par trigger.
+insert into public.attendance (student_id, subject_id, teacher_id, session_date, status, note) values
+  ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today() - 14, 'absent', 'Malade'),
+  ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today() - 7, 'absent', null),
+  ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today(), 'absent', null);
+insert into public.follow_ups (student_id, type, channel, note) values
+  ('4b000000-0000-4000-8000-000000000001', 'absence', 'phone', 'Relance B');
+insert into public.platform_notifications (center_id, kind, scheduled_for, recipient)
+values ('cb000000-0000-4000-8000-000000000001', 'due_in_7', private.today(), 'dir@b.test');
+insert into public.support_sessions (actor_id, center_id, reason, started_at, expires_at, ended_at)
+values ('a0000000-0000-4000-8000-00000000000d', 'cb000000-0000-4000-8000-000000000001', 'Support B',
+        now() - interval '2 hours', now() - interval '1 hour', now() - interval '90 minutes');
+-- Fichiers de B (photos d'élève et d'équipe).
+insert into storage.objects (bucket_id, name) values
+  ('student-photos', 'cb000000-0000-4000-8000-000000000001/4b000000-0000-4000-8000-000000000001.jpg'),
+  ('staff-photos', 'cb000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-00000000000a/1.jpg');
+
+-- Lignes de B : tout ce qui n'était pas dans la photographie.
+create table isolation_test.b_rows (tbl text, key jsonb);
+do $$
+declare
+  r record;
+begin
+  for r in select * from isolation_test.pk loop
+    execute format(
+      'insert into isolation_test.b_rows select %L, k from (select %s as k from public.%I x) s
+       where not exists (select 1 from isolation_test.baseline b where b.tbl = %L and b.key = s.k)',
+      r.tbl, r.key_expr, r.tbl, r.tbl);
+  end loop;
+end;
+$$;
+
+select is(
+  (select coalesce(string_agg(p.tbl, ', ' order by p.tbl), '') from isolation_test.pk p
+   where p.tbl not in (select tbl from isolation_test.global_tables)
+     and not exists (select 1 from isolation_test.b_rows b where b.tbl = p.tbl)),
+  '', 'couverture : le centre B a des lignes dans chaque table de données de centre');
+
+-- Nombre de lignes de B visibles pour le rôle courant (droits de l'appelant).
+create function isolation_test.b_visible(p_tbl text)
+returns integer
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_expr text;
+  v_count integer;
+begin
+  select key_expr into v_expr from isolation_test.pk where tbl = p_tbl;
+  execute format(
+    'select count(*)::int from public.%I x where %s in (select key from isolation_test.b_rows where tbl = %L)',
+    p_tbl, v_expr, p_tbl)
+  into v_count;
+  return v_count;
+exception
+  -- Aucun droit de lecture (table fermée ou colonnes non accordées) : rien de visible.
+  when insufficient_privilege then
+    return 0;
+end;
+$$;
+
+-- Séance de B, pour les appels de fonctions.
+select set_config('iso.b_attendance', (select id::text from public.attendance where student_id = '4b000000-0000-4000-8000-000000000001' limit 1), true);
+
+grant usage on schema isolation_test to authenticated, anon;
+grant select on all tables in schema isolation_test to authenticated, anon;
+grant execute on function isolation_test.b_visible(text) to authenticated, anon;
+
+-- Contrôle positif : l'admin de B voit bien ses propres données (le test
+-- ne passe pas « à vide »).
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"b0000000-0000-4000-8000-00000000000a","role":"authenticated"}';
+select ok(isolation_test.b_visible(tbl) > 0, format('contrôle : admin B voit ses lignes dans %s', tbl))
+from unnest(array['students', 'enrollments', 'invoices', 'attendance', 'alerts', 'follow_ups', 'levels', 'subjects', 'packs',
+                  'pack_enrollments', 'schedule_slots', 'teacher_assignments', 'profiles', 'center_branding']) as tbl;
+reset role;
+
+-- ---------------------------------------------------------------------
+-- Chaque rôle du centre A, le super-admin hors support, l'anonyme :
+-- zéro ligne de B, table par table.
+-- ---------------------------------------------------------------------
+set local role authenticated;
+
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-00000000000a","role":"authenticated"}';
+select is(isolation_test.b_visible(tbl), 0, format('admin A : aucune ligne de B dans %s', tbl))
+from (select distinct tbl from isolation_test.b_rows order by 1) t;
+
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-00000000000b","role":"authenticated"}';
+select is(isolation_test.b_visible(tbl), 0, format('assistant A : aucune ligne de B dans %s', tbl))
+from (select distinct tbl from isolation_test.b_rows order by 1) t;
+
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-00000000000c","role":"authenticated"}';
+select is(isolation_test.b_visible(tbl), 0, format('professeur A : aucune ligne de B dans %s', tbl))
+from (select distinct tbl from isolation_test.b_rows order by 1) t;
+
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-00000000000d","role":"authenticated"}';
+select is(isolation_test.b_visible(tbl), 0, format('super-admin hors support : aucune ligne de B dans %s', tbl))
+from (select distinct tbl from isolation_test.b_rows order by 1) t;
+
+-- Fichiers de B.
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-00000000000a","role":"authenticated"}';
+select is(
+  (select count(*)::int from storage.objects where name like 'cb000000-0000-4000-8000-000000000001/%' and bucket_id in ('student-photos', 'staff-photos')),
+  0, 'admin A : aucune photo de B');
+
+-- Fonctions appelées avec des identifiants de B.
+select is((select count(*)::int from public.student_attendance('4b000000-0000-4000-8000-000000000001')), 0, 'admin A : assiduité d''un élève de B vide');
+select is((select count(*)::int from public.student_absence_follow_ups('4b000000-0000-4000-8000-000000000001')), 0, 'admin A : relances d''un élève de B vides');
+select throws_ok($$select public.set_attendance_note(current_setting('iso.b_attendance')::uuid, 'X')$$, 'P0002', null, 'admin A : séance de B non annotable');
+select throws_ok($$select * from public.center_branding_settings('cb000000-0000-4000-8000-000000000001')$$, '42501', null, 'admin A : marque de B inaccessible');
+select throws_ok($$select public.update_center_branding('cb000000-0000-4000-8000-000000000001', 'Pirate', null, null, null, null, null, null, null, null, null)$$,
+  '42501', null, 'admin A : marque de B non modifiable');
+select throws_ok($$select * from public.platform_center('cb000000-0000-4000-8000-000000000001')$$, '42501', null, 'admin A : fiche plateforme de B refusée');
+select throws_ok($$select public.set_my_photo('cb000000-0000-4000-8000-000000000001/a0000000-0000-4000-8000-00000000000a/1.jpg')$$,
+  '22023', null, 'admin A : photo rangée dans le dossier de B refusée');
+select is((select center_name from public.my_center_access()), 'Centre A', 'admin A : accès limité à son centre');
+-- Tentatives de modification (vérifiées plus bas, hors RLS).
+update public.students set full_name = 'Modifié par A' where id = '4b000000-0000-4000-8000-000000000001';
+delete from public.levels where id = '1b000000-0000-4000-8000-000000000001';
+update public.invoices set status = 'paid' where student_id = '4b000000-0000-4000-8000-000000000001';
+select throws_ok($$insert into public.students (center_id, full_name, level_id) values ('cb000000-0000-4000-8000-000000000001', 'Intrus', '1b000000-0000-4000-8000-000000000001')$$,
+  '42501', null, 'admin A : aucune création dans le centre B');
+
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-00000000000c","role":"authenticated"}';
+select is((select count(*)::int from public.student_attendance('4b000000-0000-4000-8000-000000000001')), 0, 'professeur A : assiduité d''un élève de B vide');
+
+reset role;
+set local role anon;
+select is(isolation_test.b_visible(tbl), 0, format('anonyme : aucune ligne de B dans %s', tbl))
+from (select distinct tbl from isolation_test.b_rows order by 1) t;
+select is((select count(*)::int from public.center_for_host('iso-b', null)), 1, 'anonyme : seul le nom et la marque publique d''un centre sont exposés');
+
+reset role;
+
+-- Données de B intactes après les tentatives du centre A.
+select is((select full_name from public.students where id = '4b000000-0000-4000-8000-000000000001'), 'Élève B1', 'élève de B non modifié par A');
+select is((select count(*)::int from public.levels where id = '1b000000-0000-4000-8000-000000000001'), 1, 'niveau de B non supprimé par A');
+select is((select count(*)::int from public.invoices where student_id = '4b000000-0000-4000-8000-000000000001' and status = 'paid'), 0, 'factures de B non modifiées par A');
+
+select * from finish();
+rollback;
