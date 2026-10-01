@@ -402,6 +402,7 @@ const TEXTS = {
       notFound: "Centre introuvable",
       identity: "Informations",
       slug: "Adresse",
+      loginUrl: "Adresse de connexion du centre",
       type: "Type d'établissement",
       createdAt: "Créé le",
       activatedAt: "Activé le",

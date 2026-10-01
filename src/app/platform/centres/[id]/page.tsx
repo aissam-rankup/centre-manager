@@ -22,7 +22,7 @@ import {
   type PlatformPayment,
 } from "@/lib/data/platform";
 import { formatDate, formatDateTime, toISODate, today } from "@/lib/format";
-import { dnsTarget, getBrandingSettings } from "@/lib/branding";
+import { appOrigin, dnsTarget, getBrandingSettings } from "@/lib/branding";
 import { formatPhone, toTelHref } from "@/lib/phone";
 import { customTermsSchema, EMPTY_TERMS } from "@/lib/validation/platform";
 
@@ -178,6 +178,9 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
         <SectionCard title={L.identity}>
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={L.slug}>{center.slug}</Field>
+            <Field label={L.loginUrl}>
+              <span className="break-all font-normal">{`${await appOrigin()}${ROUTES.login}?centre=${center.slug}`}</span>
+            </Field>
             <Field label={L.type}>{center.center_type_label}</Field>
             <Field label={L.createdAt}>{formatDate(center.created_at)}</Field>
             <Field label={L.activatedAt}>{center.activated_at ? formatDate(center.activated_at) : "—"}</Field>

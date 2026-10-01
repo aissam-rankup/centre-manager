@@ -1,14 +1,14 @@
 import "server-only";
 
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { cache } from "react";
 
 import { getAuthState } from "@/lib/auth/session";
 import { type BrandingData, parseBranding } from "@/lib/branding-data";
 import { LABELS } from "@/lib/constants/labels";
 import { publicEnv } from "@/lib/env";
-import { resolveHost } from "@/lib/hosts";
+import { CENTER_COOKIE, resolveHost, SLUG_PATTERN } from "@/lib/hosts";
 import { createClient } from "@/lib/supabase/server";
 
 /** Marque affichée : celle du centre en marque blanche, sinon celle de la plateforme. */
@@ -44,15 +44,21 @@ export function brandFrom(branding: BrandingData | null, centerName: string): Br
 }
 
 /** Centre désigné par l'adresse (sous-domaine ou domaine personnalisé vérifié), sans session. */
-export const getHostCenter = cache(async (): Promise<{ centerId: string; name: string; brand: Brand } | null> => {
-  const target = resolveHost((await headers()).get("host"));
-  if (target.kind === "platform") return null;
+export const getHostCenter = cache(async (): Promise<{ centerId: string; name: string; brand: Brand; viaCookie: boolean } | null> => {
+  let target = resolveHost((await headers()).get("host"));
+  const viaCookie = target.kind === "platform";
+  if (target.kind === "platform") {
+    // Domaine unique : centre choisi par « /connexion?centre=<adresse> ».
+    const remembered = (await cookies()).get(CENTER_COOKIE)?.value;
+    if (!remembered || !SLUG_PATTERN.test(remembered)) return null;
+    target = { kind: "slug", slug: remembered };
+  }
   const supabase = await createClient();
   const { data, error } = await supabase
     .rpc("center_for_host", target.kind === "slug" ? { p_slug: target.slug } : { p_domain: target.domain })
     .maybeSingle();
   if (error || !data) return null;
-  return { centerId: data.center_id, name: data.name, brand: brandFrom(parseBranding(data.branding), data.name) };
+  return { centerId: data.center_id, name: data.name, brand: brandFrom(parseBranding(data.branding), data.name), viaCookie };
 });
 
 /** Marque des espaces d'un centre : celle du compte connecté (ou du centre consulté en support). */
@@ -188,4 +194,13 @@ export async function getBrandingSettings(centerId: string): Promise<BrandingSet
       customDomain: data.custom_domain ?? "",
     },
   };
+}
+
+/** Adresse publique de l'application (liens à transmettre). */
+export async function appOrigin(): Promise<string> {
+  if (publicEnv.NEXT_PUBLIC_APP_URL) return publicEnv.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
 }

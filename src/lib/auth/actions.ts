@@ -1,10 +1,12 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { destinationAfterLogin, ROUTES } from "@/lib/auth/routes";
 import { loginSchema } from "@/lib/auth/schemas";
 import { getHostCenter } from "@/lib/branding";
+import { CENTER_COOKIE } from "@/lib/hosts";
 import { LABELS } from "@/lib/constants/labels";
 import { createClient } from "@/lib/supabase/server";
 
@@ -42,10 +44,15 @@ export async function signIn(input: unknown, next: string | null): Promise<Login
   }
 
   // Adresse d'un centre (sous-domaine ou domaine personnalisé) : seuls ses comptes s'y connectent.
+  // Centre seulement mémorisé par le navigateur (?centre=) : il est oublié, sans refus.
   const hostCenter = await getHostCenter();
   if (hostCenter && profile.center_id !== hostCenter.centerId) {
-    await supabase.auth.signOut();
-    return { error: L.wrongCenter };
+    if (hostCenter.viaCookie) {
+      (await cookies()).delete(CENTER_COOKIE);
+    } else {
+      await supabase.auth.signOut();
+      return { error: L.wrongCenter };
+    }
   }
 
   redirect(destinationAfterLogin(profile.role, next));

@@ -23,6 +23,8 @@ const PLATFORM_METADATA: Metadata = {
     template: `%s · ${LABELS.app.name}`,
   },
   description: LABELS.app.metaDescription,
+  // Icône de la plateforme ; une favicon de centre (marque blanche) la remplace.
+  icons: { icon: "/favicon.ico" },
 };
 
 /** Onglet et favicon : marque du centre (marque blanche) de l'adresse ou du compte, sinon la plateforme. */

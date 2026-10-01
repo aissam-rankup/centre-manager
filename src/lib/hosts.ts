@@ -4,6 +4,10 @@
  * (ex. « centromanager.ma ») : sans lui, toute adresse est celle de la
  * plateforme (déploiement sur un seul domaine).
  */
+/** Cookie du centre choisi par « /connexion?centre=<adresse> » (déploiement sur un seul domaine). */
+export const CENTER_COOKIE = "cm_centre";
+export const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
 export type HostTarget = { kind: "platform" } | { kind: "slug"; slug: string } | { kind: "domain"; domain: string };
 
 const PLATFORM_SUBDOMAINS = new Set(["www", "app", "admin", "platform", "plateforme", "api"]);

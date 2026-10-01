@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { NEXT_PARAM, ROLE_HOME, ROUTES } from "@/lib/auth/routes";
 import { publicEnv } from "@/lib/env";
-import { resolveHost } from "@/lib/hosts";
+import { CENTER_COOKIE, resolveHost, SLUG_PATTERN } from "@/lib/hosts";
 import type { Database } from "@/lib/supabase/database.types";
 
 /** Claims ajoutés par le hook public.custom_access_token_hook. */
@@ -50,6 +50,18 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
   // Ne rien exécuter entre createServerClient et getClaims : la session doit être rafraîchie ici.
   const { data } = await supabase.auth.getClaims();
+
+  // « /connexion?centre=<adresse> » : écran de connexion à la marque de ce centre
+  // (mémorisé dans le navigateur ; « ?centre= » vide l'oublie).
+  const requestedCenter = request.nextUrl.searchParams.get("centre");
+  if (request.nextUrl.pathname === ROUTES.login && requestedCenter !== null) {
+    const slug = requestedCenter.trim().toLowerCase();
+    if (SLUG_PATTERN.test(slug)) {
+      response.cookies.set(CENTER_COOKIE, slug, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: true });
+    } else {
+      response.cookies.delete(CENTER_COOKIE);
+    }
+  }
   const claims = data?.claims;
   const { pathname, search } = request.nextUrl;
 
