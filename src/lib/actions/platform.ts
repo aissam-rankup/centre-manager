@@ -59,25 +59,41 @@ const phoneOrNull = (value: string) => (value ? formatPhone(value) : null);
 // ---------------------------------------------------------------------
 // Création d'un centre
 // ---------------------------------------------------------------------
-export async function createCenter(input: unknown): Promise<ActionResult<{ centerId: string }>> {
+export async function createCenter(input: unknown): Promise<ActionResult<{ centerId: string; inviteLink: string | null }>> {
   const parsed = newCenterSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const supabase = await platform();
   const values = parsed.data;
 
   // 1. Compte Auth de l'administrateur, par invitation (clé service_role, serveur uniquement).
+  //    Si le courriel ne peut pas partir (limite d'envoi du service de courriel), le
+  //    compte est créé avec un lien d'invitation que le super-admin transmet lui-même.
   const service = createAdminClient();
+  const redirectTo = await welcomeUrl();
+  const metadata = { full_name: values.adminName };
+  let userId: string;
+  let inviteLink: string | null = null;
   const { data: invited, error: inviteError } = await service.auth.admin.inviteUserByEmail(values.adminEmail, {
-    redirectTo: await welcomeUrl(),
-    data: { full_name: values.adminName },
+    redirectTo,
+    data: metadata,
   });
-  if (inviteError || !invited.user) {
-    if (inviteError?.code === "email_exists" || inviteError?.status === 422) {
-      return failure(E.emailExists, { adminEmail: E.emailExists });
+  if (!inviteError && invited.user) {
+    userId = invited.user.id;
+  } else if (inviteError?.code === "email_exists" || inviteError?.status === 422) {
+    return failure(E.emailExists, { adminEmail: E.emailExists });
+  } else {
+    const { data: link, error: linkError } = await service.auth.admin.generateLink({
+      type: "invite",
+      email: values.adminEmail,
+      options: { redirectTo, data: metadata },
+    });
+    if (linkError || !link.user) {
+      if (linkError?.code === "email_exists") return failure(E.emailExists, { adminEmail: E.emailExists });
+      return failure(E.inviteFailed);
     }
-    return failure(E.inviteFailed);
+    userId = link.user.id;
+    inviteLink = link.properties.action_link;
   }
-  const userId = invited.user.id;
 
   // 2. Centre, abonnement et profil admin, dans une seule transaction.
   const { data: centerId, error } = await supabase.rpc("platform_create_center", {
@@ -108,7 +124,7 @@ export async function createCenter(input: unknown): Promise<ActionResult<{ cente
   }
 
   revalidatePlatform();
-  return success({ centerId });
+  return success({ centerId, inviteLink });
 }
 
 // ---------------------------------------------------------------------
@@ -206,7 +222,7 @@ export async function updateCenterStatus(input: unknown): Promise<ActionResult> 
  * Accès d'un compte du centre : nouvelle invitation s'il n'a jamais ouvert
  * son lien, sinon lien de choix du mot de passe (récupération).
  */
-export async function resendInvitation(input: unknown): Promise<ActionResult<{ passwordLink: boolean }>> {
+export async function resendInvitation(input: unknown): Promise<ActionResult<{ passwordLink: boolean; link: string | null }>> {
   const parsed = resendInvitationSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid);
   const supabase = await platform();
@@ -236,9 +252,19 @@ export async function resendInvitation(input: unknown): Promise<ActionResult<{ p
   const { error } = passwordLink
     ? await service.auth.resetPasswordForEmail(user.user.email, { redirectTo })
     : await service.auth.admin.inviteUserByEmail(user.user.email, { redirectTo });
-  if (error) return failure(E.inviteFailed);
+  if (!error) {
+    revalidatePlatform(centerId);
+    return success({ passwordLink, link: null });
+  }
+  // Courriel refusé (limite d'envoi…) : lien à transmettre par le super-admin.
+  const { data: generated, error: linkError } = await service.auth.admin.generateLink(
+    passwordLink
+      ? { type: "recovery", email: user.user.email, options: { redirectTo } }
+      : { type: "invite", email: user.user.email, options: { redirectTo } },
+  );
+  if (linkError) return failure(E.inviteFailed);
   revalidatePlatform(centerId);
-  return success({ passwordLink });
+  return success({ passwordLink, link: generated.properties.action_link });
 }
 
 export async function updatePlatformSettings(input: unknown): Promise<ActionResult> {

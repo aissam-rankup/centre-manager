@@ -554,6 +554,15 @@ const TEXTS = {
       adminPhone: "Téléphone de l'administrateur",
       summary: "Récapitulatif",
     },
+    accessLink: {
+      title: "Lien d'accès à transmettre",
+      description: (email: string) =>
+        `Le service de courriel n'a pas pu envoyer le message (limite d'envoi atteinte). Copiez ce lien et envoyez-le à ${email}, par exemple par WhatsApp : il permet de choisir son mot de passe.`,
+      personal: "Lien personnel et à usage unique : ne le partagez qu'avec cette personne.",
+      copy: "Copier le lien",
+      copied: "Lien copié",
+      continue: "Continuer",
+    },
     actions: {
       title: "Actions",
       recordPayment: "Enregistrer un paiement",

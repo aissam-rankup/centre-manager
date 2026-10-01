@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { AccessLinkDialog } from "@/components/platform/access-link-dialog";
 import { VocabularyPicker } from "@/components/platform/vocabulary-picker";
 import { ChoiceItem } from "@/components/shared/choice-item";
 import { FormField } from "@/components/shared/form-field";
@@ -56,6 +57,8 @@ export function NewCenterForm({ types, todayIso }: NewCenterFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [serverError, setServerError] = useState<string | null>(null);
+  // Courriel refusé : lien d'invitation à transmettre, puis fiche du centre.
+  const [created, setCreated] = useState<{ centerId: string; link: string; email: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const [slugEdited, setSlugEdited] = useState(false);
   const [dueEdited, setDueEdited] = useState(false);
@@ -159,6 +162,11 @@ export function NewCenterForm({ types, todayIso }: NewCenterFormProps) {
         }
         return;
       }
+      if (result.data.inviteLink) {
+        toast.success(L.success);
+        setCreated({ centerId: result.data.centerId, link: result.data.inviteLink, email: values.adminEmail });
+        return;
+      }
       toast.success(L.success, { description: L.successDescription(values.adminEmail) });
       router.push(`${ROUTES.platform.centers}/${result.data.centerId}`);
     });
@@ -181,6 +189,11 @@ export function NewCenterForm({ types, todayIso }: NewCenterFormProps) {
       }}
       className="flex flex-col gap-6"
     >
+      <AccessLinkDialog
+        link={created?.link ?? null}
+        email={created?.email ?? ""}
+        onClose={() => created && router.push(`${ROUTES.platform.centers}/${created.centerId}`)}
+      />
       <Stepper current={step} />
 
       <Card>

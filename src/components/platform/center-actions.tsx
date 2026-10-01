@@ -18,6 +18,7 @@ import { type ReactNode, useState, useTransition } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { AccessLinkDialog } from "@/components/platform/access-link-dialog";
 import { VocabularyPicker } from "@/components/platform/vocabulary-picker";
 import { ChoiceItem } from "@/components/shared/choice-item";
 import { FormField } from "@/components/shared/form-field";
@@ -554,16 +555,21 @@ export function ResendInvitationButton({
   centerId,
   userId,
   name,
+  email,
   signedIn,
 }: {
   centerId: string;
   userId: string;
   name: string;
+  email: string;
   signedIn: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const [link, setLink] = useState<string | null>(null);
   const label = signedIn ? A.passwordLink : A.resendInvitation;
   return (
+    <>
+    <AccessLinkDialog link={link} email={email} onClose={() => setLink(null)} />
     <Button
       variant="ghost"
       disabled={pending}
@@ -571,13 +577,15 @@ export function ResendInvitationButton({
       onClick={() =>
         startTransition(async () => {
           const result = await resendInvitation({ centerId, userId });
-          if (result.ok) toast.success(result.data.passwordLink ? A.passwordLinkSent : A.invitationSent);
-          else toast.error(result.error);
+          if (!result.ok) toast.error(result.error);
+          else if (result.data.link) setLink(result.data.link);
+          else toast.success(result.data.passwordLink ? A.passwordLinkSent : A.invitationSent);
         })
       }
     >
       {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <Send aria-hidden />}
       {label}
     </Button>
+    </>
   );
 }

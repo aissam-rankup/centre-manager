@@ -75,6 +75,7 @@ const userColumns = (centerId: string, canInvite: boolean): readonly DataTableCo
             centerId={centerId}
             userId={row.user_id}
             name={row.full_name}
+            email={row.email}
             signedIn={row.confirmed || Boolean(row.last_sign_in_at)}
           />
         ) : null}
