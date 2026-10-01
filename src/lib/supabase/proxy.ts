@@ -56,11 +56,17 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   const requestedCenter = request.nextUrl.searchParams.get("centre");
   if (request.nextUrl.pathname === ROUTES.login && requestedCenter !== null) {
     const slug = requestedCenter.trim().toLowerCase();
+    // Redirection vers l'adresse sans paramètre : la page est rendue avec le cookie déjà posé.
+    const url = request.nextUrl.clone();
+    url.searchParams.delete("centre");
+    const redirect = NextResponse.redirect(url);
+    for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
     if (SLUG_PATTERN.test(slug)) {
-      response.cookies.set(CENTER_COOKIE, slug, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: true });
+      redirect.cookies.set(CENTER_COOKIE, slug, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: true });
     } else {
-      response.cookies.delete(CENTER_COOKIE);
+      redirect.cookies.delete(CENTER_COOKIE);
     }
+    return redirect;
   }
   const claims = data?.claims;
   const { pathname, search } = request.nextUrl;
