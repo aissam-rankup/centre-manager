@@ -608,6 +608,7 @@ const TEXTS = {
       supportDescription:
         "Vous consultez l'espace administration du centre pendant 1 heure, sans pouvoir rien modifier. L'accès est journalisé et un bandeau reste affiché.",
       supportSubmit: "Ouvrir l'accès support",
+      supportReasonPlaceholder: "Ex. le directeur signale un problème sur le planning",
       statusDescription: {
         active:
           "Les comptes du centre retrouvent l'accès immédiatement. Si l'échéance est dépassée, prolongez-la : sinon le contrôle quotidien suspendra à nouveau le centre.",

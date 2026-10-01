@@ -508,7 +508,7 @@ function SupportDialog({ centerId }: { centerId: string }) {
           id="support-reason"
           rows={2}
           value={reason}
-          placeholder={A.reasonPlaceholder}
+          placeholder={A.supportReasonPlaceholder}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "support-reason-erreur" : undefined}
           onChange={(event) => setReason(event.target.value)}
