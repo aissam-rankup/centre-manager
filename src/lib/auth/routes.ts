@@ -44,6 +44,7 @@ export const ROUTES = {
     settings: "/admin/reglages",
     payroll: "/admin/paie",
     expenses: "/admin/charges",
+    rooms: "/admin/salles",
   },
   /** Reçu imprimable (accueil et administration). */
   receipt: (id: string) => `/recus/${id}`,
