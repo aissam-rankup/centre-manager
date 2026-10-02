@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { FilterChips } from "@/components/admin/filter-chips";
 import { CampaignStudents } from "@/components/reenrollment/campaign-students";
+import { ReminderWaves } from "@/components/reminders/reminder-waves";
 import { CancelCampaignButton, ConfirmCampaignButton } from "@/components/reenrollment/campaign-actions";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -145,6 +146,12 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
         />
         <StatCard label={R.stats.risk} value={atRisk.length} icon={TriangleAlert} tone={atRisk.length > 0 ? "warning" : "success"} />
       </div>
+
+      {page.reminders ? (
+        <SectionCard title={LABELS.reenrollment.reminders.title} description={LABELS.reenrollment.reminders.description}>
+          <ReminderWaves items={page.reminders.items} daysBefore={page.reminders.daysBefore} fileBase={fileBase} />
+        </SectionCard>
+      ) : null}
 
       <SectionCard title={R.risk.title} description={R.risk.description(page.riskThreshold)}>
         {atRisk.length === 0 ? (

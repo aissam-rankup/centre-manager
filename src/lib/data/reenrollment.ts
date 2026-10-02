@@ -15,6 +15,8 @@ import {
   type ReviewLine,
   type ReviewStudent,
 } from "@/lib/reenrollment";
+import { getReminderQueue } from "@/lib/data/reminders";
+import type { ReminderItem } from "@/lib/reminders";
 import { signPhotoUrls } from "@/lib/storage/photos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -72,6 +74,8 @@ export type CampaignPage = {
   canEdit: boolean;
   /** Admin du centre, hors mode support. */
   canConfirm: boolean;
+  /** Campagne confirmée : rappels de paiement (null si désactivés ou campagne non émise). */
+  reminders: { daysBefore: number; items: ReminderItem[] } | null;
 };
 
 /** Campagnes du centre et revue de celle demandée (ou de celle à traiter). Accueil et admin. */
@@ -87,7 +91,11 @@ export async function getCampaignPage(requestedId: string | undefined): Promise<
       .order("period_year", { ascending: false })
       .order("period_month", { ascending: false })
       .limit(24),
-    supabase.from("centers").select("risk_attendance_threshold").eq("id", profile.centerId).single(),
+    supabase
+      .from("centers")
+      .select("risk_attendance_threshold, payment_reminders_enabled, reminder_days_before")
+      .eq("id", profile.centerId)
+      .single(),
   ]);
   if (runsResult.error) throw runsResult.error;
   if (centerResult.error) throw centerResult.error;
@@ -101,7 +109,7 @@ export async function getCampaignPage(requestedId: string | undefined): Promise<
   const selected = runs.find((run) => run.id === requestedId) ?? defaultCampaign(runs);
   const isAdmin = profile.role === "admin" && profile.support === null;
   const base = { runs, riskThreshold: centerResult.data.risk_attendance_threshold, canConfirm: isAdmin };
-  if (!selected) return { ...base, run: null, students: [], canEdit: false };
+  if (!selected) return { ...base, run: null, students: [], canEdit: false, reminders: null };
 
   const [runResult, reviewResult] = await Promise.all([
     supabase
@@ -157,7 +165,13 @@ export async function getCampaignPage(requestedId: string | undefined): Promise<
     atRisk: student.at_risk,
   }));
 
-  return { ...base, run, students, canEdit: profile.support === null && run.status === "draft" };
+  const issued = run.status === "confirmed" || run.status === "sent" || run.status === "closed";
+  const reminders =
+    issued && centerResult.data.payment_reminders_enabled
+      ? { daysBefore: centerResult.data.reminder_days_before, items: await getReminderQueue({ runId: run.id }) }
+      : null;
+
+  return { ...base, run, students, canEdit: profile.support === null && run.status === "draft", reminders };
 }
 
 type BillingRunRow = {

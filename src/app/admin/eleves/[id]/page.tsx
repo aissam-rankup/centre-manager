@@ -110,7 +110,7 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
               />
             ),
           },
-          { value: "relances", label: T.followUps, count: student.followUps.length, content: <FollowUpsSection student={student} /> },
+          { value: "relances", label: T.followUps, count: student.followUps.length + student.reminders.length, content: <FollowUpsSection student={student} /> },
         ]}
       />
     </div>

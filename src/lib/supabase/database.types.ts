@@ -3465,6 +3465,30 @@ export type Database = {
           vocabulary: Json
         }[]
       }
+      payment_reminder_queue: {
+        Args: { p_run_id?: string; p_student_id?: string }
+        Returns: {
+          amount_due: number
+          billing_run_id: string
+          days_overdue: number
+          due_date: string
+          full_name: string
+          guardian_name: string
+          guardian_phone: string
+          invoice_ids: string[]
+          last_channel: Database["public"]["Enums"]["notification_channel"]
+          last_sent_at: string
+          last_sent_by_name: string
+          level_name: string
+          period_month: number
+          period_year: number
+          photo_url: string
+          reminder_type: Database["public"]["Enums"]["payment_reminder_type"]
+          student_id: string
+          subject_names: string[]
+          suggested: boolean
+        }[]
+      }
       payroll_mark_paid: {
         Args: {
           p_line_id: string
@@ -3877,6 +3901,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_payment_reminder: {
+        Args: {
+          p_channel: Database["public"]["Enums"]["notification_channel"]
+          p_due_date: string
+          p_is_repeat?: boolean
+          p_message?: string
+          p_phone?: string
+          p_run_id: string
+          p_student_id: string
+          p_template?: string
+        }
+        Returns: string
       }
       set_attendance_note: {
         Args: { p_attendance_id: string; p_note: string }

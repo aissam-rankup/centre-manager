@@ -199,8 +199,12 @@ select ok(private.create_period_invoice('63a00000-0000-4000-8000-000000000061', 
 -- ---------------------------------------------------------------------
 -- Clôture automatique, mois sans cours
 -- ---------------------------------------------------------------------
-select is(private.close_billing_runs('2026-12-14'), 0, 'campagne close seulement après sa dernière période (cycle du 15 : le 14 décembre)');
-select is(private.close_billing_runs('2026-12-15'), 1, 'campagne close le lendemain de sa dernière période');
+select private.close_billing_runs('2026-12-14');
+select is((select status::text from public.billing_runs where id = current_setting('test.run_id')::uuid), 'confirmed',
+  'campagne close seulement après sa dernière période (cycle du 15 : le 14 décembre)');
+select private.close_billing_runs('2026-12-15');
+select is((select status::text from public.billing_runs where id = current_setting('test.run_id')::uuid), 'closed',
+  'campagne close le lendemain de sa dernière période');
 
 select private.generate_billing_runs('2026-11-25');
 select set_config('test.dec_id', (select id::text from public.billing_runs where center_id = 'c3a00000-0000-4000-8000-0000000000b1' and period_month = 12), true);

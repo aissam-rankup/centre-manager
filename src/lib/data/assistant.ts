@@ -1,10 +1,13 @@
 import "server-only";
 
 import { requireStaff } from "@/lib/auth/session";
+import type { NotificationChannel } from "@/lib/absences";
 import { type DashboardStudent, loadDashboardStudents, loadSubjectPresence, type SubjectPresence } from "@/lib/data/dashboard";
+import { getReminderQueue } from "@/lib/data/reminders";
 import { LABELS } from "@/lib/constants/labels";
 import { type DiscountSummary, parseDiscountList, parseDiscountSummary, type StudentDiscount } from "@/lib/discounts";
 import { toISODate, today } from "@/lib/format";
+import type { ReminderItem, ReminderType } from "@/lib/reminders";
 import { signPhotoUrls } from "@/lib/storage/photos";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
@@ -281,6 +284,18 @@ export type StudentFollowUp = {
   authorName: string | null;
 };
 
+/** Rappel de paiement envoyé : un message, une ou plusieurs factures. */
+export type StudentReminder = {
+  messageId: string;
+  type: ReminderType;
+  channel: NotificationChannel;
+  sentAt: string;
+  authorName: string | null;
+  amount: number;
+  subjectNames: string[];
+  isRepeat: boolean;
+};
+
 export type StudentFile = {
   id: string;
   fullName: string;
@@ -299,6 +314,10 @@ export type StudentFile = {
   invoices: StudentInvoice[];
   absences: StudentAbsence[];
   followUps: StudentFollowUp[];
+  /** Rappels de paiement envoyés, du plus récent au plus ancien. */
+  reminders: StudentReminder[];
+  /** Rappels à envoyer maintenant (campagnes confirmées, factures non réglées). */
+  reminderItems: ReminderItem[];
 };
 
 export async function getStudentFile(studentId: string): Promise<StudentFile | null> {
@@ -313,8 +332,17 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
   if (error) throw error;
   if (!student) return null;
 
-  const [enrollmentsResult, packsResult, invoicesResult, absencesResult, followUpsResult, discountsResult, overlapsResult] =
-    await Promise.all([
+  const [
+    enrollmentsResult,
+    packsResult,
+    invoicesResult,
+    absencesResult,
+    followUpsResult,
+    discountsResult,
+    overlapsResult,
+    remindersResult,
+    reminderItems,
+  ] = await Promise.all([
     supabase
       .from("enrollments")
       .select("id, subject_id, start_date, price_agreed, billing_day, active, pack_enrollment_id, subjects(name)")
@@ -352,6 +380,15 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
       .eq("student_id", studentId)
       .order("granted_at", { ascending: false }),
     supabase.from("discount_overlaps").select("discount_id, other_discount_id").eq("student_id", studentId),
+    supabase
+      .from("payment_reminders")
+      .select(
+        "id, message_id, reminder_type, channel, sent_at, is_repeat, profiles(full_name), invoices(amount_due, enrollments(subjects(name)), pack_enrollments(packs(name)))",
+      )
+      .eq("student_id", studentId)
+      .eq("status", "sent")
+      .order("sent_at", { ascending: false }),
+    getReminderQueue({ studentId }),
   ]);
 
   if (enrollmentsResult.error) throw enrollmentsResult.error;
@@ -361,6 +398,31 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
   if (followUpsResult.error) throw followUpsResult.error;
   if (discountsResult.error) throw discountsResult.error;
   if (overlapsResult.error) throw overlapsResult.error;
+  if (remindersResult.error) throw remindersResult.error;
+
+  // Un message couvre une ou plusieurs factures : une ligne d'historique par message.
+  const reminders = new Map<string, StudentReminder>();
+  for (const row of remindersResult.data) {
+    const name = row.invoices?.pack_enrollments?.packs?.name
+      ? LABELS.packs.label(row.invoices.pack_enrollments.packs.name)
+      : (row.invoices?.enrollments?.subjects?.name ?? "");
+    const current = reminders.get(row.message_id);
+    if (current) {
+      current.amount += Number(row.invoices?.amount_due ?? 0);
+      if (name) current.subjectNames.push(name);
+      continue;
+    }
+    reminders.set(row.message_id, {
+      messageId: row.message_id,
+      type: row.reminder_type,
+      channel: row.channel,
+      sentAt: row.sent_at,
+      authorName: row.profiles?.full_name ?? null,
+      amount: Number(row.invoices?.amount_due ?? 0),
+      subjectNames: name ? [name] : [],
+      isRepeat: row.is_repeat,
+    });
+  }
 
   const overlapping = new Set(
     overlapsResult.data.flatMap((row) => [row.discount_id, row.other_discount_id]).filter((id): id is string => Boolean(id)),
@@ -469,6 +531,8 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
       createdAt: row.created_at,
       authorName: row.profiles?.full_name ?? null,
     })),
+    reminders: [...reminders.values()],
+    reminderItems,
   };
 }
 

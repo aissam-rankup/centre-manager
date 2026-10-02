@@ -6,6 +6,7 @@ import { ContactButtons } from "@/components/assistant/contact-buttons";
 import { DiscountBadges } from "@/components/discounts/discount-badge";
 import { FollowUpDialog } from "@/components/assistant/follow-up-dialog";
 import { type PayableInvoice, PayInvoiceButton, PaymentDialog } from "@/components/receipts/payment-dialog";
+import { ReminderActions } from "@/components/reminders/reminder-actions";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Money } from "@/components/shared/money";
@@ -20,6 +21,7 @@ import type { StudentFile, StudentInvoice } from "@/lib/data/assistant";
 import { discountBadgeLabel, discountState } from "@/lib/discounts";
 import { formatDate, formatDateTime, formatMAD, toISODate, today } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
+import { cn } from "@/lib/utils";
 
 /** Sections de la fiche élève, partagées par les espaces Accueil et Admin. */
 
@@ -275,6 +277,7 @@ export async function PaymentsSection({ student }: { student: StudentFile }) {
         />
       }
     >
+      {student.reminderItems.length > 0 ? <StudentReminders student={student} LABELS={LABELS} /> : null}
       {student.invoices.length === 0 ? (
         <EmptyState icon={Receipt} title={L.payments.emptyTitle} description={L.payments.emptyDescription} />
       ) : (
@@ -287,6 +290,38 @@ export async function PaymentsSection({ student }: { student: StudentFile }) {
         />
       )}
     </SectionCard>
+  );
+}
+
+/** Rappels de paiement à envoyer pour cet élève (campagnes confirmées, factures non réglées). */
+function StudentReminders({ student, LABELS }: { student: StudentFile; LABELS: AppLabels }) {
+  const R = LABELS.reenrollment.reminders;
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border px-4 py-3">
+      <h3 className="font-semibold">{R.studentTitle}</h3>
+      <ul className="flex flex-col divide-y divide-divider">
+        {student.reminderItems.map((item) => (
+          <li key={`${item.runId}:${item.dueDate}`} className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 lg:flex-row lg:items-center">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className={cn("font-medium", item.type === "overdue" && "text-danger-ink")}>{R.waves[item.type]}</span>
+                <Money amount={item.amountDue} />
+              </span>
+              <span className="text-caption text-muted-foreground">
+                {item.subjectNames.join(", ")} · {R.due(formatDate(item.dueDate))}
+                {item.type === "overdue" && item.daysOverdue !== null ? ` · ${R.late(R.days(item.daysOverdue))}` : ""}
+              </span>
+              <span className={cn("text-caption font-medium", item.lastSentAt ? "text-success-ink" : "text-muted-foreground")}>
+                {item.lastSentAt && item.lastChannel
+                  ? R.sent(R.channels[item.lastChannel], formatDateTime(item.lastSentAt), item.lastSentByName)
+                  : R.notSent}
+              </span>
+            </div>
+            <ReminderActions item={item} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -328,26 +363,47 @@ export async function AbsencesSection({ student }: { student: StudentFile }) {
 export async function FollowUpsSection({ student }: { student: StudentFile }) {
   const LABELS = await getLabels();
   const L = LABELS.assistant.student;
+  const R = LABELS.reenrollment.reminders;
+  // Relances saisies et rappels de paiement envoyés, dans un seul historique.
+  const entries = [
+    ...student.followUps.map((followUp) => ({ kind: "followUp" as const, at: followUp.createdAt, followUp })),
+    ...student.reminders.map((reminder) => ({ kind: "reminder" as const, at: reminder.sentAt, reminder })),
+  ].sort((a, b) => b.at.localeCompare(a.at));
   return (
     <SectionCard id="relances" title={L.sections.followUps}>
-      {student.followUps.length === 0 ? (
+      {entries.length === 0 ? (
         <EmptyState icon={MessageSquareText} title={L.followUps.emptyTitle} description={L.followUps.emptyDescription} />
       ) : (
         <ol className="flex flex-col divide-y">
-          {student.followUps.map((followUp) => (
-            <li key={followUp.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="font-medium">{LABELS.followUp.types[followUp.type]}</span>
-                <span className="text-caption text-muted-foreground">·</span>
-                <span className="text-caption text-muted-foreground">{LABELS.followUp.channels[followUp.channel]}</span>
-              </div>
-              {followUp.note ? <p className="whitespace-pre-line">{followUp.note}</p> : null}
-              <p className="text-caption text-muted-foreground">
-                {formatDateTime(followUp.createdAt)}
-                {followUp.authorName ? ` ${L.followUps.by(followUp.authorName)}` : ""}
-              </p>
-            </li>
-          ))}
+          {entries.map((entry) =>
+            entry.kind === "followUp" ? (
+              <li key={entry.followUp.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-medium">{LABELS.followUp.types[entry.followUp.type]}</span>
+                  <span className="text-caption text-muted-foreground">·</span>
+                  <span className="text-caption text-muted-foreground">{LABELS.followUp.channels[entry.followUp.channel]}</span>
+                </div>
+                {entry.followUp.note ? <p className="whitespace-pre-line">{entry.followUp.note}</p> : null}
+                <p className="text-caption text-muted-foreground">
+                  {formatDateTime(entry.followUp.createdAt)}
+                  {entry.followUp.authorName ? ` ${L.followUps.by(entry.followUp.authorName)}` : ""}
+                </p>
+              </li>
+            ) : (
+              <li key={entry.reminder.messageId} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-medium">{R.history(R.waves[entry.reminder.type])}</span>
+                  <span className="text-caption text-muted-foreground">·</span>
+                  <span className="text-caption text-muted-foreground">{LABELS.absenceAlerts.channelNames[entry.reminder.channel]}</span>
+                </div>
+                <p>{R.historyDetail(formatMAD(entry.reminder.amount), entry.reminder.subjectNames.join(", "))}</p>
+                <p className="text-caption text-muted-foreground">
+                  {formatDateTime(entry.reminder.sentAt)}
+                  {entry.reminder.authorName ? ` ${L.followUps.by(entry.reminder.authorName)}` : ""}
+                </p>
+              </li>
+            ),
+          )}
         </ol>
       )}
     </SectionCard>
