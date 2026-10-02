@@ -10,6 +10,7 @@ import { brandMetadata, getSessionBrand } from "@/lib/branding";
 import { LabelsProvider } from "@/lib/i18n/client";
 import { getLabels } from "@/lib/i18n/server";
 import { getNotifications } from "@/lib/data/notifications";
+import { hasReenrollment } from "@/lib/data/reenrollment";
 import { formatLongDate } from "@/lib/format";
 
 /** Onglet et favicon à la marque du centre (marque blanche). */
@@ -21,7 +22,7 @@ export default async function AssistantLayout({ children }: { children: ReactNod
   const profile = await requireRole("assistant");
   const LABELS = await getLabels();
   const brand = await getSessionBrand();
-  const notifications = await getNotifications();
+  const [notifications, reenrollment] = await Promise.all([getNotifications(), hasReenrollment()]);
 
   return (
     <LabelsProvider terms={profile.vocabulary} brandName={brand.whiteLabel ? brand.name : null}>
@@ -30,6 +31,7 @@ export default async function AssistantLayout({ children }: { children: ReactNod
         space="assistant"
         user={toShellUser(profile, LABELS)}
         logoUrl={brand.logoUrl}
+        reenrollment={reenrollment}
         spaceLabel={LABELS.spaces.assistant}
         todayLabel={formatLongDate(new Date())}
         searchHref={ROUTES.assistant.students}

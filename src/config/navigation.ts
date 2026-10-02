@@ -31,7 +31,7 @@ export type NavSpace = "assistant" | "teacher" | "admin" | "platform" | "stylegu
 /** Entrées de navigation, dans le vocabulaire du centre. */
 export function navigationFor(
   LABELS: AppLabels,
-  options: { brandingEditable?: boolean } = {},
+  options: { brandingEditable?: boolean; reenrollment?: boolean } = {},
 ): Record<NavSpace, readonly NavItem[]> {
   return {
     assistant: [
@@ -39,7 +39,7 @@ export function navigationFor(
       { href: ROUTES.assistant.students, label: LABELS.nav.students, icon: Users },
       { href: ROUTES.assistant.newStudent, label: LABELS.nav.newStudent, shortLabel: LABELS.nav.short.newStudent, icon: UserPlus },
       { href: ROUTES.assistant.absences, label: LABELS.nav.absences, icon: CalendarX },
-      { href: ROUTES.assistant.reenrollment, label: LABELS.nav.reenrollment, icon: CalendarSync },
+      ...(options.reenrollment ? [{ href: ROUTES.assistant.reenrollment, label: LABELS.nav.reenrollment, icon: CalendarSync }] : []),
       { href: ROUTES.assistant.newTeacher, label: LABELS.nav.newTeacher, shortLabel: LABELS.nav.short.newTeacher, icon: GraduationCap },
     ],
     teacher: [
@@ -51,7 +51,7 @@ export function navigationFor(
       { href: ROUTES.admin.students, label: LABELS.nav.students, icon: Users },
       { href: ROUTES.admin.absences, label: LABELS.nav.absences, icon: CalendarX },
       { href: ROUTES.admin.subjects, label: LABELS.nav.subjects, shortLabel: LABELS.nav.short.subjects, icon: BookOpen },
-      { href: ROUTES.admin.reenrollment, label: LABELS.nav.reenrollment, icon: CalendarSync },
+      ...(options.reenrollment ? [{ href: ROUTES.admin.reenrollment, label: LABELS.nav.reenrollment, icon: CalendarSync }] : []),
       { href: ROUTES.admin.schedule, label: LABELS.nav.planning, icon: CalendarRange },
       { href: ROUTES.admin.rooms, label: LABELS.nav.rooms, icon: DoorOpen },
       { href: ROUTES.admin.users, label: LABELS.nav.users, icon: UserCog },

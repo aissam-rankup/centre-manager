@@ -37,6 +37,8 @@ type AppShellProps = {
   logoUrl?: string | null;
   /** Entrée « Marque » (administrateur d'un centre en marque blanche). */
   brandingEditable?: boolean;
+  /** Réinscription automatique activée (ou campagnes existantes) : entrée « Réinscriptions ». */
+  reenrollment?: boolean;
   children: ReactNode;
 };
 
@@ -55,10 +57,11 @@ export function AppShell({
   banners,
   logoUrl = null,
   brandingEditable = false,
+  reenrollment = false,
   children,
 }: AppShellProps) {
   const LABELS = useLabels();
-  const items = navigationFor(LABELS, { brandingEditable })[space];
+  const items = navigationFor(LABELS, { brandingEditable, reenrollment })[space];
   const home = items[0]?.href ?? "/";
   const pathname = usePathname();
   const activeHref = findActiveHref(items, pathname);

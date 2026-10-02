@@ -29,11 +29,13 @@ type CampaignStudentsProps = {
   students: readonly ReviewStudent[];
   editable: boolean;
   issued: boolean;
+  /** Mois sans cours : rien n'est facturé. */
+  cancelled: boolean;
   fileBase: string;
 };
 
 /** Liste des élèves de la campagne : filtres (à risque, sans décision…), recherche, cartes d'intention. */
-export function CampaignStudents({ runId, students, editable, issued, fileBase }: CampaignStudentsProps) {
+export function CampaignStudents({ runId, students, editable, issued, cancelled, fileBase }: CampaignStudentsProps) {
   const LABELS = useLabels();
   const R = LABELS.reenrollment.review;
   const [filter, setFilter] = useState<Filter>(editable && students.some((student) => student.atRisk) ? "risk" : "all");
@@ -101,6 +103,7 @@ export function CampaignStudents({ runId, students, editable, issued, fileBase }
               student={student}
               editable={editable}
               issued={issued}
+              cancelled={cancelled}
               fileHref={`${fileBase}/${student.studentId}`}
             />
           ))}

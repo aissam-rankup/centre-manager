@@ -198,6 +198,17 @@ function toSummary(row: BillingRunRow): BillingRunSummary {
   };
 }
 
+/** Menu : réinscription automatique activée, ou campagnes déjà préparées (accueil et admin). */
+export async function hasReenrollment(): Promise<boolean> {
+  const profile = await requireStaff();
+  const supabase = await createClient();
+  const [center, runs] = await Promise.all([
+    supabase.from("centers").select("auto_reenrollment_enabled").eq("id", profile.centerId).single(),
+    supabase.from("billing_runs").select("id", { count: "exact", head: true }).eq("center_id", profile.centerId),
+  ]);
+  return Boolean(center.data?.auto_reenrollment_enabled) || (runs.count ?? 0) > 0;
+}
+
 /** Réglages de la réinscription automatique, campagne du mois prochain et brouillon du mois en cours (admin). */
 export async function getReenrollmentSettings(): Promise<ReenrollmentSettings> {
   const profile = await requireRole("admin");

@@ -61,6 +61,7 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
   const counts = countIntents(students);
   const atRisk = students.filter((student) => student.atRisk);
   const draft = run.status === "draft";
+  const cancelled = run.status === "cancelled";
   const started = isoDate(run.year, run.month, 1) <= todayIso;
   const keptLines = students.reduce(
     (sum, student) => sum + (student.intent === "dropped" || student.intent === "paused" ? 0 : student.lines.filter((line) => line.kept).length),
@@ -128,24 +129,26 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard label={R.stats.students} value={run.studentCount} icon={Users} className="col-span-2 xl:col-span-1" />
-        <StatCard
-          label={R.stats.expected}
-          value={<Money amount={run.totalExpected} />}
-          icon={Wallet}
-          tone="brand"
-          className="col-span-2 xl:col-span-1"
-        />
-        <StatCard
-          label={R.stats.pending}
-          value={counts.pending}
-          hint={R.stats.decisionsValue(counts.confirmed, counts.dropped, counts.paused)}
-          icon={ListChecks}
-          tone="success"
-        />
-        <StatCard label={R.stats.risk} value={atRisk.length} icon={TriangleAlert} tone={atRisk.length > 0 ? "warning" : "success"} />
-      </div>
+      {cancelled ? null : (
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          <StatCard label={R.stats.students} value={run.studentCount} icon={Users} className="col-span-2 xl:col-span-1" />
+          <StatCard
+            label={R.stats.expected}
+            value={<Money amount={run.totalExpected} />}
+            icon={Wallet}
+            tone="brand"
+            className="col-span-2 xl:col-span-1"
+          />
+          <StatCard
+            label={R.stats.pending}
+            value={counts.pending}
+            hint={R.stats.decisionsValue(counts.confirmed, counts.dropped, counts.paused)}
+            icon={ListChecks}
+            tone="success"
+          />
+          <StatCard label={R.stats.risk} value={atRisk.length} icon={TriangleAlert} tone={atRisk.length > 0 ? "warning" : "success"} />
+        </div>
+      )}
 
       {page.reminders ? (
         <SectionCard title={LABELS.reenrollment.reminders.title} description={LABELS.reenrollment.reminders.description}>
@@ -153,36 +156,43 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
         </SectionCard>
       ) : null}
 
-      <SectionCard title={R.risk.title} description={R.risk.description(page.riskThreshold)}>
-        {atRisk.length === 0 ? (
-          <p className="text-muted-foreground">{R.risk.none}</p>
-        ) : (
-          <ul className="flex flex-col divide-y divide-divider">
-            {atRisk.map((student) => (
-              <li key={student.studentId} className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2">
-                <a href={`#eleve-${student.studentId}`} className="rounded-sm font-medium text-heading hover:text-primary">
-                  {student.fullName}
-                </a>
-                <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption">
-                  {student.overdueAmount > 0 ? (
-                    <span className="font-medium text-danger-ink">{R.risk.overdue(formatMAD(student.overdueAmount))}</span>
-                  ) : null}
-                  {student.lowAttendance && student.attendanceRate !== null ? (
-                    <span className="font-medium text-warning-ink">{R.risk.attendance(formatPercent(student.attendanceRate))}</span>
-                  ) : null}
-                  <span className="text-muted-foreground">{R.intent[student.intent]}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </SectionCard>
+      {cancelled ? null : (
+        <SectionCard title={R.risk.title} description={R.risk.description(page.riskThreshold)}>
+          {atRisk.length === 0 ? (
+            <p className="text-muted-foreground">{R.risk.none}</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-divider">
+              {atRisk.map((student) => (
+                <li key={student.studentId} className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2">
+                  <a
+                    href={`#eleve-${student.studentId}`}
+                    className="flex min-h-11 flex-1 items-center rounded-sm font-medium text-heading hover:text-primary"
+                  >
+                    {student.fullName}
+                  </a>
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption">
+                    {student.overdueAmount > 0 ? (
+                      <span className="font-medium text-danger-ink">{R.risk.overdue(formatMAD(student.overdueAmount))}</span>
+                    ) : null}
+                    {student.lowAttendance && student.attendanceRate !== null ? (
+                      <span className="font-medium text-warning-ink">{R.risk.attendance(formatPercent(student.attendanceRate))}</span>
+                    ) : null}
+                    <span className="text-muted-foreground">{R.intent[student.intent]}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+      )}
 
       <CampaignStudents
+        key={run.id}
         runId={run.id}
         students={students}
         editable={page.canEdit}
-        issued={!draft && run.status !== "cancelled"}
+        issued={!draft && !cancelled}
+        cancelled={cancelled}
         fileBase={fileBase}
       />
     </div>

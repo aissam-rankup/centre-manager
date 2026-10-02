@@ -35,11 +35,13 @@ type StudentIntentCardProps = {
   editable: boolean;
   /** Campagne confirmée : statut de chaque facture émise. */
   issued: boolean;
+  /** Mois sans cours : rien n'est facturé. */
+  cancelled: boolean;
   fileHref: string;
 };
 
 /** Un élève dans la revue : lignes du mois, risques, intention (reconduit, abandonne, en pause). */
-export function StudentIntentCard({ runId, student, editable, issued, fileHref }: StudentIntentCardProps) {
+export function StudentIntentCard({ runId, student, editable, issued, cancelled, fileHref }: StudentIntentCardProps) {
   const LABELS = useLabels();
   const R = LABELS.reenrollment.review;
   const [pending, startTransition] = useTransition();
@@ -59,6 +61,7 @@ export function StudentIntentCard({ runId, student, editable, issued, fileHref }
     : student.lines.filter((line) => !decision.dropped.includes(line.sourceId)).reduce((sum, line) => sum + line.amountDue, 0);
 
   const save = (next: Decision, nextReason?: string, onDone?: () => void) => {
+    if (pending) return;
     startTransition(async () => {
       setOptimistic(next);
       const result = await setReenrollmentIntent({
@@ -118,94 +121,104 @@ export function StudentIntentCard({ runId, student, editable, issued, fileHref }
       ) : (
         <ul className="flex flex-col divide-y divide-divider border-y border-divider">
           {student.lines.map((line) => {
-            const kept = !leaving && !decision.dropped.includes(line.sourceId);
+            const kept = !cancelled && !leaving && !decision.dropped.includes(line.sourceId);
             const lastKept = kept && keptCount <= 1;
+            const selectable = editable && !leaving;
+            const Row = selectable ? "label" : "div";
             return (
-              <li key={line.lineId} className="flex min-h-11 items-center gap-3 py-2">
-                {editable && !leaving ? (
-                  <Checkbox
-                    checked={kept}
-                    disabled={pending || lastKept}
-                    aria-label={R.keepLine(line.name)}
-                    onCheckedChange={(checked) => {
-                      const dropped = checked === true
-                        ? decision.dropped.filter((id) => id !== line.sourceId)
-                        : [...decision.dropped, line.sourceId];
-                      save({ intent: "confirmed", dropped });
-                    }}
-                    className="size-5"
-                  />
-                ) : null}
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className={cn("truncate font-medium", !kept && "text-muted-foreground line-through")}>
-                    {line.name}
-                    {line.kind === "pack" ? <span className="ml-2 text-caption font-normal text-muted-foreground">{R.pack}</span> : null}
-                  </span>
-                  <span className="text-caption text-muted-foreground">
-                    {kept ? R.due(formatDate(line.dueDate)) : R.lineRemoved}
-                    {kept && line.discountAmount > 0 ? ` · ${R.full} ${formatMAD(line.amountFull)} − ${formatMAD(line.discountAmount)}` : null}
-                  </span>
-                  {line.discountConflict && kept ? <span className="text-caption text-warning-ink">{R.conflict}</span> : null}
-                </div>
-                <div className="flex flex-col items-end gap-0.5">
-                  <Money amount={line.amountDue} className={cn(!kept && "text-muted-foreground line-through")} />
-                  {issued && line.invoiceStatus ? (
-                    <span
-                      className={cn(
-                        "text-caption font-medium",
-                        line.invoiceStatus === "paid" ? "text-success-ink" : line.invoiceStatus === "overdue" ? "text-danger-ink" : "text-muted-foreground",
-                      )}
-                    >
-                      {R.invoiceStatus[line.invoiceStatus]}
-                    </span>
+              <li key={line.lineId}>
+                <Row className={cn("flex min-h-11 items-center gap-3 py-2", selectable && !lastKept && "cursor-pointer")}>
+                  {selectable ? (
+                    <Checkbox
+                      checked={kept}
+                      disabled={lastKept}
+                      aria-disabled={pending || undefined}
+                      aria-label={R.keepLine(line.name)}
+                      onCheckedChange={(checked) => {
+                        const dropped = checked === true
+                          ? decision.dropped.filter((id) => id !== line.sourceId)
+                          : [...decision.dropped, line.sourceId];
+                        save({ intent: "confirmed", dropped });
+                      }}
+                      className="size-5"
+                    />
                   ) : null}
-                </div>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className={cn("truncate font-medium", !kept && "text-muted-foreground", !kept && !cancelled && "line-through")}>
+                      {line.name}
+                      {line.kind === "pack" ? <span className="ml-2 text-caption font-normal text-muted-foreground">{R.pack}</span> : null}
+                    </span>
+                    <span className="text-caption text-muted-foreground">
+                      {cancelled ? null : kept ? R.due(formatDate(line.dueDate)) : R.lineRemoved}
+                      {kept && line.discountAmount > 0 ? ` · ${R.full} ${formatMAD(line.amountFull)} − ${formatMAD(line.discountAmount)}` : null}
+                    </span>
+                    {line.discountConflict && kept ? <span className="text-caption text-warning-ink">{R.conflict}</span> : null}
+                  </div>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <Money amount={line.amountDue} className={cn(!kept && "text-muted-foreground", !kept && !cancelled && "line-through")} />
+                    {issued && line.invoiceStatus ? (
+                      <span
+                        className={cn(
+                          "text-caption font-medium",
+                          line.invoiceStatus === "paid" ? "text-success-ink" : line.invoiceStatus === "overdue" ? "text-danger-ink" : "text-muted-foreground",
+                        )}
+                      >
+                        {R.invoiceStatus[line.invoiceStatus]}
+                      </span>
+                    ) : null}
+                  </div>
+                </Row>
               </li>
             );
           })}
         </ul>
       )}
 
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-caption text-muted-foreground">{R.net}</span>
-        <Money amount={netKept} className="text-lg" />
-      </div>
+      {cancelled ? null : (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-caption text-muted-foreground">{R.net}</span>
+          <Money amount={netKept} className="text-lg" />
+        </div>
+      )}
 
       {editable ? (
-        <div
-          role="radiogroup"
-          aria-label={R.intentLabel(student.fullName)}
-          className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1"
-        >
+        <fieldset className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+          <legend className="sr-only">{R.intentLabel(student.fullName)}</legend>
           {CHOICES.map((choice) => {
             const selected = decision.intent === choice;
             return (
-              <button
+              <label
                 key={choice}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                disabled={pending}
-                onClick={() => {
-                  if (selected) return;
-                  if (choice === "confirmed") {
-                    save({ intent: "confirmed", dropped: leaving ? [] : decision.dropped });
-                    return;
-                  }
-                  setReason(student.reason ?? "");
-                  setDialogError(null);
-                  setLeaveChoice(choice);
-                }}
                 className={cn(
-                  "min-h-11 rounded-md px-2 text-caption font-medium transition-colors disabled:opacity-60",
+                  "flex min-h-11 cursor-pointer items-center justify-center rounded-md px-2 text-center text-caption font-medium transition-colors",
+                  "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
                   selected ? "bg-card text-heading shadow-card" : "text-muted-foreground hover:text-heading",
+                  pending && "opacity-60",
                 )}
               >
+                <input
+                  type="radio"
+                  name={`intention-${student.studentId}`}
+                  value={choice}
+                  checked={selected}
+                  aria-disabled={pending || undefined}
+                  onChange={() => {
+                    if (pending || selected) return;
+                    if (choice === "confirmed") {
+                      save({ intent: "confirmed", dropped: leaving ? [] : decision.dropped });
+                      return;
+                    }
+                    setReason(student.reason ?? "");
+                    setDialogError(null);
+                    setLeaveChoice(choice);
+                  }}
+                  className="sr-only"
+                />
                 {R.intent[choice]}
-              </button>
+              </label>
             );
           })}
-        </div>
+        </fieldset>
       ) : (
         <p className="font-medium">{R.intent[decision.intent]}</p>
       )}
