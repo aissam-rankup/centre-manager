@@ -9,6 +9,97 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      absence_notifications: {
+        Row: {
+          attendance_id: string | null
+          center_id: string
+          channel: Database["public"]["Enums"]["notification_channel"]
+          guardian_phone_used: string | null
+          id: string
+          is_repeat: boolean
+          is_series: boolean
+          message_body: string | null
+          sent_at: string
+          sent_by: string | null
+          status: Database["public"]["Enums"]["absence_notification_status"]
+          student_id: string
+          template_used: string | null
+        }
+        Insert: {
+          attendance_id?: string | null
+          center_id: string
+          channel: Database["public"]["Enums"]["notification_channel"]
+          guardian_phone_used?: string | null
+          id?: string
+          is_repeat?: boolean
+          is_series?: boolean
+          message_body?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: Database["public"]["Enums"]["absence_notification_status"]
+          student_id: string
+          template_used?: string | null
+        }
+        Update: {
+          attendance_id?: string | null
+          center_id?: string
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          guardian_phone_used?: string | null
+          id?: string
+          is_repeat?: boolean
+          is_series?: boolean
+          message_body?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: Database["public"]["Enums"]["absence_notification_status"]
+          student_id?: string
+          template_used?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "absence_notifications_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "absence_notifications_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "absence_notifications_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "absence_notifications_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id", "center_id"]
+          },
+          {
+            foreignKeyName: "absence_notifications_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "absence_notifications_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id", "center_id"]
+          },
+        ]
+      }
       alerts: {
         Row: {
           created_at: string
@@ -264,6 +355,8 @@ export type Database = {
       }
       centers: {
         Row: {
+          absence_notification_enabled: boolean
+          absence_notification_template: string | null
           activated_at: string | null
           address: string | null
           billing_interval: Database["public"]["Enums"]["billing_interval"]
@@ -287,6 +380,8 @@ export type Database = {
           status: Database["public"]["Enums"]["center_status"]
         }
         Insert: {
+          absence_notification_enabled?: boolean
+          absence_notification_template?: string | null
           activated_at?: string | null
           address?: string | null
           billing_interval?: Database["public"]["Enums"]["billing_interval"]
@@ -310,6 +405,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["center_status"]
         }
         Update: {
+          absence_notification_enabled?: boolean
+          absence_notification_template?: string | null
           activated_at?: string | null
           address?: string | null
           billing_interval?: Database["public"]["Enums"]["billing_interval"]
@@ -1477,6 +1574,105 @@ export type Database = {
           },
         ]
       }
+      rooms: {
+        Row: {
+          capacity: number | null
+          center_id: string
+          created_at: string
+          equipment: Json
+          floor: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          center_id: string
+          created_at?: string
+          equipment?: Json
+          floor?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          center_id?: string
+          created_at?: string
+          equipment?: Json
+          floor?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedule_conflicts_log: {
+        Row: {
+          attempted_slot: Json
+          center_id: string
+          conflict_type: Database["public"]["Enums"]["schedule_conflict_type"]
+          conflicting_slot_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          resolved_how: string | null
+        }
+        Insert: {
+          attempted_slot: Json
+          center_id: string
+          conflict_type: Database["public"]["Enums"]["schedule_conflict_type"]
+          conflicting_slot_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          resolved_how?: string | null
+        }
+        Update: {
+          attempted_slot?: Json
+          center_id?: string
+          conflict_type?: Database["public"]["Enums"]["schedule_conflict_type"]
+          conflicting_slot_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          resolved_how?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_conflicts_log_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_conflicts_log_conflicting_slot_id_fkey"
+            columns: ["conflicting_slot_id"]
+            isOneToOne: false
+            referencedRelation: "schedule_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_conflicts_log_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedule_slots: {
         Row: {
           center_id: string
@@ -1485,6 +1681,7 @@ export type Database = {
           id: string
           level_id: string
           room: string
+          room_id: string | null
           start_time: string
           subject_id: string
           teacher_id: string
@@ -1496,6 +1693,7 @@ export type Database = {
           id?: string
           level_id: string
           room: string
+          room_id?: string | null
           start_time: string
           subject_id: string
           teacher_id: string
@@ -1507,6 +1705,7 @@ export type Database = {
           id?: string
           level_id?: string
           room?: string
+          room_id?: string | null
           start_time?: string
           subject_id?: string
           teacher_id?: string
@@ -1524,6 +1723,13 @@ export type Database = {
             columns: ["level_id", "center_id"]
             isOneToOne: false
             referencedRelation: "levels"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "schedule_slots_room_fkey"
+            columns: ["room_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id", "center_id"]
           },
           {
@@ -2977,6 +3183,7 @@ export type Database = {
       }
     }
     Enums: {
+      absence_notification_status: "prepared" | "sent" | "failed" | "no_phone"
       alert_type: "consecutive_absences" | "overdue_payment"
       attendance_status: "present" | "absent"
       billing_interval: "month" | "year"
@@ -2988,11 +3195,13 @@ export type Database = {
       follow_up_channel: "phone" | "whatsapp" | "in_person"
       follow_up_type: "payment" | "absence"
       invoice_status: "pending" | "paid" | "overdue"
+      notification_channel: "whatsapp" | "phone_call" | "in_person"
       pay_mode: "fixed_salary" | "commission"
       payment_method: "cash" | "bank_transfer" | "card"
       payroll_status: "draft" | "validated" | "paid"
       receipt_format: "a5" | "ticket_80mm"
       receipt_kind: "payment" | "cancellation"
+      schedule_conflict_type: "room" | "teacher" | "level"
       subscription_payment_method: "bank_transfer" | "cash" | "card"
       subscription_plan: "standard" | "white_label"
       user_role: "admin" | "assistant" | "teacher" | "super_admin"
@@ -3123,6 +3332,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      absence_notification_status: ["prepared", "sent", "failed", "no_phone"],
       alert_type: ["consecutive_absences", "overdue_payment"],
       attendance_status: ["present", "absent"],
       billing_interval: ["month", "year"],
@@ -3134,11 +3344,13 @@ export const Constants = {
       follow_up_channel: ["phone", "whatsapp", "in_person"],
       follow_up_type: ["payment", "absence"],
       invoice_status: ["pending", "paid", "overdue"],
+      notification_channel: ["whatsapp", "phone_call", "in_person"],
       pay_mode: ["fixed_salary", "commission"],
       payment_method: ["cash", "bank_transfer", "card"],
       payroll_status: ["draft", "validated", "paid"],
       receipt_format: ["a5", "ticket_80mm"],
       receipt_kind: ["payment", "cancellation"],
+      schedule_conflict_type: ["room", "teacher", "level"],
       subscription_payment_method: ["bank_transfer", "cash", "card"],
       subscription_plan: ["standard", "white_label"],
       user_role: ["admin", "assistant", "teacher", "super_admin"],

@@ -348,6 +348,48 @@ begin
   -- attendance_after_write_absence_alerts (séries forcées ci-dessus comprises).
 
   -- -------------------------------------------------------------------
+  -- Salles (créées depuis le planning) : capacité, étage, équipements.
+  -- -------------------------------------------------------------------
+  update public.rooms r
+  set capacity = x.capacity, floor = x.floor, equipment = x.equipment::jsonb
+  from (values
+    ('Salle 1', 16, 'Rez-de-chaussée', '["whiteboard", "projector"]'),
+    ('Salle 2', 12, '1er étage', '["whiteboard"]'),
+    ('Salle 3', 10, '1er étage', '["whiteboard", "computers"]')
+  ) as x(name, capacity, floor, equipment)
+  where r.center_id = c_center and r.name = x.name;
+  insert into public.rooms (center_id, name, capacity, floor, equipment, notes)
+  values (c_center, 'Salle 4', 20, '2e étage', '["whiteboard", "projector", "air_conditioning"]', 'Grande salle, idéale pour les stages.');
+
+  -- -------------------------------------------------------------------
+  -- Responsables déjà prévenus de certaines absences (WhatsApp, appel).
+  -- -------------------------------------------------------------------
+  insert into public.absence_notifications (center_id, student_id, attendance_id, channel, message_body, sent_at, sent_by,
+                                            guardian_phone_used, status)
+  select c_center, a.student_id, a.id,
+         case when row_number() over (order by a.session_date desc, a.id) % 3 = 0 then 'phone_call' else 'whatsapp' end::public.notification_channel,
+         null,
+         (a.session_date::timestamp + time '19:00') at time zone 'Africa/Casablanca',
+         c_assistant,
+         st.guardian_phone,
+         'sent'
+  from public.attendance a
+  join public.students st on st.id = a.student_id
+  where a.status = 'absent' and a.session_date < v_today - 2
+  order by a.session_date desc
+  limit 8;
+
+  -- Conflit de salle rencontré puis résolu par une autre salle.
+  insert into public.schedule_conflicts_log (center_id, attempted_slot, conflict_type, conflicting_slot_id, resolved_how, created_by, created_at)
+  select c_center,
+         jsonb_build_object('subject_id', ss.subject_id, 'level_id', ss.level_id, 'teacher_id', c_prof3,
+                            'room_id', ss.room_id, 'day_of_week', ss.day_of_week, 'start_time', '17:30', 'end_time', '19:00'),
+         'room', ss.id, 'other_room', c_admin, v_previous_month::timestamptz + interval '3 days'
+  from public.schedule_slots ss
+  where ss.center_id = c_center and ss.room = 'Salle 1' and ss.day_of_week = 1
+  limit 1;
+
+  -- -------------------------------------------------------------------
   -- Relances déjà effectuées (une partie des impayés)
   -- -------------------------------------------------------------------
   insert into public.follow_ups (student_id, invoice_id, type, channel, note, created_by, created_at)

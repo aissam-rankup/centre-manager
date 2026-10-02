@@ -27,7 +27,9 @@ async function describeAdminError(error: DatabaseError): Promise<string> {
   if (error.code === "23503") return E.inUse;
   if (error.code === "23505") return E.duplicate;
   if (error.code === "23P01") {
-    return error.message?.includes("schedule_slots_no_room_overlap") ? E.roomConflict : E.teacherConflict;
+    if (error.message?.includes("schedule_slots_no_room_overlap")) return E.roomConflict;
+    if (error.message?.includes("schedule_slots_no_level_overlap")) return E.levelConflict;
+    return E.teacherConflict;
   }
   return await describeCenterError(error);
 }

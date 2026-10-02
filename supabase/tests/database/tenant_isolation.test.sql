@@ -160,6 +160,12 @@ insert into public.expenses (id, center_id, category_id, label, amount, receipt_
 select '7b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', ec.id, 'Loyer B', 4000,
        'cb000000-0000-4000-8000-000000000001/loyer.pdf'
 from public.expense_categories ec where ec.center_id = 'cb000000-0000-4000-8000-000000000001' and ec.name = 'Loyer';
+-- Planning et absences de B : conflit journalisé, responsable prévenu (salle créée par trigger).
+insert into public.schedule_conflicts_log (center_id, attempted_slot, conflict_type)
+values ('cb000000-0000-4000-8000-000000000001', '{"day_of_week": 2}', 'room');
+insert into public.absence_notifications (student_id, center_id, attendance_id, channel)
+select '4b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', a.id, 'whatsapp'
+from public.attendance a where a.student_id = '4b000000-0000-4000-8000-000000000001' limit 1;
 -- Fichiers de B (photos d'élève et d'équipe, reçu, justificatif).
 insert into storage.objects (bucket_id, name) values
   ('student-photos', 'cb000000-0000-4000-8000-000000000001/4b000000-0000-4000-8000-000000000001.jpg'),
@@ -229,7 +235,8 @@ select ok(isolation_test.b_visible(tbl) > 0, format('contrôle : admin B voit se
 from unnest(array['students', 'enrollments', 'invoices', 'attendance', 'alerts', 'follow_ups', 'levels', 'subjects', 'packs',
                   'pack_enrollments', 'schedule_slots', 'teacher_assignments', 'profiles', 'center_branding',
                   'discounts', 'receipts', 'center_events', 'teacher_salaries', 'teacher_commissions', 'payroll_periods',
-                  'payroll_lines', 'expense_categories', 'expenses']) as tbl;
+                  'payroll_lines', 'expense_categories', 'expenses', 'rooms', 'schedule_conflicts_log',
+                  'absence_notifications']) as tbl;
 reset role;
 
 -- ---------------------------------------------------------------------

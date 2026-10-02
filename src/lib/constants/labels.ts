@@ -1251,6 +1251,7 @@ const TEXTS = {
       duplicate: "Ce nom existe déjà.",
       roomConflict: "Cette salle est déjà occupée sur ce créneau.",
       teacherConflict: "Ce professeur a déjà un cours sur ce créneau.",
+      levelConflict: "Ce niveau a déjà un cours sur ce créneau : ses élèves ne peuvent pas suivre deux cours en même temps.",
     },
     dashboard: {
       title: "Tableau de bord",
