@@ -830,7 +830,7 @@ const TEXTS = {
       conflict: "Plusieurs remises possibles : la plus favorable est appliquée.",
     },
   },
-  paymentMethods: { cash: "Espèces", bank_transfer: "Virement", card: "Carte" },
+  paymentMethods: { cash: "Espèces", bank_transfer: "Virement", card: "Carte", cheque: "Chèque" },
   receipts: {
     title: "Reçu de paiement",
     cancellationTitle: "Reçu d'annulation",

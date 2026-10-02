@@ -245,12 +245,12 @@ export function PaymentDialog({ studentId, studentName, guardianPhone, invoices,
 
             <fieldset className="flex flex-col gap-2">
               <legend className="mb-2 text-caption font-medium text-muted-foreground">{P.method}</legend>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {PAYMENT_METHODS.map((value) => (
                   <label
                     key={value}
                     className={cn(
-                      "flex h-10 cursor-pointer items-center justify-center rounded-lg border text-table font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                      "flex h-11 cursor-pointer items-center justify-center rounded-lg border text-table font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
                       method === value ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted",
                     )}
                   >

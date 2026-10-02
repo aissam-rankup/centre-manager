@@ -6,7 +6,7 @@ import type { Database, Json } from "@/lib/supabase/database.types";
 export type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 export type ReceiptFormat = Database["public"]["Enums"]["receipt_format"];
 
-export const PAYMENT_METHODS = ["cash", "bank_transfer", "card"] as const satisfies readonly PaymentMethod[];
+export const PAYMENT_METHODS = ["cash", "bank_transfer", "card", "cheque"] as const satisfies readonly PaymentMethod[];
 export const RECEIPT_FORMATS = ["a5", "ticket_80mm"] as const satisfies readonly ReceiptFormat[];
 
 /** Durée de validité du lien de reçu envoyé sur WhatsApp. */

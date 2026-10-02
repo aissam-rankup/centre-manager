@@ -166,6 +166,23 @@ values ('cb000000-0000-4000-8000-000000000001', '{"day_of_week": 2}', 'room');
 insert into public.absence_notifications (student_id, center_id, attendance_id, channel)
 select '4b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', a.id, 'whatsapp'
 from public.attendance a where a.student_id = '4b000000-0000-4000-8000-000000000001' limit 1;
+-- Réinscription et caisse de B : campagne (ligne, intention), rappel de paiement,
+-- session de caisse et mouvement d'espèces.
+insert into public.billing_runs (id, center_id, period_year, period_month, total_expected, student_count)
+values ('8b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 2026, 11, 300, 1);
+insert into public.billing_run_lines (billing_run_id, center_id, student_id, enrollment_id, period_start, period_end, due_date, amount_full, amount_due)
+select '8b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', e.student_id, e.id,
+       date '2026-11-01', date '2026-11-30', date '2026-11-05', 300, 300
+from public.enrollments e where e.student_id = '4b000000-0000-4000-8000-000000000001' and e.subject_id = '2b000000-0000-4000-8000-000000000001';
+insert into public.reenrollment_intents (center_id, billing_run_id, student_id, period_year, period_month)
+values ('cb000000-0000-4000-8000-000000000001', '8b000000-0000-4000-8000-000000000001', '4b000000-0000-4000-8000-000000000001', 2026, 11);
+insert into public.payment_reminders (student_id, center_id, invoice_id, message_id, reminder_type, channel)
+select '4b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', i.id, gen_random_uuid(), 'overdue', 'whatsapp'
+from public.invoices i where i.student_id = '4b000000-0000-4000-8000-000000000001' and i.status <> 'paid' limit 1;
+insert into public.cash_sessions (id, center_id, opening_float)
+values ('9b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 100);
+insert into public.cash_movements (center_id, cash_session_id, kind, amount, reason)
+values ('cb000000-0000-4000-8000-000000000001', '9b000000-0000-4000-8000-000000000001', 'bank_deposit', -50, 'Dépôt B');
 -- Fichiers de B (photos d'élève et d'équipe, reçu, justificatif).
 insert into storage.objects (bucket_id, name) values
   ('student-photos', 'cb000000-0000-4000-8000-000000000001/4b000000-0000-4000-8000-000000000001.jpg'),
@@ -236,7 +253,8 @@ from unnest(array['students', 'enrollments', 'invoices', 'attendance', 'alerts',
                   'pack_enrollments', 'schedule_slots', 'teacher_assignments', 'profiles', 'center_branding',
                   'discounts', 'receipts', 'center_events', 'teacher_salaries', 'teacher_commissions', 'payroll_periods',
                   'payroll_lines', 'expense_categories', 'expenses', 'rooms', 'schedule_conflicts_log',
-                  'absence_notifications']) as tbl;
+                  'absence_notifications', 'billing_runs', 'billing_run_lines', 'reenrollment_intents',
+                  'payment_reminders', 'cash_sessions', 'cash_movements']) as tbl;
 reset role;
 
 -- ---------------------------------------------------------------------
