@@ -2880,6 +2880,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_teacher_pay: {
+        Args: {
+          p_effective_from: string
+          p_monthly_amount?: number
+          p_pay_mode: Database["public"]["Enums"]["pay_mode"]
+          p_rates?: Json
+          p_teacher_id: string
+        }
+        Returns: undefined
+      }
       set_teacher_salary: {
         Args: {
           p_effective_from: string

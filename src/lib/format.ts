@@ -9,6 +9,12 @@ export const TIME_ZONE = "Africa/Casablanca";
 
 const amountFormatter = new Intl.NumberFormat("fr-FR", {
   minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+/** Montant avec centimes : toujours deux décimales (« 1 732,50 »). */
+const centsFormatter = new Intl.NumberFormat("fr-FR", {
+  minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
 
@@ -17,10 +23,12 @@ const percentFormatter = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 1,
 });
 
-/** « 1 200 MAD » */
+/** « 1 200 MAD », « 1 732,50 MAD » */
 export function formatMAD(amount: number): string {
   // Espace insécable classique pour les milliers, pour un rendu « 1 200 MAD » homogène.
-  const digits = amountFormatter.format(amount).replace(/ /g, " ");
+  const rounded = Math.round(amount * 100) / 100;
+  const formatter = Number.isInteger(rounded) ? amountFormatter : centsFormatter;
+  const digits = formatter.format(rounded).replace(/ /g, " ");
   return `${digits} ${LABELS.currency.code}`;
 }
 

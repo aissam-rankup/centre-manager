@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(41);
+select plan(46);
 
 insert into auth.users (id, email) values
   ('a9000000-0000-4000-8000-000000000001', 'admin-p22@test.local'),
@@ -197,7 +197,24 @@ select results_eq(
   $$values (3000.00::numeric, true), (3300.00::numeric, false)$$,
   'salaire : l''augmentation crée une ligne, l''ancienne est close');
 
+-- Réglage groupé de la rémunération : une ligne d'historique seulement si la valeur change.
+select lives_ok(
+  $$select public.set_teacher_pay('a9000000-0000-4000-8000-000000000003', 'commission', private.today(), null,
+      '[{"subject_id": "e9000000-0000-4000-8000-000000000001", "rate_percent": 30}]'::jsonb)$$,
+  'admin : réglage de la rémunération enregistré');
+select is((select count(*)::int from public.teacher_commissions), 1, 'même taux : aucune ligne d''historique ajoutée');
+select public.set_teacher_pay('a9000000-0000-4000-8000-000000000003', 'commission', private.today(), null,
+  '[{"subject_id": "e9000000-0000-4000-8000-000000000001", "rate_percent": 40}]'::jsonb);
+select results_eq(
+  $$select rate_percent, effective_to is null from public.teacher_commissions order by effective_from$$,
+  $$values (30.00::numeric, false), (40.00::numeric, true)$$,
+  'nouveau taux : nouvelle ligne, l''ancienne est close');
+select is((select count(*)::int from public.center_events where action = 'payroll.pay_settings_changed'), 2, 'réglages de rémunération journalisés');
+
 set local request.jwt.claims = '{"sub":"a9000000-0000-4000-8000-000000000002","role":"authenticated"}';
+select throws_ok(
+  $$select public.set_teacher_pay('a9000000-0000-4000-8000-000000000003', 'fixed_salary', private.today(), 9999, '[]'::jsonb)$$,
+  '42501', null, 'assistant : ne règle pas la rémunération');
 select is((select count(*)::int from public.payroll_lines) + (select count(*)::int from public.teacher_commissions), 0, 'assistant : paie invisible');
 select throws_ok(
   $$select public.payroll_refresh(current_setting('p22.year')::int, current_setting('p22.month')::int)$$,
