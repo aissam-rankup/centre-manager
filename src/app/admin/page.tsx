@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { z } from "zod";
 
 import { AbsenceChart } from "@/components/admin/absence-chart";
+import { DiscountsOverview, FinanceOverview } from "@/components/admin/finance-overview";
 import { FilterChips } from "@/components/admin/filter-chips";
 import { ProgressRing, ProgressTile } from "@/components/dashboard/progress-tile";
 import { ReminderCard } from "@/components/dashboard/reminder-card";
@@ -14,6 +15,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/lib/auth/routes";
 import { getLabels } from "@/lib/i18n/server";
 import { getAdminDashboard } from "@/lib/data/admin";
+import { getFinancialDashboard } from "@/lib/data/finance";
 import { formatMAD, formatMonth, formatPercent } from "@/lib/format";
 
 
@@ -34,6 +36,8 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
   // Filtre ignoré s'il ne correspond à aucun niveau du centre.
   const levelId = filtered.levels.some((level) => level.id === requestedLevel) ? requestedLevel : null;
   const data = requestedLevel && !levelId ? await getAdminDashboard(null) : filtered;
+  // Finances : tout le centre, jamais en mode support.
+  const finance = await getFinancialDashboard();
 
   const gap = Math.max(0, data.expected - data.collected);
   const gapRatio = data.expected > 0 ? gap / data.expected : 0;
@@ -75,6 +79,8 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
           </StatTiles>
         </section>
 
+        {finance ? <FinanceOverview data={finance} LABELS={LABELS} /> : null}
+
         <StudentBoard students={data.students} fileBase={ROUTES.admin.students} seeAllHref={ROUTES.admin.students} />
 
         <section aria-labelledby="absences" className="flex flex-col gap-3">
@@ -92,6 +98,8 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
 
       {/* Colonne droite : sous le contenu jusqu'à 1024 px, en grille de 2 sur tablette */}
       <aside className="flex flex-col gap-6" aria-label={D.reminder.title}>
+        {finance ? <DiscountsOverview data={finance} LABELS={LABELS} /> : null}
+
         <section aria-labelledby="rappel" className="flex flex-col gap-3">
           <SectionHeading id="rappel" title={D.reminder.title} href={`${ROUTES.admin.students}?statut=retard`} />
           <ReminderCard

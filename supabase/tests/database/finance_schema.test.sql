@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(46);
+select plan(50);
 
 insert into auth.users (id, email) values
   ('a9000000-0000-4000-8000-000000000001', 'admin-p22@test.local'),
@@ -219,12 +219,18 @@ select is((select count(*)::int from public.payroll_lines) + (select count(*)::i
 select throws_ok(
   $$select public.payroll_refresh(current_setting('p22.year')::int, current_setting('p22.month')::int)$$,
   '42501', null, 'assistant : ne calcule pas la paie');
+select throws_ok($$select * from public.admin_financial_summary(12)$$, '42501', null, 'assistant : résultat financier refusé');
+select throws_ok($$select * from public.admin_discount_summary()$$, '42501', null, 'assistant : remises du mois refusées');
 
 -- ---------------------------------------------------------------------
 -- Charges
 -- ---------------------------------------------------------------------
 set local request.jwt.claims = '{"sub":"a9000000-0000-4000-8000-000000000001","role":"authenticated"}';
 select is((select count(*)::int from public.expense_categories), 10, 'catégories de charges pré-remplies');
+select results_eq(
+  $$select count(*)::int, bool_and(month_start <= private.today()) from public.admin_financial_summary(12)$$,
+  $$values (12, true)$$,
+  'résultat financier : douze mois, jusqu''au mois en cours');
 insert into public.expenses (id, center_id, category_id, label, amount, expense_date, is_recurring)
 select '79000000-0000-4000-8000-000000000001', 'c9000000-0000-4000-8000-000000000001', ec.id, 'Loyer', 5000,
        (date_trunc('month', private.today()) - interval '1 month')::date + 2, true
@@ -258,6 +264,7 @@ select is(
   (select count(*)::int from public.expenses) + (select count(*)::int from public.payroll_lines)
   + (select count(*)::int from public.teacher_salaries) + (select count(*)::int from public.center_events),
   0, 'support : charges, paie et journal invisibles');
+select throws_ok($$select * from public.admin_financial_summary(12)$$, '42501', null, 'support : résultat financier refusé');
 
 reset role;
 

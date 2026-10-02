@@ -184,6 +184,12 @@
   --chart-5: #ffa24c;
   --chart-grid: #f1f3f8;
 
+  /* Résultat financier : palette validée (vision des couleurs, contraste) — relief : légende et tableau. */
+  --fin-collected: #6c2bf5;
+  --fin-payroll: #eb6834;
+  --fin-expenses: #1baf7a;
+  --fin-net: #2a78d6;
+
   --sidebar: #6c2bf5;
   --sidebar-foreground: #ffffff;
   --sidebar-muted: rgb(255 255 255 / 0.7);
@@ -256,6 +262,11 @@
   --chart-4: #ff6b6b;
   --chart-5: #ffa24c;
   --chart-grid: #2c2848;
+
+  --fin-collected: #9b73ff;
+  --fin-payroll: #d95926;
+  --fin-expenses: #199e70;
+  --fin-net: #3987e5;
 
   --sidebar: #5a1fe0;
   --sidebar-foreground: #ffffff;

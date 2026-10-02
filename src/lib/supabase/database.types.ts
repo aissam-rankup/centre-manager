@@ -2236,6 +2236,14 @@ export type Database = {
           total_count: number
         }[]
       }
+      admin_discount_summary: {
+        Args: { p_month?: string }
+        Returns: {
+          amount: number
+          reason: Database["public"]["Enums"]["discount_reason"]
+          students: number
+        }[]
+      }
       admin_enrollment_report: {
         Args: never
         Returns: {
@@ -2248,6 +2256,18 @@ export type Database = {
           monthly_price: number
           subject_id: string
           subject_name: string
+        }[]
+      }
+      admin_financial_summary: {
+        Args: { p_months?: number }
+        Returns: {
+          collected: number
+          discount_students: number
+          discounts: number
+          expected: number
+          expenses: number
+          month_start: string
+          payroll: number
         }[]
       }
       admin_list_users: {
