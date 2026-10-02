@@ -1,6 +1,7 @@
 import "server-only";
 
 import { requireRole } from "@/lib/auth/session";
+import { type OccupancyReport, roomOccupancy } from "@/lib/room-occupancy";
 import { parseEquipment, type RoomView, toMinutes, weekOrder } from "@/lib/rooms";
 import { createClient } from "@/lib/supabase/server";
 
@@ -52,4 +53,13 @@ export async function getRooms(): Promise<RoomView[]> {
       };
     })
     .sort((a, b) => Number(b.isActive) - Number(a.isActive) || a.name.localeCompare(b.name, "fr", { numeric: true }));
+}
+
+/** Taux d'occupation des salles sur la semaine type (tableau de bord admin). */
+export async function getRoomOccupancy(): Promise<OccupancyReport> {
+  const rooms = await getRooms();
+  return roomOccupancy(
+    rooms.flatMap((room) => room.slots.map((slot) => ({ roomId: room.id, ...slot }))),
+    rooms,
+  );
 }

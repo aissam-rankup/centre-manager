@@ -190,6 +190,18 @@
   --fin-expenses: #1baf7a;
   --fin-net: #2a78d6;
 
+  /* Occupation des salles : rampe ordinale d'une teinte (validée), du presque vide au complet. */
+  --occ-1: #b9a3fa;
+  --occ-2: #946cf7;
+  --occ-3: #6c2bf5;
+  --occ-4: #5016c8;
+  --occ-5: #360c8f;
+  --occ-ink-1: #1b1830;
+  --occ-ink-2: #1b1830;
+  --occ-ink-3: #ffffff;
+  --occ-ink-4: #ffffff;
+  --occ-ink-5: #ffffff;
+
   --sidebar: #6c2bf5;
   --sidebar-foreground: #ffffff;
   --sidebar-muted: rgb(255 255 255 / 0.7);
@@ -267,6 +279,17 @@
   --fin-payroll: #d95926;
   --fin-expenses: #199e70;
   --fin-net: #3987e5;
+
+  --occ-1: #5236b8;
+  --occ-2: #6c48dc;
+  --occ-3: #8c66f5;
+  --occ-4: #ad91ff;
+  --occ-5: #d2c2ff;
+  --occ-ink-1: #ffffff;
+  --occ-ink-2: #ffffff;
+  --occ-ink-3: #12101f;
+  --occ-ink-4: #12101f;
+  --occ-ink-5: #12101f;
 
   --sidebar: #5a1fe0;
   --sidebar-foreground: #ffffff;

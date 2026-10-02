@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AbsenceChart } from "@/components/admin/absence-chart";
 import { DiscountsOverview, FinanceOverview } from "@/components/admin/finance-overview";
 import { FilterChips } from "@/components/admin/filter-chips";
+import { RoomOccupancyOverview } from "@/components/admin/room-occupancy";
 import { ProgressRing, ProgressTile } from "@/components/dashboard/progress-tile";
 import { ReminderCard } from "@/components/dashboard/reminder-card";
 import { SectionHeading } from "@/components/dashboard/section-heading";
@@ -16,6 +17,7 @@ import { ROUTES } from "@/lib/auth/routes";
 import { getLabels } from "@/lib/i18n/server";
 import { getAdminDashboard } from "@/lib/data/admin";
 import { getFinancialDashboard } from "@/lib/data/finance";
+import { getRoomOccupancy } from "@/lib/data/rooms";
 import { formatMAD, formatMonth, formatPercent } from "@/lib/format";
 
 
@@ -37,7 +39,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
   const levelId = filtered.levels.some((level) => level.id === requestedLevel) ? requestedLevel : null;
   const data = requestedLevel && !levelId ? await getAdminDashboard(null) : filtered;
   // Finances : tout le centre, jamais en mode support.
-  const finance = await getFinancialDashboard();
+  const [finance, occupancy] = await Promise.all([getFinancialDashboard(), getRoomOccupancy()]);
 
   const gap = Math.max(0, data.expected - data.collected);
   const gapRatio = data.expected > 0 ? gap / data.expected : 0;
@@ -80,6 +82,8 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
         </section>
 
         {finance ? <FinanceOverview data={finance} LABELS={LABELS} /> : null}
+
+        <RoomOccupancyOverview data={occupancy} LABELS={LABELS} />
 
         <StudentBoard students={data.students} fileBase={ROUTES.admin.students} seeAllHref={ROUTES.admin.students} />
 
