@@ -43,6 +43,7 @@ export const ROUTES = {
     branding: "/admin/marque",
     settings: "/admin/reglages",
     payroll: "/admin/paie",
+    expenses: "/admin/charges",
   },
   /** Reçu imprimable (accueil et administration). */
   receipt: (id: string) => `/recus/${id}`,
