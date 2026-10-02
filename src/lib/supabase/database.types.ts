@@ -60,6 +60,13 @@ export type Database = {
             foreignKeyName: "absence_notifications_attendance_id_fkey"
             columns: ["attendance_id"]
             isOneToOne: false
+            referencedRelation: "absences_to_notify"
+            referencedColumns: ["attendance_id"]
+          },
+          {
+            foreignKeyName: "absence_notifications_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
             referencedRelation: "attendance"
             referencedColumns: ["id"]
           },
@@ -201,6 +208,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "absences_to_notify"
+            referencedColumns: ["subject_id"]
           },
           {
             foreignKeyName: "attendance_subject_id_fkey"
@@ -612,6 +626,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "absences_to_notify"
+            referencedColumns: ["subject_id"]
           },
           {
             foreignKeyName: "enrollments_subject_id_fkey"
@@ -1085,6 +1106,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "packs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pack_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "absences_to_notify"
+            referencedColumns: ["subject_id"]
           },
           {
             foreignKeyName: "pack_subjects_subject_id_fkey"
@@ -2198,6 +2226,60 @@ export type Database = {
       }
     }
     Views: {
+      absences_to_notify: {
+        Row: {
+          attendance_id: string | null
+          center_id: string | null
+          end_time: string | null
+          full_name: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          in_series: boolean | null
+          level_name: string | null
+          notified_at: string | null
+          notified_by: string | null
+          notified_channel:
+            | Database["public"]["Enums"]["notification_channel"]
+            | null
+          photo_url: string | null
+          session_date: string | null
+          start_time: string | null
+          student_id: string | null
+          subject_id: string | null
+          subject_name: string | null
+          teacher_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_rosters: {
         Row: {
           active: boolean | null
@@ -2227,6 +2309,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "absences_to_notify"
+            referencedColumns: ["subject_id"]
           },
           {
             foreignKeyName: "enrollments_subject_id_fkey"

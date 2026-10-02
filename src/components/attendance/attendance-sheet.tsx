@@ -1,5 +1,6 @@
 import { BellRing, CalendarCheck, CalendarX, FileDown, MessageSquareText } from "lucide-react";
 
+import { AbsenceNotificationStatus, NotifyActions } from "@/components/absences/absence-alerts";
 import { FilterChips, type FilterOption } from "@/components/admin/filter-chips";
 import { AttendanceNote } from "@/components/attendance/attendance-note";
 import { StatTile, StatTiles } from "@/components/dashboard/stat-tile";
@@ -13,8 +14,9 @@ import {
   periodStart,
   summarizeAttendance,
 } from "@/lib/attendance";
+import type { AbsenceToNotify } from "@/lib/absences";
 import type { AttendanceData } from "@/lib/data/attendance";
-import { formatDate, formatDateTime, formatDateWithWeekday, formatPercent } from "@/lib/format";
+import { formatDate, formatDateTime, formatDateWithWeekday, formatPercent, toISODate, today } from "@/lib/format";
 import { getLabels } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
@@ -149,6 +151,30 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
               <ol aria-label={L.listCaption} className="flex flex-col divide-y divide-divider">
                 {summary.absencesList.map((absence) => {
                   const dateLabel = formatDate(absence.date);
+                  // Accueil et admin : notification au responsable de cette séance.
+                  const notice = data.notices[absence.id];
+                  const notifiable: AbsenceToNotify | null =
+                    teacherScope || !data.student
+                      ? null
+                      : {
+                          attendanceId: absence.id,
+                          studentId: data.student.id,
+                          fullName: data.student.fullName,
+                          photoUrl: null,
+                          levelName: data.student.levelName,
+                          subjectName: absence.subjectName,
+                          sessionDate: absence.date,
+                          startTime: absence.startTime,
+                          endTime: absence.endTime,
+                          teacherName: absence.teacherName,
+                          guardianName: data.student.guardianName,
+                          guardianPhone: data.student.guardianPhone,
+                          inSeries: absence.triggersAlert,
+                          notifiedAt: notice?.sentAt ?? null,
+                          notifiedChannel: notice?.channel ?? null,
+                          notifiedBy: notice?.byName ?? null,
+                        };
+                  const recent = absence.date >= toISODate(new Date(today().getTime() - 7 * 24 * 60 * 60 * 1000));
                   return (
                     <li key={absence.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:gap-4">
                       <span
@@ -172,8 +198,12 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                           </span>
                         ) : null}
                         <span className={cn("text-caption", absence.note ? "text-foreground" : "text-subtle")}>{absence.note ?? L.noNote}</span>
+                        <AbsenceNotificationStatus item={notifiable} />
                       </div>
-                      <AttendanceNote attendanceId={absence.id} note={absence.note} dateLabel={dateLabel} />
+                      <div className="flex flex-col items-start gap-2 sm:items-end">
+                        <AttendanceNote attendanceId={absence.id} note={absence.note} dateLabel={dateLabel} />
+                        {notifiable && recent ? <NotifyActions item={notifiable} compact /> : null}
+                      </div>
                     </li>
                   );
                 })}

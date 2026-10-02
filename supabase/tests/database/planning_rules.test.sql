@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(22);
+select plan(24);
 
 insert into auth.users (id, email) values
   ('a6000000-0000-4000-8000-000000000001', 'admin-p30@test.local'),
@@ -139,6 +139,13 @@ select throws_ok(
   '23514', null, 'séance où l''élève était présent : refusée');
 select is((select sent_by::text from public.absence_notifications limit 1), 'a6000000-0000-4000-8000-000000000002',
   'notification horodatée avec son auteur');
+select results_eq(
+  $$select notified_channel is not null, notified_by, start_time::text from public.absences_to_notify
+    where attendance_id = '96000000-0000-4000-8000-000000000001'$$,
+  $$values (true, 'Accueil', null::text)$$,
+  'absences à signaler : dernière notification, auteur, horaire (aucun créneau ce jour-là)');
+select is((select count(*)::int from public.absences_to_notify where attendance_id = '96000000-0000-4000-8000-000000000002'), 0,
+  'absences à signaler : séance où l''élève était présent exclue');
 
 set local request.jwt.claims = '{"sub":"a6000000-0000-4000-8000-000000000003","role":"authenticated"}';
 select is((select count(*)::int from public.absence_notifications), 0, 'professeur : ne voit pas les notifications aux responsables');

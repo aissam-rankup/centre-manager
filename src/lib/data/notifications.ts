@@ -18,6 +18,8 @@ export type NotificationItem = {
   author: string | null;
   /** ISO 8601. */
   at: string;
+  /** Série d'absences consécutives, pour l'administrateur : en tête de liste. */
+  priority: boolean;
 };
 
 const WINDOW_DAYS = 14;
@@ -29,7 +31,7 @@ const LIMIT = 30;
  */
 export async function getNotifications(): Promise<NotificationItem[]> {
   const LABELS = await getLabels();
-  await requireRole(["admin", "assistant"]);
+  const profile = await requireRole(["admin", "assistant"]);
   const supabase = await createClient();
   const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
@@ -63,6 +65,7 @@ export async function getNotifications(): Promise<NotificationItem[]> {
       body: row.note,
       author: row.profiles?.full_name ?? null,
       at: row.created_at,
+      priority: false,
     })),
     ...notesResult.data.flatMap((row) =>
       row.notes_updated_at
@@ -76,6 +79,7 @@ export async function getNotifications(): Promise<NotificationItem[]> {
               body: row.notes,
               author: row.author?.full_name ?? null,
               at: row.notes_updated_at,
+              priority: false,
             },
           ]
         : [],
@@ -92,11 +96,12 @@ export async function getNotifications(): Promise<NotificationItem[]> {
               body: null,
               author: null,
               at: row.created_at,
+              priority: profile.role === "admin",
             },
           ]
         : [],
     ),
   ];
 
-  return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, LIMIT);
+  return items.sort((a, b) => Number(b.priority) - Number(a.priority) || b.at.localeCompare(a.at)).slice(0, LIMIT);
 }

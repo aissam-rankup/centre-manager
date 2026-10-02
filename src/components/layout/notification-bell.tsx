@@ -100,6 +100,9 @@ export function NotificationBell({ items, fileBase }: NotificationBellProps) {
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <span className="flex items-center gap-2">
                         <span className="truncate font-medium text-heading">{item.studentName}</span>
+                        {item.priority ? (
+                          <span className="shrink-0 rounded-full bg-danger/10 px-2 py-0.5 text-caption font-semibold text-danger-ink">{L.priority}</span>
+                        ) : null}
                         {isNew ? <span className="size-2 shrink-0 rounded-full bg-primary" aria-hidden /> : null}
                       </span>
                       <span className="text-caption text-muted-foreground">

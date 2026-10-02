@@ -2,6 +2,7 @@ import { CircleCheckBig, UserCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AbsenceAlertsBlock } from "@/components/absences/absence-alerts";
 import { ContactButtons } from "@/components/assistant/contact-buttons";
 import { FollowUpDialog } from "@/components/assistant/follow-up-dialog";
 import { ProgressRing, ProgressTile } from "@/components/dashboard/progress-tile";
@@ -15,6 +16,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { ROUTES } from "@/lib/auth/routes";
 import { getLabels } from "@/lib/i18n/server";
+import { getAbsenceAlertsSettings, getAbsencesToNotify } from "@/lib/data/absence-alerts";
 import { type AbsenceAlertItem, type FollowUpQueueItem, getAssistantDashboard } from "@/lib/data/assistant";
 import { formatDate, formatDateWithWeekday, formatMAD, today } from "@/lib/format";
 
@@ -29,7 +31,12 @@ export default async function AssistantDashboardPage() {
   const LABELS = await getLabels();
   const L = LABELS.assistant.dashboard;
   const D = LABELS.dashboard;
-  const { stats, monthUnpaid, queue, alerts, students, presence } = await getAssistantDashboard();
+  const [{ stats, monthUnpaid, queue, alerts, students, presence }, absenceSettings] = await Promise.all([
+    getAssistantDashboard(),
+    getAbsenceAlertsSettings(),
+  ]);
+  const absences = absenceSettings.enabled ? await getAbsencesToNotify() : [];
+  const absencesPending = absences.filter((item) => !item.notifiedAt).length;
   const dateLabel = formatDateWithWeekday(today());
 
   return (
@@ -62,6 +69,19 @@ export default async function AssistantDashboardPage() {
             />
           </StatTiles>
         </section>
+
+        {absenceSettings.enabled ? (
+          <section aria-labelledby="absences-a-signaler" id="absences-signaler" className="flex scroll-mt-4 flex-col gap-3">
+            <SectionHeading
+              id="absences-a-signaler"
+              title={LABELS.absenceAlerts.title}
+              actions={<CountBadge count={absencesPending} />}
+            />
+            <div className="rounded-xl bg-card p-5 shadow-card md:p-6">
+              <AbsenceAlertsBlock items={absences} fileBase={ROUTES.assistant.students} />
+            </div>
+          </section>
+        ) : null}
 
         <section aria-labelledby="relances-titre" id="relances" className="flex scroll-mt-4 flex-col gap-3">
           <SectionHeading id="relances-titre" title={L.queue.title} actions={<CountBadge count={queue.length} />} />
