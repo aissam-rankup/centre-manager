@@ -15,6 +15,8 @@ import {
   SubjectsSection,
 } from "@/components/students/student-file-sections";
 import { StudentTabs } from "@/components/students/student-tabs";
+import { ReceiptsSection } from "@/components/receipts/receipts-section";
+import { getStudentReceipts } from "@/lib/data/receipts";
 import { AttendanceSheet } from "@/components/attendance/attendance-sheet";
 import { parseAttendanceFilters } from "@/lib/attendance";
 import { getAttendanceData } from "@/lib/data/attendance";
@@ -43,6 +45,7 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
   const filters = parseAttendanceFilters(query);
   const tab = typeof query.onglet === "string" ? query.onglet : undefined;
   const student = await loadStudent(id);
+  const receipts = await getStudentReceipts(student.id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -71,6 +74,10 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
         defaultValue={tab}
         panels={[
           { value: "paiements", label: T.payments, count: student.invoices.length, content: <PaymentsSection student={student} /> },
+          { value: "recus", label: T.receipts, count: receipts.length, content: (
+              <ReceiptsSection receipts={receipts} guardianPhone={student.guardianPhone} canCancel={false} />
+            ),
+          },
           { value: "absences", label: T.absences, count: student.absences.length, content: (
               <AttendanceSheet
                 data={await getAttendanceData(student.id)}

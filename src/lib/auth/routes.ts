@@ -41,7 +41,10 @@ export const ROUTES = {
     reports: "/admin/rapports",
     absences: "/admin/absences",
     branding: "/admin/marque",
+    settings: "/admin/reglages",
   },
+  /** Reçu imprimable (accueil et administration). */
+  receipt: (id: string) => `/recus/${id}`,
 } as const;
 
 /** Espace d'accueil de chaque rôle. */

@@ -260,6 +260,8 @@ export type StudentInvoice = {
   discount: DiscountSummary | null;
   /** Plusieurs remises possibles : la plus favorable est appliquée. */
   discountConflict: boolean;
+  receiptId: string | null;
+  receiptNumber: string | null;
   status: InvoiceStatus;
   dueDate: string;
   paidAt: string | null;
@@ -323,7 +325,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     supabase
       .from("invoices")
       .select(
-        "id, enrollment_id, pack_enrollment_id, period_start, period_end, amount_due, amount_full, discount_amount, discount_snapshot, discount_conflict, status, due_date, paid_at, enrollments(subjects(name)), pack_enrollments(packs(name))",
+        "id, enrollment_id, pack_enrollment_id, period_start, period_end, amount_due, amount_full, discount_amount, discount_snapshot, discount_conflict, status, due_date, paid_at, receipt_id, receipts(receipt_number), enrollments(subjects(name)), pack_enrollments(packs(name))",
       )
       .eq("student_id", studentId)
       .order("period_start", { ascending: false })
@@ -374,6 +376,8 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     discountAmount: Number(row.discount_amount),
     discount: parseDiscountSummary(row.discount_snapshot ?? undefined),
     discountConflict: row.discount_conflict,
+    receiptId: row.receipt_id,
+    receiptNumber: row.receipts?.receipt_number ?? null,
     status: effectiveInvoiceStatus(row.status, row.due_date, todayIso),
     dueDate: row.due_date,
     paidAt: row.paid_at,

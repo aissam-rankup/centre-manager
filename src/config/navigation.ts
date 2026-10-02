@@ -50,6 +50,7 @@ export function navigationFor(
       { href: ROUTES.admin.users, label: LABELS.nav.users, icon: UserCog },
       { href: ROUTES.admin.reports, label: LABELS.nav.reports, icon: BarChart3 },
       ...(options.brandingEditable ? [{ href: ROUTES.admin.branding, label: LABELS.nav.branding, icon: Palette }] : []),
+      { href: ROUTES.admin.settings, label: LABELS.nav.settings, icon: Settings },
     ],
     platform: [
       { href: ROUTES.platform.home, label: LABELS.nav.dashboard, shortLabel: LABELS.nav.short.dashboard, icon: LayoutDashboard },

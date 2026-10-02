@@ -49,26 +49,6 @@ export async function searchStudents(query: string): Promise<ActionResult<Studen
 }
 
 // ---------------------------------------------------------------------
-// Paiement intégral
-// ---------------------------------------------------------------------
-export async function markInvoicePaid(invoiceId: string): Promise<ActionResult> {
-  const LABELS = await getLabels();
-  const E = LABELS.actions.errors;
-  const parsed = z.uuid().safeParse(invoiceId);
-  if (!parsed.success) return failure(E.invalid);
-
-  await requireStaff();
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("mark_invoice_paid", { p_invoice_id: parsed.data });
-  if (error) {
-    return failure(error.code === "P0002" ? LABELS.assistant.student.payments.alreadyPaid : await describeCenterError(error));
-  }
-
-  revalidateAssistant();
-  return success();
-}
-
-// ---------------------------------------------------------------------
 // Relance
 // ---------------------------------------------------------------------
 export async function recordFollowUp(input: unknown): Promise<ActionResult> {

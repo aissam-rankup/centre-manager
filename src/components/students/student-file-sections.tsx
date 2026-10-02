@@ -1,10 +1,11 @@
-import { CalendarCheck, CircleDollarSign, MessageSquareText, Receipt, StickyNote } from "lucide-react";
+import { CalendarCheck, CircleDollarSign, MessageSquareText, Receipt, ReceiptText, StickyNote } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { ContactButtons } from "@/components/assistant/contact-buttons";
 import { DiscountBadges } from "@/components/discounts/discount-badge";
 import { FollowUpDialog } from "@/components/assistant/follow-up-dialog";
-import { MarkPaidButton } from "@/components/assistant/mark-paid-button";
+import { type PayableInvoice, PayInvoiceButton, PaymentDialog } from "@/components/receipts/payment-dialog";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Money } from "@/components/shared/money";
@@ -12,6 +13,7 @@ import { SectionCard } from "@/components/shared/section-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { ROUTES } from "@/lib/auth/routes";
 import type { AppLabels } from "@/lib/constants/labels";
 import { getLabels } from "@/lib/i18n/server";
 import type { StudentFile, StudentInvoice } from "@/lib/data/assistant";
@@ -168,7 +170,26 @@ function periodLabel(invoice: StudentInvoice, LABELS: AppLabels): string {
   return LABELS.billing.period(formatDate(invoice.periodStart), formatDate(invoice.periodEnd));
 }
 
-function paymentColumns(LABELS: AppLabels): readonly DataTableColumn<StudentInvoice>[] {
+function payableInvoices(student: StudentFile, LABELS: AppLabels): PayableInvoice[] {
+  const todayIso = toISODate(today());
+  return student.invoices
+    .filter((invoice) => invoice.status !== "paid")
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.subjectName.localeCompare(b.subjectName, "fr"))
+    .map((invoice) => ({
+      id: invoice.id,
+      subjectName: invoice.subjectName,
+      periodLabel: periodLabel(invoice, LABELS),
+      dueLabel: LABELS.payment.due(formatDate(invoice.dueDate)),
+      overdue: invoice.status === "overdue",
+      dueNow: invoice.dueDate <= todayIso,
+      amountFull: invoice.amountFull,
+      discountAmount: invoice.discountAmount,
+      discountLabel: invoice.discount ? discountBadgeLabel(invoice.discount, LABELS) : null,
+      amountDue: invoice.amountDue,
+    }));
+}
+
+function paymentColumns(LABELS: AppLabels, student: StudentFile): readonly DataTableColumn<StudentInvoice>[] {
   const L = LABELS.assistant.student;
   return [
     {
@@ -196,24 +217,20 @@ function paymentColumns(LABELS: AppLabels): readonly DataTableColumn<StudentInvo
       className: "whitespace-nowrap",
       cell: (invoice) =>
         invoice.status === "paid" ? (
-          <span className="numeric font-normal">{invoice.paidAt ? formatDate(invoice.paidAt) : LABELS.common.none}</span>
+          <span className="flex flex-col">
+            <span className="numeric font-normal">{invoice.paidAt ? formatDate(invoice.paidAt) : LABELS.common.none}</span>
+            {invoice.receiptId && invoice.receiptNumber ? (
+              <Link
+                href={ROUTES.receipt(invoice.receiptId)}
+                className="inline-flex items-center gap-1 text-caption font-medium text-primary underline-offset-4 hover:underline"
+              >
+                <ReceiptText className="size-3.5" aria-hidden />
+                {LABELS.receipts.number(invoice.receiptNumber)}
+              </Link>
+            ) : null}
+          </span>
         ) : (
-          <MarkPaidButton
-            invoiceId={invoice.id}
-            amountLabel={formatMAD(invoice.amountDue)}
-            subjectName={invoice.subjectName}
-            periodLabel={periodLabel(invoice, LABELS)}
-            breakdown={
-              invoice.discountAmount > 0
-                ? {
-                    fullLabel: formatMAD(invoice.amountFull),
-                    discountLabel: `− ${formatMAD(invoice.discountAmount)}`,
-                    discountReason: invoice.discount ? discountBadgeLabel(invoice.discount, LABELS) : null,
-                    conflict: invoice.discountConflict,
-                  }
-                : null
-            }
-          />
+          <PayInvoiceButton studentId={student.id} invoiceId={invoice.id} label={LABELS.payment.payThis} />
         ),
     },
   ];
@@ -243,13 +260,26 @@ function InvoiceAmount({ invoice, LABELS }: { invoice: StudentInvoice; LABELS: A
 export async function PaymentsSection({ student }: { student: StudentFile }) {
   const LABELS = await getLabels();
   const L = LABELS.assistant.student;
+  const payable = payableInvoices(student, LABELS);
   return (
-    <SectionCard id="paiements" title={L.sections.payments}>
+    <SectionCard
+      id="paiements"
+      title={L.sections.payments}
+      aside={
+        <PaymentDialog
+          studentId={student.id}
+          studentName={student.fullName}
+          guardianPhone={student.guardianPhone}
+          invoices={payable}
+          triggerLabel={LABELS.payment.trigger}
+        />
+      }
+    >
       {student.invoices.length === 0 ? (
         <EmptyState icon={Receipt} title={L.payments.emptyTitle} description={L.payments.emptyDescription} />
       ) : (
         <DataTable
-          columns={paymentColumns(LABELS)}
+          columns={paymentColumns(LABELS, student)}
           rows={student.invoices}
           getRowId={(invoice) => invoice.id}
           caption={L.payments.caption}
