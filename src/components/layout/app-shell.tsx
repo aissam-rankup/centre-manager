@@ -163,7 +163,11 @@ function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl }: Sideb
         )}
       </Link>
 
-      <nav aria-label={LABELS.nav.mainLabel} className="mt-[20px] flex flex-col items-center gap-2">
+      {/* Défile si l'écran est trop bas pour toutes les entrées ; la déconnexion reste visible. */}
+      <nav
+        aria-label={LABELS.nav.mainLabel}
+        className="mt-[20px] flex min-h-0 flex-col items-center gap-2 overflow-y-auto px-4 py-1 no-scrollbar"
+      >
         {items.map((item) => (
           <SidebarLink key={item.href} item={item} active={item.href === activeHref} />
         ))}
@@ -177,7 +181,7 @@ function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl }: Sideb
               disabled={pending}
               onClick={() => startTransition(() => signOut())}
               aria-label={LABELS.common.signOut}
-              className="mt-auto flex size-10 items-center justify-center rounded-lg text-sidebar-muted transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              className="mt-auto flex size-10 shrink-0 items-center justify-center rounded-lg text-sidebar-muted transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground"
             >
               <LogOut className="size-5" aria-hidden />
             </button>

@@ -120,7 +120,7 @@ const FORMS: readonly (keyof Word)[] = [
 const AGREEMENTS = [
   "actif", "ajouté", "créé", "supprimé", "modifié", "enregistré", "inscrit", "absent", "présent", "affecté",
   "retiré", "archivé", "choisi", "sélectionné", "prévu", "annulé", "concerné", "suivi", "arrêté", "repris",
-  "introuvable", "utilisé", "désactivé", "réactivé", "planifié",
+  "introuvable", "utilisé", "désactivé", "réactivé", "planifié", "reconduit",
 ] as const;
 
 type Rule = { from: string; to: string };

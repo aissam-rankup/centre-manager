@@ -35,6 +35,88 @@ export type ReenrollmentSettings = {
   currentDraft: BillingRunSummary | null;
 };
 
+export type ReenrollmentIntent = Database["public"]["Enums"]["reenrollment_intent"];
+export type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
+
+/** Ligne d'une campagne : une matière ou un pack d'un élève pour le mois. */
+export type ReviewLine = {
+  lineId: string;
+  kind: "subject" | "pack";
+  /** Inscription ou abonnement pack. */
+  sourceId: string;
+  name: string;
+  periodStart: string;
+  dueDate: string;
+  amountFull: number;
+  discountAmount: number;
+  amountDue: number;
+  discountConflict: boolean;
+  /** Reconduite (ni élève qui part, ni matière retirée). */
+  kept: boolean;
+  invoiceId: string | null;
+  invoiceStatus: InvoiceStatus | null;
+  amountPaid: number | null;
+  overdueFrom: string | null;
+};
+
+export type ReviewStudent = {
+  studentId: string;
+  fullName: string;
+  photoUrl: string | null;
+  levelName: string | null;
+  guardianName: string | null;
+  guardianPhone: string | null;
+  intent: ReenrollmentIntent;
+  reason: string | null;
+  decidedAt: string | null;
+  decidedByName: string | null;
+  appliedAt: string | null;
+  lines: ReviewLine[];
+  /** Totaux des lignes reconduites. */
+  amountFull: number;
+  discountAmount: number;
+  amountDue: number;
+  overdueAmount: number;
+  overdueInvoices: number;
+  attendanceRate: number | null;
+  attendanceCount: number;
+  lowAttendance: boolean;
+  atRisk: boolean;
+};
+
+export type CampaignListItem = { id: string; year: number; month: number; status: BillingRunStatus };
+
+export type CampaignDetail = BillingRunSummary & {
+  confirmedAt: string | null;
+  confirmedByName: string | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+};
+
+/** Intentions comptées pour le résumé de la campagne. */
+export type IntentCounts = Record<ReenrollmentIntent, number>;
+
+export function countIntents(students: readonly ReviewStudent[]): IntentCounts {
+  const counts: IntentCounts = { pending: 0, confirmed: 0, dropped: 0, paused: 0 };
+  for (const student of students) counts[student.intent] += 1;
+  return counts;
+}
+
+/** Élève qui part ce mois-ci : aucune facture, ses matières s'arrêtent. */
+export function isLeaving(intent: ReenrollmentIntent): boolean {
+  return intent === "dropped" || intent === "paused";
+}
+
+/**
+ * Campagne ouverte par défaut : le brouillon le plus ancien (celui qui bloque
+ * des factures), sinon la plus récente.
+ */
+export function defaultCampaign(runs: readonly CampaignListItem[]): CampaignListItem | null {
+  const drafts = runs.filter((run) => run.status === "draft");
+  if (drafts.length > 0) return drafts.reduce((a, b) => (a.year * 12 + a.month <= b.year * 12 + b.month ? a : b));
+  return runs[0] ?? null;
+}
+
 /** Premier jour du mois suivant la date donnée (AAAA-MM-JJ), en calendrier. */
 export function nextMonthOf(todayIso: string): { year: number; month: number } {
   const [year = 0, month = 1] = todayIso.split("-").map(Number);

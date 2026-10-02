@@ -3294,6 +3294,36 @@ export type Database = {
           unpaid_count: number
         }[]
       }
+      billing_run_review: {
+        Args: { p_run_id: string }
+        Returns: {
+          amount_due: number
+          amount_full: number
+          applied_at: string
+          at_risk: boolean
+          attendance_count: number
+          attendance_rate: number
+          decided_at: string
+          decided_by_name: string
+          discount_amount: number
+          full_name: string
+          guardian_name: string
+          guardian_phone: string
+          intent: Database["public"]["Enums"]["reenrollment_intent"]
+          level_name: string
+          lines: Json
+          low_attendance: boolean
+          overdue_amount: number
+          overdue_invoices: number
+          photo_url: string
+          reason: string
+          student_id: string
+        }[]
+      }
+      cancel_billing_run: {
+        Args: { p_reason: string; p_run_id: string }
+        Returns: undefined
+      }
       cancel_receipt: {
         Args: { p_reason: string; p_receipt_id: string }
         Returns: {
@@ -3361,6 +3391,7 @@ export type Database = {
           white_label: boolean
         }[]
       }
+      confirm_billing_run: { Args: { p_run_id: string }; Returns: Json }
       create_student: {
         Args: {
           p_billing_day?: number
@@ -3852,6 +3883,16 @@ export type Database = {
         Returns: undefined
       }
       set_my_photo: { Args: { p_path?: string }; Returns: undefined }
+      set_reenrollment_intent: {
+        Args: {
+          p_dropped_sources?: string[]
+          p_intent: Database["public"]["Enums"]["reenrollment_intent"]
+          p_reason?: string
+          p_run_id: string
+          p_student_id: string
+        }
+        Returns: undefined
+      }
       set_teacher_commission: {
         Args: {
           p_effective_from: string

@@ -217,6 +217,7 @@ const TEXTS = {
     payroll: "Paie",
     expenses: "Charges",
     rooms: "Salles",
+    reenrollment: "Réinscriptions",
     short: {
       dashboard: "Accueil",
       subjects: "Matières",
@@ -1240,7 +1241,120 @@ const TEXTS = {
         `${month} : ${students <= 1 ? `${students} élève` : `${students} élèves`}, ${total} à encaisser.`,
       generatedAuto: (date: string) => `Préparée automatiquement le ${date}.`,
       generatedBy: (date: string) => `Préparée le ${date}.`,
-      reviewSoon: "L'écran de revue de la campagne arrive à l'étape suivante.",
+      openCampaign: "Ouvrir la campagne",
+    },
+    review: {
+      description:
+        "Revoyez la campagne avant d'émettre les factures : intention de chaque élève, élèves à risque, puis confirmation par l'admin.",
+      campaigns: "Campagnes",
+      month: (month: string) => capitalize(month),
+      emptyTitle: "Aucune campagne",
+      emptyDescription:
+        "Activez la réinscription automatique dans les réglages : la campagne du mois suivant y sera préparée en brouillon.",
+      openSettings: "Ouvrir les réglages",
+      status: {
+        draft: "Brouillon",
+        confirmed: "Confirmée",
+        sent: "Rappels envoyés",
+        closed: "Close",
+        cancelled: "Mois sans cours",
+      },
+      notice: {
+        draft: "Brouillon : aucune facture n'est émise avant la confirmation. Les élèves sans décision seront reconduits.",
+        draftAssistant:
+          "Brouillon : notez l'intention des élèves. L'admin confirmera la campagne ; les élèves sans décision seront reconduits.",
+        late: "Le mois a commencé : les factures de cette campagne attendent la confirmation.",
+        confirmed: (date: string, name: string | null) =>
+          `Confirmée le ${date}${name ? ` par ${name}` : ""} : factures émises, montants figés.`,
+        cancelled: (reason: string | null) => `Mois sans cours : aucune facture ce mois-ci.${reason ? ` Motif : ${reason}` : ""}`,
+        support: "Mode support : lecture seule.",
+      },
+      stats: {
+        students: "Élèves facturés",
+        expected: "Prévisionnel",
+        decisionsValue: (kept: number, dropped: number, paused: number) =>
+          `${kept} reconduit${kept > 1 ? "s" : ""} · ${dropped} abandon${dropped > 1 ? "s" : ""} · ${paused} pause${paused > 1 ? "s" : ""}`,
+        pending: "Sans décision",
+        risk: "À risque",
+      },
+      risk: {
+        title: "Élèves à risque",
+        description: (threshold: number) =>
+          `Impayé en retard d'un mois précédent, ou présence sous ${threshold} % sur 30 jours : à traiter avant de facturer.`,
+        none: "Aucun élève à risque ce mois-ci.",
+        overdue: (amount: string) => `Impayé ${amount}`,
+        attendance: (rate: string) => `Présence ${rate}`,
+      },
+      filters: {
+        label: "Filtrer les élèves",
+        all: (count: number) => `Tous (${count})`,
+        risk: (count: number) => `À risque (${count})`,
+        pending: (count: number) => `Sans décision (${count})`,
+        confirmed: (count: number) => `Reconduits (${count})`,
+        leaving: (count: number) => `Abandons et pauses (${count})`,
+      },
+      search: "Rechercher un élève",
+      noMatch: "Aucun élève ne correspond à ce filtre.",
+      intent: {
+        pending: "Sans décision",
+        confirmed: "Reconduit",
+        dropped: "Abandonne",
+        paused: "En pause",
+      },
+      intentLabel: (name: string) => `Intention de ${name}`,
+      keepLine: (name: string) => `Reconduire ${name}`,
+      lineRemoved: "Retirée",
+      pack: "Pack",
+      full: "Tarif plein",
+      discount: "Remise",
+      net: "Net à payer",
+      due: (date: string) => `Échéance le ${date}`,
+      conflict: "Remises en conflit : la plus avantageuse est appliquée.",
+      noLine: "Rien à facturer ce mois-ci.",
+      leavingNote: "Aucune facture ce mois-ci ; ses matières s'arrêtent au début de leur période.",
+      applied: "Appliqué : matières arrêtées.",
+      decided: (date: string, name: string | null) => `Décidé le ${date}${name ? ` par ${name}` : ""}`,
+      reasonShown: (reason: string) => `Motif : ${reason}`,
+      saved: "Intention enregistrée",
+      openFile: "Fiche",
+      invoiceStatus: {
+        pending: "À régler",
+        overdue: "En retard",
+        paid: "Réglée",
+      },
+      leaveDialog: {
+        dropped: (name: string) => `${name} abandonne`,
+        paused: (name: string) => `${name} fait une pause`,
+        description:
+          "Aucune facture ce mois-ci. Ses matières s'arrêteront au début de leur période ; une reprise plus tard se facture normalement.",
+        reason: "Motif (facultatif)",
+        reasonPlaceholder: "Ex. : déménagement, emploi du temps, examens",
+        submit: "Enregistrer",
+      },
+      confirm: {
+        button: "Confirmer la campagne",
+        title: (month: string) => `Confirmer la campagne ${ofMonth(month)} ?`,
+        summary: (students: number, lines: number, total: string) =>
+          `${students} élève${students > 1 ? "s" : ""}, ${lines} facture${lines > 1 ? "s" : ""}, ${total} à encaisser.`,
+        decisions: (pending: number, dropped: number, paused: number) =>
+          `${pending} élève${pending > 1 ? "s" : ""} sans décision ${pending > 1 ? "seront reconduits" : "sera reconduit"} ; ${dropped} abandon${dropped > 1 ? "s" : ""}, ${paused} pause${paused > 1 ? "s" : ""}.`,
+        riskWarning: (count: number) =>
+          `${count} élève${count > 1 ? "s" : ""} à risque ${count > 1 ? "n'ont" : "n'a"} pas encore de décision.`,
+        irreversible: "Les factures sont émises et leurs montants figés : la campagne ne se modifie plus ensuite.",
+        action: "Confirmer et émettre les factures",
+        done: (count: number) => `${count} facture${count > 1 ? "s" : ""} émise${count > 1 ? "s" : ""}`,
+      },
+      cancel: {
+        button: "Mois sans cours",
+        title: (month: string) => `Déclarer ${month} sans cours ?`,
+        description:
+          "Aucune facture ne sera émise pour ce mois, ni par la campagne, ni par la facturation automatique. Ce choix est définitif.",
+        reason: "Motif",
+        reasonPlaceholder: "Ex. : vacances d'été",
+        reasonRequired: "Indiquez le motif (300 caractères au plus).",
+        action: "Déclarer le mois sans cours",
+        done: "Mois déclaré sans cours",
+      },
     },
   },
   absenceAlerts: {
@@ -2159,7 +2273,18 @@ const TEXTS = {
  * séance) : ils suivent le vocabulaire du centre et se lisent uniquement via
  * getLabels() (serveur) ou useLabels() (client).
  */
-type CenterNamespaces = "attendanceSheet" | "absencesPage" | "dashboard" | "roles" | "nav" | "spaces" | "billing" | "admin" | "teacher" | "assistant";
+type CenterNamespaces =
+  | "attendanceSheet"
+  | "absencesPage"
+  | "dashboard"
+  | "roles"
+  | "nav"
+  | "spaces"
+  | "billing"
+  | "admin"
+  | "teacher"
+  | "assistant"
+  | "reenrollment";
 
 export type AppLabels = typeof TEXTS;
 

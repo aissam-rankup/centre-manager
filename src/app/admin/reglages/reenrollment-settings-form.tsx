@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarClock, LoaderCircle, Save, Sparkles, TriangleAlert } from "lucide-react";
+import { CalendarClock, CalendarSync, LoaderCircle, Save, Sparkles, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +10,7 @@ import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { prepareBillingRun, updateReenrollmentSettings } from "@/lib/actions/reenrollment";
+import { ROUTES } from "@/lib/auth/routes";
 import { formatDate, formatDateTime, formatDayMonth, formatMAD, formatMonth } from "@/lib/format";
 import { useLabels } from "@/lib/i18n/client";
 import { campaignDueDate, isoDate, type ReenrollmentSettings, validDay } from "@/lib/reenrollment";
@@ -92,10 +94,15 @@ export function ReenrollmentSettingsForm({ settings }: { settings: ReenrollmentS
         </div>
 
         {draft ? (
-          <p className="flex items-start gap-2 rounded-xl bg-warning/10 px-4 py-3">
-            <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning-ink" aria-hidden />
-            {S.currentDraft(formatMonth(isoDate(draft.year, draft.month, 1)))}
-          </p>
+          <div className="flex flex-col gap-3 rounded-xl bg-warning/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="flex items-start gap-2">
+              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning-ink" aria-hidden />
+              {S.currentDraft(formatMonth(isoDate(draft.year, draft.month, 1)))}
+            </p>
+            <Button asChild variant="outline" className="self-start sm:self-auto">
+              <Link href={`${ROUTES.admin.reenrollment}?campagne=${draft.id}`}>{S.openCampaign}</Link>
+            </Button>
+          </div>
         ) : null}
 
         <div className={cn("flex flex-col gap-2 rounded-xl px-4 py-3", run && run.status !== "cancelled" ? "bg-primary-soft" : "bg-muted")}>
@@ -113,9 +120,14 @@ export function ReenrollmentSettingsForm({ settings }: { settings: ReenrollmentS
                 {S.runStatus[run.status]} · {S.runSummary(monthName, run.studentCount, formatMAD(run.totalExpected))}
               </p>
               <p className="text-caption text-muted-foreground">
-                {run.automatic ? S.generatedAuto(formatDateTime(run.generatedAt)) : S.generatedBy(formatDateTime(run.generatedAt))}{" "}
-                {run.status === "draft" ? S.reviewSoon : null}
+                {run.automatic ? S.generatedAuto(formatDateTime(run.generatedAt)) : S.generatedBy(formatDateTime(run.generatedAt))}
               </p>
+              <Button asChild variant="outline" className="self-start">
+                <Link href={`${ROUTES.admin.reenrollment}?campagne=${run.id}`}>
+                  <CalendarSync aria-hidden />
+                  {S.openCampaign}
+                </Link>
+              </Button>
             </>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3">
