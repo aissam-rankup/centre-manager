@@ -193,6 +193,51 @@ export type Database = {
           },
         ]
       }
+      center_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          center_id: string
+          created_at: string
+          entity_id: string | null
+          id: number
+          payload: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          center_id: string
+          created_at?: string
+          entity_id?: string | null
+          id?: never
+          payload?: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          center_id?: string
+          created_at?: string
+          entity_id?: string | null
+          id?: never
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "center_events_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       center_types: {
         Row: {
           code: string
@@ -220,6 +265,7 @@ export type Database = {
       centers: {
         Row: {
           activated_at: string | null
+          address: string | null
           billing_interval: Database["public"]["Enums"]["billing_interval"]
           cancelled_at: string | null
           center_type: string
@@ -233,12 +279,16 @@ export type Database = {
           owner_contact_email: string | null
           owner_contact_name: string | null
           owner_contact_phone: string | null
+          phone: string | null
           price: number | null
+          receipt_format: Database["public"]["Enums"]["receipt_format"]
+          receipt_whatsapp_template: string | null
           slug: string
           status: Database["public"]["Enums"]["center_status"]
         }
         Insert: {
           activated_at?: string | null
+          address?: string | null
           billing_interval?: Database["public"]["Enums"]["billing_interval"]
           cancelled_at?: string | null
           center_type?: string
@@ -252,12 +302,16 @@ export type Database = {
           owner_contact_email?: string | null
           owner_contact_name?: string | null
           owner_contact_phone?: string | null
+          phone?: string | null
           price?: number | null
+          receipt_format?: Database["public"]["Enums"]["receipt_format"]
+          receipt_whatsapp_template?: string | null
           slug: string
           status?: Database["public"]["Enums"]["center_status"]
         }
         Update: {
           activated_at?: string | null
+          address?: string | null
           billing_interval?: Database["public"]["Enums"]["billing_interval"]
           cancelled_at?: string | null
           center_type?: string
@@ -271,7 +325,10 @@ export type Database = {
           owner_contact_email?: string | null
           owner_contact_name?: string | null
           owner_contact_phone?: string | null
+          phone?: string | null
           price?: number | null
+          receipt_format?: Database["public"]["Enums"]["receipt_format"]
+          receipt_whatsapp_template?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["center_status"]
         }
@@ -282,6 +339,120 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "center_types"
             referencedColumns: ["code"]
+          },
+        ]
+      }
+      discounts: {
+        Row: {
+          center_id: string
+          granted_at: string
+          granted_by: string | null
+          id: string
+          is_active: boolean
+          pack_id: string | null
+          reason: Database["public"]["Enums"]["discount_reason"]
+          reason_note: string | null
+          scope: Database["public"]["Enums"]["discount_scope"]
+          student_id: string
+          subject_id: string | null
+          type: Database["public"]["Enums"]["discount_type"]
+          updated_at: string
+          valid_from: string
+          valid_to: string | null
+          value: number
+        }
+        Insert: {
+          center_id: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          pack_id?: string | null
+          reason: Database["public"]["Enums"]["discount_reason"]
+          reason_note?: string | null
+          scope: Database["public"]["Enums"]["discount_scope"]
+          student_id: string
+          subject_id?: string | null
+          type: Database["public"]["Enums"]["discount_type"]
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+          value: number
+        }
+        Update: {
+          center_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          pack_id?: string | null
+          reason?: Database["public"]["Enums"]["discount_reason"]
+          reason_note?: string | null
+          scope?: Database["public"]["Enums"]["discount_scope"]
+          student_id?: string
+          subject_id?: string | null
+          type?: Database["public"]["Enums"]["discount_type"]
+          updated_at?: string
+          valid_from?: string
+          valid_to?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discounts_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discounts_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discounts_pack_id_center_id_fkey"
+            columns: ["pack_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "packs"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "discounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id", "center_id"]
+          },
+          {
+            foreignKeyName: "discounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "discounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "discounts_subject_id_center_id_fkey"
+            columns: ["subject_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "subject_catalog"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "discounts_subject_id_center_id_fkey"
+            columns: ["subject_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id", "center_id"]
           },
         ]
       }
@@ -357,6 +528,152 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_categories: {
+        Row: {
+          center_id: string
+          created_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          is_recurring: boolean
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category_id: string
+          center_id: string
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          expense_date: string
+          id: string
+          is_recurring: boolean
+          label: string
+          notes: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          period_month: number
+          period_year: number
+          receipt_url: string | null
+          recorded_by: string | null
+          recurrence_day: number | null
+          recurrence_source_id: string | null
+          status: Database["public"]["Enums"]["expense_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category_id: string
+          center_id: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          expense_date?: string
+          id?: string
+          is_recurring?: boolean
+          label: string
+          notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          period_month: number
+          period_year: number
+          receipt_url?: string | null
+          recorded_by?: string | null
+          recurrence_day?: number | null
+          recurrence_source_id?: string | null
+          status?: Database["public"]["Enums"]["expense_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string
+          center_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          expense_date?: string
+          id?: string
+          is_recurring?: boolean
+          label?: string
+          notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          period_month?: number
+          period_year?: number
+          receipt_url?: string | null
+          recorded_by?: string | null
+          recurrence_day?: number | null
+          recurrence_source_id?: string | null
+          status?: Database["public"]["Enums"]["expense_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_id_center_id_fkey"
+            columns: ["category_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "expenses_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_recurrence_source_id_fkey"
+            columns: ["recurrence_source_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
             referencedColumns: ["id"]
           },
         ]
@@ -440,47 +757,89 @@ export type Database = {
       invoices: {
         Row: {
           amount_due: number
+          amount_full: number
           amount_paid: number
+          discount_amount: number
+          discount_conflict: boolean
+          discount_id: string | null
+          discount_snapshot: Json | null
           due_date: string
           enrollment_id: string | null
           id: string
           pack_enrollment_id: string | null
           paid_at: string | null
           paid_by: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
           period_end: string
           period_start: string
+          receipt_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           student_id: string
         }
         Insert: {
           amount_due: number
+          amount_full: number
           amount_paid?: number
+          discount_amount?: number
+          discount_conflict?: boolean
+          discount_id?: string | null
+          discount_snapshot?: Json | null
           due_date: string
           enrollment_id?: string | null
           id?: string
           pack_enrollment_id?: string | null
           paid_at?: string | null
           paid_by?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           period_end: string
           period_start: string
+          receipt_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           student_id: string
         }
         Update: {
           amount_due?: number
+          amount_full?: number
           amount_paid?: number
+          discount_amount?: number
+          discount_conflict?: boolean
+          discount_id?: string | null
+          discount_snapshot?: Json | null
           due_date?: string
           enrollment_id?: string | null
           id?: string
           pack_enrollment_id?: string | null
           paid_at?: string | null
           paid_by?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           period_end?: string
           period_start?: string
+          receipt_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           student_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "discount_overlaps"
+            referencedColumns: ["discount_id"]
+          },
+          {
+            foreignKeyName: "invoices_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "discount_overlaps"
+            referencedColumns: ["other_discount_id"]
+          },
+          {
+            foreignKeyName: "invoices_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "discounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_enrollment_id_student_id_fkey"
             columns: ["enrollment_id", "student_id"]
@@ -507,6 +866,13 @@ export type Database = {
             columns: ["paid_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
             referencedColumns: ["id"]
           },
         ]
@@ -684,6 +1050,133 @@ export type Database = {
           },
         ]
       }
+      payroll_lines: {
+        Row: {
+          adjustment_amount: number
+          adjustment_reason: string | null
+          center_id: string
+          computed_amount: number
+          detail: Json
+          final_amount: number | null
+          id: string
+          paid_at: string | null
+          paid_by: string | null
+          pay_mode: Database["public"]["Enums"]["pay_mode"] | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          payroll_period_id: string
+          teacher_id: string
+          teacher_name: string
+          updated_at: string
+        }
+        Insert: {
+          adjustment_amount?: number
+          adjustment_reason?: string | null
+          center_id: string
+          computed_amount?: number
+          detail?: Json
+          final_amount?: number | null
+          id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          payroll_period_id: string
+          teacher_id: string
+          teacher_name: string
+          updated_at?: string
+        }
+        Update: {
+          adjustment_amount?: number
+          adjustment_reason?: string | null
+          center_id?: string
+          computed_amount?: number
+          detail?: Json
+          final_amount?: number | null
+          id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          payroll_period_id?: string
+          teacher_id?: string
+          teacher_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_lines_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_lines_payroll_period_id_center_id_fkey"
+            columns: ["payroll_period_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_periods"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "payroll_lines_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_periods: {
+        Row: {
+          center_id: string
+          created_at: string
+          id: string
+          month: number
+          status: Database["public"]["Enums"]["payroll_status"]
+          total_amount: number
+          validated_at: string | null
+          validated_by: string | null
+          year: number
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          id?: string
+          month: number
+          status?: Database["public"]["Enums"]["payroll_status"]
+          total_amount?: number
+          validated_at?: string | null
+          validated_by?: string | null
+          year: number
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          id?: string
+          month?: number
+          status?: Database["public"]["Enums"]["payroll_status"]
+          total_amount?: number
+          validated_at?: string | null
+          validated_by?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_periods_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_periods_validated_by_fkey"
+            columns: ["validated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_events: {
         Row: {
           action: string
@@ -791,6 +1284,7 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          pay_mode: Database["public"]["Enums"]["pay_mode"] | null
           phone: string | null
           photo_url: string | null
           role: Database["public"]["Enums"]["user_role"]
@@ -801,6 +1295,7 @@ export type Database = {
           created_at?: string
           full_name: string
           id: string
+          pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
           phone?: string | null
           photo_url?: string | null
           role: Database["public"]["Enums"]["user_role"]
@@ -811,6 +1306,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
           phone?: string | null
           photo_url?: string | null
           role?: Database["public"]["Enums"]["user_role"]
@@ -821,6 +1317,162 @@ export type Database = {
             columns: ["center_id"]
             isOneToOne: false
             referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipt_counters: {
+        Row: {
+          center_id: string
+          last_number: number
+          year: number
+        }
+        Insert: {
+          center_id: string
+          last_number: number
+          year: number
+        }
+        Update: {
+          center_id?: string
+          last_number?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_counters_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipts: {
+        Row: {
+          amount_full: number
+          amount_paid: number
+          balance_due: number
+          cancel_reason: string | null
+          cancels_receipt_id: string | null
+          center_id: string
+          center_snapshot: Json
+          discount_applied: number
+          id: string
+          issued_at: string
+          issued_by: string | null
+          issued_by_name: string | null
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          level_name: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          pdf_url: string | null
+          period_end: string
+          period_start: string
+          printed_at: string | null
+          receipt_number: string | null
+          receipt_seq: number
+          receipt_year: number
+          student_id: string | null
+          student_name: string
+          subjects_covered: Json
+          whatsapp_sent_at: string | null
+        }
+        Insert: {
+          amount_full: number
+          amount_paid: number
+          balance_due?: number
+          cancel_reason?: string | null
+          cancels_receipt_id?: string | null
+          center_id: string
+          center_snapshot: Json
+          discount_applied?: number
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          issued_by_name?: string | null
+          kind?: Database["public"]["Enums"]["receipt_kind"]
+          level_name?: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          pdf_url?: string | null
+          period_end: string
+          period_start: string
+          printed_at?: string | null
+          receipt_number?: string | null
+          receipt_seq: number
+          receipt_year: number
+          student_id?: string | null
+          student_name: string
+          subjects_covered: Json
+          whatsapp_sent_at?: string | null
+        }
+        Update: {
+          amount_full?: number
+          amount_paid?: number
+          balance_due?: number
+          cancel_reason?: string | null
+          cancels_receipt_id?: string | null
+          center_id?: string
+          center_snapshot?: Json
+          discount_applied?: number
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          issued_by_name?: string | null
+          kind?: Database["public"]["Enums"]["receipt_kind"]
+          level_name?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          pdf_url?: string | null
+          period_end?: string
+          period_start?: string
+          printed_at?: string | null
+          receipt_number?: string | null
+          receipt_seq?: number
+          receipt_year?: number
+          student_id?: string | null
+          student_name?: string
+          subjects_covered?: Json
+          whatsapp_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_cancels_receipt_id_fkey"
+            columns: ["cancels_receipt_id"]
+            isOneToOne: true
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "receipts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -1208,6 +1860,136 @@ export type Database = {
           },
         ]
       }
+      teacher_commissions: {
+        Row: {
+          center_id: string
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          level_id: string
+          rate_percent: number
+          subject_id: string
+          teacher_id: string
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_from: string
+          effective_to?: string | null
+          id?: string
+          level_id: string
+          rate_percent: number
+          subject_id: string
+          teacher_id: string
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          level_id?: string
+          rate_percent?: number
+          subject_id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_commissions_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teacher_commissions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teacher_commissions_subject_id_level_id_fkey"
+            columns: ["subject_id", "level_id"]
+            isOneToOne: false
+            referencedRelation: "subject_catalog"
+            referencedColumns: ["id", "level_id"]
+          },
+          {
+            foreignKeyName: "teacher_commissions_subject_id_level_id_fkey"
+            columns: ["subject_id", "level_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id", "level_id"]
+          },
+          {
+            foreignKeyName: "teacher_commissions_teacher_id_center_id_fkey"
+            columns: ["teacher_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "center_id"]
+          },
+        ]
+      }
+      teacher_salaries: {
+        Row: {
+          center_id: string
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          monthly_amount: number
+          teacher_id: string
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_from: string
+          effective_to?: string | null
+          id?: string
+          monthly_amount: number
+          teacher_id: string
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          monthly_amount?: number
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_salaries_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teacher_salaries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teacher_salaries_teacher_id_center_id_fkey"
+            columns: ["teacher_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "center_id"]
+          },
+        ]
+      }
     }
     Views: {
       class_rosters: {
@@ -1253,6 +2035,44 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "subjects"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      discount_overlaps: {
+        Row: {
+          center_id: string | null
+          discount_id: string | null
+          other_discount_id: string | null
+          student_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discounts_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id", "center_id"]
+          },
+          {
+            foreignKeyName: "discounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "discounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id", "center_id"]
           },
         ]
       }
@@ -1480,6 +2300,43 @@ export type Database = {
           unpaid_count: number
         }[]
       }
+      cancel_receipt: {
+        Args: { p_reason: string; p_receipt_id: string }
+        Returns: {
+          amount_full: number
+          amount_paid: number
+          balance_due: number
+          cancel_reason: string | null
+          cancels_receipt_id: string | null
+          center_id: string
+          center_snapshot: Json
+          discount_applied: number
+          id: string
+          issued_at: string
+          issued_by: string | null
+          issued_by_name: string | null
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          level_name: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          pdf_url: string | null
+          period_end: string
+          period_start: string
+          printed_at: string | null
+          receipt_number: string | null
+          receipt_seq: number
+          receipt_year: number
+          student_id: string | null
+          student_name: string
+          subjects_covered: Json
+          whatsapp_sent_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "receipts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       center_branding_settings: {
         Args: { p_center_id: string }
         Returns: {
@@ -1525,19 +2382,27 @@ export type Database = {
         Returns: string
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      delete_expense: { Args: { p_expense_id: string }; Returns: undefined }
       mark_invoice_paid: {
         Args: { p_invoice_id: string }
         Returns: {
           amount_due: number
+          amount_full: number
           amount_paid: number
+          discount_amount: number
+          discount_conflict: boolean
+          discount_id: string | null
+          discount_snapshot: Json | null
           due_date: string
           enrollment_id: string | null
           id: string
           pack_enrollment_id: string | null
           paid_at: string | null
           paid_by: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
           period_end: string
           period_start: string
+          receipt_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           student_id: string
         }
@@ -1547,6 +2412,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      mark_receipt_printed: {
+        Args: { p_receipt_id: string }
+        Returns: undefined
       }
       my_center_access: {
         Args: never
@@ -1567,6 +2436,122 @@ export type Database = {
           suspension_date: string
           vocabulary: Json
         }[]
+      }
+      payroll_mark_paid: {
+        Args: {
+          p_line_id: string
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_paid_at: string
+        }
+        Returns: {
+          adjustment_amount: number
+          adjustment_reason: string | null
+          center_id: string
+          computed_amount: number
+          detail: Json
+          final_amount: number | null
+          id: string
+          paid_at: string | null
+          paid_by: string | null
+          pay_mode: Database["public"]["Enums"]["pay_mode"] | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          payroll_period_id: string
+          teacher_id: string
+          teacher_name: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payroll_lines"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      payroll_refresh: {
+        Args: { p_month: number; p_year: number }
+        Returns: {
+          center_id: string
+          created_at: string
+          id: string
+          month: number
+          status: Database["public"]["Enums"]["payroll_status"]
+          total_amount: number
+          validated_at: string | null
+          validated_by: string | null
+          year: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payroll_periods"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      payroll_set_adjustment: {
+        Args: { p_amount: number; p_line_id: string; p_reason: string }
+        Returns: {
+          adjustment_amount: number
+          adjustment_reason: string | null
+          center_id: string
+          computed_amount: number
+          detail: Json
+          final_amount: number | null
+          id: string
+          paid_at: string | null
+          paid_by: string | null
+          pay_mode: Database["public"]["Enums"]["pay_mode"] | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          payroll_period_id: string
+          teacher_id: string
+          teacher_name: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payroll_lines"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      payroll_unlock: {
+        Args: { p_period_id: string; p_reason: string }
+        Returns: {
+          center_id: string
+          created_at: string
+          id: string
+          month: number
+          status: Database["public"]["Enums"]["payroll_status"]
+          total_amount: number
+          validated_at: string | null
+          validated_by: string | null
+          year: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payroll_periods"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      payroll_validate: {
+        Args: { p_period_id: string }
+        Returns: {
+          center_id: string
+          created_at: string
+          id: string
+          month: number
+          status: Database["public"]["Enums"]["payroll_status"]
+          total_amount: number
+          validated_at: string | null
+          validated_by: string | null
+          year: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payroll_periods"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       platform_billing_months: {
         Args: never
@@ -1822,11 +2807,101 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_payment: {
+        Args: {
+          p_invoice_ids: string[]
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_student_id: string
+        }
+        Returns: {
+          amount_full: number
+          amount_paid: number
+          balance_due: number
+          cancel_reason: string | null
+          cancels_receipt_id: string | null
+          center_id: string
+          center_snapshot: Json
+          discount_applied: number
+          id: string
+          issued_at: string
+          issued_by: string | null
+          issued_by_name: string | null
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          level_name: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          pdf_url: string | null
+          period_end: string
+          period_start: string
+          printed_at: string | null
+          receipt_number: string | null
+          receipt_seq: number
+          receipt_year: number
+          student_id: string | null
+          student_name: string
+          subjects_covered: Json
+          whatsapp_sent_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "receipts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_attendance_note: {
         Args: { p_attendance_id: string; p_note: string }
         Returns: undefined
       }
       set_my_photo: { Args: { p_path?: string }; Returns: undefined }
+      set_teacher_commission: {
+        Args: {
+          p_effective_from: string
+          p_rate_percent: number
+          p_subject_id: string
+          p_teacher_id: string
+        }
+        Returns: {
+          center_id: string
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          level_id: string
+          rate_percent: number
+          subject_id: string
+          teacher_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "teacher_commissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      set_teacher_salary: {
+        Args: {
+          p_effective_from: string
+          p_monthly_amount: number
+          p_teacher_id: string
+        }
+        Returns: {
+          center_id: string
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          monthly_amount: number
+          teacher_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "teacher_salaries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       student_absence_follow_ups: {
         Args: { p_student_id: string }
         Returns: {
@@ -1875,9 +2950,18 @@ export type Database = {
       attendance_status: "present" | "absent"
       billing_interval: "month" | "year"
       center_status: "trial" | "active" | "past_due" | "suspended" | "cancelled"
+      discount_reason: "sibling" | "social" | "merit" | "referral" | "other"
+      discount_scope: "all_subjects" | "specific_subject"
+      discount_type: "percentage" | "fixed_amount"
+      expense_status: "draft" | "confirmed"
       follow_up_channel: "phone" | "whatsapp" | "in_person"
       follow_up_type: "payment" | "absence"
       invoice_status: "pending" | "paid" | "overdue"
+      pay_mode: "fixed_salary" | "commission"
+      payment_method: "cash" | "bank_transfer" | "card"
+      payroll_status: "draft" | "validated" | "paid"
+      receipt_format: "a5" | "ticket_80mm"
+      receipt_kind: "payment" | "cancellation"
       subscription_payment_method: "bank_transfer" | "cash" | "card"
       subscription_plan: "standard" | "white_label"
       user_role: "admin" | "assistant" | "teacher" | "super_admin"
@@ -2012,9 +3096,18 @@ export const Constants = {
       attendance_status: ["present", "absent"],
       billing_interval: ["month", "year"],
       center_status: ["trial", "active", "past_due", "suspended", "cancelled"],
+      discount_reason: ["sibling", "social", "merit", "referral", "other"],
+      discount_scope: ["all_subjects", "specific_subject"],
+      discount_type: ["percentage", "fixed_amount"],
+      expense_status: ["draft", "confirmed"],
       follow_up_channel: ["phone", "whatsapp", "in_person"],
       follow_up_type: ["payment", "absence"],
       invoice_status: ["pending", "paid", "overdue"],
+      pay_mode: ["fixed_salary", "commission"],
+      payment_method: ["cash", "bank_transfer", "card"],
+      payroll_status: ["draft", "validated", "paid"],
+      receipt_format: ["a5", "ticket_80mm"],
+      receipt_kind: ["payment", "cancellation"],
       subscription_payment_method: ["bank_transfer", "cash", "card"],
       subscription_plan: ["standard", "white_label"],
       user_role: ["admin", "assistant", "teacher", "super_admin"],

@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Pencil, Plus, Save, Trash2 } from "lucide-react";
+import { LoaderCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -187,14 +187,12 @@ function PackRow({ subscription }: { subscription: StudentPackSubscription }) {
   const LABELS = useLabels();
   const L = LABELS.admin.students;
   const E = L.enrollments;
-  const [price, setPrice] = useState(String(subscription.priceAgreed));
   const [pending, startTransition] = useTransition();
-  const priceChanged = Number(price) !== subscription.priceAgreed;
   const title = LABELS.packs.label(subscription.packName);
 
   const save = (active: boolean) => {
     startTransition(async () => {
-      const result = await updatePackSubscription({ id: subscription.id, priceAgreed: price, active });
+      const result = await updatePackSubscription({ id: subscription.id, active });
       if (result.ok) toast.success(E.saved);
       else toast.error(result.error);
     });
@@ -213,25 +211,9 @@ function PackRow({ subscription }: { subscription: StudentPackSubscription }) {
       </div>
       <div className="flex items-end gap-2">
         <div className="flex flex-col gap-1">
-          <label htmlFor={`prix-pack-${subscription.id}`} className="text-caption text-muted-foreground">
-            {E.price}
-          </label>
-          <Input
-            id={`prix-pack-${subscription.id}`}
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step={10}
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            className="numeric w-28 font-normal"
-          />
+          <span className="text-caption text-muted-foreground">{E.price}</span>
+          <span className="numeric font-medium">{formatMAD(subscription.priceAgreed)}</span>
         </div>
-        {priceChanged ? (
-          <Button onClick={() => save(subscription.active)} disabled={pending} aria-label={`${LABELS.admin.common.save} — ${title}`}>
-            {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <Save aria-hidden />}
-          </Button>
-        ) : null}
         <Button variant="outline" onClick={() => save(!subscription.active)} disabled={pending}>
           {subscription.active ? E.stop : E.resume}
         </Button>
@@ -286,13 +268,11 @@ function EnrollmentRow({ enrollment }: { enrollment: StudentEnrollment }) {
   const LABELS = useLabels();
   const L = LABELS.admin.students;
   const E = L.enrollments;
-  const [price, setPrice] = useState(String(enrollment.priceAgreed));
   const [pending, startTransition] = useTransition();
-  const priceChanged = Number(price) !== enrollment.priceAgreed;
 
   const save = (active: boolean) => {
     startTransition(async () => {
-      const result = await updateEnrollment({ id: enrollment.id, priceAgreed: price, active });
+      const result = await updateEnrollment({ id: enrollment.id, active });
       if (result.ok) toast.success(E.saved);
       else toast.error(result.error);
     });
@@ -308,25 +288,9 @@ function EnrollmentRow({ enrollment }: { enrollment: StudentEnrollment }) {
       </div>
       <div className="flex items-end gap-2">
         <div className="flex flex-col gap-1">
-          <label htmlFor={`prix-${enrollment.id}`} className="text-caption text-muted-foreground">
-            {E.price}
-          </label>
-          <Input
-            id={`prix-${enrollment.id}`}
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step={10}
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            className="numeric w-28 font-normal"
-          />
+          <span className="text-caption text-muted-foreground">{E.price}</span>
+          <span className="numeric font-medium">{formatMAD(enrollment.priceAgreed)}</span>
         </div>
-        {priceChanged ? (
-          <Button onClick={() => save(enrollment.active)} disabled={pending} aria-label={`${LABELS.admin.common.save} — ${enrollment.subjectName}`}>
-            {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <Save aria-hidden />}
-          </Button>
-        ) : null}
         <Button variant="outline" onClick={() => save(!enrollment.active)} disabled={pending}>
           {enrollment.active ? E.stop : E.resume}
         </Button>

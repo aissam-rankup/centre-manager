@@ -137,10 +137,35 @@ values ('cb000000-0000-4000-8000-000000000001', 'due_in_7', private.today(), 'di
 insert into public.support_sessions (actor_id, center_id, reason, started_at, expires_at, ended_at)
 values ('a0000000-0000-4000-8000-00000000000d', 'cb000000-0000-4000-8000-000000000001', 'Support B',
         now() - interval '2 hours', now() - interval '1 hour', now() - interval '90 minutes');
--- Fichiers de B (photos d'élève et d'équipe).
+-- Finances de B : remise (journal du centre par trigger), encaissement du
+-- pack avec reçu, paie, charges (catégories créées avec le centre).
+insert into public.discounts (student_id, center_id, type, value, scope, reason) values
+  ('4b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 'percentage', 10, 'all_subjects', 'sibling');
+update public.invoices set status = 'paid', amount_paid = amount_due, paid_at = now(), payment_method = 'cash'
+where student_id = '4b000000-0000-4000-8000-000000000002';
+select private.issue_receipt(array(select id from public.invoices where student_id = '4b000000-0000-4000-8000-000000000002'),
+                             now(), 'b0000000-0000-4000-8000-00000000000b');
+update public.profiles set pay_mode = 'commission' where id = 'b0000000-0000-4000-8000-00000000000c';
+insert into public.teacher_commissions (center_id, teacher_id, subject_id, level_id, rate_percent, effective_from) values
+  ('cb000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', '2b000000-0000-4000-8000-000000000001',
+   '1b000000-0000-4000-8000-000000000001', 30, private.today() - 60);
+insert into public.teacher_salaries (center_id, teacher_id, monthly_amount, effective_from) values
+  ('cb000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', 2500, private.today() - 60);
+insert into public.payroll_periods (id, center_id, year, month) values
+  ('5b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 2026, 1);
+insert into public.payroll_lines (id, payroll_period_id, center_id, teacher_id, teacher_name, pay_mode, computed_amount) values
+  ('6b000000-0000-4000-8000-000000000001', '5b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001',
+   'b0000000-0000-4000-8000-00000000000c', 'Prof B', 'commission', 90);
+insert into public.expenses (id, center_id, category_id, label, amount, receipt_url)
+select '7b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', ec.id, 'Loyer B', 4000,
+       'cb000000-0000-4000-8000-000000000001/loyer.pdf'
+from public.expense_categories ec where ec.center_id = 'cb000000-0000-4000-8000-000000000001' and ec.name = 'Loyer';
+-- Fichiers de B (photos d'élève et d'équipe, reçu, justificatif).
 insert into storage.objects (bucket_id, name) values
   ('student-photos', 'cb000000-0000-4000-8000-000000000001/4b000000-0000-4000-8000-000000000001.jpg'),
-  ('staff-photos', 'cb000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-00000000000a/1.jpg');
+  ('staff-photos', 'cb000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-00000000000a/1.jpg'),
+  ('receipts', 'cb000000-0000-4000-8000-000000000001/recu.pdf'),
+  ('expense-receipts', 'cb000000-0000-4000-8000-000000000001/loyer.pdf');
 
 -- Lignes de B : tout ce qui n'était pas dans la photographie.
 create table isolation_test.b_rows (tbl text, key jsonb);
@@ -187,8 +212,10 @@ exception
 end;
 $$;
 
--- Séance de B, pour les appels de fonctions.
+-- Séance et reçu de B, pour les appels de fonctions.
 select set_config('iso.b_attendance', (select id::text from public.attendance where student_id = '4b000000-0000-4000-8000-000000000001' limit 1), true);
+select set_config('iso.b_receipt', (select id::text from public.receipts where center_id = 'cb000000-0000-4000-8000-000000000001'), true);
+select set_config('iso.b_invoice', (select id::text from public.invoices where student_id = '4b000000-0000-4000-8000-000000000001' limit 1), true);
 
 grant usage on schema isolation_test to authenticated, anon;
 grant select on all tables in schema isolation_test to authenticated, anon;
@@ -200,7 +227,9 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"b0000000-0000-4000-8000-00000000000a","role":"authenticated"}';
 select ok(isolation_test.b_visible(tbl) > 0, format('contrôle : admin B voit ses lignes dans %s', tbl))
 from unnest(array['students', 'enrollments', 'invoices', 'attendance', 'alerts', 'follow_ups', 'levels', 'subjects', 'packs',
-                  'pack_enrollments', 'schedule_slots', 'teacher_assignments', 'profiles', 'center_branding']) as tbl;
+                  'pack_enrollments', 'schedule_slots', 'teacher_assignments', 'profiles', 'center_branding',
+                  'discounts', 'receipts', 'center_events', 'teacher_salaries', 'teacher_commissions', 'payroll_periods',
+                  'payroll_lines', 'expense_categories', 'expenses']) as tbl;
 reset role;
 
 -- ---------------------------------------------------------------------
@@ -228,8 +257,8 @@ from (select distinct tbl from isolation_test.b_rows order by 1) t;
 -- Fichiers de B.
 set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-00000000000a","role":"authenticated"}';
 select is(
-  (select count(*)::int from storage.objects where name like 'cb000000-0000-4000-8000-000000000001/%' and bucket_id in ('student-photos', 'staff-photos')),
-  0, 'admin A : aucune photo de B');
+  (select count(*)::int from storage.objects where name like 'cb000000-0000-4000-8000-000000000001/%'),
+  0, 'admin A : aucun fichier de B (photos, reçus, justificatifs)');
 
 -- Fonctions appelées avec des identifiants de B.
 select is((select count(*)::int from public.student_attendance('4b000000-0000-4000-8000-000000000001')), 0, 'admin A : assiduité d''un élève de B vide');
@@ -242,6 +271,13 @@ select throws_ok($$select * from public.platform_center('cb000000-0000-4000-8000
 select throws_ok($$select public.set_my_photo('cb000000-0000-4000-8000-000000000001/a0000000-0000-4000-8000-00000000000a/1.jpg')$$,
   '22023', null, 'admin A : photo rangée dans le dossier de B refusée');
 select is((select center_name from public.my_center_access()), 'Centre A', 'admin A : accès limité à son centre');
+select throws_ok($$select public.record_payment('4b000000-0000-4000-8000-000000000001', array[current_setting('iso.b_invoice')::uuid], 'cash')$$,
+  '42501', null, 'admin A : encaissement d''une facture de B refusé');
+select throws_ok($$select public.cancel_receipt(current_setting('iso.b_receipt')::uuid, 'Pirate')$$, '42501', null, 'admin A : reçu de B non annulable');
+select throws_ok($$select public.payroll_set_adjustment('6b000000-0000-4000-8000-000000000001', 1000, 'Pirate')$$, '42501', null, 'admin A : paie de B non modifiable');
+select throws_ok($$select public.payroll_validate('5b000000-0000-4000-8000-000000000001')$$, '42501', null, 'admin A : paie de B non validable');
+select throws_ok($$select public.delete_expense('7b000000-0000-4000-8000-000000000001')$$, '42501', null, 'admin A : charge de B non supprimable');
+update public.discounts set value = 99 where student_id = '4b000000-0000-4000-8000-000000000001';
 -- Tentatives de modification (vérifiées plus bas, hors RLS).
 update public.students set full_name = 'Modifié par A' where id = '4b000000-0000-4000-8000-000000000001';
 delete from public.levels where id = '1b000000-0000-4000-8000-000000000001';
@@ -264,6 +300,7 @@ reset role;
 select is((select full_name from public.students where id = '4b000000-0000-4000-8000-000000000001'), 'Élève B1', 'élève de B non modifié par A');
 select is((select count(*)::int from public.levels where id = '1b000000-0000-4000-8000-000000000001'), 1, 'niveau de B non supprimé par A');
 select is((select count(*)::int from public.invoices where student_id = '4b000000-0000-4000-8000-000000000001' and status = 'paid'), 0, 'factures de B non modifiées par A');
+select is((select value from public.discounts where student_id = '4b000000-0000-4000-8000-000000000001'), 10.00, 'remise de B non modifiée par A');
 
 select * from finish();
 rollback;

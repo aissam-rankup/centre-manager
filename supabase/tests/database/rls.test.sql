@@ -117,16 +117,17 @@ select is(count(*)::int, 0, 'assistant : ne peut pas modifier un élève') from 
 with d as (delete from public.students where id = 'f0000000-0000-4000-8000-0000000000a1' returning 1)
 select is(count(*)::int, 0, 'assistant : ne peut pas supprimer un élève') from d;
 select lives_ok(
-  $$insert into public.enrollments (student_id, subject_id)
-    values ('f0000000-0000-4000-8000-0000000000a3', 'e0000000-0000-4000-8000-0000000000a2')$$,
+  $$insert into public.enrollments (student_id, subject_id, price_agreed)
+    values ('f0000000-0000-4000-8000-0000000000a3', 'e0000000-0000-4000-8000-0000000000a2', 100)$$,
   'assistant : peut inscrire un élève à une matière');
 select is(
   (select price_agreed from public.enrollments where student_id = 'f0000000-0000-4000-8000-0000000000a3'),
-  300.00::numeric, 'inscription : prix par défaut = tarif de la matière');
-select throws_ok(
-  $$insert into public.enrollments (student_id, subject_id, price_agreed)
-    values ('f0000000-0000-4000-8000-0000000000a3', 'e0000000-0000-4000-8000-0000000000a1', 100)$$,
-  '42501', null, 'assistant : ne peut pas fixer un tarif');
+  300.00::numeric, 'inscription : prix = tarif de la matière, un autre prix est ignoré');
+with u as (
+  update public.enrollments set price_agreed = 100
+  where student_id = 'f0000000-0000-4000-8000-0000000000a3' returning 1
+)
+select is(count(*)::int, 0, 'assistant : ne peut pas modifier un tarif') from u;
 select lives_ok(
   $$update public.invoices set status = 'paid', amount_paid = 400, paid_at = now(), paid_by = 'a0000000-0000-4000-8000-000000000002'
     where id = '11000000-0000-4000-8000-0000000000a1'$$,

@@ -24,7 +24,11 @@ insert into public.teacher_assignments (teacher_id, subject_id, level_id) values
   ('a5000000-0000-4000-8000-000000000002', 'e5000000-0000-4000-8000-000000000003', 'd5000000-0000-4000-8000-000000000001');
 insert into public.students (id, center_id, full_name, level_id) values
   ('f5000000-0000-4000-8000-000000000001', 'c5000000-0000-4000-8000-000000000001', 'Élève P7', 'd5000000-0000-4000-8000-000000000001');
--- Maths : active, cycle du 1er (inscription le 10/01). Anglais : arrêtée.
+-- Maths : active, cycle du 1er (inscription le 10/01), remise de 50 MAD.
+-- Anglais : arrêtée.
+insert into public.discounts (center_id, student_id, type, value, scope, subject_id, reason, valid_from) values
+  ('c5000000-0000-4000-8000-000000000001', 'f5000000-0000-4000-8000-000000000001', 'fixed_amount', 50,
+   'specific_subject', 'e5000000-0000-4000-8000-000000000001', 'sibling', '2026-01-10');
 insert into public.enrollments (id, student_id, subject_id, start_date, price_agreed, active) values
   ('b5000000-0000-4000-8000-000000000001', 'f5000000-0000-4000-8000-000000000001', 'e5000000-0000-4000-8000-000000000001', '2026-01-10', 350, true),
   ('b5000000-0000-4000-8000-000000000002', 'f5000000-0000-4000-8000-000000000001', 'e5000000-0000-4000-8000-000000000002', '2026-01-10', 250, false);
@@ -36,7 +40,7 @@ do $$ begin perform private.generate_invoices('2026-03-03'); end $$;
 select is(
   (select amount_due from public.invoices
     where enrollment_id = 'b5000000-0000-4000-8000-000000000001' and period_start = '2026-03-01'),
-  350.00::numeric, 'factures : période en cours créée au prix convenu');
+  350.00::numeric, 'factures : période en cours créée au net de la remise');
 select is(
   (select due_date from public.invoices
     where enrollment_id = 'b5000000-0000-4000-8000-000000000001' and period_start = '2026-03-01'),

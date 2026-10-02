@@ -94,7 +94,6 @@ export function adminSchemas(LABELS: AppLabels) {
 
   const enrollmentUpdateSchema = z.object({
     id: z.uuid(),
-    priceAgreed: z.coerce.number(V.priceInvalid).min(0, V.priceInvalid).max(100000, V.priceInvalid),
     active: z.boolean(),
   });
 

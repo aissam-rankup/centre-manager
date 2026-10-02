@@ -62,6 +62,9 @@ declare
   v_current_month date := date_trunc('month', private.today())::date;
   v_previous_month date := (date_trunc('month', private.today()) - interval '1 month')::date;
 
+  v_receipt record;
+  v_payroll uuid;
+
   v_tc uuid;   -- Tronc commun
   v_1bac uuid; -- 1ère année BAC
   v_2bac uuid; -- 2ème année BAC Sciences
@@ -85,6 +88,9 @@ begin
   insert into public.centers (id, name, slug, center_type, price, owner_contact_name, owner_contact_phone, owner_contact_email)
   values (c_center, 'Centre Al Wiam — Casablanca', 'al-wiam', 'soutien_scolaire', 490,
           'Nadia Berrada', '06 61 12 34 56', 'direction@alwiam.demo');
+  update public.centers
+  set address = '12 rue Ibn Battouta, Maârif, Casablanca', phone = '05 22 25 40 18'
+  where id = c_center;
 
   perform pg_temp.create_demo_user(c_admin, c_center, 'admin@centro.demo', 'Nadia Berrada', 'admin', '06 61 12 34 56');
   perform pg_temp.create_demo_user(c_assistant, c_center, 'accueil@centro.demo', 'Karim Lahlou', 'assistant', '06 62 23 45 67');
@@ -162,8 +168,28 @@ begin
   from demo_students d;
 
   -- -------------------------------------------------------------------
+  -- Remises (avant les inscriptions : les factures sont calculées nettes).
+  --  * idx % 13 = 0 : fratrie, 50 MAD de moins sur chaque matière ;
+  --  * idx 6        : situation sociale, 25 % sur toutes les matières ;
+  --  * idx 20       : mérite, 10 % sur les mathématiques.
+  -- -------------------------------------------------------------------
+  insert into public.discounts (center_id, student_id, type, value, scope, subject_id, reason, granted_by, granted_at, valid_from)
+  select c_center, d.id, 'fixed_amount'::public.discount_type, 50, 'all_subjects'::public.discount_scope, null::uuid, 'sibling'::public.discount_reason, c_admin,
+         v_previous_month::timestamptz - interval '12 days', v_previous_month - 12
+  from demo_students d where d.idx % 13 = 0
+  union all
+  select c_center, d.id, 'percentage', 25, 'all_subjects', null::uuid, 'social', c_admin,
+         v_previous_month::timestamptz - interval '12 days', v_previous_month - 12
+  from demo_students d where d.idx = 6
+  union all
+  select c_center, d.id, 'percentage', 10, 'specific_subject', s.id, 'merit', c_admin,
+         v_previous_month::timestamptz - interval '12 days', v_previous_month - 12
+  from demo_students d join public.subjects s on s.level_id = d.level_id and s.name = 'Mathématiques'
+  where d.idx = 20;
+
+  -- -------------------------------------------------------------------
   -- Inscriptions : les deux matières du niveau (une seule si idx % 5 = 0).
-  -- Réduction de 50 MAD si idx % 13 = 0.
+  -- Prix = tarif de la matière (les remises s'appliquent aux factures).
   -- Date d'inscription (détermine le cycle de facturation) :
   --  * idx % 7 = 0 : nouvel élève, inscrit ces derniers jours ;
   --  * idx % 3 = 0 : le 15 du mois précédent (cycle du 15) ;
@@ -175,7 +201,7 @@ begin
     d.idx,
     d.id as student_id,
     s.id as subject_id,
-    s.monthly_price - case when d.idx % 13 = 0 then 50 else 0 end as price_agreed,
+    s.monthly_price as price_agreed,
     case
       when d.idx % 7 = 0 then greatest(v_current_month, v_today - (d.idx % 5))
       when d.idx % 3 = 0 then v_previous_month + 14
@@ -186,8 +212,8 @@ begin
   where d.idx % 5 <> 0 or s.name = 'Mathématiques';
 
   -- Le trigger enrollments_after_insert_first_invoice crée la première facture.
-  insert into public.enrollments (id, student_id, subject_id, start_date, price_agreed, active)
-  select e.id, e.student_id, e.subject_id, e.start_date, e.price_agreed, true
+  insert into public.enrollments (id, student_id, subject_id, start_date, active)
+  select e.id, e.student_id, e.subject_id, e.start_date, true
   from demo_enrollments e;
 
   -- -------------------------------------------------------------------
@@ -249,6 +275,25 @@ begin
       due_date = excluded.due_date,
       paid_at = excluded.paid_at,
       paid_by = excluded.paid_by;
+
+  -- Montant réglé = net après remise ; mode de paiement varié.
+  update public.invoices i
+  set amount_paid = i.amount_due,
+      payment_method = (array['cash', 'cash', 'cash', 'bank_transfer', 'card'])[1 + d.idx % 5]::public.payment_method
+  from demo_students d
+  where d.id = i.student_id and i.status = 'paid';
+
+  -- Reçus : un par élève et par jour d'encaissement, dans l'ordre chronologique.
+  for v_receipt in
+    select array_agg(i.id order by i.period_start) as ids, min(i.paid_at) as paid_at
+    from public.invoices i
+    join demo_students d on d.id = i.student_id
+    where i.status = 'paid'
+    group by i.student_id, (i.paid_at at time zone 'Africa/Casablanca')::date
+    order by min(i.paid_at)
+  loop
+    perform private.issue_receipt(v_receipt.ids, v_receipt.paid_at, c_assistant);
+  end loop;
 
   -- -------------------------------------------------------------------
   -- Présences : 4 semaines de séances passées (jusqu'à hier inclus).
@@ -349,6 +394,74 @@ begin
   select n.id, p.id, v_today - 2, p.monthly_price
   from new_students n
   join public.packs p on p.level_id = n.level_id;
+
+  -- -------------------------------------------------------------------
+  -- Paie : Rachid et Laila à la commission (taux par matière), Youssef au
+  -- salaire fixe (augmenté ce mois-ci). Mois précédent validé et versé.
+  -- -------------------------------------------------------------------
+  update public.profiles set pay_mode = 'commission' where id in (c_prof1, c_prof2);
+  update public.profiles set pay_mode = 'fixed_salary' where id = c_prof3;
+
+  insert into public.teacher_commissions (center_id, teacher_id, subject_id, level_id, rate_percent, effective_from, created_by)
+  values
+    (c_center, c_prof1, v_maths_tc, v_tc, 30, v_previous_month - interval '6 months', c_admin),
+    (c_center, c_prof1, v_maths_1bac, v_1bac, 30, v_previous_month - interval '6 months', c_admin),
+    (c_center, c_prof1, v_maths_2bac, v_2bac, 35, v_previous_month - interval '6 months', c_admin),
+    (c_center, c_prof2, v_pc_2bac, v_2bac, 30, v_previous_month - interval '6 months', c_admin);
+
+  insert into public.teacher_salaries (center_id, teacher_id, monthly_amount, effective_from, effective_to, created_by)
+  values
+    (c_center, c_prof3, 3200, v_previous_month - interval '12 months', v_current_month - 1, c_admin),
+    (c_center, c_prof3, 3500, v_current_month, null, c_admin);
+
+  insert into public.payroll_periods (center_id, year, month)
+  values (c_center, extract(year from v_previous_month), extract(month from v_previous_month))
+  returning id into v_payroll;
+
+  insert into public.payroll_lines (payroll_period_id, center_id, teacher_id, teacher_name, pay_mode, computed_amount, detail)
+  select v_payroll, c_center, p.id, p.full_name, c.pay_mode, c.amount, c.detail
+  from public.profiles p
+  cross join lateral private.compute_teacher_pay(p.id, extract(year from v_previous_month)::int,
+                                                 extract(month from v_previous_month)::int) as c
+  where p.center_id = c_center and p.role = 'teacher';
+
+  update public.payroll_lines
+  set adjustment_amount = 300, adjustment_reason = 'Prime : stage intensif de révision'
+  where payroll_period_id = v_payroll and teacher_id = c_prof2;
+
+  update public.payroll_periods
+  set status = 'validated', validated_by = c_admin, validated_at = v_current_month::timestamptz - interval '1 day'
+  where id = v_payroll;
+
+  update public.payroll_lines
+  set paid_at = v_current_month, payment_method = 'bank_transfer', paid_by = c_admin
+  where payroll_period_id = v_payroll;
+
+  -- -------------------------------------------------------------------
+  -- Charges : mois précédent complet ; loyer et internet récurrents
+  -- (brouillons du mois en cours générés comme chaque mois).
+  -- -------------------------------------------------------------------
+  insert into public.expenses (center_id, category_id, label, amount, expense_date, payment_method,
+                               is_recurring, recurrence_day, notes, recorded_by)
+  select c_center, ec.id, x.label, x.amount, v_previous_month + x.day_offset, x.method::public.payment_method,
+         x.recurring, x.recurrence_day, x.notes, c_admin
+  from (values
+    ('Loyer', 'Loyer du local', 6000, 0, 'bank_transfer', true, 1::smallint, null),
+    ('Internet', 'Fibre 100 Mb', 399, 4, 'bank_transfer', true, 5::smallint, null),
+    ('Électricité', 'Facture d''électricité', 850, 9, 'cash', false, null, null),
+    ('Eau', 'Facture d''eau', 180, 9, 'cash', false, null, null),
+    ('Ménage', 'Entretien des salles', 1200, 27, 'cash', false, null, null),
+    ('Fournitures', 'Marqueurs, ramettes de papier', 340, 3, 'card', false, null, null),
+    ('Marketing', 'Flyers de rentrée', 500, 2, 'cash', false, null, 'Distribution devant les lycées du quartier.')
+  ) as x(category, label, amount, day_offset, method, recurring, recurrence_day, notes)
+  join public.expense_categories ec on ec.center_id = c_center and ec.name = x.category;
+
+  insert into public.expenses (center_id, category_id, label, amount, expense_date, payment_method, recorded_by)
+  select c_center, ec.id, 'Cartouches d''encre', 120, v_today, 'cash', c_admin
+  from public.expense_categories ec
+  where ec.center_id = c_center and ec.name = 'Fournitures';
+
+  perform private.generate_recurring_expenses(v_today);
 
   -- -------------------------------------------------------------------
   -- Abonnement du centre principal : deux mois payés, échéance dans ~20 jours.

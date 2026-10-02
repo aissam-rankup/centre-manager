@@ -67,10 +67,11 @@ select results_eq(
     where student_id = 'f6000000-0000-4000-8000-000000000001'$$,
   $$values (1, 350, private.today())$$,
   'facturation : une seule facture au prix du pack, due le jour de la souscription');
-select throws_ok(
-  $$insert into public.pack_enrollments (student_id, pack_id, price_agreed)
-    values ('f6000000-0000-4000-8000-000000000001', 'b6000000-0000-4000-8000-000000000001', 300)$$,
-  '42501', null, 'assistant : ne fixe pas un autre prix de pack');
+with u as (
+  update public.pack_enrollments set price_agreed = 300
+  where id = 'b7000000-0000-4000-8000-000000000001' returning 1
+)
+select is(count(*)::int, 0, 'assistant : ne modifie pas le prix d''un pack souscrit') from u;
 select throws_ok(
   $$insert into public.enrollments (student_id, subject_id)
     values ('f6000000-0000-4000-8000-000000000001', 'e6000000-0000-4000-8000-000000000003')$$,

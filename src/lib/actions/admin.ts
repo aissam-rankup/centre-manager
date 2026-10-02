@@ -206,9 +206,9 @@ export async function updatePackSubscription(input: unknown): Promise<ActionResu
   const parsed = (await adminSchemasNow()).packSubscriptionUpdateSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { supabase } = await admin();
-  const { id, priceAgreed, active } = parsed.data;
+  const { id, active } = parsed.data;
 
-  const { error } = await supabase.from("pack_enrollments").update({ price_agreed: priceAgreed, active }).eq("id", id);
+  const { error } = await supabase.from("pack_enrollments").update({ active }).eq("id", id);
   if (error) return failure(await describeAdminError(error));
 
   revalidateAdmin();
@@ -420,9 +420,9 @@ export async function updateEnrollment(input: unknown): Promise<ActionResult> {
   const parsed = (await adminSchemasNow()).enrollmentUpdateSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { supabase } = await admin();
-  const { id, priceAgreed, active } = parsed.data;
+  const { id, active } = parsed.data;
 
-  const { error } = await supabase.from("enrollments").update({ price_agreed: priceAgreed, active }).eq("id", id);
+  const { error } = await supabase.from("enrollments").update({ active }).eq("id", id);
   if (error) return failure(await describeAdminError(error));
 
   revalidateAdmin();
