@@ -3228,6 +3228,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      slot_conflicts: {
+        Args: {
+          p_day_of_week: number
+          p_end_time: string
+          p_level_id: string
+          p_room_id: string
+          p_slot_id?: string
+          p_start_time: string
+          p_teacher_id: string
+        }
+        Returns: {
+          conflict_type: Database["public"]["Enums"]["schedule_conflict_type"]
+          day_of_week: number
+          end_time: string
+          enrolled: number
+          level_name: string
+          room_name: string
+          slot_id: string
+          start_time: string
+          subject_name: string
+          teacher_name: string
+        }[]
+      }
       student_absence_follow_ups: {
         Args: { p_student_id: string }
         Returns: {

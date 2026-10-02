@@ -1,7 +1,7 @@
 "use client";
 
-import { CalendarPlus, CalendarRange, Clock, DoorOpen, Trash2, TriangleAlert } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CalendarPlus, CalendarRange, Clock, DoorOpen, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useWatch } from "react-hook-form";
 
 import { DeleteSlotButton } from "@/components/admin/delete-buttons";
@@ -15,9 +15,11 @@ import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { saveSlot } from "@/lib/actions/admin";
+import { SlotConflictPanel } from "@/components/planning/slot-conflict-panel";
+import { abandonSlotConflicts, saveSlot } from "@/lib/actions/admin";
 import { useLabels } from "@/lib/i18n/client";
 import type { PlanningData, PlanningSlot } from "@/lib/data/admin";
+import type { SlotConflictReport } from "@/lib/schedule-conflicts";
 import { cn } from "@/lib/utils";
 import { adminSchemas } from "@/lib/validation/admin";
 
@@ -134,14 +136,10 @@ function SlotCard({ slot, data, tone }: { slot: PlanningSlot; data: PlanningData
   );
 }
 
-/** Chevauchement de deux plages horaires « HH:MM » (bornes exclusives, comme en base). */
-function overlaps(startA: string, endA: string, startB: string, endB: string): boolean {
-  return startA < endB && startB < endA;
-}
-
 function SlotDialog({ data, slot, trigger }: { data: PlanningData; slot?: PlanningSlot; trigger: React.ReactElement }) {
   const LABELS = useLabels();
   const L = LABELS.admin.planning;
+  const [report, setReport] = useState<SlotConflictReport | null>(null);
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
     schema: adminSchemas(LABELS).slotSchema,
     defaultValues: {
@@ -151,53 +149,50 @@ function SlotDialog({ data, slot, trigger }: { data: PlanningData; slot?: Planni
       dayOfWeek: slot?.dayOfWeek ?? 1,
       startTime: slot?.startTime ?? "17:00",
       endTime: slot?.endTime ?? "18:30",
-      room: slot?.room ?? "",
+      roomId: slot?.roomId ?? "",
+      conflictLogIds: [],
     },
-    action: saveSlot,
-    successMessage: slot ? LABELS.admin.common.saved : LABELS.admin.common.created,
+    action: async (values) => {
+      const result = await saveSlot(values);
+      if (!result.ok && result.conflict) {
+        const conflict = result.conflict;
+        setReport(conflict);
+        // Les conflits successifs restent liés : l'issue finale les clôt tous.
+        form.setValue("conflictLogIds", [...(form.getValues("conflictLogIds") ?? []), ...conflict.logIds].slice(-20));
+      } else {
+        setReport(null);
+      }
+      return result;
+    },
+    successMessage: report ? L.conflict.resolved : slot ? LABELS.admin.common.saved : LABELS.admin.common.created,
   });
   const errors = form.formState.errors;
-  const [subjectId, teacherId, dayOfWeek, startTime, endTime, room] = useWatch({
-    control: form.control,
-    name: ["subjectId", "teacherId", "dayOfWeek", "startTime", "endTime", "room"],
-  });
+  const subjectId = useWatch({ control: form.control, name: "subjectId" });
 
   const subject = data.subjects.find((item) => item.id === subjectId);
   const eligibleTeachers = data.teachers.filter((teacher) => subject?.teacherIds.includes(teacher.id));
-  const rooms = useMemo(() => [...new Set(data.slots.map((item) => item.room))].sort(), [data.slots]);
+  // Salles actives, plus la salle actuelle du créneau si elle a été désactivée.
+  const rooms = data.rooms.filter((room) => room.isActive || room.id === slot?.roomId);
 
-  // Détection des conflits en direct (la base les refuse aussi).
-  const conflicts = useMemo(() => {
-    if (!startTime || !endTime || endTime <= startTime) return [];
-    const normalizedRoom = String(room ?? "").trim().toLowerCase();
-    return data.slots
-      .filter((other) => other.id !== slot?.id && other.dayOfWeek === Number(dayOfWeek))
-      .filter((other) => overlaps(startTime, endTime, other.startTime, other.endTime))
-      .flatMap((other) => {
-        const label = L.conflictSlot(other.subjectName, other.levelName, LABELS.teacher.schedule.time(other.startTime, other.endTime));
-        const messages: string[] = [];
-        if (normalizedRoom && other.room.trim().toLowerCase() === normalizedRoom) messages.push(L.conflictRoom(other.room, label));
-        if (teacherId && other.teacherId === teacherId) messages.push(L.conflictTeacher(other.teacherName, label));
-        return messages;
-      });
-  }, [data.slots, slot?.id, dayOfWeek, startTime, endTime, room, teacherId, L, LABELS]);
+  const handleOpenChange = (value: boolean) => {
+    // Fenêtre fermée sans issue : les conflits signalés sont abandonnés.
+    if (!value && report) {
+      const logIds = form.getValues("conflictLogIds") ?? [];
+      if (logIds.length > 0) void abandonSlotConflicts(logIds);
+    }
+    setReport(null);
+    onOpenChange(value);
+  };
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       trigger={trigger}
       title={slot ? L.editSlot : L.newSlot}
       pending={pending}
-      error={error}
-      submitDisabled={conflicts.length > 0}
-      onSubmit={(event) => {
-        if (conflicts.length > 0) {
-          event.preventDefault();
-          return;
-        }
-        void onSubmit(event);
-      }}
+      error={report ? null : error}
+      onSubmit={onSubmit}
     >
       <FormField id="slot-subject" label={L.subject} error={errors.subjectId?.message}>
         <NativeSelect
@@ -255,25 +250,36 @@ function SlotDialog({ data, slot, trigger }: { data: PlanningData; slot?: Planni
         </FormField>
       </div>
 
-      <FormField id="slot-room" label={L.room} error={errors.room?.message}>
-        <Input list="salles-connues" placeholder={L.roomPlaceholder} autoComplete="off" {...form.register("room")} />
+      <FormField id="slot-room" label={L.room} error={errors.roomId?.message} hint={rooms.length === 0 ? L.noRooms : L.roomHint}>
+        <NativeSelect disabled={rooms.length === 0} {...form.register("roomId")}>
+          <option value="">{L.chooseRoom}</option>
+          {rooms.map((room) => {
+            const name = room.isActive ? room.name : L.roomInactive(room.name);
+            return (
+              <option key={room.id} value={room.id}>
+                {room.capacity === null ? name : `${name} · ${LABELS.rooms.places(room.capacity)}`}
+              </option>
+            );
+          })}
+        </NativeSelect>
       </FormField>
-      <datalist id="salles-connues">
-        {rooms.map((item) => (
-          <option key={item} value={item} />
-        ))}
-      </datalist>
 
-      {conflicts.length > 0 ? (
-        <div role="alert" className="flex gap-3 rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-          <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden />
-          <div className="flex flex-col gap-1">
-            <p className="font-semibold">{L.conflictTitle}</p>
-            {conflicts.map((message) => (
-              <p key={message}>{message}</p>
-            ))}
-          </div>
-        </div>
+      {report ? (
+        <SlotConflictPanel
+          report={report}
+          pending={pending}
+          onApplyRoom={(room) => {
+            form.setValue("roomId", room.roomId);
+            void onSubmit();
+          }}
+          onApplyTime={(time) => {
+            form.setValue("dayOfWeek", time.dayOfWeek);
+            form.setValue("startTime", time.startTime);
+            form.setValue("endTime", time.endTime);
+            form.setValue("roomId", time.roomId);
+            void onSubmit();
+          }}
+        />
       ) : null}
 
       {slot ? (

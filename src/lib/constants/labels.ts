@@ -1,5 +1,20 @@
 import { DEFAULT_VOCABULARY, translateTree, translator, type VocabularyTerms } from "@/lib/vocabulary";
 
+/** Heure parlée : « 15:00 » → « 15h », « 15:30 » → « 15h30 ». */
+function hourLabel(time: string): string {
+  const [hours = "", minutes = "00"] = time.split(":");
+  return `${Number(hours)}h${minutes === "00" ? "" : minutes}`;
+}
+
+/** « B2 » → « salle B2 » ; « Salle 1 » reste « Salle 1 » (pas de « salle Salle 1 »). */
+function roomRef(name: string): string {
+  return /^salle\b/i.test(name.trim()) ? name : `salle ${name}`;
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 /**
  * Libellés de l'interface — source unique de vérité.
  * Aucun texte affiché ne doit être écrit en dur dans un composant.
@@ -1353,6 +1368,7 @@ const TEXTS = {
       packRequired: "Choisissez un pack.",
       packSubjectsRequired: "Cochez au moins une matière.",
       teacherRequired: "Choisissez un professeur.",
+      roomRequired: "Choisissez une salle.",
       emailRequired: "Saisissez l'email.",
       emailInvalid: "Cet email n'est pas valide.",
       passwordTooShort: "Le mot de passe doit contenir au moins 8 caractères.",
@@ -1458,14 +1474,40 @@ const TEXTS = {
       start: "Début",
       end: "Fin",
       room: "Salle",
-      roomPlaceholder: "Ex. : Salle 1",
+      chooseRoom: "Choisir une salle",
+      roomInactive: (name: string) => `${name} (désactivée)`,
+      roomHint: "Les salles se créent et se modifient depuis la page « Salles ».",
+      noRooms: "Aucune salle active. Créez-en une depuis la page « Salles ».",
       chooseSubject: "Choisir une matière",
       chooseTeacher: "Choisir un professeur",
       noTeacher: "Aucun professeur n'est affecté à cette matière. Affectez-en un depuis « Utilisateurs ».",
-      conflictTitle: "Conflit de planning",
-      conflictRoom: (room: string, other: string) => `La salle ${room} est déjà occupée : ${other}.`,
-      conflictTeacher: (teacher: string, other: string) => `${teacher} a déjà un cours : ${other}.`,
-      conflictSlot: (subject: string, level: string, time: string) => `${subject} (${level}), ${time}`,
+      conflict: {
+        title: "Impossible de placer ce cours",
+        types: { room: "Salle occupée", teacher: "Professeur déjà en cours", level: "Niveau déjà en cours" },
+        hours: (start: string, end: string) => `de ${hourLabel(start)} à ${hourLabel(end)}`,
+        enrolled: (count: number) => (count <= 1 ? `${count} élève inscrit` : `${count} élèves inscrits`),
+        room: (room: string, day: string, hours: string, teacher: string, subject: string, level: string, enrolled: string) =>
+          `${capitalize(roomRef(room))} est déjà occupée le ${day.toLowerCase()} ${hours} par ${teacher} — ${subject}, ${level}, ${enrolled}.`,
+        teacher: (teacher: string, day: string, hours: string, subject: string, level: string, room: string, enrolled: string) =>
+          `${teacher} est déjà en cours le ${day.toLowerCase()} ${hours} — ${subject}, ${level}, ${roomRef(room)}, ${enrolled}.`,
+        level: (level: string, day: string, hours: string, subject: string, teacher: string, room: string, enrolled: string) =>
+          `Le niveau ${level} a déjà un cours le ${day.toLowerCase()} ${hours} — ${subject} avec ${teacher}, ${roomRef(room)}, ${enrolled}. Ses élèves ne peuvent pas suivre deux cours en même temps.`,
+        forecast: (count: number) => `Effectif prévu pour ce cours : ${count <= 1 ? `${count} élève inscrit` : `${count} élèves inscrits`}.`,
+        solutions: "Solutions proposées",
+        freeRooms: "Salles libres sur ce créneau",
+        noFreeRoom: "Aucune autre salle n'est libre sur ce créneau.",
+        tooSmall: (count: number) => `trop petite pour ${count} élèves`,
+        capacityUnknown: "capacité non renseignée",
+        freeTimes: "Créneaux libres les plus proches",
+        sameDay: "Même jour",
+        otherDays: "Dans la semaine",
+        noFreeTime: "Aucun créneau libre trouvé pour ce professeur et ce niveau.",
+        apply: "Appliquer",
+        applyRoom: (room: string) => `Placer le cours en ${room}`,
+        applyTime: (day: string, time: string, room: string) => `Placer le cours ${day.toLowerCase()} ${time}, ${room}`,
+        resolved: "Créneau enregistré : conflit résolu",
+        modified: "Le planning a changé entre-temps : voici la situation à jour.",
+      },
       filterLevel: "Niveau",
       allLevels: "Tous les niveaux",
       emptyTitle: "Aucun créneau",

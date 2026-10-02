@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(28);
 
 insert into auth.users (id, email) values
   ('a6000000-0000-4000-8000-000000000001', 'admin-p30@test.local'),
@@ -104,6 +104,31 @@ select lives_ok(
   $$insert into public.schedule_conflicts_log (center_id, attempted_slot, conflict_type, resolved_how)
     values ('c6000000-0000-4000-8000-000000000001', '{"day_of_week": 2}', 'level', 'other_time')$$,
   'admin : conflit journalisé avec sa résolution');
+
+-- Explication des conflits (panneau de refus) : qui occupe, quand, combien d'inscrits.
+select results_eq(
+  $$select conflict_type::text, start_time::text, room_name, teacher_name, subject_name, level_name, enrolled
+    from public.slot_conflicts('d6000000-0000-4000-8000-000000000002', 'a6000000-0000-4000-8000-000000000004',
+      (select id from public.rooms where name = 'Salle Bleue'), 2::smallint, '15:00', '17:00')$$,
+  $$values ('room', '14:00:00', 'Salle Bleue', 'Prof Un', 'Maths A', 'Niveau A', 0),
+           ('room', '16:00:00', 'Salle Bleue', 'Prof Deux', 'Anglais A', 'Niveau A', 0),
+           ('teacher', '16:00:00', 'Salle Bleue', 'Prof Deux', 'Anglais A', 'Niveau A', 0)$$,
+  'conflits expliqués : chevauchements partiels de salle et de professeur');
+select results_eq(
+  $$select conflict_type::text from public.slot_conflicts('d6000000-0000-4000-8000-000000000001', 'a6000000-0000-4000-8000-000000000004',
+      (select id from public.rooms where name = 'Salle Verte'), 2::smallint, '15:30', '16:30')$$,
+  $$values ('teacher'), ('level'), ('level')$$,
+  'conflits expliqués : même niveau ailleurs, professeur déjà en cours');
+select is(
+  (select count(*)::int from public.slot_conflicts('d6000000-0000-4000-8000-000000000001', 'a6000000-0000-4000-8000-000000000003',
+     (select id from public.rooms where name = 'Salle Bleue'), 2::smallint, '14:00', '15:30', '56000000-0000-4000-8000-000000000001')),
+  0, 'créneau modifié : il ne se bloque pas lui-même');
+
+set local request.jwt.claims = '{"sub":"a6000000-0000-4000-8000-000000000003","role":"authenticated"}';
+select is(
+  (select count(*)::int from public.slot_conflicts('d6000000-0000-4000-8000-000000000002', 'a6000000-0000-4000-8000-000000000004',
+     (select id from public.rooms where name = 'Salle Bleue'), 2::smallint, '15:00', '17:00')),
+  0, 'explication des conflits réservée à l''admin');
 reset role;
 
 -- ---------------------------------------------------------------------

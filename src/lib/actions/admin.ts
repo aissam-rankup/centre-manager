@@ -8,6 +8,15 @@ import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { formatPhone } from "@/lib/phone";
+import {
+  type OccupiedSlot,
+  type SlotConflict,
+  type SlotConflictReport,
+  type SlotRequest,
+  type SlotSaveResult,
+  suggestRooms,
+  suggestTimes,
+} from "@/lib/schedule-conflicts";
 import { PHOTO_BUCKET } from "@/lib/storage/photos";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -221,20 +230,132 @@ export async function updatePackSubscription(input: unknown): Promise<ActionResu
 // ---------------------------------------------------------------------
 // Planning
 // ---------------------------------------------------------------------
-export async function saveSlot(input: unknown): Promise<ActionResult> {
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * Conflits du créneau demandé, expliqués (fonction `slot_conflicts`), consignés au
+ * journal, avec les issues possibles : salles libres et créneaux libres proches.
+ * Null si le créneau est libre.
+ */
+async function slotConflictReport(supabase: Supabase, centerId: string, request: SlotRequest, subjectId: string): Promise<SlotConflictReport | null> {
+  const { data: rows, error } = await supabase.rpc("slot_conflicts", {
+    p_level_id: request.levelId,
+    p_teacher_id: request.teacherId,
+    p_room_id: request.roomId,
+    p_day_of_week: request.dayOfWeek,
+    p_start_time: request.startTime,
+    p_end_time: request.endTime,
+    p_slot_id: request.slotId ?? undefined,
+  });
+  if (error) throw error;
+  if (rows.length === 0) return null;
+
+  const [slots, rooms, enrollments, logged] = await Promise.all([
+    supabase.from("schedule_slots").select("id, level_id, teacher_id, room_id, day_of_week, start_time, end_time"),
+    supabase.from("rooms").select("id, name, capacity").eq("is_active", true),
+    supabase.from("enrollments").select("id", { count: "exact", head: true }).eq("subject_id", subjectId).eq("active", true),
+    // Le journal ne bloque jamais l'explication (mode support : écriture refusée).
+    supabase
+      .from("schedule_conflicts_log")
+      .insert(
+        rows.map((row) => ({
+          center_id: centerId,
+          conflict_type: row.conflict_type,
+          conflicting_slot_id: row.slot_id,
+          attempted_slot: {
+            slot_id: request.slotId,
+            subject_id: subjectId,
+            level_id: request.levelId,
+            teacher_id: request.teacherId,
+            room_id: request.roomId,
+            day_of_week: request.dayOfWeek,
+            start_time: request.startTime,
+            end_time: request.endTime,
+          },
+        })),
+      )
+      .select("id"),
+  ]);
+  if (slots.error) throw slots.error;
+  if (rooms.error) throw rooms.error;
+  if (enrollments.error) throw enrollments.error;
+
+  const occupied: OccupiedSlot[] = slots.data.map((slot) => ({
+    id: slot.id,
+    levelId: slot.level_id,
+    teacherId: slot.teacher_id,
+    roomId: slot.room_id ?? "",
+    dayOfWeek: slot.day_of_week,
+    startTime: slot.start_time.slice(0, 5),
+    endTime: slot.end_time.slice(0, 5),
+  }));
+  const roomOptions = rooms.data.map((room) => ({ id: room.id, name: room.name, capacity: room.capacity }));
+  const enrolled = enrollments.count ?? 0;
+  // Le dimanche n'est proposé que si le centre y donne déjà cours.
+  const days = [1, 2, 3, 4, 5, 6, ...(occupied.some((slot) => slot.dayOfWeek === 0) || request.dayOfWeek === 0 ? [0] : [])];
+  const conflicts: SlotConflict[] = rows.map((row) => ({
+    type: row.conflict_type,
+    slotId: row.slot_id,
+    roomName: row.room_name,
+    dayOfWeek: row.day_of_week,
+    startTime: row.start_time.slice(0, 5),
+    endTime: row.end_time.slice(0, 5),
+    teacherName: row.teacher_name,
+    subjectName: row.subject_name,
+    levelName: row.level_name,
+    enrolled: row.enrolled,
+  }));
+
+  return {
+    conflicts,
+    // Changer de salle ne règle qu'un conflit de salle.
+    rooms: conflicts.every((conflict) => conflict.type === "room") ? suggestRooms(request, occupied, roomOptions, enrolled) : [],
+    times: suggestTimes(request, occupied, roomOptions, enrolled, days),
+    enrolled,
+    logIds: (logged.data ?? []).map((row) => row.id),
+  };
+}
+
+/** Clôt les conflits signalés : l'admin a choisi une autre salle ou un autre horaire. */
+async function resolveSlotConflicts(supabase: Supabase, logIds: string[], request: SlotRequest) {
+  if (logIds.length === 0) return;
+  const { data } = await supabase.from("schedule_conflicts_log").select("attempted_slot").in("id", logIds).limit(1).maybeSingle();
+  const attempted = z
+    .object({ room_id: z.string(), day_of_week: z.number(), start_time: z.string(), end_time: z.string() })
+    .safeParse(data?.attempted_slot);
+  if (!attempted.success) return;
+  const timeChanged =
+    attempted.data.day_of_week !== request.dayOfWeek || attempted.data.start_time !== request.startTime || attempted.data.end_time !== request.endTime;
+  const how = timeChanged ? "other_time" : attempted.data.room_id !== request.roomId ? "other_room" : null;
+  if (!how) return;
+  await supabase.from("schedule_conflicts_log").update({ resolved_how: how }).in("id", logIds).is("resolved_how", null);
+}
+
+export async function saveSlot(input: unknown): Promise<SlotSaveResult> {
   const LABELS = await getLabels();
   const parsed = (await adminSchemasNow()).slotSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const { profile, supabase } = await admin();
-  const { id, subjectId, teacherId, dayOfWeek, startTime, endTime, room } = parsed.data;
+  const { id, subjectId, teacherId, dayOfWeek, startTime, endTime, roomId, conflictLogIds } = parsed.data;
 
-  const { data: subject, error: subjectError } = await supabase
-    .from("subjects")
-    .select("level_id")
-    .eq("id", subjectId)
-    .maybeSingle();
+  const [{ data: subject, error: subjectError }, { data: room, error: roomError }] = await Promise.all([
+    supabase.from("subjects").select("level_id").eq("id", subjectId).maybeSingle(),
+    supabase.from("rooms").select("name").eq("id", roomId).maybeSingle(),
+  ]);
   if (subjectError) return failure(await describeAdminError(subjectError));
+  if (roomError) return failure(await describeAdminError(roomError));
   if (!subject) return failure(LABELS.actions.errors.notFound);
+  if (!room) return failure(LABELS.admin.validation.roomRequired, { roomId: LABELS.admin.validation.roomRequired });
+
+  const request: SlotRequest = { slotId: id, levelId: subject.level_id, teacherId, roomId, dayOfWeek, startTime, endTime };
+  const conflictOf = async (): Promise<SlotSaveResult | null> => {
+    const report = await slotConflictReport(supabase, profile.centerId, request, subjectId);
+    return report ? { ok: false, error: LABELS.admin.planning.conflict.title, conflict: report } : null;
+  };
+
+  // Contrôle explicite avant l'écriture : l'admin voit qui occupe le créneau.
+  const blocked = await conflictOf();
+  if (blocked) return blocked;
 
   const values = {
     subject_id: subjectId,
@@ -243,15 +364,37 @@ export async function saveSlot(input: unknown): Promise<ActionResult> {
     day_of_week: dayOfWeek,
     start_time: startTime,
     end_time: endTime,
-    room,
+    room_id: roomId,
+    room: room.name,
   };
   const { error } = id
     ? await supabase.from("schedule_slots").update(values).eq("id", id)
     : await supabase.from("schedule_slots").insert({ ...values, center_id: profile.centerId });
-  if (error) return failure(await describeAdminError(error));
+  if (error) {
+    // Un autre admin a pris le créneau entre-temps : les contraintes ont tranché, on explique.
+    if (error.code === "23P01") return (await conflictOf()) ?? failure(await describeAdminError(error));
+    return failure(await describeAdminError(error));
+  }
 
+  await resolveSlotConflicts(supabase, conflictLogIds, request);
   revalidateAdmin();
   revalidatePath(ROUTES.teacher.home, "layout");
+  return success();
+}
+
+/** L'admin renonce au créneau : les conflits signalés sont clos comme abandonnés. */
+export async function abandonSlotConflicts(logIds: unknown): Promise<ActionResult> {
+  const LABELS = await getLabels();
+  const parsed = z.array(z.uuid()).max(20).safeParse(logIds);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid);
+  if (parsed.data.length === 0) return success();
+  const { supabase } = await admin();
+  const { error } = await supabase
+    .from("schedule_conflicts_log")
+    .update({ resolved_how: "abandoned" })
+    .in("id", parsed.data)
+    .is("resolved_how", null);
+  if (error) return failure(await describeAdminError(error));
   return success();
 }
 

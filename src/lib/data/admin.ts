@@ -207,7 +207,12 @@ export type PlanningSlot = {
   startTime: string;
   endTime: string;
   room: string;
+  roomId: string;
+  /** Inscrits actifs à la matière (packs compris). */
+  enrolled: number;
 };
+
+export type PlanningRoom = { id: string; name: string; capacity: number | null; isActive: boolean };
 
 export type PlanningSubject = { id: string; name: string; levelId: string; levelName: string; teacherIds: string[] };
 export type PlanningTeacher = { id: string; fullName: string };
@@ -217,24 +222,29 @@ export type PlanningData = {
   subjects: PlanningSubject[];
   teachers: PlanningTeacher[];
   levels: LevelOption[];
+  rooms: PlanningRoom[];
 };
 
 export async function getPlanningData(): Promise<PlanningData> {
   const { supabase } = await adminClient();
 
-  const [slotsResult, subjectsResult, teachersResult, assignmentsResult] = await Promise.all([
+  const [slotsResult, subjectsResult, teachersResult, assignmentsResult, roomsResult, enrollmentsResult] = await Promise.all([
     supabase
       .from("schedule_slots")
-      .select("id, subject_id, level_id, teacher_id, day_of_week, start_time, end_time, room")
+      .select("id, subject_id, level_id, teacher_id, day_of_week, start_time, end_time, room, room_id")
       .order("day_of_week")
       .order("start_time"),
     supabase.from("subjects").select("id, name, level_id, levels(name, sort_order)"),
     supabase.from("profiles").select("id, full_name, active, photo_url").eq("role", "teacher").order("full_name"),
     supabase.from("teacher_assignments").select("teacher_id, subject_id"),
+    supabase.from("rooms").select("id, name, capacity, is_active"),
+    supabase.from("enrollments").select("subject_id").eq("active", true),
   ]);
-  for (const result of [slotsResult, subjectsResult, teachersResult, assignmentsResult]) {
+  for (const result of [slotsResult, subjectsResult, teachersResult, assignmentsResult, roomsResult, enrollmentsResult]) {
     if (result.error) throw result.error;
   }
+  const enrolledBySubject = new Map<string, number>();
+  for (const row of enrollmentsResult.data ?? []) enrolledBySubject.set(row.subject_id, (enrolledBySubject.get(row.subject_id) ?? 0) + 1);
 
   const teacherNames = new Map((teachersResult.data ?? []).map((t) => [t.id, t.full_name] as const));
   const teacherPhotoPaths = new Map((teachersResult.data ?? []).map((t) => [t.id, t.photo_url] as const));
@@ -273,10 +283,15 @@ export async function getPlanningData(): Promise<PlanningData> {
       startTime: slot.start_time.slice(0, 5),
       endTime: slot.end_time.slice(0, 5),
       room: slot.room,
+      roomId: slot.room_id ?? "",
+      enrolled: enrolledBySubject.get(slot.subject_id) ?? 0,
     })),
     subjects,
     teachers: (teachersResult.data ?? []).filter((t) => t.active).map((t) => ({ id: t.id, fullName: t.full_name })),
     levels: await getLevelOptions(),
+    rooms: (roomsResult.data ?? [])
+      .map((room) => ({ id: room.id, name: room.name, capacity: room.capacity, isActive: room.is_active }))
+      .sort((a, b) => a.name.localeCompare(b.name, "fr", { numeric: true })),
   };
 }
 

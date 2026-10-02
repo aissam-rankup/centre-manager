@@ -50,7 +50,9 @@ export function adminSchemas(LABELS: AppLabels) {
       dayOfWeek: z.coerce.number().int().min(0).max(6),
       startTime: time,
       endTime: time,
-      room: name(40),
+      roomId: z.uuid(V.roomRequired),
+      // Conflits signalés juste avant : clos par l'issue choisie.
+      conflictLogIds: z.array(z.uuid()).max(20).default([]),
     })
     .refine((slot) => slot.endTime > slot.startTime, { message: V.endBeforeStart, path: ["endTime"] });
 
