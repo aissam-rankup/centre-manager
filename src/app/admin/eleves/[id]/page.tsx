@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
+import { DiscountsPanel } from "@/components/discounts/discounts-panel";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
   FollowUpsSection,
@@ -20,6 +21,7 @@ import { requireRole } from "@/lib/auth/session";
 import { getLabels } from "@/lib/i18n/server";
 import { getLevelOptions } from "@/lib/data/admin";
 import { getLevelsWithSubjects, getStudentFile } from "@/lib/data/assistant";
+import { toISODate, today } from "@/lib/format";
 
 import { EnrollmentsEditor, StudentAdminActions } from "./student-admin";
 
@@ -75,6 +77,17 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
         packSubscriptions={student.packSubscriptions}
         levelSubjects={levelCatalog?.subjects ?? []}
         levelPacks={levelCatalog?.packs ?? []}
+      />
+
+      <DiscountsPanel
+        studentId={student.id}
+        discounts={student.discounts}
+        canEdit
+        todayIso={toISODate(today())}
+        targets={[
+          ...(levelCatalog?.subjects ?? []).map((subject) => ({ value: `subject:${subject.id}`, label: subject.name })),
+          ...(levelCatalog?.packs ?? []).map((pack) => ({ value: `pack:${pack.id}`, label: LABELS.packs.label(pack.name) })),
+        ]}
       />
 
       <StudentTabs

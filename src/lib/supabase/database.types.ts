@@ -2153,6 +2153,7 @@ export type Database = {
         Row: {
           center_id: string | null
           created_at: string | null
+          discounts: Json | null
           full_name: string | null
           guardian_name: string | null
           guardian_phone: string | null

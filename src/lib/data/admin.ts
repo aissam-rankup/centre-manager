@@ -2,6 +2,7 @@ import "server-only";
 
 import { requireRole } from "@/lib/auth/session";
 import { type DashboardStudent, loadDashboardStudents, type SubjectPresence } from "@/lib/data/dashboard";
+import { type DiscountSummary, parseDiscountList } from "@/lib/discounts";
 import { signPhotoUrls, STAFF_PHOTO_BUCKET } from "@/lib/storage/photos";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
@@ -337,13 +338,15 @@ export type AdminStudentRow = {
   guardianPhone: string | null;
   unpaidAmount: number;
   isOverdue: boolean;
+  /** Remises en cours (badge). */
+  discounts: DiscountSummary[];
 };
 
 export async function getAdminStudents(): Promise<AdminStudentRow[]> {
   const { supabase } = await adminClient();
   const { data, error } = await supabase
     .from("student_directory")
-    .select("id, full_name, level_id, level_name, photo_url, guardian_name, guardian_phone, unpaid_amount, is_overdue")
+    .select("id, full_name, level_id, level_name, photo_url, guardian_name, guardian_phone, unpaid_amount, is_overdue, discounts")
     .order("full_name");
   if (error) throw error;
 
@@ -361,6 +364,7 @@ export async function getAdminStudents(): Promise<AdminStudentRow[]> {
             guardianPhone: row.guardian_phone,
             unpaidAmount: Number(row.unpaid_amount ?? 0),
             isOverdue: row.is_overdue ?? false,
+            discounts: parseDiscountList(row.discounts),
           },
         ]
       : [],

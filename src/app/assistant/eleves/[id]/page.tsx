@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
+import { DiscountsPanel } from "@/components/discounts/discounts-panel";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { getLabels } from "@/lib/i18n/server";
@@ -18,6 +19,7 @@ import { AttendanceSheet } from "@/components/attendance/attendance-sheet";
 import { parseAttendanceFilters } from "@/lib/attendance";
 import { getAttendanceData } from "@/lib/data/attendance";
 import { getStudentFile, type StudentFile } from "@/lib/data/assistant";
+import { toISODate, today } from "@/lib/format";
 
 async function loadStudent(id: string): Promise<StudentFile> {
   if (!z.uuid().safeParse(id).success) notFound();
@@ -54,6 +56,16 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
       <StudentHeader student={student} />
 
       <SubjectsSection student={student} />
+
+      {student.discounts.length > 0 ? (
+        <DiscountsPanel
+          studentId={student.id}
+          discounts={student.discounts}
+          canEdit={false}
+          targets={[]}
+          todayIso={toISODate(today())}
+        />
+      ) : null}
 
       <StudentTabs
         defaultValue={tab}

@@ -3,6 +3,7 @@ import "server-only";
 import { requireStaff } from "@/lib/auth/session";
 import { type DashboardStudent, loadDashboardStudents, loadSubjectPresence, type SubjectPresence } from "@/lib/data/dashboard";
 import { LABELS } from "@/lib/constants/labels";
+import { type DiscountSummary, parseDiscountList, parseDiscountSummary, type StudentDiscount } from "@/lib/discounts";
 import { toISODate, today } from "@/lib/format";
 import { signPhotoUrls } from "@/lib/storage/photos";
 import type { Database } from "@/lib/supabase/database.types";
@@ -166,6 +167,8 @@ export type StudentListItem = {
   levelName: string;
   photoUrl: string | null;
   isOverdue: boolean;
+  /** Remises en cours (badge). */
+  discounts: DiscountSummary[];
 };
 
 /** Même normalisation que private.normalize_search : minuscules, sans accents. */
@@ -186,7 +189,7 @@ export async function searchStudentDirectory(query: string): Promise<StudentList
 
   let request = supabase
     .from("student_directory")
-    .select("id, full_name, level_name, photo_url, is_overdue")
+    .select("id, full_name, level_name, photo_url, is_overdue, discounts")
     .order("full_name", { ascending: true })
     .limit(SEARCH_LIMIT);
 
@@ -210,6 +213,7 @@ export async function searchStudentDirectory(query: string): Promise<StudentList
             levelName: row.level_name ?? "",
             photoUrl: row.photo_url ? (photos.get(row.photo_url) ?? null) : null,
             isOverdue: row.is_overdue ?? false,
+            discounts: parseDiscountList(row.discounts),
           },
         ]
       : [],
@@ -249,7 +253,13 @@ export type StudentInvoice = {
   subjectName: string;
   periodStart: string;
   periodEnd: string;
+  /** Net à encaisser (tarif plein − remise). */
   amountDue: number;
+  amountFull: number;
+  discountAmount: number;
+  discount: DiscountSummary | null;
+  /** Plusieurs remises possibles : la plus favorable est appliquée. */
+  discountConflict: boolean;
   status: InvoiceStatus;
   dueDate: string;
   paidAt: string | null;
@@ -280,6 +290,7 @@ export type StudentFile = {
   oldestOverdueInvoiceId: string | null;
   enrollments: StudentEnrollment[];
   packSubscriptions: StudentPackSubscription[];
+  discounts: StudentDiscount[];
   invoices: StudentInvoice[];
   absences: StudentAbsence[];
   followUps: StudentFollowUp[];
@@ -297,7 +308,8 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
   if (error) throw error;
   if (!student) return null;
 
-  const [enrollmentsResult, packsResult, invoicesResult, absencesResult, followUpsResult] = await Promise.all([
+  const [enrollmentsResult, packsResult, invoicesResult, absencesResult, followUpsResult, discountsResult, overlapsResult] =
+    await Promise.all([
     supabase
       .from("enrollments")
       .select("id, subject_id, start_date, price_agreed, billing_day, active, pack_enrollment_id, subjects(name)")
@@ -311,7 +323,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     supabase
       .from("invoices")
       .select(
-        "id, enrollment_id, pack_enrollment_id, period_start, period_end, amount_due, status, due_date, paid_at, enrollments(subjects(name)), pack_enrollments(packs(name))",
+        "id, enrollment_id, pack_enrollment_id, period_start, period_end, amount_due, amount_full, discount_amount, discount_snapshot, discount_conflict, status, due_date, paid_at, enrollments(subjects(name)), pack_enrollments(packs(name))",
       )
       .eq("student_id", studentId)
       .order("period_start", { ascending: false })
@@ -327,6 +339,14 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
       .select("id, type, channel, note, created_at, profiles(full_name)")
       .eq("student_id", studentId)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("discounts")
+      .select(
+        "id, type, value, scope, subject_id, pack_id, reason, reason_note, valid_from, valid_to, is_active, granted_at, subjects(name), packs(name), profiles(full_name)",
+      )
+      .eq("student_id", studentId)
+      .order("granted_at", { ascending: false }),
+    supabase.from("discount_overlaps").select("discount_id, other_discount_id").eq("student_id", studentId),
   ]);
 
   if (enrollmentsResult.error) throw enrollmentsResult.error;
@@ -334,6 +354,12 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
   if (invoicesResult.error) throw invoicesResult.error;
   if (absencesResult.error) throw absencesResult.error;
   if (followUpsResult.error) throw followUpsResult.error;
+  if (discountsResult.error) throw discountsResult.error;
+  if (overlapsResult.error) throw overlapsResult.error;
+
+  const overlapping = new Set(
+    overlapsResult.data.flatMap((row) => [row.discount_id, row.other_discount_id]).filter((id): id is string => Boolean(id)),
+  );
 
   const todayIso = toISODate(today());
   const invoices: StudentInvoice[] = invoicesResult.data.map((row) => ({
@@ -344,6 +370,10 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     periodStart: row.period_start,
     periodEnd: row.period_end,
     amountDue: Number(row.amount_due),
+    amountFull: Number(row.amount_full),
+    discountAmount: Number(row.discount_amount),
+    discount: parseDiscountSummary(row.discount_snapshot ?? undefined),
+    discountConflict: row.discount_conflict,
     status: effectiveInvoiceStatus(row.status, row.due_date, todayIso),
     dueDate: row.due_date,
     paidAt: row.paid_at,
@@ -400,6 +430,23 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
         .filter((enrollment) => enrollment.pack_enrollment_id === row.id)
         .map((enrollment) => enrollment.subjects?.name ?? "")
         .sort((a, b) => a.localeCompare(b, "fr")),
+    })),
+    discounts: discountsResult.data.map((row) => ({
+      id: row.id,
+      type: row.type,
+      value: Number(row.value),
+      scope: row.scope,
+      subjectId: row.subject_id,
+      packId: row.pack_id,
+      target: row.subjects?.name ?? (row.packs?.name ? LABELS.packs.label(row.packs.name) : null),
+      reason: row.reason,
+      reasonNote: row.reason_note,
+      validFrom: row.valid_from,
+      validTo: row.valid_to,
+      isActive: row.is_active,
+      grantedAt: row.granted_at,
+      grantedByName: row.profiles?.full_name ?? null,
+      conflict: overlapping.has(row.id),
     })),
     invoices,
     absences: absencesResult.data.map((row) => ({

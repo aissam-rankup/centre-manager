@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 
 import { SectionHeading } from "@/components/dashboard/section-heading";
 import { EmptyState } from "@/components/shared/empty-state";
+import { DiscountBadges } from "@/components/discounts/discount-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
@@ -121,6 +122,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
                   </Link>
                   <span className="truncate text-caption text-muted-foreground">{student.levelName}</span>
                   <StatusBadge status={student.status} />
+                  <DiscountBadges discounts={student.discounts} />
                   <PhoneLink phone={student.guardianPhone} />
                 </div>
                 <RowMenu student={student} fileBase={fileBase} />
@@ -184,7 +186,10 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
                     </td>
                     <td className="hidden max-w-[200px] truncate px-4 xl:table-cell">{student.subjects}</td>
                     <td className="px-3 lg:px-4">
-                      <StatusBadge status={student.status} />
+                      <span className="flex flex-col gap-1 py-1.5">
+                        <StatusBadge status={student.status} />
+                        <DiscountBadges discounts={student.discounts} />
+                      </span>
                     </td>
                     <td className="px-3 whitespace-nowrap lg:px-4">
                       <PhoneLink phone={student.guardianPhone} />

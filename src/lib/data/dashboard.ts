@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { LABELS } from "@/lib/constants/labels";
+import { type DiscountSummary, parseDiscountList } from "@/lib/discounts";
 import { toISODate, today } from "@/lib/format";
 import { signPhotoUrls } from "@/lib/storage/photos";
 import type { Database } from "@/lib/supabase/database.types";
@@ -23,6 +24,8 @@ export type DashboardStudent = {
   subjects: string;
   status: DashboardStudentStatus;
   guardianPhone: string | null;
+  /** Remises en cours (badge). */
+  discounts: DiscountSummary[];
 };
 
 export type SubjectPresence = {
@@ -45,7 +48,7 @@ export async function loadDashboardStudents(
 ): Promise<{ students: DashboardStudent[]; followUpsToday: number }> {
   let directoryQuery = supabase
     .from("student_directory")
-    .select("id, full_name, level_id, level_name, photo_url, guardian_phone, is_overdue")
+    .select("id, full_name, level_id, level_name, photo_url, guardian_phone, is_overdue, discounts")
     .order("full_name");
   if (levelId) directoryQuery = directoryQuery.eq("level_id", levelId);
 
@@ -93,6 +96,7 @@ export async function loadDashboardStudents(
             : (subjectsByStudent.get(row.id) ?? []).sort((a, b) => a.localeCompare(b, "fr")).join(", "),
           status,
           guardianPhone: row.guardian_phone,
+          discounts: parseDiscountList(row.discounts),
         },
       ];
     })

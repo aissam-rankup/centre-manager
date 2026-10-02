@@ -2,6 +2,7 @@ import { CalendarCheck, CircleDollarSign, MessageSquareText, Receipt, StickyNote
 import type { ReactNode } from "react";
 
 import { ContactButtons } from "@/components/assistant/contact-buttons";
+import { DiscountBadges } from "@/components/discounts/discount-badge";
 import { FollowUpDialog } from "@/components/assistant/follow-up-dialog";
 import { MarkPaidButton } from "@/components/assistant/mark-paid-button";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
@@ -14,7 +15,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { AppLabels } from "@/lib/constants/labels";
 import { getLabels } from "@/lib/i18n/server";
 import type { StudentFile, StudentInvoice } from "@/lib/data/assistant";
-import { formatDate, formatDateTime, formatMAD } from "@/lib/format";
+import { discountBadgeLabel, discountState } from "@/lib/discounts";
+import { formatDate, formatDateTime, formatMAD, toISODate, today } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 
 /** Sections de la fiche élève, partagées par les espaces Accueil et Admin. */
@@ -26,6 +28,8 @@ export async function StudentHeader({ student, actions }: { student: StudentFile
   const LABELS = await getLabels();
   const L = LABELS.assistant.student;
   const guardianLabel = student.guardianName ?? student.fullName;
+  const todayIso = toISODate(today());
+  const activeDiscounts = student.discounts.filter((discount) => discountState(discount, todayIso) === "active");
 
   return (
     <Card>
@@ -41,6 +45,7 @@ export async function StudentHeader({ student, actions }: { student: StudentFile
             <h1 className="text-title text-heading">{student.fullName}</h1>
             <p className="text-muted-foreground">{student.levelName}</p>
             <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />
+            <DiscountBadges discounts={activeDiscounts} max={3} className="justify-center sm:justify-start" />
             <p className="text-caption text-muted-foreground">{L.enrolledOn(formatDate(student.createdAt))}</p>
           </div>
         </div>
@@ -178,7 +183,7 @@ function paymentColumns(LABELS: AppLabels): readonly DataTableColumn<StudentInvo
       ),
     },
     { id: "period", header: L.payments.period, mobile: "hidden", cell: (invoice) => periodLabel(invoice, LABELS) },
-    { id: "amount", header: L.payments.amount, align: "end", cell: (invoice) => <Money amount={invoice.amountDue} /> },
+    { id: "amount", header: L.payments.amount, align: "end", cell: (invoice) => <InvoiceAmount invoice={invoice} LABELS={LABELS} /> },
     {
       id: "dueDate",
       header: L.payments.dueDate,
@@ -198,10 +203,41 @@ function paymentColumns(LABELS: AppLabels): readonly DataTableColumn<StudentInvo
             amountLabel={formatMAD(invoice.amountDue)}
             subjectName={invoice.subjectName}
             periodLabel={periodLabel(invoice, LABELS)}
+            breakdown={
+              invoice.discountAmount > 0
+                ? {
+                    fullLabel: formatMAD(invoice.amountFull),
+                    discountLabel: `− ${formatMAD(invoice.discountAmount)}`,
+                    discountReason: invoice.discount ? discountBadgeLabel(invoice.discount, LABELS) : null,
+                    conflict: invoice.discountConflict,
+                  }
+                : null
+            }
           />
         ),
     },
   ];
+}
+
+/** Montant d'une facture : net en évidence ; avec remise, tarif plein barré et remise. */
+function InvoiceAmount({ invoice, LABELS }: { invoice: StudentInvoice; LABELS: AppLabels }) {
+  if (invoice.discountAmount <= 0) return <Money amount={invoice.amountDue} />;
+  const D = LABELS.discounts.invoice;
+  return (
+    <span className="inline-flex flex-col items-end gap-0.5">
+      <span className="numeric text-caption font-normal text-muted-foreground line-through">
+        <span className="sr-only">{D.full} : </span>
+        {formatMAD(invoice.amountFull)}
+      </span>
+      <span className="numeric text-caption font-medium text-foreground">
+        <span className="sr-only">{D.discount} : </span>− {formatMAD(invoice.discountAmount)}
+      </span>
+      <span className="font-semibold">
+        <span className="sr-only">{D.net} : </span>
+        <Money amount={invoice.amountDue} />
+      </span>
+    </span>
+  );
 }
 
 export async function PaymentsSection({ student }: { student: StudentFile }) {

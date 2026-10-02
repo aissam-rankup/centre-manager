@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
+import { DiscountBadges } from "@/components/discounts/discount-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
@@ -125,6 +126,7 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate font-medium">{student.fullName}</span>
                   <span className="truncate text-caption text-muted-foreground">{student.levelName}</span>
+                  <DiscountBadges discounts={student.discounts} className="mt-1" />
                 </span>
                 <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />
                 <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />

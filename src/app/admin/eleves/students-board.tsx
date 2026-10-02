@@ -4,6 +4,7 @@ import { Search, SearchX } from "lucide-react";
 import Link from "next/link";
 import { useDeferredValue, useMemo, useState } from "react";
 
+import { DiscountBadges } from "@/components/discounts/discount-badge";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Money } from "@/components/shared/money";
@@ -36,6 +37,7 @@ function columns(LABELS: AppLabels): readonly DataTableColumn<AdminStudentRow>[]
           <span className="flex min-w-0 flex-col">
             <span className="truncate font-medium underline-offset-4 hover:underline">{student.fullName}</span>
             <span className="truncate text-caption text-muted-foreground md:hidden">{student.levelName}</span>
+            <DiscountBadges discounts={student.discounts} className="mt-1" />
           </span>
         </Link>
       ),
