@@ -13,9 +13,12 @@ type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
 type FollowUpType = Database["public"]["Enums"]["follow_up_type"];
 type FollowUpChannel = Database["public"]["Enums"]["follow_up_channel"];
 
-/** Statut affiché : une facture en attente dont l'échéance est dépassée est en retard. */
-export function effectiveInvoiceStatus(status: InvoiceStatus, dueDate: string, todayIso = toISODate(today())): InvoiceStatus {
-  return status === "pending" && dueDate < todayIso ? "overdue" : status;
+/**
+ * Statut affiché : une facture en attente est en retard à partir de son premier jour de retard
+ * (`overdue_from` : l'échéance, ou le lendemain pour une facture de campagne), comme en base.
+ */
+export function effectiveInvoiceStatus(status: InvoiceStatus, overdueFrom: string, todayIso = toISODate(today())): InvoiceStatus {
+  return status === "pending" && overdueFrom <= todayIso ? "overdue" : status;
 }
 
 // ---------------------------------------------------------------------
@@ -325,7 +328,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     supabase
       .from("invoices")
       .select(
-        "id, enrollment_id, pack_enrollment_id, period_start, period_end, amount_due, amount_full, discount_amount, discount_snapshot, discount_conflict, status, due_date, paid_at, receipt_id, receipts(receipt_number), enrollments(subjects(name)), pack_enrollments(packs(name))",
+        "id, enrollment_id, pack_enrollment_id, period_start, period_end, amount_due, amount_full, discount_amount, discount_snapshot, discount_conflict, status, due_date, overdue_from, paid_at, receipt_id, receipts(receipt_number), enrollments(subjects(name)), pack_enrollments(packs(name))",
       )
       .eq("student_id", studentId)
       .order("period_start", { ascending: false })
@@ -378,7 +381,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     discountConflict: row.discount_conflict,
     receiptId: row.receipt_id,
     receiptNumber: row.receipts?.receipt_number ?? null,
-    status: effectiveInvoiceStatus(row.status, row.due_date, todayIso),
+    status: effectiveInvoiceStatus(row.status, row.overdue_from ?? row.due_date, todayIso),
     dueDate: row.due_date,
     paidAt: row.paid_at,
   }));

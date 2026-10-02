@@ -15,6 +15,11 @@ function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/** « de novembre 2026 », « d'octobre 2026 ». */
+function ofMonth(month: string): string {
+  return /^[aeiouyàâéèêîïôû]/i.test(month) ? `d'${month}` : `de ${month}`;
+}
+
 /**
  * Libellés de l'interface — source unique de vérité.
  * Aucun texte affiché ne doit être écrit en dur dans un composant.
@@ -1199,6 +1204,45 @@ const TEXTS = {
     summary: (rooms: number, overloaded: number) =>
       overloaded > 0 ? `${rooms} salles · ${overloaded} cours dépassent la capacité` : `${rooms} salles`,
   },
+  reenrollment: {
+    settings: {
+      title: "Réinscription automatique",
+      description:
+        "Chaque mois, la campagne du mois suivant est préparée en brouillon : une ligne par matière ou pack de chaque élève actif, remise déduite. Rien n'est facturé avant la confirmation de l'admin.",
+      enabled: "Activer la réinscription automatique",
+      enabledHint:
+        "Activée, la campagne remplace la facturation automatique de chaque mois. Désactivée, les factures continuent d'être créées le jour du cycle, comme aujourd'hui.",
+      generationDay: "Jour de préparation",
+      generationDayHint: (day: number) => `La campagne du mois suivant est préparée le ${day} de chaque mois (1 à 28).`,
+      dueDay: "Jour d'échéance",
+      dueDayHint: (month: string, first: string, fifteenth: string) =>
+        `Pour ${month} : échéance le ${first} (cycle du 1er) et le ${fifteenth} (cycle du 15) ; en retard à partir du lendemain.`,
+      dayInvalid: "Indiquez un jour entre 1 et 28.",
+      next: "Prochaine campagne",
+      scheduled: (month: string, date: string) => `Campagne ${ofMonth(month)} : préparée automatiquement le ${date}.`,
+      tonight: (month: string) => `Campagne ${ofMonth(month)} : préparée automatiquement cette nuit.`,
+      missed: (month: string) =>
+        `Campagne ${ofMonth(month)} : le jour de préparation est passé. Préparez-la maintenant, sinon les factures ${ofMonth(month)} seront créées comme d'habitude.`,
+      disabledNotice: "Réinscription automatique désactivée : la facturation reste automatique, le jour du cycle.",
+      currentDraft: (month: string) =>
+        `La campagne ${ofMonth(month)} n'est pas encore confirmée : ses factures sont en attente.`,
+      cancelledSummary: (month: string) => `${capitalize(month)} : mois sans cours, aucune facture.`,
+      prepareNow: "Préparer maintenant",
+      prepared: "Brouillon préparé",
+      runStatus: {
+        draft: "Brouillon à revoir",
+        confirmed: "Confirmée",
+        sent: "Rappels envoyés",
+        closed: "Close",
+        cancelled: "Mois sans campagne",
+      },
+      runSummary: (month: string, students: number, total: string) =>
+        `${month} : ${students <= 1 ? `${students} élève` : `${students} élèves`}, ${total} à encaisser.`,
+      generatedAuto: (date: string) => `Préparée automatiquement le ${date}.`,
+      generatedBy: (date: string) => `Préparée le ${date}.`,
+      reviewSoon: "L'écran de revue de la campagne arrive à l'étape suivante.",
+    },
+  },
   absenceAlerts: {
     title: "Absences à signaler",
     description: "Prévenez le responsable le jour même : le message est déjà rédigé, il suffit de l'envoyer.",
@@ -1335,7 +1379,7 @@ const TEXTS = {
   },
   centerSettings: {
     title: "Réglages du centre",
-    description: "Coordonnées, reçus de paiement et alertes d'absence.",
+    description: "Coordonnées, reçus de paiement, réinscription automatique et alertes d'absence.",
     contactTitle: "Coordonnées",
     contactDescription: "Affichées en en-tête et en pied des reçus.",
     address: "Adresse",

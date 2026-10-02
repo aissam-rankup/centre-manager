@@ -246,6 +246,7 @@ export type Database = {
           billing_run_id: string
           center_id: string
           discount_amount: number
+          discount_conflict: boolean
           discount_id: string | null
           discount_snapshot: Json | null
           due_date: string
@@ -263,6 +264,7 @@ export type Database = {
           billing_run_id: string
           center_id: string
           discount_amount?: number
+          discount_conflict?: boolean
           discount_id?: string | null
           discount_snapshot?: Json | null
           due_date: string
@@ -280,6 +282,7 @@ export type Database = {
           billing_run_id?: string
           center_id?: string
           discount_amount?: number
+          discount_conflict?: boolean
           discount_id?: string | null
           discount_snapshot?: Json | null
           due_date?: string
@@ -1336,6 +1339,7 @@ export type Database = {
           due_date: string
           enrollment_id: string | null
           id: string
+          overdue_from: string | null
           pack_enrollment_id: string | null
           paid_at: string | null
           paid_by: string | null
@@ -1358,6 +1362,7 @@ export type Database = {
           due_date: string
           enrollment_id?: string | null
           id?: string
+          overdue_from?: string | null
           pack_enrollment_id?: string | null
           paid_at?: string | null
           paid_by?: string | null
@@ -1380,6 +1385,7 @@ export type Database = {
           due_date?: string
           enrollment_id?: string | null
           id?: string
+          overdue_from?: string | null
           pack_enrollment_id?: string | null
           paid_at?: string | null
           paid_by?: string | null
@@ -3386,6 +3392,7 @@ export type Database = {
           due_date: string
           enrollment_id: string | null
           id: string
+          overdue_from: string | null
           pack_enrollment_id: string | null
           paid_at: string | null
           paid_by: string | null
@@ -3797,6 +3804,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      prepare_billing_run: { Args: never; Returns: string }
       record_payment: {
         Args: {
           p_invoice_ids: string[]

@@ -83,6 +83,13 @@ export function formatLongDate(date: Date | string): string {
   return format(inAppTimeZone(date), "d MMMM yyyy", { locale: fr });
 }
 
+/** « 5 novembre », « 1er décembre » */
+export function formatDayMonth(date: Date | string): string {
+  const zoned = inAppTimeZone(date);
+  const day = zoned.getDate();
+  return `${day === 1 ? "1er" : day} ${format(zoned, "MMMM", { locale: fr })}`;
+}
+
 /** « 2026-09-24 » — format des colonnes `date` Postgres, au fuseau de Casablanca. */
 export function toISODate(date: Date | string): string {
   return format(inAppTimeZone(date), "yyyy-MM-dd");
