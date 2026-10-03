@@ -128,7 +128,7 @@ export async function getNotifications(): Promise<NotificationItem[]> {
               kind: "cashVariance" as const,
               studentId: null,
               studentName: LABELS.nav.cash,
-              href: ROUTES.admin.cash,
+              href: `${ROUTES.admin.cash}/${row.id}`,
               detail: LABELS.cash.notification(formatMAD(variance), formatDate(row.session_date)),
               body: row.variance_reason,
               author: row.closer?.full_name ?? null,

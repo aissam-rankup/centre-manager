@@ -58,7 +58,7 @@ export async function recordCashMovement(input: unknown): Promise<ActionResult> 
       kind: z.enum(ADMIN_MOVEMENT_KINDS),
       amount: moneySchema(C.amountInvalid).refine((value) => value > 0, C.amountInvalid),
       direction: z.enum(["in", "out"]).default("out"),
-      reason: z.string().trim().min(1, C.movementReason).max(300),
+      reason: z.string().trim().min(1, C.movementReasonRequired).max(300),
     })
     .safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
@@ -83,6 +83,8 @@ export async function closeCashSession(input: unknown): Promise<ActionResult> {
     .object({
       sessionId: z.uuid(),
       counted: z.string().trim().min(1, C.amountInvalid).pipe(moneySchema(C.amountInvalid)),
+      /** Espèces attendues affichées au moment du comptage. */
+      expected: z.number().finite(),
       reason: z.string().trim().max(500).optional(),
       notes: z.string().trim().max(1000).optional(),
     })
@@ -95,6 +97,7 @@ export async function closeCashSession(input: unknown): Promise<ActionResult> {
     p_counted: parsed.data.counted,
     p_reason: parsed.data.reason ?? "",
     p_notes: parsed.data.notes ?? "",
+    p_expected: parsed.data.expected,
   });
   if (error) return failure(await describeCenterError(error));
   revalidateCash();
@@ -106,7 +109,7 @@ export async function updateCashSettings(input: unknown): Promise<ActionResult> 
   const LABELS = await getLabels();
   const S = LABELS.cash.settings;
   const parsed = z
-    .object({ perAssistant: z.boolean(), threshold: moneySchema(S.thresholdInvalid) })
+    .object({ perAssistant: z.boolean(), threshold: z.string().trim().min(1, S.thresholdInvalid).pipe(moneySchema(S.thresholdInvalid)) })
     .safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   const profile = await requireRole("admin");
@@ -115,6 +118,48 @@ export async function updateCashSettings(input: unknown): Promise<ActionResult> 
     .from("centers")
     .update({ cash_session_per_assistant: parsed.data.perAssistant, cash_variance_alert_threshold: parsed.data.threshold })
     .eq("id", profile.centerId);
+  if (error) return failure(await describeCenterError(error));
+  revalidateCash();
+  return success();
+}
+
+/** Validation d'une session clôturée (admin) : verrouillée définitivement. */
+export async function validateCashSession(input: unknown): Promise<ActionResult> {
+  const LABELS = await getLabels();
+  const parsed = z.object({ sessionId: z.uuid(), notes: z.string().trim().max(1000).optional() }).safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid);
+  await requireRole("admin");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("validate_cash_session", {
+    p_session_id: parsed.data.sessionId,
+    p_notes: parsed.data.notes ?? "",
+  });
+  if (error) return failure(await describeCenterError(error));
+  revalidateCash();
+  return success();
+}
+
+/** Correction après clôture (admin) : opération du jour, liée à la session, motivée. */
+export async function recordCashCorrection(input: unknown): Promise<ActionResult> {
+  const LABELS = await getLabels();
+  const C = LABELS.cash;
+  const parsed = z
+    .object({
+      sessionId: z.uuid(),
+      amount: moneySchema(C.amountInvalid).refine((value) => value > 0, C.amountInvalid),
+      direction: z.enum(["in", "out"]),
+      reason: z.string().trim().min(1, C.movementReasonRequired).max(300),
+    })
+    .safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
+  await requireRole("admin");
+  const supabase = await createClient();
+  const { sessionId, amount, direction, reason } = parsed.data;
+  const { error } = await supabase.rpc("record_cash_correction", {
+    p_session_id: sessionId,
+    p_amount: direction === "out" ? -amount : amount,
+    p_reason: reason,
+  });
   if (error) return failure(await describeCenterError(error));
   revalidateCash();
   return success();

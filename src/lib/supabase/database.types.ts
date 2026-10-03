@@ -3369,6 +3369,30 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cash_month_overview: { Args: { p_month?: string }; Returns: Json }
+      cash_session_history: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          cash_collected: number
+          closed_at: string
+          closed_by_name: string
+          corrections: number
+          counted_cash: number
+          expected_cash: number
+          holder_name: string
+          id: string
+          is_shared: boolean
+          opened_at: string
+          opened_by_name: string
+          session_date: string
+          status: Database["public"]["Enums"]["cash_session_status"]
+          total_collected: number
+          transactions: number
+          validated_by_name: string
+          variance: number
+          variance_reason: string
+        }[]
+      }
       cash_session_summary: { Args: { p_session_id: string }; Returns: Json }
       center_branding_settings: {
         Args: { p_center_id: string }
@@ -3402,6 +3426,7 @@ export type Database = {
       close_cash_session: {
         Args: {
           p_counted: number
+          p_expected?: number
           p_notes?: string
           p_reason?: string
           p_session_id: string
@@ -3878,6 +3903,10 @@ export type Database = {
         Returns: undefined
       }
       prepare_billing_run: { Args: never; Returns: string }
+      record_cash_correction: {
+        Args: { p_amount: number; p_reason: string; p_session_id: string }
+        Returns: string
+      }
       record_cash_movement: {
         Args: {
           p_amount: number
@@ -4039,6 +4068,16 @@ export type Database = {
           teacher_name: string
         }[]
       }
+      stale_cash_sessions: {
+        Args: never
+        Returns: {
+          holder_name: string
+          id: string
+          is_shared: boolean
+          opened_by_name: string
+          session_date: string
+        }[]
+      }
       student_absence_follow_ups: {
         Args: { p_student_id: string }
         Returns: {
@@ -4079,6 +4118,10 @@ export type Database = {
           p_support_email: string
           p_support_phone: string
         }
+        Returns: undefined
+      }
+      validate_cash_session: {
+        Args: { p_notes?: string; p_session_id: string }
         Returns: undefined
       }
     }

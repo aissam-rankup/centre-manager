@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeftRight, CircleCheck, LoaderCircle, LockKeyhole, Unlock } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -82,6 +83,7 @@ export function CloseCashForm({ sessionId, expectedCash }: { sessionId: string; 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   const cents = counted.trim() === "" ? null : parseCents(counted);
   const variance = cents === null ? null : varianceCents(cents, expectedCash);
@@ -109,7 +111,6 @@ export function CloseCashForm({ sessionId, expectedCash }: { sessionId: string; 
           inputMode="decimal"
           value={counted}
           onChange={(event) => setCounted(event.target.value)}
-          aria-describedby={`ecart-${sessionId}`}
           className="numeric h-11 text-lg font-semibold"
         />
       </FormField>
@@ -181,9 +182,11 @@ export function CloseCashForm({ sessionId, expectedCash }: { sessionId: string; 
               disabled={pending}
               onClick={() =>
                 startTransition(async () => {
-                  const result = await closeCashSession({ sessionId, counted, reason, notes });
+                  const result = await closeCashSession({ sessionId, counted, reason, notes, expected: expectedCash });
                   if (!result.ok) {
                     setErrors({ server: result.fieldErrors?.counted ?? result.error });
+                    // Chiffres changés entre-temps : l'attendu et l'écart se mettent à jour.
+                    router.refresh();
                     return;
                   }
                   toast.success(C.closedToast);

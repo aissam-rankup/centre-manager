@@ -118,9 +118,9 @@ export type CashPage = {
   perAssistant: boolean;
   /** Admin : charges et paie en espèces. */
   finance: boolean;
-  /** Session ouverte aujourd'hui (la commune, ou la sienne). */
+  /** Session ouverte aujourd'hui selon le réglage (la commune, ou la sienne) : les encaissements y vont. */
   current: CashSessionSummary | null;
-  /** Sessions d'un jour précédent restées ouvertes. */
+  /** Autres sessions ouvertes à clôturer : d'un jour précédent, ou ouvertes avant un changement de réglage. */
   stale: CashSessionSummary[];
   /** Sessions clôturées aujourd'hui. */
   closedToday: CashSessionSummary[];
@@ -146,16 +146,20 @@ export async function getCashPage(): Promise<CashPage> {
   if (sessions.error) throw sessions.error;
 
   const perAssistant = center.data.cash_session_per_assistant;
-  // La caisse de l'utilisateur : la commune, ou la sienne (l'admin voit les autres dans l'historique).
-  const mine = sessions.data.filter((session) => (perAssistant ? session.assistant_id === profile.id : session.is_shared));
+  // Les caisses de l'utilisateur : la commune et la sienne, quel que soit le réglage actuel
+  // (l'admin voit celles des autres dans l'historique).
+  const mine = sessions.data.filter((session) => session.is_shared || session.assistant_id === profile.id);
   const summaries = await Promise.all(mine.map((session) => getCashSessionSummary(session.id)));
+  const isCurrent = (session: CashSessionSummary) =>
+    session.status === "open" && session.sessionDate === todayIso && (perAssistant ? !session.isShared : session.isShared);
+  const current = summaries.find(isCurrent) ?? null;
 
   return {
     support: false,
     perAssistant,
     finance: profile.role === "admin",
-    current: summaries.find((session) => session.status === "open" && session.sessionDate === todayIso) ?? null,
-    stale: summaries.filter((session) => session.status === "open" && session.sessionDate < todayIso),
+    current,
+    stale: summaries.filter((session) => session.status === "open" && session.id !== current?.id),
     closedToday: summaries.filter((session) => session.status !== "open" && session.sessionDate === todayIso).reverse(),
   };
 }
@@ -194,4 +198,145 @@ export async function getCashSettings(): Promise<CashSettings> {
     .single();
   if (error) throw error;
   return { perAssistant: data.cash_session_per_assistant, threshold: Number(data.cash_variance_alert_threshold) };
+}
+
+export type CashHistoryRow = {
+  id: string;
+  sessionDate: string;
+  status: "open" | "closed" | "validated";
+  isShared: boolean;
+  holderName: string | null;
+  openedByName: string | null;
+  closedByName: string | null;
+  validatedByName: string | null;
+  totalCollected: number;
+  cashCollected: number;
+  transactions: number;
+  expectedCash: number;
+  countedCash: number | null;
+  variance: number | null;
+  varianceReason: string | null;
+  corrections: number;
+};
+
+export type CashPerson = {
+  name: string | null;
+  sessions: number;
+  exact: number;
+  shortCount: number;
+  surplusCount: number;
+  shortage: number;
+  surplus: number;
+  net: number;
+};
+
+export type CashMonthOverview = {
+  monthStart: string;
+  sessions: number;
+  exact: number;
+  validated: number;
+  shortage: number;
+  surplus: number;
+  net: number;
+  collected: number;
+  staleOpen: number;
+  people: CashPerson[];
+};
+
+const overviewSchema = z.object({
+  month_start: z.string(),
+  sessions: z.number(),
+  exact: z.number(),
+  validated: z.number(),
+  shortage: amount,
+  surplus: amount,
+  net: amount,
+  collected: amount,
+  stale_open: z.number(),
+  people: z.array(
+    z.object({
+      name: z.string().nullable(),
+      sessions: z.number(),
+      exact: z.number(),
+      short_count: z.number(),
+      surplus_count: z.number(),
+      shortage: amount,
+      surplus: amount,
+      net: amount,
+    }),
+  ),
+});
+
+/** Historique et indicateurs d'un mois (admin, hors mode support). */
+export async function getCashHistory(month: { year: number; month: number }): Promise<{ rows: CashHistoryRow[]; overview: CashMonthOverview }> {
+  const supabase = await createClient();
+  const from = `${month.year}-${String(month.month).padStart(2, "0")}-01`;
+  const last = new Date(Date.UTC(month.year, month.month, 0)).getUTCDate();
+  const to = `${month.year}-${String(month.month).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
+  const [history, overview] = await Promise.all([
+    supabase.rpc("cash_session_history", { p_from: from, p_to: to }),
+    supabase.rpc("cash_month_overview", { p_month: from }),
+  ]);
+  if (history.error) throw history.error;
+  if (overview.error) throw overview.error;
+  const o = overviewSchema.parse(overview.data);
+  return {
+    rows: history.data.map((row) => ({
+      id: row.id,
+      sessionDate: row.session_date,
+      status: row.status,
+      isShared: row.is_shared,
+      holderName: row.holder_name ?? null,
+      openedByName: row.opened_by_name ?? null,
+      closedByName: row.closed_by_name ?? null,
+      validatedByName: row.validated_by_name ?? null,
+      totalCollected: Number(row.total_collected),
+      cashCollected: Number(row.cash_collected),
+      transactions: row.transactions,
+      expectedCash: Number(row.expected_cash),
+      countedCash: row.counted_cash === null ? null : Number(row.counted_cash),
+      variance: row.variance === null ? null : Number(row.variance),
+      varianceReason: row.variance_reason ?? null,
+      corrections: Number(row.corrections),
+    })),
+    overview: {
+      monthStart: o.month_start,
+      sessions: o.sessions,
+      exact: o.exact,
+      validated: o.validated,
+      shortage: o.shortage,
+      surplus: o.surplus,
+      net: o.net,
+      collected: o.collected,
+      staleOpen: o.stale_open,
+      people: o.people.map((person) => ({
+        name: person.name,
+        sessions: person.sessions,
+        exact: person.exact,
+        shortCount: person.short_count,
+        surplusCount: person.surplus_count,
+        shortage: person.shortage,
+        surplus: person.surplus,
+        net: person.net,
+      })),
+    },
+  };
+}
+
+export type StaleCashSession = { id: string; sessionDate: string; isShared: boolean; holderName: string | null; openedByName: string | null };
+
+/** Caisses d'un jour précédent restées ouvertes (admin, hors support ; vide sinon). */
+export async function getStaleCashSessions(): Promise<StaleCashSession[]> {
+  const profile = await requireStaff();
+  if (profile.support || profile.role !== "admin") return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("stale_cash_sessions");
+  if (error) throw error;
+  return data.map((row) => ({
+    id: row.id,
+    sessionDate: row.session_date,
+    isShared: row.is_shared,
+    holderName: row.holder_name ?? null,
+    openedByName: row.opened_by_name ?? null,
+  }));
 }
