@@ -70,7 +70,7 @@ const TEXTS = {
     open: (count: number) => (count === 0 ? "Notifications" : `Notifications — ${count} nouvelle(s)`),
     description: "Relances et notes des 14 derniers jours, alertes à traiter.",
     empty: "Aucune notification pour le moment.",
-    kinds: { followUp: "Relance", note: "Note de fiche", absenceAlert: "Alerte d'absences" },
+    kinds: { followUp: "Relance", note: "Note de fiche", absenceAlert: "Alerte d'absences", cashVariance: "Écart de caisse" },
     by: (name: string) => `par ${name}`,
     priority: "Prioritaire",
   },
@@ -218,6 +218,7 @@ const TEXTS = {
     expenses: "Charges",
     rooms: "Salles",
     reenrollment: "Réinscriptions",
+    cash: "Caisse",
     short: {
       dashboard: "Accueil",
       subjects: "Matières",
@@ -1457,6 +1458,89 @@ const TEXTS = {
       },
     },
   },
+  cash: {
+    description: "Encaissements du jour par mode de paiement, espèces attendues dans le tiroir, comptage et clôture.",
+    shared: "Caisse commune du centre",
+    personal: (name: string | null) => (name ? `Caisse de ${name}` : "Caisse personnelle"),
+    closedTitle: "Caisse fermée",
+    closedDescription:
+      "Elle s'ouvre au premier encaissement de la journée. Vous pouvez aussi l'ouvrir maintenant avec le fonds de caisse.",
+    openingFloat: "Fonds de caisse",
+    openingFloatHint: "Monnaie présente dans le tiroir en début de journée ; 0 si le centre n'en utilise pas.",
+    open: "Ouvrir la caisse",
+    opened: "Caisse ouverte",
+    amountInvalid: "Indiquez un montant positif, au centime près (ex. : 250 ou 250,50).",
+    sessionOf: (date: string) => `Caisse du ${date}`,
+    openedAt: (time: string, name: string | null, amount: string) =>
+      `Ouverte à ${time}${name ? ` par ${name}` : ""} · fonds ${amount}`,
+    closedAt: (date: string, name: string | null) => `Clôturée le ${date}${name ? ` par ${name}` : ""}`,
+    status: { open: "Ouverte", closed: "Clôturée", validated: "Validée" },
+    staleTitle: "Caisse d'un jour précédent encore ouverte",
+    staleDescription: "Comptez et clôturez-la : les encaissements d'aujourd'hui vont dans une nouvelle session.",
+    methods: { cash: "Espèces", bank_transfer: "Virement", card: "Carte", cheque: "Chèque" },
+    total: "Total encaissé",
+    transactions: (count: number) => (count > 1 ? `${count} opérations` : `${count} opération`),
+    listTitle: "Encaissements",
+    listEmpty: "Aucun encaissement dans cette session.",
+    cancellation: "Annulation",
+    receipt: (number: string) => `Reçu ${number}`,
+    movementsTitle: "Mouvements d'espèces",
+    movementsEmpty: "Aucun mouvement.",
+    movementKinds: {
+      refund: "Remboursement",
+      expense: "Charge payée en espèces",
+      teacher_pay: "Paie en espèces",
+      bank_deposit: "Dépôt en banque",
+      float_change: "Ajustement du fonds",
+      correction: "Correction",
+    },
+    hiddenReason: "Détail réservé à l'admin",
+    addMovement: "Mouvement d'espèces",
+    movementTitle: "Mouvement d'espèces",
+    movementDescription: "Sortie ou entrée d'espèces hors encaissement : elle compte dans les espèces attendues.",
+    movementKind: "Nature",
+    movementAmount: "Montant",
+    movementDirection: { in: "Ajout au tiroir", out: "Retrait du tiroir" },
+    movementReason: "Motif",
+    movementReasonPlaceholder: "Ex. : dépôt à la banque, remboursement de Salma Bennani",
+    movementSave: "Enregistrer le mouvement",
+    movementSaved: "Mouvement enregistré",
+    expected: {
+      title: "Espèces attendues",
+      formula: (float: string, cash: string, movements: string) =>
+        `Fonds ${float} + espèces encaissées ${cash} ${movements.startsWith("-") ? "−" : "+"} mouvements ${movements.replace(/^-/, "")}`,
+      note: "Virements, cartes et chèques se rapprochent à part : ils n'entrent pas dans l'écart.",
+    },
+    counted: "Montant compté",
+    countedHint: "Les espèces réellement présentes dans le tiroir.",
+    variance: {
+      none: "Caisse juste",
+      shortage: (amount: string) => `Manquant : ${amount}`,
+      surplus: (amount: string) => `Excédent : ${amount}`,
+    },
+    varianceReason: "Motif de l'écart",
+    varianceReasonPlaceholder: "Ex. : erreur de rendu de monnaie",
+    varianceReasonRequired: "Indiquez le motif de l'écart avant de clôturer.",
+    notes: "Notes (facultatif)",
+    close: "Clôturer la caisse",
+    closeConfirmTitle: "Clôturer la caisse ?",
+    closeConfirmDescription: "Une fois clôturée, la session ne change plus : une correction passera par une opération datée du jour.",
+    closeConfirm: "Clôturer",
+    closedToast: "Caisse clôturée",
+    countedCash: "Compté",
+    supportReadOnly: "Mode support : la caisse n'est pas consultable.",
+    settings: {
+      title: "Caisse",
+      description: "Clôture de caisse journalière : une session commune, ou une par personne à l'accueil.",
+      perAssistant: "Une caisse par personne à l'accueil",
+      perAssistantHint:
+        "Indispensable dès qu'il y a deux personnes à l'accueil : chaque écart est attribué à quelqu'un. Prend effet à la prochaine ouverture.",
+      threshold: "Seuil d'alerte (écart)",
+      thresholdHint: (amount: string) => `Un écart de plus de ${amount} (en manque ou en excédent) alerte l'admin.`,
+      thresholdInvalid: "Indiquez un montant positif, au centime près.",
+    },
+    notification: (amount: string, date: string) => `Écart de caisse de ${amount} le ${date}`,
+  },
   absenceAlerts: {
     title: "Absences à signaler",
     description: "Prévenez le responsable le jour même : le message est déjà rédigé, il suffit de l'envoyer.",
@@ -2410,7 +2494,8 @@ type CenterNamespaces =
   | "admin"
   | "teacher"
   | "assistant"
-  | "reenrollment";
+  | "reenrollment"
+  | "cash";
 
 export type AppLabels = typeof TEXTS;
 

@@ -3369,6 +3369,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cash_session_summary: { Args: { p_session_id: string }; Returns: Json }
       center_branding_settings: {
         Args: { p_center_id: string }
         Returns: {
@@ -3397,6 +3398,15 @@ export type Database = {
           slug: string
           white_label: boolean
         }[]
+      }
+      close_cash_session: {
+        Args: {
+          p_counted: number
+          p_notes?: string
+          p_reason?: string
+          p_session_id: string
+        }
+        Returns: Json
       }
       confirm_billing_run: { Args: { p_run_id: string }; Returns: Json }
       create_student: {
@@ -3472,6 +3482,7 @@ export type Database = {
           vocabulary: Json
         }[]
       }
+      open_cash_session: { Args: { p_opening_float?: number }; Returns: string }
       payment_reminder_queue: {
         Args: { p_run_id?: string; p_student_id?: string }
         Returns: {
@@ -3867,6 +3878,14 @@ export type Database = {
         Returns: undefined
       }
       prepare_billing_run: { Args: never; Returns: string }
+      record_cash_movement: {
+        Args: {
+          p_amount: number
+          p_kind: Database["public"]["Enums"]["cash_movement_kind"]
+          p_reason: string
+        }
+        Returns: string
+      }
       record_payment: {
         Args: {
           p_invoice_ids: string[]

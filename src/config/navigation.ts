@@ -1,4 +1,5 @@
 import {
+  Banknote,
   BarChart3,
   BookOpen,
   Building2,
@@ -38,6 +39,7 @@ export function navigationFor(
       { href: ROUTES.assistant.home, label: LABELS.nav.dashboard, shortLabel: LABELS.nav.short.dashboard, icon: LayoutDashboard },
       { href: ROUTES.assistant.students, label: LABELS.nav.students, icon: Users },
       { href: ROUTES.assistant.newStudent, label: LABELS.nav.newStudent, shortLabel: LABELS.nav.short.newStudent, icon: UserPlus },
+      { href: ROUTES.assistant.cash, label: LABELS.nav.cash, icon: Banknote },
       { href: ROUTES.assistant.absences, label: LABELS.nav.absences, icon: CalendarX },
       ...(options.reenrollment ? [{ href: ROUTES.assistant.reenrollment, label: LABELS.nav.reenrollment, icon: CalendarSync }] : []),
       { href: ROUTES.assistant.newTeacher, label: LABELS.nav.newTeacher, shortLabel: LABELS.nav.short.newTeacher, icon: GraduationCap },
@@ -58,6 +60,7 @@ export function navigationFor(
       { href: ROUTES.admin.reports, label: LABELS.nav.reports, icon: BarChart3 },
       { href: ROUTES.admin.payroll, label: LABELS.nav.payroll, icon: HandCoins },
       { href: ROUTES.admin.expenses, label: LABELS.nav.expenses, icon: ReceiptText },
+      { href: ROUTES.admin.cash, label: LABELS.nav.cash, icon: Banknote },
       ...(options.brandingEditable ? [{ href: ROUTES.admin.branding, label: LABELS.nav.branding, icon: Palette }] : []),
       { href: ROUTES.admin.settings, label: LABELS.nav.settings, icon: Settings },
     ],

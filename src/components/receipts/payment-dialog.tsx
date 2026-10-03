@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { recordPayment } from "@/lib/actions/receipts";
 import { ROUTES } from "@/lib/auth/routes";
 import { formatMAD } from "@/lib/format";
@@ -45,6 +46,8 @@ type PaymentDialogProps = {
   guardianPhone: string | null;
   invoices: PayableInvoice[];
   triggerLabel: string;
+  /** Aucune caisse ouverte aujourd'hui : le fonds de caisse est demandé (elle s'ouvre avec ce paiement). */
+  needsCashOpening?: boolean;
 };
 
 /** Ouverture depuis une ligne de facture (même dialogue, cette seule facture cochée). */
@@ -70,7 +73,14 @@ type Done = { receiptId: string; receiptNumber: string; amountPaid: number };
  * Dialogue d'encaissement, toujours monté dans la section Paiements : il
  * reste ouvert sur le reçu après l'actualisation de la page (factures réglées).
  */
-export function PaymentDialog({ studentId, studentName, guardianPhone, invoices, triggerLabel }: PaymentDialogProps) {
+export function PaymentDialog({
+  studentId,
+  studentName,
+  guardianPhone,
+  invoices,
+  triggerLabel,
+  needsCashOpening = false,
+}: PaymentDialogProps) {
   const LABELS = useLabels();
   const P = LABELS.payment;
   const D = LABELS.discounts.invoice;
@@ -80,6 +90,7 @@ export function PaymentDialog({ studentId, studentName, guardianPhone, invoices,
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(dueNow));
   const [method, setMethod] = useState<PaymentMethod>("cash");
+  const [openingFloat, setOpeningFloat] = useState("0");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
   const [pending, startTransition] = useTransition();
@@ -93,6 +104,7 @@ export function PaymentDialog({ studentId, studentName, guardianPhone, invoices,
     (selection: string[]) => {
       setSelected(new Set(selection));
       setMethod("cash");
+      setOpeningFloat("0");
       setError(null);
       setDone(null);
       setOpen(true);
@@ -133,7 +145,12 @@ export function PaymentDialog({ studentId, studentName, guardianPhone, invoices,
     }
     setError(null);
     startTransition(async () => {
-      const result = await recordPayment({ studentId, invoiceIds: chosen.map((invoice) => invoice.id), method });
+      const result = await recordPayment({
+        studentId,
+        invoiceIds: chosen.map((invoice) => invoice.id),
+        method,
+        openingFloat: needsCashOpening ? openingFloat : undefined,
+      });
       if (!result.ok) {
         setError(result.error);
         return;
@@ -267,6 +284,19 @@ export function PaymentDialog({ studentId, studentName, guardianPhone, invoices,
                 ))}
               </div>
             </fieldset>
+
+            {needsCashOpening ? (
+              <label className="flex flex-col gap-1.5 rounded-xl border border-dashed px-4 py-3">
+                <span className="font-medium">{LABELS.cash.openingFloat}</span>
+                <span className="text-caption text-muted-foreground">{LABELS.cash.openingFloatHint}</span>
+                <Input
+                  inputMode="decimal"
+                  value={openingFloat}
+                  onChange={(event) => setOpeningFloat(event.target.value)}
+                  className="numeric h-11 font-normal"
+                />
+              </label>
+            ) : null}
 
             <dl className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
               {totalDiscount > 0 ? (

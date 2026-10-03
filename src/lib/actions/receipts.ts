@@ -7,6 +7,7 @@ import { z } from "zod";
 import { type ActionResult, failure, success } from "@/lib/actions/result";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole, requireStaff } from "@/lib/auth/session";
+import { parseCents } from "@/lib/cash";
 import { getCenterReceiptSettings, getReceipt } from "@/lib/data/receipts";
 import { formatMAD } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
@@ -30,6 +31,8 @@ const paymentSchema = z.object({
   studentId: z.uuid(),
   invoiceIds: z.array(z.uuid()).min(1),
   method: z.enum(PAYMENT_METHODS),
+  /** Premier encaissement du jour : fonds de caisse saisi (la caisse s'ouvre avec). */
+  openingFloat: z.string().trim().optional(),
 });
 
 export async function recordPayment(
@@ -40,6 +43,13 @@ export async function recordPayment(
   if (!parsed.success) return failure(LABELS.payment.noneSelected);
   await requireStaff();
   const supabase = await createClient();
+
+  if (parsed.data.openingFloat !== undefined) {
+    const cents = parseCents(parsed.data.openingFloat === "" ? "0" : parsed.data.openingFloat);
+    if (cents === null) return failure(LABELS.cash.amountInvalid, { openingFloat: LABELS.cash.amountInvalid });
+    const { error: openError } = await supabase.rpc("open_cash_session", { p_opening_float: cents / 100 });
+    if (openError) return failure(await describeCenterError(openError));
+  }
 
   const { data, error } = await supabase.rpc("record_payment", {
       p_student_id: parsed.data.studentId,

@@ -25,6 +25,7 @@ export const ROUTES = {
     newTeacher: "/assistant/professeurs/nouveau",
     absences: "/assistant/absences",
     reenrollment: "/assistant/reinscriptions",
+    cash: "/assistant/caisse",
   },
   teacher: {
     home: "/professeur",
@@ -47,6 +48,7 @@ export const ROUTES = {
     expenses: "/admin/charges",
     rooms: "/admin/salles",
     reenrollment: "/admin/reinscriptions",
+    cash: "/admin/caisse",
   },
   /** Reçu imprimable (accueil et administration). */
   receipt: (id: string) => `/recus/${id}`,

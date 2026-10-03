@@ -18,6 +18,7 @@ import { ROUTES } from "@/lib/auth/routes";
 import type { AppLabels } from "@/lib/constants/labels";
 import { getLabels } from "@/lib/i18n/server";
 import type { StudentFile, StudentInvoice } from "@/lib/data/assistant";
+import { needsCashOpening } from "@/lib/data/cash";
 import { discountBadgeLabel, discountState } from "@/lib/discounts";
 import { formatDate, formatDateTime, formatMAD, toISODate, today } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
@@ -263,6 +264,7 @@ export async function PaymentsSection({ student }: { student: StudentFile }) {
   const LABELS = await getLabels();
   const L = LABELS.assistant.student;
   const payable = payableInvoices(student, LABELS);
+  const cashClosed = payable.length > 0 ? await needsCashOpening() : false;
   return (
     <SectionCard
       id="paiements"
@@ -274,6 +276,7 @@ export async function PaymentsSection({ student }: { student: StudentFile }) {
           guardianPhone={student.guardianPhone}
           invoices={payable}
           triggerLabel={LABELS.payment.trigger}
+          needsCashOpening={cashClosed}
         />
       }
     >

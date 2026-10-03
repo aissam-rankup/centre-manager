@@ -1,16 +1,22 @@
 import "server-only";
 
+import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
+import { formatDate, formatMAD } from "@/lib/format";
 import { getLabels } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
-export type NotificationKind = "followUp" | "note" | "absenceAlert";
+export type NotificationKind = "followUp" | "note" | "absenceAlert" | "cashVariance";
 
 export type NotificationItem = {
   id: string;
   kind: NotificationKind;
-  studentId: string;
+  /** Élève concerné (vide pour une alerte de caisse). */
+  studentId: string | null;
+  /** Titre : l'élève, ou la caisse. */
   studentName: string;
+  /** Lien propre (sinon la fiche de l'élève). */
+  href?: string;
   /** Détail : type et canal de relance, matière de l'alerte… */
   detail: string | null;
   /** Texte libre : note de relance ou note de fiche. */
@@ -35,7 +41,7 @@ export async function getNotifications(): Promise<NotificationItem[]> {
   const supabase = await createClient();
   const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-  const [followUpsResult, notesResult, alertsResult] = await Promise.all([
+  const [followUpsResult, notesResult, alertsResult, cashResult] = await Promise.all([
     supabase
       .from("follow_ups")
       .select("id, type, channel, note, created_at, student_id, students(full_name), profiles(full_name)")
@@ -50,10 +56,21 @@ export async function getNotifications(): Promise<NotificationItem[]> {
       .order("notes_updated_at", { ascending: false })
       .limit(LIMIT),
     supabase.from("open_absence_alerts").select("id, student_id, full_name, subject_name, absence_count, created_at").limit(LIMIT),
+    // Écarts de caisse au-delà du seuil, pas encore validés : pour l'admin (hors support).
+    profile.role === "admin" && !profile.support
+      ? supabase
+          .from("cash_sessions")
+          .select("id, session_date, variance, variance_reason, closed_at, closer:profiles!cash_sessions_closed_by_fkey(full_name), centers(cash_variance_alert_threshold)")
+          .eq("status", "closed")
+          .gte("closed_at", since)
+          .order("closed_at", { ascending: false })
+          .limit(LIMIT)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (followUpsResult.error) throw followUpsResult.error;
   if (notesResult.error) throw notesResult.error;
   if (alertsResult.error) throw alertsResult.error;
+  if (cashResult.error) throw cashResult.error;
 
   const items: NotificationItem[] = [
     ...followUpsResult.data.map((row) => ({
@@ -101,6 +118,26 @@ export async function getNotifications(): Promise<NotificationItem[]> {
           ]
         : [],
     ),
+    ...cashResult.data.flatMap((row) => {
+      const variance = Number(row.variance ?? 0);
+      const threshold = Number(row.centers?.cash_variance_alert_threshold ?? 0);
+      return row.closed_at && Math.abs(variance) > threshold
+        ? [
+            {
+              id: `caisse-${row.id}`,
+              kind: "cashVariance" as const,
+              studentId: null,
+              studentName: LABELS.nav.cash,
+              href: ROUTES.admin.cash,
+              detail: LABELS.cash.notification(formatMAD(variance), formatDate(row.session_date)),
+              body: row.variance_reason,
+              author: row.closer?.full_name ?? null,
+              at: row.closed_at,
+              priority: true,
+            },
+          ]
+        : [];
+    }),
   ];
 
   return items.sort((a, b) => Number(b.priority) - Number(a.priority) || b.at.localeCompare(a.at)).slice(0, LIMIT);

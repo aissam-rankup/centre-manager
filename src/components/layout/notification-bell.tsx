@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellRing, MessageSquareText, StickyNote } from "lucide-react";
+import { Banknote, Bell, BellRing, MessageSquareText, StickyNote } from "lucide-react";
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 
@@ -18,11 +18,13 @@ const KIND_ICON: Record<NotificationKind, typeof Bell> = {
   followUp: MessageSquareText,
   note: StickyNote,
   absenceAlert: BellRing,
+  cashVariance: Banknote,
 };
 const KIND_TONE: Record<NotificationKind, string> = {
   followUp: "bg-primary-soft text-primary",
   note: "bg-muted text-heading",
   absenceAlert: "bg-warning/15 text-warning-ink",
+  cashVariance: "bg-danger/10 text-danger-ink",
 };
 
 /** Dernière consultation (préférence locale, sans incidence si le stockage est indisponible). */
@@ -91,7 +93,7 @@ export function NotificationBell({ items, fileBase }: NotificationBellProps) {
               return (
                 <li key={item.id}>
                   <Link
-                    href={`${fileBase}/${item.studentId}`}
+                    href={item.href ?? `${fileBase}/${item.studentId ?? ""}`}
                     className="flex gap-3 px-4 py-3 transition-colors hover:bg-row-hover"
                   >
                     <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", KIND_TONE[item.kind])}>

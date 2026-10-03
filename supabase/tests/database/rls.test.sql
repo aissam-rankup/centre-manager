@@ -128,10 +128,10 @@ with u as (
   where student_id = 'f0000000-0000-4000-8000-0000000000a3' returning 1
 )
 select is(count(*)::int, 0, 'assistant : ne peut pas modifier un tarif') from u;
-select lives_ok(
+select throws_ok(
   $$update public.invoices set status = 'paid', amount_paid = 400, paid_at = now(), paid_by = 'a0000000-0000-4000-8000-000000000002'
     where id = '11000000-0000-4000-8000-0000000000a1'$$,
-  'assistant : peut marquer une facture comme payée');
+  '42501', null, 'assistant : un encaissement passe par l''écran de paiement (reçu et caisse), jamais en direct');
 select throws_ok(
   $$update public.invoices set amount_due = 1 where id = '11000000-0000-4000-8000-0000000000a1'$$,
   '42501', null, 'assistant : ne peut pas modifier le montant dû');
