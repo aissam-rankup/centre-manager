@@ -16,6 +16,7 @@ export type Database = {
           channel: Database["public"]["Enums"]["notification_channel"]
           guardian_phone_used: string | null
           id: string
+          is_demo: boolean
           is_repeat: boolean
           is_series: boolean
           message_body: string | null
@@ -31,6 +32,7 @@ export type Database = {
           channel: Database["public"]["Enums"]["notification_channel"]
           guardian_phone_used?: string | null
           id?: string
+          is_demo?: boolean
           is_repeat?: boolean
           is_series?: boolean
           message_body?: string | null
@@ -46,6 +48,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["notification_channel"]
           guardian_phone_used?: string | null
           id?: string
+          is_demo?: boolean
           is_repeat?: boolean
           is_series?: boolean
           message_body?: string | null
@@ -111,6 +114,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_demo: boolean
           payload: Json
           resolved: boolean
           student_id: string
@@ -119,6 +123,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_demo?: boolean
           payload?: Json
           resolved?: boolean
           student_id: string
@@ -127,6 +132,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_demo?: boolean
           payload?: Json
           resolved?: boolean
           student_id?: string
@@ -159,6 +165,7 @@ export type Database = {
       attendance: {
         Row: {
           id: string
+          is_demo: boolean
           marked_at: string
           note: string | null
           session_date: string
@@ -169,6 +176,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_demo?: boolean
           marked_at?: string
           note?: string | null
           session_date: string
@@ -179,6 +187,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_demo?: boolean
           marked_at?: string
           note?: string | null
           session_date?: string
@@ -253,6 +262,7 @@ export type Database = {
           enrollment_id: string | null
           id: string
           invoice_id: string | null
+          is_demo: boolean
           pack_enrollment_id: string | null
           period_end: string
           period_start: string
@@ -272,6 +282,7 @@ export type Database = {
           enrollment_id?: string | null
           id?: string
           invoice_id?: string | null
+          is_demo?: boolean
           pack_enrollment_id?: string | null
           period_end: string
           period_start: string
@@ -291,6 +302,7 @@ export type Database = {
           enrollment_id?: string | null
           id?: string
           invoice_id?: string | null
+          is_demo?: boolean
           pack_enrollment_id?: string | null
           period_end?: string
           period_start?: string
@@ -396,6 +408,7 @@ export type Database = {
           generated_at: string
           generated_by: string | null
           id: string
+          is_demo: boolean
           notes: string | null
           period_month: number
           period_year: number
@@ -415,6 +428,7 @@ export type Database = {
           generated_at?: string
           generated_by?: string | null
           id?: string
+          is_demo?: boolean
           notes?: string | null
           period_month: number
           period_year: number
@@ -434,6 +448,7 @@ export type Database = {
           generated_at?: string
           generated_by?: string | null
           id?: string
+          is_demo?: boolean
           notes?: string | null
           period_month?: number
           period_year?: number
@@ -483,6 +498,7 @@ export type Database = {
           created_by: string | null
           expense_id: string | null
           id: string
+          is_demo: boolean
           kind: Database["public"]["Enums"]["cash_movement_kind"]
           payroll_line_id: string | null
           reason: string
@@ -497,6 +513,7 @@ export type Database = {
           created_by?: string | null
           expense_id?: string | null
           id?: string
+          is_demo?: boolean
           kind: Database["public"]["Enums"]["cash_movement_kind"]
           payroll_line_id?: string | null
           reason: string
@@ -511,6 +528,7 @@ export type Database = {
           created_by?: string | null
           expense_id?: string | null
           id?: string
+          is_demo?: boolean
           kind?: Database["public"]["Enums"]["cash_movement_kind"]
           payroll_line_id?: string | null
           reason?: string
@@ -571,6 +589,7 @@ export type Database = {
           expected_by_method: Json | null
           expected_cash: number | null
           id: string
+          is_demo: boolean
           is_shared: boolean
           notes: string | null
           opened_at: string
@@ -593,6 +612,7 @@ export type Database = {
           expected_by_method?: Json | null
           expected_cash?: number | null
           id?: string
+          is_demo?: boolean
           is_shared?: boolean
           notes?: string | null
           opened_at?: string
@@ -615,6 +635,7 @@ export type Database = {
           expected_by_method?: Json | null
           expected_cash?: number | null
           id?: string
+          is_demo?: boolean
           is_shared?: boolean
           notes?: string | null
           opened_at?: string
@@ -675,6 +696,7 @@ export type Database = {
           domain_verified: boolean
           email_sender_name: string | null
           favicon_url: string | null
+          is_demo: boolean
           login_background_url: string | null
           logo_url: string | null
           primary_color: string | null
@@ -691,6 +713,7 @@ export type Database = {
           domain_verified?: boolean
           email_sender_name?: string | null
           favicon_url?: string | null
+          is_demo?: boolean
           login_background_url?: string | null
           logo_url?: string | null
           primary_color?: string | null
@@ -707,6 +730,7 @@ export type Database = {
           domain_verified?: boolean
           email_sender_name?: string | null
           favicon_url?: string | null
+          is_demo?: boolean
           login_background_url?: string | null
           logo_url?: string | null
           primary_color?: string | null
@@ -733,6 +757,7 @@ export type Database = {
           created_at: string
           entity_id: string | null
           id: number
+          is_demo: boolean
           payload: Json
         }
         Insert: {
@@ -742,6 +767,7 @@ export type Database = {
           created_at?: string
           entity_id?: string | null
           id?: never
+          is_demo?: boolean
           payload?: Json
         }
         Update: {
@@ -751,6 +777,7 @@ export type Database = {
           created_at?: string
           entity_id?: string | null
           id?: never
+          is_demo?: boolean
           payload?: Json
         }
         Relationships: [
@@ -774,6 +801,7 @@ export type Database = {
         Row: {
           code: string
           is_custom: boolean
+          is_demo: boolean
           label: string
           sort_order: number
           terms: Json
@@ -781,6 +809,7 @@ export type Database = {
         Insert: {
           code: string
           is_custom?: boolean
+          is_demo?: boolean
           label: string
           sort_order?: number
           terms: Json
@@ -788,6 +817,7 @@ export type Database = {
         Update: {
           code?: string
           is_custom?: boolean
+          is_demo?: boolean
           label?: string
           sort_order?: number
           terms?: Json
@@ -812,6 +842,7 @@ export type Database = {
           custom_terms: Json
           grace_days: number
           id: string
+          is_demo: boolean
           name: string
           notes: string | null
           owner_contact_email: string | null
@@ -848,6 +879,7 @@ export type Database = {
           custom_terms?: Json
           grace_days?: number
           id?: string
+          is_demo?: boolean
           name: string
           notes?: string | null
           owner_contact_email?: string | null
@@ -884,6 +916,7 @@ export type Database = {
           custom_terms?: Json
           grace_days?: number
           id?: string
+          is_demo?: boolean
           name?: string
           notes?: string | null
           owner_contact_email?: string | null
@@ -920,6 +953,7 @@ export type Database = {
           granted_by: string | null
           id: string
           is_active: boolean
+          is_demo: boolean
           pack_id: string | null
           reason: Database["public"]["Enums"]["discount_reason"]
           reason_note: string | null
@@ -938,6 +972,7 @@ export type Database = {
           granted_by?: string | null
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           pack_id?: string | null
           reason: Database["public"]["Enums"]["discount_reason"]
           reason_note?: string | null
@@ -956,6 +991,7 @@ export type Database = {
           granted_by?: string | null
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           pack_id?: string | null
           reason?: Database["public"]["Enums"]["discount_reason"]
           reason_note?: string | null
@@ -1032,6 +1068,7 @@ export type Database = {
           active: boolean
           billing_day: number | null
           id: string
+          is_demo: boolean
           pack_enrollment_id: string | null
           price_agreed: number
           start_date: string
@@ -1042,6 +1079,7 @@ export type Database = {
           active?: boolean
           billing_day?: number | null
           id?: string
+          is_demo?: boolean
           pack_enrollment_id?: string | null
           price_agreed: number
           start_date?: string
@@ -1052,6 +1090,7 @@ export type Database = {
           active?: boolean
           billing_day?: number | null
           id?: string
+          is_demo?: boolean
           pack_enrollment_id?: string | null
           price_agreed?: number
           start_date?: string
@@ -1117,6 +1156,7 @@ export type Database = {
           icon: string
           id: string
           is_active: boolean
+          is_demo: boolean
           is_recurring: boolean
           name: string
           sort_order: number
@@ -1127,6 +1167,7 @@ export type Database = {
           icon?: string
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           is_recurring?: boolean
           name: string
           sort_order?: number
@@ -1137,6 +1178,7 @@ export type Database = {
           icon?: string
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           is_recurring?: boolean
           name?: string
           sort_order?: number
@@ -1161,6 +1203,7 @@ export type Database = {
           deleted_by: string | null
           expense_date: string
           id: string
+          is_demo: boolean
           is_recurring: boolean
           label: string
           notes: string | null
@@ -1183,6 +1226,7 @@ export type Database = {
           deleted_by?: string | null
           expense_date?: string
           id?: string
+          is_demo?: boolean
           is_recurring?: boolean
           label: string
           notes?: string | null
@@ -1205,6 +1249,7 @@ export type Database = {
           deleted_by?: string | null
           expense_date?: string
           id?: string
+          is_demo?: boolean
           is_recurring?: boolean
           label?: string
           notes?: string | null
@@ -1263,6 +1308,7 @@ export type Database = {
           created_by: string | null
           id: string
           invoice_id: string | null
+          is_demo: boolean
           note: string | null
           student_id: string
           type: Database["public"]["Enums"]["follow_up_type"]
@@ -1273,6 +1319,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           invoice_id?: string | null
+          is_demo?: boolean
           note?: string | null
           student_id: string
           type: Database["public"]["Enums"]["follow_up_type"]
@@ -1283,6 +1330,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           invoice_id?: string | null
+          is_demo?: boolean
           note?: string | null
           student_id?: string
           type?: Database["public"]["Enums"]["follow_up_type"]
@@ -1345,6 +1393,7 @@ export type Database = {
           due_date: string
           enrollment_id: string | null
           id: string
+          is_demo: boolean
           overdue_from: string | null
           pack_enrollment_id: string | null
           paid_at: string | null
@@ -1368,6 +1417,7 @@ export type Database = {
           due_date: string
           enrollment_id?: string | null
           id?: string
+          is_demo?: boolean
           overdue_from?: string | null
           pack_enrollment_id?: string | null
           paid_at?: string | null
@@ -1391,6 +1441,7 @@ export type Database = {
           due_date?: string
           enrollment_id?: string | null
           id?: string
+          is_demo?: boolean
           overdue_from?: string | null
           pack_enrollment_id?: string | null
           paid_at?: string | null
@@ -1472,18 +1523,21 @@ export type Database = {
         Row: {
           center_id: string
           id: string
+          is_demo: boolean
           name: string
           sort_order: number
         }
         Insert: {
           center_id: string
           id?: string
+          is_demo?: boolean
           name: string
           sort_order?: number
         }
         Update: {
           center_id?: string
           id?: string
+          is_demo?: boolean
           name?: string
           sort_order?: number
         }
@@ -1503,6 +1557,7 @@ export type Database = {
           billing_day: number | null
           created_at: string
           id: string
+          is_demo: boolean
           pack_id: string
           price_agreed: number
           start_date: string
@@ -1513,6 +1568,7 @@ export type Database = {
           billing_day?: number | null
           created_at?: string
           id?: string
+          is_demo?: boolean
           pack_id: string
           price_agreed: number
           start_date?: string
@@ -1523,6 +1579,7 @@ export type Database = {
           billing_day?: number | null
           created_at?: string
           id?: string
+          is_demo?: boolean
           pack_id?: string
           price_agreed?: number
           start_date?: string
@@ -1561,14 +1618,17 @@ export type Database = {
       }
       pack_subjects: {
         Row: {
+          is_demo: boolean
           pack_id: string
           subject_id: string
         }
         Insert: {
+          is_demo?: boolean
           pack_id: string
           subject_id: string
         }
         Update: {
+          is_demo?: boolean
           pack_id?: string
           subject_id?: string
         }
@@ -1609,6 +1669,7 @@ export type Database = {
           center_id: string
           created_at: string
           id: string
+          is_demo: boolean
           level_id: string
           monthly_price: number
           name: string
@@ -1618,6 +1679,7 @@ export type Database = {
           center_id: string
           created_at?: string
           id?: string
+          is_demo?: boolean
           level_id: string
           monthly_price: number
           name: string
@@ -1627,6 +1689,7 @@ export type Database = {
           center_id?: string
           created_at?: string
           id?: string
+          is_demo?: boolean
           level_id?: string
           monthly_price?: number
           name?: string
@@ -1658,6 +1721,7 @@ export type Database = {
           guardian_phone_used: string | null
           id: string
           invoice_id: string
+          is_demo: boolean
           is_repeat: boolean
           message_body: string | null
           message_id: string
@@ -1677,6 +1741,7 @@ export type Database = {
           guardian_phone_used?: string | null
           id?: string
           invoice_id: string
+          is_demo?: boolean
           is_repeat?: boolean
           message_body?: string | null
           message_id: string
@@ -1696,6 +1761,7 @@ export type Database = {
           guardian_phone_used?: string | null
           id?: string
           invoice_id?: string
+          is_demo?: boolean
           is_repeat?: boolean
           message_body?: string | null
           message_id?: string
@@ -1774,6 +1840,7 @@ export type Database = {
           detail: Json
           final_amount: number | null
           id: string
+          is_demo: boolean
           paid_at: string | null
           paid_by: string | null
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
@@ -1791,6 +1858,7 @@ export type Database = {
           detail?: Json
           final_amount?: number | null
           id?: string
+          is_demo?: boolean
           paid_at?: string | null
           paid_by?: string | null
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
@@ -1808,6 +1876,7 @@ export type Database = {
           detail?: Json
           final_amount?: number | null
           id?: string
+          is_demo?: boolean
           paid_at?: string | null
           paid_by?: string | null
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
@@ -1846,6 +1915,7 @@ export type Database = {
           center_id: string
           created_at: string
           id: string
+          is_demo: boolean
           month: number
           status: Database["public"]["Enums"]["payroll_status"]
           total_amount: number
@@ -1857,6 +1927,7 @@ export type Database = {
           center_id: string
           created_at?: string
           id?: string
+          is_demo?: boolean
           month: number
           status?: Database["public"]["Enums"]["payroll_status"]
           total_amount?: number
@@ -1868,6 +1939,7 @@ export type Database = {
           center_id?: string
           created_at?: string
           id?: string
+          is_demo?: boolean
           month?: number
           status?: Database["public"]["Enums"]["payroll_status"]
           total_amount?: number
@@ -1898,6 +1970,7 @@ export type Database = {
           actor_id: string | null
           center_id: string | null
           id: number
+          is_demo: boolean
           occurred_at: string
           payload: Json
         }
@@ -1906,6 +1979,7 @@ export type Database = {
           actor_id?: string | null
           center_id?: string | null
           id?: never
+          is_demo?: boolean
           occurred_at?: string
           payload?: Json
         }
@@ -1914,6 +1988,7 @@ export type Database = {
           actor_id?: string | null
           center_id?: string | null
           id?: never
+          is_demo?: boolean
           occurred_at?: string
           payload?: Json
         }
@@ -1932,6 +2007,7 @@ export type Database = {
           center_id: string | null
           created_at: string
           id: number
+          is_demo: boolean
           kind: string
           payload: Json
           recipient: string | null
@@ -1942,6 +2018,7 @@ export type Database = {
           center_id?: string | null
           created_at?: string
           id?: never
+          is_demo?: boolean
           kind: string
           payload?: Json
           recipient?: string | null
@@ -1952,6 +2029,7 @@ export type Database = {
           center_id?: string | null
           created_at?: string
           id?: never
+          is_demo?: boolean
           kind?: string
           payload?: Json
           recipient?: string | null
@@ -1971,6 +2049,7 @@ export type Database = {
       platform_settings: {
         Row: {
           id: number
+          is_demo: boolean
           support_email: string | null
           support_name: string | null
           support_phone: string | null
@@ -1978,6 +2057,7 @@ export type Database = {
         }
         Insert: {
           id?: number
+          is_demo?: boolean
           support_email?: string | null
           support_name?: string | null
           support_phone?: string | null
@@ -1985,6 +2065,7 @@ export type Database = {
         }
         Update: {
           id?: number
+          is_demo?: boolean
           support_email?: string | null
           support_name?: string | null
           support_phone?: string | null
@@ -1999,6 +2080,7 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          is_demo: boolean
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
           phone: string | null
           photo_url: string | null
@@ -2010,6 +2092,7 @@ export type Database = {
           created_at?: string
           full_name: string
           id: string
+          is_demo?: boolean
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
           phone?: string | null
           photo_url?: string | null
@@ -2021,6 +2104,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          is_demo?: boolean
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
           phone?: string | null
           photo_url?: string | null
@@ -2039,16 +2123,19 @@ export type Database = {
       receipt_counters: {
         Row: {
           center_id: string
+          is_demo: boolean
           last_number: number
           year: number
         }
         Insert: {
           center_id: string
+          is_demo?: boolean
           last_number: number
           year: number
         }
         Update: {
           center_id?: string
+          is_demo?: boolean
           last_number?: number
           year?: number
         }
@@ -2074,6 +2161,7 @@ export type Database = {
           center_snapshot: Json
           discount_applied: number
           id: string
+          is_demo: boolean
           issued_at: string
           issued_by: string | null
           issued_by_name: string | null
@@ -2103,6 +2191,7 @@ export type Database = {
           center_snapshot: Json
           discount_applied?: number
           id?: string
+          is_demo?: boolean
           issued_at?: string
           issued_by?: string | null
           issued_by_name?: string | null
@@ -2132,6 +2221,7 @@ export type Database = {
           center_snapshot?: Json
           discount_applied?: number
           id?: string
+          is_demo?: boolean
           issued_at?: string
           issued_by?: string | null
           issued_by_name?: string | null
@@ -2211,6 +2301,7 @@ export type Database = {
           decided_by: string | null
           id: string
           intent: Database["public"]["Enums"]["reenrollment_intent"]
+          is_demo: boolean
           period_month: number
           period_year: number
           reason: string | null
@@ -2227,6 +2318,7 @@ export type Database = {
           decided_by?: string | null
           id?: string
           intent?: Database["public"]["Enums"]["reenrollment_intent"]
+          is_demo?: boolean
           period_month: number
           period_year: number
           reason?: string | null
@@ -2243,6 +2335,7 @@ export type Database = {
           decided_by?: string | null
           id?: string
           intent?: Database["public"]["Enums"]["reenrollment_intent"]
+          is_demo?: boolean
           period_month?: number
           period_year?: number
           reason?: string | null
@@ -2298,6 +2391,7 @@ export type Database = {
           floor: string | null
           id: string
           is_active: boolean
+          is_demo: boolean
           name: string
           notes: string | null
         }
@@ -2309,6 +2403,7 @@ export type Database = {
           floor?: string | null
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           name: string
           notes?: string | null
         }
@@ -2320,6 +2415,7 @@ export type Database = {
           floor?: string | null
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           name?: string
           notes?: string | null
         }
@@ -2342,6 +2438,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          is_demo: boolean
           resolved_how: string | null
         }
         Insert: {
@@ -2352,6 +2449,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_demo?: boolean
           resolved_how?: string | null
         }
         Update: {
@@ -2362,6 +2460,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_demo?: boolean
           resolved_how?: string | null
         }
         Relationships: [
@@ -2394,6 +2493,7 @@ export type Database = {
           day_of_week: number
           end_time: string
           id: string
+          is_demo: boolean
           level_id: string
           room: string
           room_id: string | null
@@ -2406,6 +2506,7 @@ export type Database = {
           day_of_week: number
           end_time: string
           id?: string
+          is_demo?: boolean
           level_id: string
           room: string
           room_id?: string | null
@@ -2418,6 +2519,7 @@ export type Database = {
           day_of_week?: number
           end_time?: string
           id?: string
+          is_demo?: boolean
           level_id?: string
           room?: string
           room_id?: string | null
@@ -2479,6 +2581,7 @@ export type Database = {
           guardian_name: string | null
           guardian_phone: string | null
           id: string
+          is_demo: boolean
           level_id: string
           notes: string | null
           notes_updated_at: string | null
@@ -2494,6 +2597,7 @@ export type Database = {
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
+          is_demo?: boolean
           level_id: string
           notes?: string | null
           notes_updated_at?: string | null
@@ -2509,6 +2613,7 @@ export type Database = {
           guardian_name?: string | null
           guardian_phone?: string | null
           id?: string
+          is_demo?: boolean
           level_id?: string
           notes?: string | null
           notes_updated_at?: string | null
@@ -2552,6 +2657,7 @@ export type Database = {
           center_id: string
           created_at: string
           id: string
+          is_demo: boolean
           level_id: string
           monthly_price: number
           name: string
@@ -2560,6 +2666,7 @@ export type Database = {
           center_id: string
           created_at?: string
           id?: string
+          is_demo?: boolean
           level_id: string
           monthly_price: number
           name: string
@@ -2568,6 +2675,7 @@ export type Database = {
           center_id?: string
           created_at?: string
           id?: string
+          is_demo?: boolean
           level_id?: string
           monthly_price?: number
           name?: string
@@ -2595,6 +2703,7 @@ export type Database = {
           center_id: string
           created_at: string
           id: string
+          is_demo: boolean
           method: Database["public"]["Enums"]["subscription_payment_method"]
           paid_at: string
           period_covered_end: string | null
@@ -2607,6 +2716,7 @@ export type Database = {
           center_id: string
           created_at?: string
           id?: string
+          is_demo?: boolean
           method: Database["public"]["Enums"]["subscription_payment_method"]
           paid_at?: string
           period_covered_end?: string | null
@@ -2619,6 +2729,7 @@ export type Database = {
           center_id?: string
           created_at?: string
           id?: string
+          is_demo?: boolean
           method?: Database["public"]["Enums"]["subscription_payment_method"]
           paid_at?: string
           period_covered_end?: string | null
@@ -2653,6 +2764,7 @@ export type Database = {
           current_period_end: string | null
           current_period_start: string | null
           id: string
+          is_demo: boolean
           plan: Database["public"]["Enums"]["subscription_plan"]
           started_at: string
           status: Database["public"]["Enums"]["center_status"]
@@ -2666,6 +2778,7 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
+          is_demo?: boolean
           plan?: Database["public"]["Enums"]["subscription_plan"]
           started_at?: string
           status?: Database["public"]["Enums"]["center_status"]
@@ -2679,6 +2792,7 @@ export type Database = {
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
+          is_demo?: boolean
           plan?: Database["public"]["Enums"]["subscription_plan"]
           started_at?: string
           status?: Database["public"]["Enums"]["center_status"]
@@ -2700,6 +2814,7 @@ export type Database = {
           ended_at: string | null
           expires_at: string
           id: string
+          is_demo: boolean
           reason: string
           started_at: string
         }
@@ -2709,6 +2824,7 @@ export type Database = {
           ended_at?: string | null
           expires_at: string
           id?: string
+          is_demo?: boolean
           reason: string
           started_at?: string
         }
@@ -2718,6 +2834,7 @@ export type Database = {
           ended_at?: string | null
           expires_at?: string
           id?: string
+          is_demo?: boolean
           reason?: string
           started_at?: string
         }
@@ -2741,18 +2858,21 @@ export type Database = {
       teacher_assignments: {
         Row: {
           id: string
+          is_demo: boolean
           level_id: string
           subject_id: string
           teacher_id: string
         }
         Insert: {
           id?: string
+          is_demo?: boolean
           level_id: string
           subject_id: string
           teacher_id: string
         }
         Update: {
           id?: string
+          is_demo?: boolean
           level_id?: string
           subject_id?: string
           teacher_id?: string
@@ -2789,6 +2909,7 @@ export type Database = {
           effective_from: string
           effective_to: string | null
           id: string
+          is_demo: boolean
           level_id: string
           rate_percent: number
           subject_id: string
@@ -2801,6 +2922,7 @@ export type Database = {
           effective_from: string
           effective_to?: string | null
           id?: string
+          is_demo?: boolean
           level_id: string
           rate_percent: number
           subject_id: string
@@ -2813,6 +2935,7 @@ export type Database = {
           effective_from?: string
           effective_to?: string | null
           id?: string
+          is_demo?: boolean
           level_id?: string
           rate_percent?: number
           subject_id?: string
@@ -2864,6 +2987,7 @@ export type Database = {
           effective_from: string
           effective_to: string | null
           id: string
+          is_demo: boolean
           monthly_amount: number
           teacher_id: string
         }
@@ -2874,6 +2998,7 @@ export type Database = {
           effective_from: string
           effective_to?: string | null
           id?: string
+          is_demo?: boolean
           monthly_amount: number
           teacher_id: string
         }
@@ -2884,6 +3009,7 @@ export type Database = {
           effective_from?: string
           effective_to?: string | null
           id?: string
+          is_demo?: boolean
           monthly_amount?: number
           teacher_id?: string
         }
@@ -3347,6 +3473,7 @@ export type Database = {
           center_snapshot: Json
           discount_applied: number
           id: string
+          is_demo: boolean
           issued_at: string
           issued_by: string | null
           issued_by_name: string | null
@@ -3468,6 +3595,7 @@ export type Database = {
           due_date: string
           enrollment_id: string | null
           id: string
+          is_demo: boolean
           overdue_from: string | null
           pack_enrollment_id: string | null
           paid_at: string | null
@@ -3551,6 +3679,7 @@ export type Database = {
           detail: Json
           final_amount: number | null
           id: string
+          is_demo: boolean
           paid_at: string | null
           paid_by: string | null
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
@@ -3573,6 +3702,7 @@ export type Database = {
           center_id: string
           created_at: string
           id: string
+          is_demo: boolean
           month: number
           status: Database["public"]["Enums"]["payroll_status"]
           total_amount: number
@@ -3597,6 +3727,7 @@ export type Database = {
           detail: Json
           final_amount: number | null
           id: string
+          is_demo: boolean
           paid_at: string | null
           paid_by: string | null
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
@@ -3619,6 +3750,7 @@ export type Database = {
           center_id: string
           created_at: string
           id: string
+          is_demo: boolean
           month: number
           status: Database["public"]["Enums"]["payroll_status"]
           total_amount: number
@@ -3639,6 +3771,7 @@ export type Database = {
           center_id: string
           created_at: string
           id: string
+          is_demo: boolean
           month: number
           status: Database["public"]["Enums"]["payroll_status"]
           total_amount: number
@@ -3937,6 +4070,7 @@ export type Database = {
           center_snapshot: Json
           discount_applied: number
           id: string
+          is_demo: boolean
           issued_at: string
           issued_by: string | null
           issued_by_name: string | null
@@ -4005,6 +4139,7 @@ export type Database = {
           effective_from: string
           effective_to: string | null
           id: string
+          is_demo: boolean
           level_id: string
           rate_percent: number
           subject_id: string
@@ -4040,6 +4175,7 @@ export type Database = {
           effective_from: string
           effective_to: string | null
           id: string
+          is_demo: boolean
           monthly_amount: number
           teacher_id: string
         }
