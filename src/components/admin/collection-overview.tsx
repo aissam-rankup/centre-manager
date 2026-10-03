@@ -23,7 +23,7 @@ export function CollectionOverviewSection({ data, LABELS }: { data: CollectionOv
       <SectionHeading id="recouvrement" title={C.title} />
       <div className="flex flex-col gap-5 rounded-xl bg-card p-5 shadow-card md:p-6">
         <p className="text-caption text-muted-foreground">{C.description(formatMonth(data.monthStart))}</p>
-        <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <Kpi label={C.expected} value={formatMAD(data.expected)} detail={C.expectedHint(data.invoices)} />
           <Kpi label={C.collected} value={formatMAD(data.collected)} detail={C.collectedHint(data.paidInvoices, data.invoices)} />
           <Kpi label={C.remaining} value={formatMAD(remaining)} />
@@ -53,7 +53,7 @@ function Kpi({ label, value, detail, emphasis = false }: { label: string; value:
   return (
     <div className={cn("flex min-w-0 flex-col gap-1 rounded-lg px-3 py-2", emphasis ? "bg-primary-soft" : "bg-muted")}>
       <dt className="text-caption text-muted-foreground">{label}</dt>
-      <dd className="numeric text-lg leading-7 font-semibold text-heading [&_span]:whitespace-normal">{value}</dd>
+      <dd className="numeric text-lg leading-7 font-semibold text-heading">{value}</dd>
       {detail ? <dd className="text-caption text-muted-foreground">{detail}</dd> : null}
     </div>
   );

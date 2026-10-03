@@ -7,7 +7,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(15);
+select plan(17);
 
 insert into auth.users (id, email) values
   ('a6e00000-0000-4000-8000-000000000001', 'admin-q-p85@test.local'),
@@ -99,6 +99,10 @@ select is((select count(*)::int from jsonb_array_elements(public.admin_collectio
   'courbe : rien après aujourd''hui');
 select is((select (public.admin_collection_overview() -> 'days' -> 0 ->> 'previous')::numeric), 400.00::numeric,
   'courbe du mois précédent : 400 encaissés dès le 1er');
+select is((select (d.day ->> 'previous')::numeric
+           from jsonb_array_elements(public.admin_collection_overview() -> 'days') with ordinality as d(day, n)
+           order by d.n desc limit 1), 500.00::numeric,
+  'courbe du mois précédent bornée à sa longueur : le dernier jour reprend son total');
 
 set local request.jwt.claims = '{"sub":"a6e00000-0000-4000-8000-000000000004","role":"authenticated"}';
 select is((select (public.admin_collection_overview() ->> 'expected')::numeric), 999.00::numeric,
@@ -133,6 +137,8 @@ select results_eq(
   $$select o ->> 'status', (o ->> 'pending')::int from public.reenrollment_overview() as o$$,
   $$values ('draft', 1)$$,
   'brouillon seul : indicateur du brouillon, élève sans décision');
+select is((select jsonb_array_length(public.reenrollment_overview() -> 'subjects')), 0,
+  'par matière : un élève sans décision n''est compté ni reconduit ni retiré');
 set local request.jwt.claims = '{"sub":"a6e00000-0000-4000-8000-000000000001","role":"authenticated"}';
 select public.set_reenrollment_intent(current_setting('test.run')::uuid, '56e00000-0000-4000-8000-000000000001', 'confirmed',
   array['66e00000-0000-4000-8000-000000000012']::uuid[]);

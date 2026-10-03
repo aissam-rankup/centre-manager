@@ -116,6 +116,8 @@ export async function getReenrollmentOverview(): Promise<ReenrollmentOverview | 
 /** Campagne du mois en cours restée en brouillon : ses factures attendent la confirmation. */
 export async function getLateDraft(): Promise<{ id: string; year: number; month: number } | null> {
   const profile = await requireRole("admin");
+  // Mode support : lecture seule, rien à confirmer.
+  if (profile.support) return null;
   const supabase = await createClient();
   const [year = 0, month = 1] = toISODate(today()).split("-").map(Number);
   const { data, error } = await supabase

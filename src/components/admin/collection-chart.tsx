@@ -33,11 +33,14 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
   const C = LABELS.financeDashboard.collection.chart;
   const [showTable, setShowTable] = useState(false);
   const elapsed = days.filter((day) => day.current !== null);
+  const today = elapsed.at(-1)?.day;
+  // Mois précédent sans facture : rien à comparer, la courbe n'est pas tracée.
+  const series = SERIES.filter((item) => item.key === "current" || days.some((day) => day.previous !== null));
 
   return (
     <div className="flex flex-col gap-4">
       <ul className="flex flex-wrap gap-x-5 gap-y-2" aria-label={C.caption}>
-        {SERIES.map((series) => (
+        {series.map((series) => (
           <li key={series.key} className="flex items-center gap-2 text-caption text-foreground">
             <svg width="20" height="8" aria-hidden>
               <line x1="0" y1="4" x2="20" y2="4" stroke={series.color} strokeWidth="2" strokeDasharray={series.dash} />
@@ -48,7 +51,7 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
         {expected > 0 ? (
           <li className="flex items-center gap-2 text-caption text-foreground">
             <svg width="20" height="8" aria-hidden>
-              <line x1="0" y1="4" x2="20" y2="4" stroke="var(--border)" strokeWidth="2" />
+              <line x1="0" y1="4" x2="20" y2="4" stroke="var(--heading)" strokeWidth="1.5" strokeDasharray="2 3" />
             </svg>
             {C.expectedLine}
           </li>
@@ -75,9 +78,17 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
               width={44}
               domain={[0, (max: number) => Math.max(max, expected)]}
             />
-            {expected > 0 ? <ReferenceLine y={expected} stroke="var(--border)" strokeWidth={2} /> : null}
+            {expected > 0 ? (
+              <ReferenceLine
+                y={expected}
+                stroke="var(--heading)"
+                strokeWidth={1.5}
+                strokeDasharray="2 3"
+                label={{ value: C.expectedLine, position: "insideTopRight", fill: "var(--heading)", fontSize: 12 }}
+              />
+            ) : null}
             <Tooltip cursor={{ stroke: "var(--muted-foreground)", strokeWidth: 1 }} content={CollectionTooltip} />
-            {SERIES.map((series) => (
+            {series.map((series) => (
               <Line
                 key={series.key}
                 type="linear"
@@ -85,7 +96,14 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
                 stroke={series.color}
                 strokeWidth={2}
                 strokeDasharray={series.dash}
-                dot={false}
+                // Point du jour : la courbe du mois reste visible dès le 1er.
+                dot={(props: { cx?: number; cy?: number; payload?: CollectionDay; index?: number }) =>
+                  series.key === "current" && props.payload?.day === today && props.cx !== undefined && props.cy !== undefined ? (
+                    <circle key={`aujourdhui-${props.index}`} cx={props.cx} cy={props.cy} r={4} fill={series.color} stroke="var(--card)" strokeWidth={2} />
+                  ) : (
+                    <g key={`point-${series.key}-${props.index}`} />
+                  )
+                }
                 activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--card)", fill: series.color }}
                 connectNulls={false}
                 isAnimationActive={false}
@@ -107,7 +125,7 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
             <thead>
               <tr className="h-11 border-b text-caption text-muted-foreground">
                 <th scope="col" className="px-2 font-medium">{C.day}</th>
-                {SERIES.map((series) => (
+                {series.map((series) => (
                   <th key={series.key} scope="col" className="px-2 text-right font-medium">
                     {C.series[series.key]}
                   </th>
@@ -118,7 +136,7 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
               {elapsed.map((day) => (
                 <tr key={day.day} className="h-11 border-b last:border-b-0">
                   <td className="px-2">{day.day}</td>
-                  {SERIES.map((series) => (
+                  {series.map((series) => (
                     <td key={series.key} className="numeric px-2 text-right font-normal">
                       {day[series.key] === null ? "—" : formatMAD(day[series.key] ?? 0)}
                     </td>
