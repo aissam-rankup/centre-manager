@@ -182,7 +182,16 @@ export async function needsCashOpening(): Promise<boolean> {
   if (center.error) throw center.error;
   if (sessions.error) throw sessions.error;
   const perAssistant = center.data.cash_session_per_assistant;
-  return !sessions.data.some((session) => (perAssistant ? session.assistant_id === profile.id : session.is_shared));
+  const current = sessions.data.find((session) => (perAssistant ? session.assistant_id === profile.id : session.is_shared));
+  if (!current) return true;
+  // Caisse ouverte par une annulation ou un mouvement : le fonds reste à saisir jusqu'au premier encaissement.
+  const { count, error } = await supabase
+    .from("receipts")
+    .select("id", { count: "exact", head: true })
+    .eq("cash_session_id", current.id)
+    .eq("kind", "payment");
+  if (error) throw error;
+  return (count ?? 0) === 0;
 }
 
 export type CashSettings = { perAssistant: boolean; threshold: number };

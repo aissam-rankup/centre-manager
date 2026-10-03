@@ -34,11 +34,11 @@ import { formatMAD } from "@/lib/format";
 import { useLabels } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
-/** Ouvrir la caisse maintenant, avec le fonds de caisse. */
-export function OpenCashForm() {
+/** Ouvrir la caisse maintenant avec le fonds de caisse, ou corriger le fonds avant le premier encaissement. */
+export function OpenCashForm({ initialFloat = 0, adjust = false }: { initialFloat?: number; adjust?: boolean }) {
   const LABELS = useLabels();
   const C = LABELS.cash;
-  const [openingFloat, setOpeningFloat] = useState("0");
+  const [openingFloat, setOpeningFloat] = useState(String(initialFloat).replace(".", ","));
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -55,7 +55,7 @@ export function OpenCashForm() {
             setError(result.fieldErrors?.openingFloat ?? result.error);
             return;
           }
-          toast.success(C.opened);
+          toast.success(adjust ? C.floatSaved : C.opened);
         });
       }}
     >
@@ -64,7 +64,7 @@ export function OpenCashForm() {
       </FormField>
       <Button type="submit" className="min-h-11" disabled={pending}>
         {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <Unlock aria-hidden />}
-        {C.open}
+        {adjust ? C.floatSave : C.open}
       </Button>
     </form>
   );

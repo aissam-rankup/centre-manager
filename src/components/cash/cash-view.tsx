@@ -48,6 +48,12 @@ export async function CashView({ page, fileBase }: { page: CashPage; fileBase: s
         </div>
       ))}
 
+      {page.current && !page.current.receipts.some((receipt) => receipt.kind === "payment") ? (
+        <SectionCard title={C.floatTitle} description={C.floatDescription}>
+          <OpenCashForm initialFloat={page.current.openingFloat} adjust />
+        </SectionCard>
+      ) : null}
+
       {page.current ? (
         <SessionPanel session={page.current} LABELS={LABELS} fileBase={fileBase} />
       ) : (

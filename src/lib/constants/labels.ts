@@ -1469,6 +1469,10 @@ const TEXTS = {
     openingFloatHint: "Monnaie présente dans le tiroir en début de journée ; 0 si le centre n'en utilise pas.",
     open: "Ouvrir la caisse",
     opened: "Caisse ouverte",
+    floatTitle: "Fonds de caisse à confirmer",
+    floatDescription: "Aucun encaissement n'est encore passé : vérifiez la monnaie du tiroir. Après le premier encaissement, le fonds est figé.",
+    floatSave: "Enregistrer le fonds",
+    floatSaved: "Fonds de caisse enregistré",
     amountInvalid: "Indiquez un montant positif, au centime près (ex. : 250 ou 250,50).",
     sessionOf: (date: string) => `Caisse du ${date}`,
     openedAt: (time: string, name: string | null, amount: string) =>

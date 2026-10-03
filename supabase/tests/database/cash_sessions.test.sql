@@ -7,7 +7,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(34);
 
 insert into auth.users (id, email) values
   ('a7f00000-0000-4000-8000-000000000001', 'admin-s-p86@test.local'),
@@ -59,7 +59,7 @@ create function pg_temp.session_of(p_receipt public.receipts) returns uuid langu
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"a7f00000-0000-4000-8000-000000000002","role":"authenticated"}';
 select set_config('test.session', public.open_cash_session(150)::text, true);
-select is(public.open_cash_session(999), current_setting('test.session')::uuid, 'caisse déjà ouverte : la même session, fonds inchangé');
+select is(public.open_cash_session(150), current_setting('test.session')::uuid, 'caisse déjà ouverte : la même session');
 select is((select opening_float from public.cash_sessions where id = current_setting('test.session')::uuid), 150.00::numeric,
   'fonds de caisse du début de journée');
 select is((select cash_session_id from public.record_payment('57f00000-0000-4000-8000-000000000001',
@@ -152,6 +152,29 @@ values ('a7f00000-0000-4000-8000-000000000009', 'c7f00000-0000-4000-8000-0000000
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"a7f00000-0000-4000-8000-000000000009","role":"authenticated"}';
 select throws_ok($$select public.open_cash_session(0)$$, '42501', 'Mode support : lecture seule.', 'support : lecture seule');
+
+-- ---------------------------------------------------------------------
+-- Fonds de caisse : saisi tant qu'aucun encaissement n'est passé
+-- ---------------------------------------------------------------------
+reset role;
+select set_config('request.jwt.claims', '', true);
+update public.cash_sessions set status = 'closed', closed_at = now(), counted_cash = 0, expected_cash = 0, variance = 0,
+  expected_by_method = '{}'::jsonb where center_id = 'c7f00000-0000-4000-8000-0000000000a1' and status = 'open';
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"a7f00000-0000-4000-8000-000000000001","role":"authenticated"}';
+select set_config('test.s3', public.record_cash_movement('bank_deposit', 10, 'Dépôt du matin')::text, true);
+select set_config('test.s3', (select cash_session_id from public.cash_movements where id = current_setting('test.s3')::uuid)::text, true);
+select is(public.open_cash_session(120), current_setting('test.s3')::uuid, 'caisse ouverte par un mouvement : la même session');
+select is((select opening_float from public.cash_sessions where id = current_setting('test.s3')::uuid), 120.00::numeric,
+  'avant le premier encaissement : le fonds saisi remplace le fonds nul');
+select public.record_payment('57f00000-0000-4000-8000-000000000004', array[pg_temp.invoice_of('57f00000-0000-4000-8000-000000000004')], 'cash');
+select public.open_cash_session(999);
+select is((select opening_float from public.cash_sessions where id = current_setting('test.s3')::uuid), 120.00::numeric,
+  'après le premier encaissement : le fonds est figé');
+select throws_ok($$insert into public.invoices (enrollment_id, student_id, period_start, period_end, amount_full, amount_due, amount_paid, status, due_date, paid_at)
+  select e.id, e.student_id, private.today() + 40, private.today() + 69, 300, 300, 300, 'paid', private.today() + 40, now()
+  from public.enrollments e where e.student_id = '57f00000-0000-4000-8000-000000000005'$$, '42501', null,
+  'admin : une facture ne se crée pas directement réglée');
 
 -- ---------------------------------------------------------------------
 -- Une caisse par personne
