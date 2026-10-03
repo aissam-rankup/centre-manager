@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { z } from "zod";
 
 import { AbsenceChart } from "@/components/admin/absence-chart";
+import { CollectionOverviewSection, LateDraftBanner, ReenrollmentOverviewCard } from "@/components/admin/collection-overview";
 import { DiscountsOverview, FinanceOverview } from "@/components/admin/finance-overview";
 import { FilterChips } from "@/components/admin/filter-chips";
 import { RoomOccupancyOverview } from "@/components/admin/room-occupancy";
@@ -16,6 +17,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/lib/auth/routes";
 import { getLabels } from "@/lib/i18n/server";
 import { getAdminDashboard } from "@/lib/data/admin";
+import { getCollectionOverview, getLateDraft, getReenrollmentOverview } from "@/lib/data/collection";
 import { getFinancialDashboard } from "@/lib/data/finance";
 import { getRoomOccupancy } from "@/lib/data/rooms";
 import { formatMAD, formatMonth, formatPercent } from "@/lib/format";
@@ -39,7 +41,13 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
   const levelId = filtered.levels.some((level) => level.id === requestedLevel) ? requestedLevel : null;
   const data = requestedLevel && !levelId ? await getAdminDashboard(null) : filtered;
   // Finances : tout le centre, jamais en mode support.
-  const [finance, occupancy] = await Promise.all([getFinancialDashboard(), getRoomOccupancy()]);
+  const [finance, occupancy, collection, reenrollment, lateDraft] = await Promise.all([
+    getFinancialDashboard(),
+    getRoomOccupancy(),
+    getCollectionOverview(),
+    getReenrollmentOverview(),
+    getLateDraft(),
+  ]);
 
   const gap = Math.max(0, data.expected - data.collected);
   const gapRatio = data.expected > 0 ? gap / data.expected : 0;
@@ -49,6 +57,8 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
       {/* Colonne principale */}
       <div className="flex min-w-0 flex-col gap-6">
         <PageHeader title={L.title} description={L.description(formatMonth(`${data.monthStart}`))} />
+
+        {lateDraft ? <LateDraftBanner draft={lateDraft} LABELS={LABELS} /> : null}
 
         <FilterChips
           label={L.filterLabel}
@@ -81,6 +91,8 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
           </StatTiles>
         </section>
 
+        {collection ? <CollectionOverviewSection data={collection} LABELS={LABELS} /> : null}
+
         {finance ? <FinanceOverview data={finance} LABELS={LABELS} /> : null}
 
         <RoomOccupancyOverview data={occupancy} LABELS={LABELS} />
@@ -102,6 +114,8 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
 
       {/* Colonne droite : sous le contenu jusqu'à 1024 px, en grille de 2 sur tablette */}
       <aside className="flex flex-col gap-6" aria-label={D.reminder.title}>
+        {reenrollment ? <ReenrollmentOverviewCard data={reenrollment} LABELS={LABELS} /> : null}
+
         {finance ? <DiscountsOverview data={finance} LABELS={LABELS} /> : null}
 
         <section aria-labelledby="rappel" className="flex flex-col gap-3">

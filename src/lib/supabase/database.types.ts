@@ -256,6 +256,7 @@ export type Database = {
           pack_enrollment_id: string | null
           period_end: string
           period_start: string
+          stopped_at: string | null
           student_id: string
         }
         Insert: {
@@ -274,6 +275,7 @@ export type Database = {
           pack_enrollment_id?: string | null
           period_end: string
           period_start: string
+          stopped_at?: string | null
           student_id: string
         }
         Update: {
@@ -292,6 +294,7 @@ export type Database = {
           pack_enrollment_id?: string | null
           period_end?: string
           period_start?: string
+          stopped_at?: string | null
           student_id?: string
         }
         Relationships: [
@@ -3209,6 +3212,7 @@ export type Database = {
           total_count: number
         }[]
       }
+      admin_collection_overview: { Args: never; Returns: Json }
       admin_discount_summary: {
         Args: { p_month?: string }
         Returns: {
@@ -3915,6 +3919,7 @@ export type Database = {
         }
         Returns: string
       }
+      reenrollment_overview: { Args: never; Returns: Json }
       set_attendance_note: {
         Args: { p_attendance_id: string; p_note: string }
         Returns: undefined

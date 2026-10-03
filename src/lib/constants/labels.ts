@@ -1356,6 +1356,20 @@ const TEXTS = {
         done: "Mois déclaré sans cours",
       },
     },
+    dashboard: {
+      title: "Réinscription",
+      campaign: (month: string, status: string) => `Campagne ${ofMonth(month)} · ${status}`,
+      counts: { confirmed: "Reconduits", dropped: "Abandons", paused: "Pauses", pending: "Sans décision" },
+      removed: (count: number) =>
+        count > 1 ? `dont ${count} élèves avec une matière retirée` : `dont ${count} élève avec une matière retirée`,
+      bySubject: "Par matière",
+      subjectLine: (kept: number, dropped: number) =>
+        `${kept} reconduit${kept > 1 ? "s" : ""} · ${dropped} retrait${dropped > 1 ? "s" : ""}`,
+      pack: "Pack",
+      open: "Ouvrir la campagne",
+      lateDraft: (month: string) => `La campagne ${ofMonth(month)} n'est pas confirmée : les factures du mois attendent.`,
+      lateDraftAction: "Revoir et confirmer",
+    },
     reminders: {
       title: "Rappels de paiement",
       description: "Prévenez les tuteurs sur WhatsApp : le message est rédigé, les factures réglées ne reçoivent jamais de rappel.",
@@ -1575,6 +1589,32 @@ const TEXTS = {
       students: (count: number) => (count <= 1 ? `${count} élève concerné` : `${count} élèves concernés`),
       empty: "Aucune remise sur les factures de ce mois.",
       byReason: "Par motif",
+    },
+    collection: {
+      title: "Recouvrement du mois",
+      description: (month: string) =>
+        `Factures dont la période commence en ${month} (campagne comprise) : prévu, encaissé à ce jour, reste à encaisser.`,
+      expected: "Prévisionnel",
+      expectedHint: (count: number) => (count > 1 ? `${count} factures` : `${count} facture`),
+      collected: "Encaissé à ce jour",
+      collectedHint: (paid: number, total: number) => `${paid} réglée${paid > 1 ? "s" : ""} sur ${total}`,
+      remaining: "Reste à encaisser",
+      rate: "Taux de recouvrement",
+      rateNone: "Aucune facture ce mois-ci",
+      comparison: (rate: string, previousRate: string) =>
+        `Au même jour du mois dernier, ${previousRate} du prévisionnel était encaissé ; ce mois-ci, ${rate}.`,
+      comparisonNone: "Pas de facture le mois dernier pour comparer.",
+      chart: {
+        title: "Courbe d'encaissement",
+        description: "Encaissé cumulé jour par jour, comparé au même jour du mois précédent (MAD).",
+        series: { current: "Ce mois-ci", previous: "Mois précédent" },
+        expectedLine: "Prévisionnel",
+        day: "Jour",
+        dayLabel: (day: number) => `Jour ${day}`,
+        showTable: "Afficher le tableau",
+        hideTable: "Masquer le tableau",
+        caption: "Encaissé cumulé jour par jour, ce mois-ci et le mois précédent",
+      },
     },
   },
   centerSettings: {

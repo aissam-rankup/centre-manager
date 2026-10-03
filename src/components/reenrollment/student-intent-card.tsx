@@ -2,7 +2,7 @@
 
 import { LoaderCircle, TriangleAlert, UserRound } from "lucide-react";
 import Link from "next/link";
-import { useOptimistic, useState, useTransition } from "react";
+import { useId, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Money } from "@/components/shared/money";
@@ -48,6 +48,8 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
   const [leaveChoice, setLeaveChoice] = useState<"dropped" | "paused" | null>(null);
   const [reason, setReason] = useState("");
   const [dialogError, setDialogError] = useState<string | null>(null);
+  // Nom de groupe propre à cette carte (la page peut rester montée deux fois).
+  const radioName = `intention-${useId()}`;
 
   const saved: Decision = {
     intent: student.intent,
@@ -198,7 +200,7 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
               >
                 <input
                   type="radio"
-                  name={`intention-${student.studentId}`}
+                  name={radioName}
                   value={choice}
                   checked={selected}
                   aria-disabled={pending || undefined}
