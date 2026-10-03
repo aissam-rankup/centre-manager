@@ -179,8 +179,8 @@ values ('cb000000-0000-4000-8000-000000000001', '8b000000-0000-4000-8000-0000000
 insert into public.payment_reminders (student_id, center_id, invoice_id, message_id, reminder_type, channel)
 select '4b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', i.id, gen_random_uuid(), 'overdue', 'whatsapp'
 from public.invoices i where i.student_id = '4b000000-0000-4000-8000-000000000001' and i.status <> 'paid' limit 1;
-insert into public.cash_sessions (id, center_id, opening_float)
-values ('9b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 100);
+insert into public.cash_sessions (id, center_id, session_date, opening_float)
+values ('9b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', private.today() - 1, 100);
 insert into public.cash_movements (center_id, cash_session_id, kind, amount, reason)
 values ('cb000000-0000-4000-8000-000000000001', '9b000000-0000-4000-8000-000000000001', 'bank_deposit', -50, 'Dépôt B');
 -- Fichiers de B (photos d'élève et d'équipe, reçu, justificatif).
@@ -302,6 +302,27 @@ select throws_ok($$select public.cancel_receipt(current_setting('iso.b_receipt')
 select throws_ok($$select public.payroll_set_adjustment('6b000000-0000-4000-8000-000000000001', 1000, 'Pirate')$$, '42501', null, 'admin A : paie de B non modifiable');
 select throws_ok($$select public.payroll_validate('5b000000-0000-4000-8000-000000000001')$$, '42501', null, 'admin A : paie de B non validable');
 select throws_ok($$select public.delete_expense('7b000000-0000-4000-8000-000000000001')$$, '42501', null, 'admin A : charge de B non supprimable');
+-- Réinscription, rappels et caisse de B (page 8).
+select is((select count(*)::int from public.billing_run_review('8b000000-0000-4000-8000-000000000001')), 0, 'admin A : campagne de B illisible');
+select throws_ok($$select public.set_reenrollment_intent('8b000000-0000-4000-8000-000000000001', '4b000000-0000-4000-8000-000000000001', 'dropped', null, 'Pirate')$$,
+  '42501', null, 'admin A : intention d''un élève de B non modifiable');
+select throws_ok($$select public.confirm_billing_run('8b000000-0000-4000-8000-000000000001')$$, '42501', null, 'admin A : campagne de B non confirmable');
+select throws_ok($$select public.cancel_billing_run('8b000000-0000-4000-8000-000000000001', 'Pirate')$$, '42501', null, 'admin A : campagne de B non annulable');
+select ok(position('8b000000-0000-4000-8000-000000000001' in coalesce(public.reenrollment_overview()::text, '')) = 0, 'admin A : campagne de B absente de son aperçu');
+select ok(position('4b000000-0000-4000-8000-00000000000' in public.admin_collection_overview()::text) = 0, 'admin A : élèves de B absents du recouvrement');
+select is((select count(*)::int from public.payment_reminder_queue('8b000000-0000-4000-8000-000000000001', '4b000000-0000-4000-8000-000000000001')), 0,
+  'admin A : file des rappels de B vide');
+select throws_ok($$select public.record_payment_reminder('8b000000-0000-4000-8000-000000000001', '4b000000-0000-4000-8000-000000000001', date '2026-11-05', 'whatsapp')$$,
+  '42501', null, 'admin A : aucun rappel envoyé pour B');
+select throws_ok($$select public.cash_session_summary('9b000000-0000-4000-8000-000000000001')$$, '42501', null, 'admin A : caisse de B illisible');
+select throws_ok($$select public.close_cash_session('9b000000-0000-4000-8000-000000000001', 50, 'Pirate', null, 50)$$, '42501', null, 'admin A : caisse de B non clôturable');
+select throws_ok($$select public.validate_cash_session('9b000000-0000-4000-8000-000000000001')$$, '42501', null, 'admin A : caisse de B non validable');
+select throws_ok($$select public.record_cash_correction('9b000000-0000-4000-8000-000000000001', 10, 'Pirate')$$, '42501', null, 'admin A : caisse de B non corrigeable');
+select is((select count(*)::int from public.cash_session_history(private.today() - 31, private.today())
+           where id = '9b000000-0000-4000-8000-000000000001'), 0, 'admin A : caisse de B absente de l''historique');
+select is((select count(*)::int from public.stale_cash_sessions() where id = '9b000000-0000-4000-8000-000000000001'), 0,
+  'admin A : caisse de B restée ouverte non signalée chez A');
+select is((public.cash_month_overview(private.today() - 1) ->> 'stale_open')::int, 0, 'admin A : indicateurs de caisse sans les sessions de B');
 update public.discounts set value = 99 where student_id = '4b000000-0000-4000-8000-000000000001';
 -- Tentatives de modification (vérifiées plus bas, hors RLS).
 update public.students set full_name = 'Modifié par A' where id = '4b000000-0000-4000-8000-000000000001';
@@ -309,6 +330,14 @@ delete from public.levels where id = '1b000000-0000-4000-8000-000000000001';
 update public.invoices set status = 'paid' where student_id = '4b000000-0000-4000-8000-000000000001';
 select throws_ok($$insert into public.students (center_id, full_name, level_id) values ('cb000000-0000-4000-8000-000000000001', 'Intrus', '1b000000-0000-4000-8000-000000000001')$$,
   '42501', null, 'admin A : aucune création dans le centre B');
+
+set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-00000000000b","role":"authenticated"}';
+select throws_ok($$select public.cash_session_summary('9b000000-0000-4000-8000-000000000001')$$, '42501', null, 'assistant A : caisse de B illisible');
+select throws_ok($$select public.close_cash_session('9b000000-0000-4000-8000-000000000001', 50, 'Pirate', null, 50)$$, '42501', null, 'assistant A : caisse de B non clôturable');
+select is((select count(*)::int from public.payment_reminder_queue('8b000000-0000-4000-8000-000000000001', '4b000000-0000-4000-8000-000000000001')), 0,
+  'assistant A : file des rappels de B vide');
+select throws_ok($$select public.record_payment_reminder('8b000000-0000-4000-8000-000000000001', '4b000000-0000-4000-8000-000000000001', date '2026-11-05', 'whatsapp')$$,
+  '42501', null, 'assistant A : aucun rappel envoyé pour B');
 
 set local request.jwt.claims = '{"sub":"a0000000-0000-4000-8000-00000000000c","role":"authenticated"}';
 select is((select count(*)::int from public.student_attendance('4b000000-0000-4000-8000-000000000001')), 0, 'professeur A : assiduité d''un élève de B vide');
@@ -326,6 +355,27 @@ select is((select full_name from public.students where id = '4b000000-0000-4000-
 select is((select count(*)::int from public.levels where id = '1b000000-0000-4000-8000-000000000001'), 1, 'niveau de B non supprimé par A');
 select is((select count(*)::int from public.invoices where student_id = '4b000000-0000-4000-8000-000000000001' and status = 'paid'), 0, 'factures de B non modifiées par A');
 select is((select value from public.discounts where student_id = '4b000000-0000-4000-8000-000000000001'), 10.00, 'remise de B non modifiée par A');
+select results_eq(
+  $$select br.status::text, (select ri.intent::text from public.reenrollment_intents ri where ri.billing_run_id = br.id),
+           (select count(*)::int from public.payment_reminders pr where pr.center_id = br.center_id)
+    from public.billing_runs br where br.id = '8b000000-0000-4000-8000-000000000001'$$,
+  $$values ('draft', 'pending', 1)$$,
+  'campagne, intention et rappels de B non modifiés par A');
+select results_eq(
+  $$select cs.status::text, (select count(*)::int from public.cash_movements cm where cm.cash_session_id = cs.id)
+    from public.cash_sessions cs where cs.id = '9b000000-0000-4000-8000-000000000001'$$,
+  $$values ('open', 1)$$,
+  'caisse de B non modifiée par A');
+
+-- Contrôle positif des fonctions : l'admin de B voit bien sa campagne, sa caisse et sa caisse restée ouverte.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"b0000000-0000-4000-8000-00000000000a","role":"authenticated"}';
+select is((select count(*)::int from public.billing_run_review('8b000000-0000-4000-8000-000000000001')), 1, 'contrôle : admin B lit sa campagne');
+select is((public.cash_session_summary('9b000000-0000-4000-8000-000000000001') ->> 'movements_total')::numeric, -50.00::numeric,
+  'contrôle : admin B lit sa caisse');
+select is((select count(*)::int from public.stale_cash_sessions() where id = '9b000000-0000-4000-8000-000000000001'), 1,
+  'contrôle : admin B voit sa caisse restée ouverte');
+reset role;
 
 select * from finish();
 rollback;
