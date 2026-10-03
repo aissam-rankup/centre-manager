@@ -1,7 +1,8 @@
-import type { AppLabels } from "@/lib/constants/labels";
+import { type AppLabels, labelsFor } from "@/lib/constants/labels";
 import { type DiscountSummary, parseDiscountSummary } from "@/lib/discounts";
 import { formatMonth } from "@/lib/format";
 import type { Database, Json } from "@/lib/supabase/database.types";
+import { fillTemplate } from "@/lib/templates";
 
 export type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 export type ReceiptFormat = Database["public"]["Enums"]["receipt_format"];
@@ -122,10 +123,6 @@ export type ReceiptMessageValues = {
 
 /** Message WhatsApp : modèle du centre (ou proposé), variables remplacées. */
 export function renderReceiptMessage(template: string | null, values: ReceiptMessageValues, LABELS: AppLabels): string {
-  const T = LABELS.receipts.tokens;
-  let message = template?.trim() ? template : LABELS.receipts.whatsappTemplate;
-  for (const key of Object.keys(T) as (keyof typeof T)[]) {
-    message = message.split(T[key]).join(values[key]);
-  }
-  return message;
+  const message = template?.trim() ? template : LABELS.receipts.whatsappTemplate;
+  return fillTemplate(message, LABELS.receipts.tokens, labelsFor().receipts.tokens, values);
 }

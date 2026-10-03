@@ -60,7 +60,7 @@ export async function getNotifications(): Promise<NotificationItem[]> {
     profile.role === "admin" && !profile.support
       ? supabase
           .from("cash_sessions")
-          .select("id, session_date, variance, variance_reason, closed_at, closer:profiles!cash_sessions_closed_by_fkey(full_name), centers(cash_variance_alert_threshold)")
+          .select("id, session_date, variance, variance_reason, closed_at, closer:profiles!cash_sessions_closed_by_center_id_fkey(full_name), centers(cash_variance_alert_threshold)")
           .eq("status", "closed")
           .gte("closed_at", since)
           .order("closed_at", { ascending: false })

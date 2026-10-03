@@ -1,5 +1,6 @@
-import type { AppLabels } from "@/lib/constants/labels";
+import { type AppLabels, labelsFor } from "@/lib/constants/labels";
 import type { Database } from "@/lib/supabase/database.types";
+import { fillTemplate } from "@/lib/templates";
 
 export type NotificationChannel = Database["public"]["Enums"]["notification_channel"];
 export const NOTIFICATION_CHANNELS = ["whatsapp", "phone_call", "in_person"] as const satisfies readonly NotificationChannel[];
@@ -44,9 +45,6 @@ export function renderAbsenceMessage(
   series = false,
 ): string {
   const A = LABELS.absenceAlerts;
-  let message = series ? A.seriesTemplate : template?.trim() ? template : A.template;
-  for (const key of Object.keys(A.tokens) as (keyof typeof A.tokens)[]) {
-    message = message.split(A.tokens[key]).join(values[key]);
-  }
-  return message;
+  const message = series ? A.seriesTemplate : template?.trim() ? template : A.template;
+  return fillTemplate(message, A.tokens, labelsFor().absenceAlerts.tokens, values);
 }

@@ -306,25 +306,25 @@ export type Database = {
             referencedColumns: ["id", "center_id"]
           },
           {
-            foreignKeyName: "billing_run_lines_discount_id_fkey"
-            columns: ["discount_id"]
+            foreignKeyName: "billing_run_lines_discount_id_center_id_fkey"
+            columns: ["discount_id", "center_id"]
             isOneToOne: false
             referencedRelation: "discount_overlaps"
-            referencedColumns: ["discount_id"]
+            referencedColumns: ["discount_id", "center_id"]
           },
           {
-            foreignKeyName: "billing_run_lines_discount_id_fkey"
-            columns: ["discount_id"]
+            foreignKeyName: "billing_run_lines_discount_id_center_id_fkey"
+            columns: ["discount_id", "center_id"]
             isOneToOne: false
             referencedRelation: "discount_overlaps"
-            referencedColumns: ["other_discount_id"]
+            referencedColumns: ["other_discount_id", "center_id"]
           },
           {
-            foreignKeyName: "billing_run_lines_discount_id_fkey"
-            columns: ["discount_id"]
+            foreignKeyName: "billing_run_lines_discount_id_center_id_fkey"
+            columns: ["discount_id", "center_id"]
             isOneToOne: false
             referencedRelation: "discounts"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
             foreignKeyName: "billing_run_lines_enrollment_id_student_id_fkey"
@@ -444,11 +444,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "billing_runs_cancelled_by_fkey"
-            columns: ["cancelled_by"]
+            foreignKeyName: "billing_runs_cancelled_by_center_id_fkey"
+            columns: ["cancelled_by", "center_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
             foreignKeyName: "billing_runs_center_id_fkey"
@@ -458,18 +458,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "billing_runs_confirmed_by_fkey"
-            columns: ["confirmed_by"]
+            foreignKeyName: "billing_runs_confirmed_by_center_id_fkey"
+            columns: ["confirmed_by", "center_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
-            foreignKeyName: "billing_runs_generated_by_fkey"
-            columns: ["generated_by"]
+            foreignKeyName: "billing_runs_generated_by_center_id_fkey"
+            columns: ["generated_by", "center_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
         ]
       }
@@ -532,32 +532,32 @@ export type Database = {
             referencedColumns: ["id", "center_id"]
           },
           {
-            foreignKeyName: "cash_movements_created_by_fkey"
-            columns: ["created_by"]
+            foreignKeyName: "cash_movements_created_by_center_id_fkey"
+            columns: ["created_by", "center_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
-            foreignKeyName: "cash_movements_expense_id_fkey"
-            columns: ["expense_id"]
+            foreignKeyName: "cash_movements_expense_id_center_id_fkey"
+            columns: ["expense_id", "center_id"]
             isOneToOne: false
             referencedRelation: "expenses"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
-            foreignKeyName: "cash_movements_payroll_line_id_fkey"
-            columns: ["payroll_line_id"]
+            foreignKeyName: "cash_movements_payroll_line_id_center_id_fkey"
+            columns: ["payroll_line_id", "center_id"]
             isOneToOne: false
             referencedRelation: "payroll_lines"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
-            foreignKeyName: "cash_movements_receipt_id_fkey"
-            columns: ["receipt_id"]
+            foreignKeyName: "cash_movements_receipt_id_center_id_fkey"
+            columns: ["receipt_id", "center_id"]
             isOneToOne: false
             referencedRelation: "receipts"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
         ]
       }
@@ -644,25 +644,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "cash_sessions_closed_by_fkey"
-            columns: ["closed_by"]
+            foreignKeyName: "cash_sessions_closed_by_center_id_fkey"
+            columns: ["closed_by", "center_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
-            foreignKeyName: "cash_sessions_opened_by_fkey"
-            columns: ["opened_by"]
+            foreignKeyName: "cash_sessions_opened_by_center_id_fkey"
+            columns: ["opened_by", "center_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
-            foreignKeyName: "cash_sessions_validated_by_fkey"
-            columns: ["validated_by"]
+            foreignKeyName: "cash_sessions_validated_by_center_id_fkey"
+            columns: ["validated_by", "center_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
         ]
       }
@@ -1708,11 +1708,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "payment_reminders_billing_run_id_fkey"
-            columns: ["billing_run_id"]
+            foreignKeyName: "payment_reminders_billing_run_id_center_id_fkey"
+            columns: ["billing_run_id", "center_id"]
             isOneToOne: false
             referencedRelation: "billing_runs"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
             foreignKeyName: "payment_reminders_center_id_fkey"
@@ -1736,11 +1736,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payment_reminders_sent_by_fkey"
-            columns: ["sent_by"]
+            foreignKeyName: "payment_reminders_sent_by_center_id_fkey"
+            columns: ["sent_by", "center_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
             foreignKeyName: "payment_reminders_student_id_center_id_fkey"
@@ -2260,11 +2260,11 @@ export type Database = {
             referencedColumns: ["id", "center_id"]
           },
           {
-            foreignKeyName: "reenrollment_intents_decided_by_fkey"
-            columns: ["decided_by"]
+            foreignKeyName: "reenrollment_intents_decided_by_center_id_fkey"
+            columns: ["decided_by", "center_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "center_id"]
           },
           {
             foreignKeyName: "reenrollment_intents_student_id_center_id_fkey"
@@ -3518,6 +3518,7 @@ export type Database = {
           billing_run_id: string
           days_overdue: number
           due_date: string
+          followed_up_at: string
           full_name: string
           guardian_name: string
           guardian_phone: string
@@ -3526,6 +3527,7 @@ export type Database = {
           last_sent_at: string
           last_sent_by_name: string
           level_name: string
+          pack_flags: boolean[]
           period_month: number
           period_year: number
           photo_url: string

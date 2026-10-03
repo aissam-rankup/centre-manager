@@ -1,6 +1,8 @@
 import "server-only";
 
 import { requireRole, requireStaff } from "@/lib/auth/session";
+import { labelsFor } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import {
   type PaymentMethod,
   parseReceiptCenter,
@@ -9,6 +11,7 @@ import {
   type ReceiptView,
 } from "@/lib/receipts";
 import { createClient } from "@/lib/supabase/server";
+import { fromCanonicalTokens } from "@/lib/templates";
 
 const RECEIPT_COLUMNS =
   "id, receipt_number, kind, issued_at, student_id, student_name, level_name, subjects_covered, amount_full, discount_applied, amount_paid, payment_method, balance_due, issued_by_name, center_snapshot, cancels_receipt_id, cancel_reason, printed_at, whatsapp_sent_at";
@@ -126,11 +129,13 @@ export async function getCenterReceiptSettings(): Promise<CenterReceiptSettings>
     .eq("id", profile.centerId)
     .single();
   if (error) throw error;
+  // Modèle enregistré avec les variables d'origine : affiché dans le vocabulaire du centre.
+  const template = data.receipt_whatsapp_template;
   return {
     address: data.address,
     phone: data.phone,
     receiptFormat: data.receipt_format,
-    whatsappTemplate: data.receipt_whatsapp_template,
+    whatsappTemplate: template ? fromCanonicalTokens(template, (await getLabels()).receipts.tokens, labelsFor().receipts.tokens) : null,
   };
 }
 

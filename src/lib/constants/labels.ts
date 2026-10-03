@@ -1389,6 +1389,7 @@ const TEXTS = {
       sent: (channel: string, date: string, by: string | null) =>
         by ? `Rappel envoyé ${channel} le ${date} par ${by}` : `Rappel envoyé ${channel} le ${date}`,
       notSent: "Pas encore envoyé",
+      followedUp: (date: string) => `Relance de paiement notée le ${date}`,
       send: "Envoyer le rappel",
       sendAgain: "Relancer",
       otherChannel: "Autre moyen",

@@ -6,9 +6,17 @@ import { useState } from "react";
 import { ReminderActions, SendAllRemindersDialog } from "@/components/reminders/reminder-actions";
 import { Money } from "@/components/shared/money";
 import { StudentAvatar } from "@/components/shared/student-avatar";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { useLabels } from "@/lib/i18n/client";
-import { REMINDER_TYPES, type ReminderItem, reminderKey, reminderSuggestedFrom, type ReminderType } from "@/lib/reminders";
+import {
+  REMINDER_TYPES,
+  type ReminderItem,
+  reminderKey,
+  reminderStatus,
+  reminderSuggestedFrom,
+  reminderToSend,
+  type ReminderType,
+} from "@/lib/reminders";
 import { cn } from "@/lib/utils";
 
 type ReminderWavesProps = {
@@ -26,7 +34,7 @@ export function ReminderWaves({ items, daysBefore, fileBase }: ReminderWavesProp
     byType("overdue").length > 0 ? "overdue" : byType("due_today").length > 0 ? "due_today" : "upcoming",
   );
   const visible = byType(wave);
-  const toSend = visible.filter((item) => item.suggested && !item.lastSentAt);
+  const toSend = visible.filter(reminderToSend);
 
   return (
     <div className="flex flex-col gap-4">
@@ -74,6 +82,7 @@ export function ReminderWaves({ items, daysBefore, fileBase }: ReminderWavesProp
 export function ReminderRow({ item, daysBefore, fileBase }: { item: ReminderItem; daysBefore: number; fileBase: string }) {
   const LABELS = useLabels();
   const R = LABELS.reenrollment.reminders;
+  const status = reminderStatus(item, LABELS);
   return (
     <li className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 lg:flex-row lg:items-center">
       <Link href={`${fileBase}/${item.studentId}`} className="flex min-w-0 flex-1 items-center gap-3 rounded-lg">
@@ -92,11 +101,7 @@ export function ReminderRow({ item, daysBefore, fileBase }: { item: ReminderItem
           {!item.suggested ? (
             <span className="text-caption text-muted-foreground">{R.later(formatDate(reminderSuggestedFrom(item.dueDate, daysBefore)))}</span>
           ) : null}
-          <span className={cn("text-caption font-medium", item.lastSentAt ? "text-success-ink" : "text-muted-foreground")}>
-            {item.lastSentAt && item.lastChannel
-              ? R.sent(R.channels[item.lastChannel], formatDateTime(item.lastSentAt), item.lastSentByName)
-              : R.notSent}
-          </span>
+          <span className={cn("text-caption font-medium", status.done ? "text-success-ink" : "text-muted-foreground")}>{status.text}</span>
         </span>
       </Link>
       <ReminderActions item={item} />

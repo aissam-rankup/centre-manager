@@ -8,11 +8,13 @@ import { type ActionResult, failure, success } from "@/lib/actions/result";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole, requireStaff } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
+import { labelsFor } from "@/lib/constants/labels";
 import { getAbsenceAlertsSettings } from "@/lib/data/absence-alerts";
 import { formatDate, formatDateWithWeekday } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { isValidPhone, toWhatsAppHref } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
+import { toCanonicalTokens } from "@/lib/templates";
 
 function revalidateAbsences() {
   revalidatePath(ROUTES.assistant.home, "layout");
@@ -112,7 +114,11 @@ export async function updateAbsenceAlertsSettings(input: unknown): Promise<Actio
     .from("centers")
     .update({
       absence_notification_enabled: parsed.data.enabled,
-      absence_notification_template: template && template !== LABELS.absenceAlerts.template ? template : null,
+      // Variables sous leur forme d'origine : le modèle survit à un changement de vocabulaire.
+      absence_notification_template:
+        template && template !== LABELS.absenceAlerts.template
+          ? toCanonicalTokens(template, LABELS.absenceAlerts.tokens, labelsFor().absenceAlerts.tokens)
+          : null,
     })
     .eq("id", profile.centerId);
   if (error) return failure(await describeCenterError(error));

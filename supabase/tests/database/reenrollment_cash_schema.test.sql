@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(68);
+select plan(73);
 
 insert into auth.users (id, email) values
   ('a1800000-0000-4000-8000-000000000001', 'admin-p8@test.local'),
@@ -151,6 +151,29 @@ select throws_ok(
 select lives_ok(
   $$update public.billing_runs set status = 'sent', sent_at = now() where id = 'b1800000-0000-4000-8000-000000000001'$$,
   'confirmée → envoyée');
+select throws_ok(
+  $$update public.billing_run_lines set invoice_id = (select id from public.invoices where enrollment_id = '61800000-0000-4000-8000-000000000002')
+    where id = 'b2800000-0000-4000-8000-000000000001'$$,
+  '23514', null, 'ligne : jamais rattachée à la facture d''un autre élève');
+insert into public.discounts (id, center_id, student_id, type, value, scope, reason)
+values ('b4800000-0000-4000-8000-000000000001', 'c1800000-0000-4000-8000-000000000001', '51800000-0000-4000-8000-000000000001',
+        'percentage', 10, 'all_subjects', 'sibling');
+select throws_ok(
+  $$update public.billing_run_lines set discount_id = 'b4800000-0000-4000-8000-000000000001' where id = 'b2800000-0000-4000-8000-000000000001'$$,
+  '42501', null, 'envoyée : aucune remise ne s''ajoute à une ligne');
+select throws_ok(
+  $$update public.billing_runs set closed_at = now() where id = 'b1800000-0000-4000-8000-000000000001'$$,
+  '23514', null, 'date de clôture sans statut « close » : refusée');
+select throws_ok(
+  $$insert into public.billing_run_lines (billing_run_id, center_id, student_id, enrollment_id, period_start, period_end, due_date,
+                                         amount_full, amount_due, discount_id)
+    values ('b1800000-0000-4000-8000-000000000003', 'c1800000-0000-4000-8000-000000000002', '51800000-0000-4000-8000-000000000002',
+            '61800000-0000-4000-8000-000000000002', '2026-11-01', '2026-11-30', '2026-11-05', 300, 300, 'b4800000-0000-4000-8000-000000000001')$$,
+  '23503', null, 'ligne : remise d''un autre centre refusée');
+select throws_ok(
+  $$insert into public.cash_sessions (center_id, opened_by, opening_float)
+    values ('c1800000-0000-4000-8000-000000000001', 'a1800000-0000-4000-8000-000000000006', 0)$$,
+  '23503', null, 'caisse : jamais ouverte au nom d''un compte d''un autre centre');
 
 insert into public.billing_runs (id, center_id, period_year, period_month)
 values ('b1800000-0000-4000-8000-000000000002', 'c1800000-0000-4000-8000-000000000001', 2027, 7);

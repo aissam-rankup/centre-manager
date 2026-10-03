@@ -10,12 +10,14 @@ import { type ActionResult, failure, success } from "@/lib/actions/result";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole, requireStaff } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
+import { labelsFor } from "@/lib/constants/labels";
 import { getReminderQueue, getReminderSettings } from "@/lib/data/reminders";
 import { formatDayMonth, formatMAD } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { isValidPhone, toWhatsAppHref } from "@/lib/phone";
 import { REMINDER_TYPES, renderReminderMessage } from "@/lib/reminders";
 import { createClient } from "@/lib/supabase/server";
+import { toCanonicalTokens } from "@/lib/templates";
 
 function revalidateReminders() {
   revalidatePath(ROUTES.admin.home, "layout");
@@ -113,10 +115,12 @@ export async function updateReminderSettings(input: unknown): Promise<ActionResu
   const profile = await requireRole("admin");
   const supabase = await createClient();
   // Message identique au message proposé : rien d'enregistré (il suivra les évolutions de l'application).
+  // Variables enregistrées sous leur forme d'origine : le modèle survit à un changement de vocabulaire.
+  const canonical = labelsFor().reenrollment.reminders.tokens;
   const stored = Object.fromEntries(
     REMINDER_TYPES.map((type) => {
       const value = parsed.data.templates[type];
-      return [type, value && value !== R.templates[type] ? value : null];
+      return [type, value && value !== R.templates[type] ? toCanonicalTokens(value, R.tokens, canonical) : null];
     }),
   ) as Record<(typeof REMINDER_TYPES)[number], string | null>;
   const { error } = await supabase

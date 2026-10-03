@@ -115,7 +115,7 @@ export async function getCampaignPage(requestedId: string | undefined): Promise<
     supabase
       .from("billing_runs")
       .select(
-        "id, period_year, period_month, status, student_count, total_expected, generated_at, generated_by, confirmed_at, cancelled_at, cancel_reason, confirmer:profiles!billing_runs_confirmed_by_fkey(full_name)",
+        "id, period_year, period_month, status, student_count, total_expected, generated_at, generated_by, confirmed_at, cancelled_at, cancel_reason, confirmer:profiles!billing_runs_confirmed_by_center_id_fkey(full_name)",
       )
       .eq("id", selected.id)
       .single(),

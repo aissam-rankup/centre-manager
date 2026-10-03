@@ -7,7 +7,8 @@ import { z } from "zod";
 import { type ActionResult, failure, success } from "@/lib/actions/result";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole, requireStaff } from "@/lib/auth/session";
-import { parseCents } from "@/lib/cash";
+import { parseCents, toCents } from "@/lib/cash";
+import { labelsFor } from "@/lib/constants/labels";
 import { getCenterReceiptSettings, getReceipt } from "@/lib/data/receipts";
 import { formatMAD } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
@@ -16,6 +17,7 @@ import { isValidPhone, toWhatsAppHref } from "@/lib/phone";
 import { PAYMENT_METHODS, RECEIPT_FORMATS, RECEIPT_LINK_DAYS, receiptPeriodLabel, renderReceiptMessage } from "@/lib/receipts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { toCanonicalTokens } from "@/lib/templates";
 
 const RECEIPTS_BUCKET = "receipts";
 
@@ -37,18 +39,24 @@ const paymentSchema = z.object({
 
 export async function recordPayment(
   input: unknown,
-): Promise<ActionResult<{ receiptId: string; receiptNumber: string; amountPaid: number }>> {
+): Promise<ActionResult<{ receiptId: string; receiptNumber: string; amountPaid: number; floatNotice: string | null }>> {
   const LABELS = await getLabels();
   const parsed = paymentSchema.safeParse(input);
   if (!parsed.success) return failure(LABELS.payment.noneSelected);
   await requireStaff();
   const supabase = await createClient();
 
+  // Fonds figé entre-temps (un encaissement est passé) : le paiement est enregistré, l'écart signalé.
+  let floatNotice: string | null = null;
   if (parsed.data.openingFloat !== undefined) {
     const cents = parseCents(parsed.data.openingFloat === "" ? "0" : parsed.data.openingFloat);
     if (cents === null) return failure(LABELS.cash.amountInvalid, { openingFloat: LABELS.cash.amountInvalid });
-    const { error: openError } = await supabase.rpc("open_cash_session", { p_opening_float: cents / 100 });
+    const { data: sessionId, error: openError } = await supabase.rpc("open_cash_session", { p_opening_float: cents / 100 });
     if (openError) return failure(await describeCenterError(openError));
+    const { data: session } = await supabase.from("cash_sessions").select("opening_float").eq("id", sessionId).maybeSingle();
+    if (session && toCents(Number(session.opening_float)) !== cents) {
+      floatNotice = LABELS.cash.floatLocked(formatMAD(Number(session.opening_float)));
+    }
   }
 
   const { data, error } = await supabase.rpc("record_payment", {
@@ -59,7 +67,7 @@ export async function recordPayment(
   if (error) return failure(error.code === "P0002" ? LABELS.payment.alreadyPaid : await describeCenterError(error));
 
   revalidateStudents();
-  return success({ receiptId: data.id, receiptNumber: data.receipt_number ?? "", amountPaid: Number(data.amount_paid) });
+  return success({ receiptId: data.id, receiptNumber: data.receipt_number ?? "", amountPaid: Number(data.amount_paid), floatNotice });
 }
 
 // ---------------------------------------------------------------------
@@ -194,8 +202,12 @@ export async function updateCenterSettings(input: unknown): Promise<ActionResult
       address: parsed.data.address || null,
       phone: parsed.data.phone || null,
       receipt_format: parsed.data.receiptFormat,
-      // Message identique au modèle proposé : rien d'enregistré (il suit les mises à jour).
-      receipt_whatsapp_template: template && template !== LABELS.receipts.whatsappTemplate ? template : null,
+      // Message identique au modèle proposé : rien d'enregistré (il suit les mises à jour) ;
+      // variables sous leur forme d'origine (le modèle survit à un changement de vocabulaire).
+      receipt_whatsapp_template:
+        template && template !== LABELS.receipts.whatsappTemplate
+          ? toCanonicalTokens(template, LABELS.receipts.tokens, labelsFor().receipts.tokens)
+          : null,
     })
     .eq("id", profile.centerId);
   if (error) return failure(await describeCenterError(error));

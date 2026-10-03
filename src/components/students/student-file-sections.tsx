@@ -22,6 +22,7 @@ import { getCashOpening } from "@/lib/data/cash";
 import { discountBadgeLabel, discountState } from "@/lib/discounts";
 import { formatDate, formatDateTime, formatMAD, toISODate, today } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
+import { reminderStatus } from "@/lib/reminders";
 import { cn } from "@/lib/utils";
 
 /** Sections de la fiche élève, partagées par les espaces Accueil et Admin. */
@@ -303,7 +304,9 @@ function StudentReminders({ student, LABELS }: { student: StudentFile; LABELS: A
     <div className="flex flex-col gap-3 rounded-xl border px-4 py-3">
       <h3 className="font-semibold">{R.studentTitle}</h3>
       <ul className="flex flex-col divide-y divide-divider">
-        {student.reminderItems.map((item) => (
+        {student.reminderItems.map((item) => {
+          const status = reminderStatus(item, LABELS);
+          return (
           <li key={`${item.runId}:${item.dueDate}`} className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 lg:flex-row lg:items-center">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -314,15 +317,12 @@ function StudentReminders({ student, LABELS }: { student: StudentFile; LABELS: A
                 {item.subjectNames.join(", ")} · {R.due(formatDate(item.dueDate))}
                 {item.type === "overdue" && item.daysOverdue !== null ? ` · ${R.late(R.days(item.daysOverdue))}` : ""}
               </span>
-              <span className={cn("text-caption font-medium", item.lastSentAt ? "text-success-ink" : "text-muted-foreground")}>
-                {item.lastSentAt && item.lastChannel
-                  ? R.sent(R.channels[item.lastChannel], formatDateTime(item.lastSentAt), item.lastSentByName)
-                  : R.notSent}
-              </span>
+              <span className={cn("text-caption font-medium", status.done ? "text-success-ink" : "text-muted-foreground")}>{status.text}</span>
             </div>
             <ReminderActions item={item} />
           </li>
-        ))}
+          );
+        })}
       </ul>
     </div>
   );

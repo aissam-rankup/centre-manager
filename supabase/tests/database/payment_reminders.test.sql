@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(27);
+select plan(32);
 
 insert into auth.users (id, email) values
   ('a4c00000-0000-4000-8000-000000000001', 'admin-m-p84@test.local'),
@@ -33,7 +33,15 @@ insert into public.students (id, center_id, full_name, level_id, guardian_phone)
   ('54c00000-0000-4000-8000-000000000002', 'c4c00000-0000-4000-8000-0000000000a1', 'Élève 2 échéance', 'd4c00000-0000-4000-8000-0000000000a1', '0612345679'),
   ('54c00000-0000-4000-8000-000000000003', 'c4c00000-0000-4000-8000-0000000000a1', 'Élève 3 bientôt', 'd4c00000-0000-4000-8000-0000000000a1', null),
   ('54c00000-0000-4000-8000-000000000004', 'c4c00000-0000-4000-8000-0000000000a1', 'Élève 4 plus tard', 'd4c00000-0000-4000-8000-0000000000a1', null),
-  ('54c00000-0000-4000-8000-000000000005', 'c4c00000-0000-4000-8000-0000000000a1', 'Élève 5 à jour', 'd4c00000-0000-4000-8000-0000000000a1', null);
+  ('54c00000-0000-4000-8000-000000000005', 'c4c00000-0000-4000-8000-0000000000a1', 'Élève 5 à jour', 'd4c00000-0000-4000-8000-0000000000a1', null),
+  ('54c00000-0000-4000-8000-000000000006', 'c4c00000-0000-4000-8000-0000000000a1', 'Élève 6 pack', 'd4c00000-0000-4000-8000-0000000000a1', '0612345670');
+insert into public.packs (id, center_id, level_id, name, monthly_price) values
+  ('f4c00000-0000-4000-8000-000000000001', 'c4c00000-0000-4000-8000-0000000000a1', 'd4c00000-0000-4000-8000-0000000000a1', 'Duo', 450);
+insert into public.pack_subjects (pack_id, subject_id) values
+  ('f4c00000-0000-4000-8000-000000000001', 'e4c00000-0000-4000-8000-000000000001'),
+  ('f4c00000-0000-4000-8000-000000000001', 'e4c00000-0000-4000-8000-000000000002');
+insert into public.pack_enrollments (student_id, pack_id, start_date, billing_day)
+values ('54c00000-0000-4000-8000-000000000006', 'f4c00000-0000-4000-8000-000000000001', '2026-09-01', 1);
 insert into public.enrollments (id, student_id, subject_id, start_date, billing_day) values
   ('64c00000-0000-4000-8000-000000000011', '54c00000-0000-4000-8000-000000000001', 'e4c00000-0000-4000-8000-000000000001', '2026-09-01', 1),
   ('64c00000-0000-4000-8000-000000000021', '54c00000-0000-4000-8000-000000000002', 'e4c00000-0000-4000-8000-000000000001', '2026-09-01', 1),
@@ -61,6 +69,7 @@ update public.invoices set due_date = private.today() - 1 where student_id = '54
 update public.invoices set due_date = private.today() where student_id = '54c00000-0000-4000-8000-000000000002';
 update public.invoices set due_date = private.today() + 2 where student_id = '54c00000-0000-4000-8000-000000000003';
 update public.invoices set due_date = private.today() + 20 where student_id = '54c00000-0000-4000-8000-000000000004';
+update public.invoices set due_date = private.today() - 3 where student_id = '54c00000-0000-4000-8000-000000000006' and billing_run_id is not null;
 update public.invoices set status = 'paid', amount_paid = amount_due, paid_at = now()
 where student_id = '54c00000-0000-4000-8000-000000000005' and billing_run_id is not null;
 
@@ -72,7 +81,8 @@ set local request.jwt.claims = '{"sub":"a4c00000-0000-4000-8000-000000000002","r
 select results_eq(
   $$select full_name, reminder_type::text, suggested, amount_due from public.payment_reminder_queue() order by full_name$$,
   $$values ('Élève 1 retard', 'overdue', true, 300.00::numeric), ('Élève 2 échéance', 'due_today', true, 550.00::numeric),
-           ('Élève 3 bientôt', 'upcoming', true, 300.00::numeric), ('Élève 4 plus tard', 'upcoming', false, 300.00::numeric)$$,
+           ('Élève 3 bientôt', 'upcoming', true, 300.00::numeric), ('Élève 4 plus tard', 'upcoming', false, 300.00::numeric),
+           ('Élève 6 pack', 'overdue', true, 450.00::numeric)$$,
   'trois vagues ; l''élève à jour n''est jamais rappelé ; avant échéance conseillé dans les 3 jours');
 select is((select days_overdue from public.payment_reminder_queue() where student_id = '54c00000-0000-4000-8000-000000000001'), 1,
   'en retard depuis le lendemain de l''échéance : 1 jour');
@@ -137,6 +147,36 @@ select results_eq(
   'rappel en retard : compté comme relance du jour');
 select is((select days_overdue from public.payment_reminders where student_id = '54c00000-0000-4000-8000-000000000001'), 1::smallint,
   'jours de retard consignés avec le rappel');
+
+-- Et l'inverse : une relance de paiement notée depuis le suivi compte pour la vague « en retard ».
+select results_eq(
+  $$select subject_names, pack_flags, followed_up_at is null from public.payment_reminder_queue()
+    where student_id = '54c00000-0000-4000-8000-000000000006'$$,
+  $$values (array['Duo'], array[true], true)$$,
+  'facture de pack signalée (libellé « Pack … » côté application) ; pas encore relancé');
+reset role;
+-- Relance notée avant le début du retard : elle ne vaut pas pour ce retard.
+insert into public.follow_ups (student_id, type, channel, note, created_by, created_at)
+values ('54c00000-0000-4000-8000-000000000006', 'payment', 'phone', 'Ancienne', 'a4c00000-0000-4000-8000-000000000002', now() - interval '10 days');
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"a4c00000-0000-4000-8000-000000000002","role":"authenticated"}';
+select is((select followed_up_at from public.payment_reminder_queue() where student_id = '54c00000-0000-4000-8000-000000000006'), null,
+  'relance notée avant le retard : ne compte pas');
+insert into public.follow_ups (student_id, type, channel, note, created_by)
+values ('54c00000-0000-4000-8000-000000000006', 'payment', 'phone', 'Appel au père', 'a4c00000-0000-4000-8000-000000000002');
+select results_eq(
+  $$select followed_up_at is not null, last_sent_at is null, suggested from public.payment_reminder_queue()
+    where student_id = '54c00000-0000-4000-8000-000000000006'$$,
+  $$values (true, true, true)$$,
+  'relance de paiement notée aujourd''hui : comptée dans la vague « en retard » (plus proposée dans « Tout envoyer »)');
+select is((select followed_up_at from public.payment_reminder_queue() where student_id = '54c00000-0000-4000-8000-000000000002'), null,
+  'vague du jour de l''échéance : la relance du suivi ne s''y applique pas');
+insert into public.follow_ups (student_id, type, channel, note, created_by)
+values ('54c00000-0000-4000-8000-000000000001', 'absence', 'phone', 'Absence', 'a4c00000-0000-4000-8000-000000000002');
+select results_eq(
+  $$select reminder_type::text, followed_up_at from public.payment_reminder_queue() where student_id = '54c00000-0000-4000-8000-000000000001'$$,
+  $$values ('overdue', null::timestamptz)$$,
+  'une relance d''absence ne compte pas comme relance de paiement');
 
 -- ---------------------------------------------------------------------
 -- Accès

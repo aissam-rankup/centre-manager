@@ -2,8 +2,11 @@ import "server-only";
 
 import type { AbsenceToNotify } from "@/lib/absences";
 import { requireStaff } from "@/lib/auth/session";
+import { labelsFor } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { signPhotoUrls } from "@/lib/storage/photos";
 import { createClient } from "@/lib/supabase/server";
+import { fromCanonicalTokens } from "@/lib/templates";
 
 export type AbsenceAlertsSettings = { enabled: boolean; template: string | null };
 
@@ -17,7 +20,12 @@ export async function getAbsenceAlertsSettings(): Promise<AbsenceAlertsSettings>
     .eq("id", profile.centerId)
     .single();
   if (error) throw error;
-  return { enabled: data.absence_notification_enabled, template: data.absence_notification_template };
+  // Modèle enregistré avec les variables d'origine : affiché dans le vocabulaire du centre.
+  const template = data.absence_notification_template;
+  return {
+    enabled: data.absence_notification_enabled,
+    template: template ? fromCanonicalTokens(template, (await getLabels()).absenceAlerts.tokens, labelsFor().absenceAlerts.tokens) : null,
+  };
 }
 
 /**

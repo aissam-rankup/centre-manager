@@ -162,6 +162,7 @@ export function PaymentDialog({
         return;
       }
       toast.success(P.success, { description: P.receiptReady(result.data.receiptNumber, formatMAD(result.data.amountPaid)) });
+      if (result.data.floatNotice) toast.warning(result.data.floatNotice);
       setDone(result.data);
     });
   };

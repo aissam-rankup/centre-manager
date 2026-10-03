@@ -1,9 +1,12 @@
 import "server-only";
 
 import { requireStaff } from "@/lib/auth/session";
+import { labelsFor } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import type { ReminderItem, ReminderSettings } from "@/lib/reminders";
 import { signPhotoUrls } from "@/lib/storage/photos";
 import { createClient } from "@/lib/supabase/server";
+import { fromCanonicalTokens } from "@/lib/templates";
 
 /** Réglages des rappels de paiement du centre connecté (accueil et admin). */
 export async function getReminderSettings(): Promise<ReminderSettings> {
@@ -17,13 +20,17 @@ export async function getReminderSettings(): Promise<ReminderSettings> {
     .eq("id", profile.centerId)
     .single();
   if (error) throw error;
+  // Modèles enregistrés avec les variables d'origine : affichés dans le vocabulaire du centre.
+  const tokens = (await getLabels()).reenrollment.reminders.tokens;
+  const canonical = labelsFor().reenrollment.reminders.tokens;
+  const shown = (template: string | null) => (template ? fromCanonicalTokens(template, tokens, canonical) : null);
   return {
     enabled: data.payment_reminders_enabled,
     daysBefore: data.reminder_days_before,
     templates: {
-      upcoming: data.reminder_template_upcoming,
-      due_today: data.reminder_template_due_today,
-      overdue: data.reminder_template_overdue,
+      upcoming: shown(data.reminder_template_upcoming),
+      due_today: shown(data.reminder_template_due_today),
+      overdue: shown(data.reminder_template_overdue),
     },
   };
 }
@@ -35,6 +42,7 @@ export async function getReminderSettings(): Promise<ReminderSettings> {
  */
 export async function getReminderQueue(filter: { runId?: string; studentId?: string } = {}): Promise<ReminderItem[]> {
   await requireStaff();
+  const LABELS = await getLabels();
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("payment_reminder_queue", {
     p_run_id: filter.runId,
@@ -58,9 +66,11 @@ export async function getReminderQueue(filter: { runId?: string; studentId?: str
     suggested: row.suggested,
     amountDue: Number(row.amount_due),
     invoiceIds: row.invoice_ids,
-    subjectNames: row.subject_names,
+    // Facture de pack : « Pack … », comme dans la fiche de l'élève et ses reçus.
+    subjectNames: row.subject_names.map((name, index) => (row.pack_flags[index] ? LABELS.packs.label(name) : name)),
     lastSentAt: row.last_sent_at ?? null,
     lastSentByName: row.last_sent_by_name ?? null,
     lastChannel: row.last_channel ?? null,
+    followedUpAt: row.followed_up_at ?? null,
   }));
 }

@@ -1,6 +1,8 @@
 import type { NotificationChannel } from "@/lib/absences";
-import type { AppLabels } from "@/lib/constants/labels";
+import { type AppLabels, labelsFor } from "@/lib/constants/labels";
+import { formatDateTime } from "@/lib/format";
 import type { Database } from "@/lib/supabase/database.types";
+import { fillTemplate } from "@/lib/templates";
 
 export type ReminderType = Database["public"]["Enums"]["payment_reminder_type"];
 export const REMINDER_TYPES = ["upcoming", "due_today", "overdue"] as const satisfies readonly ReminderType[];
@@ -27,6 +29,8 @@ export type ReminderItem = {
   subjectNames: string[];
   /** Dernier rappel de cette vague pour ces factures. */
   lastSentAt: string | null;
+  /** En retard : relance de paiement notée depuis le suivi (appel, visite) depuis le retard. */
+  followedUpAt: string | null;
   lastSentByName: string | null;
   lastChannel: NotificationChannel | null;
 };
@@ -56,11 +60,22 @@ export function renderReminderMessage(
   LABELS: AppLabels,
 ): string {
   const R = LABELS.reenrollment.reminders;
-  let message = template?.trim() ? template : R.templates[type];
-  for (const key of Object.keys(R.tokens) as (keyof typeof R.tokens)[]) {
-    message = message.split(R.tokens[key]).join(values[key]);
+  return fillTemplate(template?.trim() ? template : R.templates[type], R.tokens, labelsFor().reenrollment.reminders.tokens, values);
+}
+
+/** État d'un rappel : dernier envoi de la vague, sinon relance notée depuis le suivi, sinon « pas encore envoyé ». */
+export function reminderStatus(item: ReminderItem, LABELS: AppLabels): { text: string; done: boolean } {
+  const R = LABELS.reenrollment.reminders;
+  if (item.lastSentAt && item.lastChannel) {
+    return { text: R.sent(R.channels[item.lastChannel], formatDateTime(item.lastSentAt), item.lastSentByName), done: true };
   }
-  return message;
+  if (item.followedUpAt) return { text: R.followedUp(formatDateTime(item.followedUpAt)), done: true };
+  return { text: R.notSent, done: false };
+}
+
+/** À proposer dans « Tout envoyer » : conseillé aujourd'hui, ni envoyé, ni relancé depuis le suivi. */
+export function reminderToSend(item: ReminderItem): boolean {
+  return item.suggested && !item.lastSentAt && !item.followedUpAt;
 }
 
 /** Clé d'un rappel : une campagne, un élève, une échéance. */
