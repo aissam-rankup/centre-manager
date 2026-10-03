@@ -48,11 +48,11 @@ function useSendReminder(): { send: Send; pending: boolean } {
           dueDate: item.dueDate,
           channel,
           phone,
-          repeat: Boolean(item.lastSentAt),
         });
         if (!result.ok) {
           target?.close();
           toast.error(result.error);
+          router.refresh();
           resolve(false);
           return;
         }
@@ -214,20 +214,23 @@ export function SendAllRemindersDialog({ items }: { items: ReminderItem[] }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button
-        variant="success"
-        className="min-h-11"
-        onClick={() => {
-          setQueue(items);
-          setIndex(0);
-          setPhone("");
-          setPhoneError(null);
-          setOpen(true);
-        }}
-      >
-        <Users aria-hidden />
-        {R.sendAll(items.length)}
-      </Button>
+      {/* Toujours monté : la file continue quand la liste se réduit après chaque envoi. */}
+      {items.length > 1 || open ? (
+        <Button
+          variant="success"
+          className="min-h-11"
+          onClick={() => {
+            setQueue(items);
+            setIndex(0);
+            setPhone("");
+            setPhoneError(null);
+            setOpen(true);
+          }}
+        >
+          <Users aria-hidden />
+          {R.sendAll(items.length)}
+        </Button>
+      ) : null}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-section">{Q.title}</DialogTitle>

@@ -1647,6 +1647,7 @@ export type Database = {
       }
       payment_reminders: {
         Row: {
+          amount_reminded: number | null
           billing_run_id: string | null
           center_id: string
           channel: Database["public"]["Enums"]["notification_channel"]
@@ -1665,6 +1666,7 @@ export type Database = {
           template_used: string | null
         }
         Insert: {
+          amount_reminded?: number | null
           billing_run_id?: string | null
           center_id: string
           channel: Database["public"]["Enums"]["notification_channel"]
@@ -1683,6 +1685,7 @@ export type Database = {
           template_used?: string | null
         }
         Update: {
+          amount_reminded?: number | null
           billing_run_id?: string | null
           center_id?: string
           channel?: Database["public"]["Enums"]["notification_channel"]

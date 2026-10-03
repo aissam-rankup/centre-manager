@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(67);
+select plan(68);
 
 insert into auth.users (id, email) values
   ('a1800000-0000-4000-8000-000000000001', 'admin-p8@test.local'),
@@ -169,18 +169,22 @@ select throws_ok(
 select set_config('p8.other_invoice', (select id::text from public.invoices where enrollment_id = '61800000-0000-4000-8000-000000000002'), true);
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"a1800000-0000-4000-8000-000000000002","role":"authenticated"}';
+select throws_ok(
+  $$insert into public.payment_reminders (student_id, center_id, invoice_id, message_id, reminder_type, channel)
+    select '51800000-0000-4000-8000-000000000001', 'c1800000-0000-4000-8000-000000000001', i.id, gen_random_uuid(), 'upcoming', 'whatsapp'
+    from public.invoices i where i.enrollment_id = '61800000-0000-4000-8000-000000000001'$$,
+  '42501', null, 'accueil : pas d''écriture directe (envoi par la fonction dédiée)');
+-- Le déclencheur, dernier rempart de la fonction d'envoi, est testé avec les droits du propriétaire.
+reset role;
 select lives_ok(
   $$insert into public.payment_reminders (student_id, center_id, invoice_id, message_id, reminder_type, channel, message_body)
     select '51800000-0000-4000-8000-000000000001', 'c1800000-0000-4000-8000-000000000002', i.id, gen_random_uuid(), 'upcoming', 'whatsapp', 'Bonjour'
     from public.invoices i where i.enrollment_id = '61800000-0000-4000-8000-000000000001'$$,
-  'accueil : rappel consigné');
-reset role;
+  'rappel consigné');
 select results_eq(
   $$select center_id::text, sent_by::text, billing_run_id is null from public.payment_reminders where student_id = '51800000-0000-4000-8000-000000000001'$$,
   $$values ('c1800000-0000-4000-8000-000000000001', 'a1800000-0000-4000-8000-000000000002', false)$$,
   'rappel : centre, auteur et campagne de la facture posés par la base');
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"a1800000-0000-4000-8000-000000000002","role":"authenticated"}';
 select throws_ok(
   $$insert into public.payment_reminders (student_id, center_id, invoice_id, message_id, reminder_type, channel)
     select '51800000-0000-4000-8000-000000000001', 'c1800000-0000-4000-8000-000000000001', i.id, gen_random_uuid(), 'upcoming', 'whatsapp'
@@ -196,6 +200,7 @@ select throws_ok(
     values ('51800000-0000-4000-8000-000000000002', 'c1800000-0000-4000-8000-000000000002',
             current_setting('p8.other_invoice')::uuid, gen_random_uuid(), 'overdue', 'whatsapp')$$,
   '42501', null, 'accueil : aucun rappel pour l''élève d''un autre centre');
+set local role authenticated;
 select throws_ok($$update public.payment_reminders set message_body = 'Modifié'$$, '42501', null, 'rappel : journal non modifiable');
 reset role;
 update public.invoices set status = 'paid', amount_paid = amount_due, paid_at = now(), payment_method = 'cash'

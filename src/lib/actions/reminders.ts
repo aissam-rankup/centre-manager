@@ -28,7 +28,6 @@ const sendSchema = z.object({
   dueDate: z.iso.date(),
   channel: z.enum(NOTIFICATION_CHANNELS),
   phone: z.string().trim().optional(),
-  repeat: z.boolean().default(false),
 });
 
 /**
@@ -86,7 +85,7 @@ export async function sendPaymentReminder(input: unknown): Promise<ActionResult<
     p_message: message ?? undefined,
     p_phone: phone ?? undefined,
     p_template: template ?? undefined,
-    p_is_repeat: parsed.data.repeat,
+    p_is_repeat: Boolean(item.lastSentAt),
   });
   if (error) return failure(await describeCenterError(error));
 

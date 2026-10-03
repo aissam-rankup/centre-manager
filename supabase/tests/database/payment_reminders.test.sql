@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(27);
 
 insert into auth.users (id, email) values
   ('a4c00000-0000-4000-8000-000000000001', 'admin-m-p84@test.local'),
@@ -91,6 +91,8 @@ select results_eq(
     from public.payment_reminders where student_id = '54c00000-0000-4000-8000-000000000002'$$,
   $$values (2, 1, true, true, true, true)$$,
   'une ligne par facture couverte, un seul message, auteur, centre et campagne posés par la base');
+select is((select sum(amount_reminded) from public.payment_reminders where student_id = '54c00000-0000-4000-8000-000000000002'),
+  550.00::numeric, 'montant rappelé conservé avec le rappel');
 select results_eq(
   $$select status::text, sent_at is not null from public.billing_runs where id = current_setting('test.run_id')::uuid$$,
   $$values ('sent', true)$$,
@@ -156,6 +158,24 @@ set local request.jwt.claims = '{"sub":"a4c00000-0000-4000-8000-000000000009","r
 select throws_ok($$select public.record_payment_reminder(current_setting('test.run_id')::uuid,
   '54c00000-0000-4000-8000-000000000004', private.today() + 20, 'whatsapp')$$, '42501', 'Mode support : lecture seule.',
   'support : lecture seule');
+reset role;
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"a4c00000-0000-4000-8000-000000000002","role":"authenticated"}';
+select throws_ok($$insert into public.payment_reminders (student_id, center_id, invoice_id, message_id, reminder_type, channel)
+  select student_id, 'c4c00000-0000-4000-8000-0000000000a1', id, gen_random_uuid(), 'overdue', 'whatsapp'
+  from public.invoices where student_id = '54c00000-0000-4000-8000-000000000004' and billing_run_id is not null$$,
+  '42501', null, 'accueil : pas d''écriture directe dans le journal des rappels');
+reset role;
+select set_config('request.jwt.claims', '', true);
+
+-- Facture à 0 MAD (remise totale) : jamais de rappel.
+update public.invoices set discount_amount = amount_full, amount_due = 0
+where student_id = '54c00000-0000-4000-8000-000000000004' and billing_run_id is not null;
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"a4c00000-0000-4000-8000-000000000002","role":"authenticated"}';
+select is((select count(*)::int from public.payment_reminder_queue() where student_id = '54c00000-0000-4000-8000-000000000004'), 0,
+  'facture à 0 MAD : hors de la file des rappels');
 reset role;
 
 -- Rappels désactivés : file vide, envoi refusé.

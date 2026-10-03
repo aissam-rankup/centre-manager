@@ -383,7 +383,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     supabase
       .from("payment_reminders")
       .select(
-        "id, message_id, reminder_type, channel, sent_at, is_repeat, profiles(full_name), invoices(amount_due, enrollments(subjects(name)), pack_enrollments(packs(name)))",
+        "id, message_id, reminder_type, channel, sent_at, is_repeat, amount_reminded, profiles(full_name), invoices(amount_due, amount_paid, enrollments(subjects(name)), pack_enrollments(packs(name)))",
       )
       .eq("student_id", studentId)
       .eq("status", "sent")
@@ -406,9 +406,10 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     const name = row.invoices?.pack_enrollments?.packs?.name
       ? LABELS.packs.label(row.invoices.pack_enrollments.packs.name)
       : (row.invoices?.enrollments?.subjects?.name ?? "");
+    const amount = Number(row.amount_reminded ?? Number(row.invoices?.amount_due ?? 0) - Number(row.invoices?.amount_paid ?? 0));
     const current = reminders.get(row.message_id);
     if (current) {
-      current.amount += Number(row.invoices?.amount_due ?? 0);
+      current.amount += amount;
       if (name) current.subjectNames.push(name);
       continue;
     }
@@ -418,7 +419,7 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
       channel: row.channel,
       sentAt: row.sent_at,
       authorName: row.profiles?.full_name ?? null,
-      amount: Number(row.invoices?.amount_due ?? 0),
+      amount,
       subjectNames: name ? [name] : [],
       isRepeat: row.is_repeat,
     });

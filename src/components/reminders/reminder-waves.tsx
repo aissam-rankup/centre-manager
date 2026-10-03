@@ -54,7 +54,7 @@ export function ReminderWaves({ items, daysBefore, fileBase }: ReminderWavesProp
             })}
           </ul>
         </div>
-        {toSend.length > 1 ? <SendAllRemindersDialog items={toSend} /> : null}
+        <SendAllRemindersDialog items={toSend} />
       </div>
 
       {visible.length === 0 ? (

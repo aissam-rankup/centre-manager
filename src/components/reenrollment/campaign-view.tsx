@@ -152,7 +152,7 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
 
       {page.reminders ? (
         <SectionCard title={LABELS.reenrollment.reminders.title} description={LABELS.reenrollment.reminders.description}>
-          <ReminderWaves items={page.reminders.items} daysBefore={page.reminders.daysBefore} fileBase={fileBase} />
+          <ReminderWaves key={run.id} items={page.reminders.items} daysBefore={page.reminders.daysBefore} fileBase={fileBase} />
         </SectionCard>
       ) : null}
 

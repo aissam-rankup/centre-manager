@@ -79,7 +79,7 @@ export function AbsenceAlertsBlock({ items, fileBase }: { items: AbsenceToNotify
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-caption text-muted-foreground">{A.description}</p>
-        {pending.length > 1 ? <NotifyAllDialog items={pending} /> : null}
+        <NotifyAllDialog items={pending} />
       </div>
       {items.length === 0 ? (
         <p className="rounded-xl bg-muted px-4 py-6 text-center text-muted-foreground">{A.emptyDescription}</p>
@@ -283,19 +283,22 @@ function NotifyAllDialog({ items }: { items: AbsenceToNotify[] }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button
-        variant="success"
-        onClick={() => {
-          setQueue(items);
-          setIndex(0);
-          setPhone("");
-          setPhoneError(null);
-          setOpen(true);
-        }}
-      >
-        <Users aria-hidden />
-        {A.notifyAll(items.length)}
-      </Button>
+      {/* Toujours monté : la file continue quand la liste se réduit après chaque envoi. */}
+      {items.length > 1 || open ? (
+        <Button
+          variant="success"
+          onClick={() => {
+            setQueue(items);
+            setIndex(0);
+            setPhone("");
+            setPhoneError(null);
+            setOpen(true);
+          }}
+        >
+          <Users aria-hidden />
+          {A.notifyAll(items.length)}
+        </Button>
+      ) : null}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-section">{Q.title}</DialogTitle>
