@@ -11,7 +11,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(39);
+select plan(40);
 
 insert into auth.users (id, email) values
   ('a8f00000-0000-4000-8000-000000000001', 'admin-y-p88@test.local'),
@@ -214,9 +214,14 @@ reset role;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"a8f00000-0000-4000-8000-000000000001","role":"authenticated"}';
 select is(
-  public.cash_session_summary(current_setting('test.s1')::uuid) - array['status', 'notes', 'validated_at', 'validated_by_name'],
-  current_setting('test.snapshot')::jsonb - array['status', 'notes', 'validated_at', 'validated_by_name'],
-  'session clôturée : chiffres, reçus et mouvements identiques après encaissements, annulation, correction et validation');
+  public.cash_session_summary(current_setting('test.s1')::uuid) - array['status', 'validated_at', 'validated_by_name', 'validation_notes', 'corrections'],
+  current_setting('test.snapshot')::jsonb - array['status', 'validated_at', 'validated_by_name', 'validation_notes', 'corrections'],
+  'session clôturée : chiffres, reçus, mouvements et note identiques après encaissements, annulation, correction et validation');
+select results_eq(
+  $$select (c ->> 'amount')::numeric, c ->> 'cash_session_id'
+    from jsonb_array_elements(public.cash_session_summary(current_setting('test.s1')::uuid) -> 'corrections') c$$,
+  $$values (-0.01::numeric, current_setting('test.s2'))$$,
+  'la correction est montrée à côté de la session corrigée, sans en changer les chiffres');
 -- Indicateurs du mois : l'encaissé est la somme des reçus de toutes les sessions du mois.
 select is(
   (select (public.cash_month_overview() ->> 'collected')::numeric),

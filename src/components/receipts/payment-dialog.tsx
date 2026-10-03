@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { recordPayment } from "@/lib/actions/receipts";
 import { ROUTES } from "@/lib/auth/routes";
+import type { CashOpening } from "@/lib/cash";
 import { formatMAD } from "@/lib/format";
 import { useLabels } from "@/lib/i18n/client";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/receipts";
@@ -46,8 +47,11 @@ type PaymentDialogProps = {
   guardianPhone: string | null;
   invoices: PayableInvoice[];
   triggerLabel: string;
-  /** Aucune caisse ouverte aujourd'hui : le fonds de caisse est demandé (elle s'ouvre avec ce paiement). */
-  needsCashOpening?: boolean;
+  /**
+   * Pas de caisse ouverte, ou ouverte sans encaissement : le fonds de caisse
+   * est demandé, prérempli avec le fonds actuel ; envoyé seulement s'il change.
+   */
+  cashOpening?: CashOpening;
 };
 
 /** Ouverture depuis une ligne de facture (même dialogue, cette seule facture cochée). */
@@ -79,7 +83,7 @@ export function PaymentDialog({
   guardianPhone,
   invoices,
   triggerLabel,
-  needsCashOpening = false,
+  cashOpening = { needed: false, currentFloat: 0 },
 }: PaymentDialogProps) {
   const LABELS = useLabels();
   const P = LABELS.payment;
@@ -90,7 +94,8 @@ export function PaymentDialog({
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(dueNow));
   const [method, setMethod] = useState<PaymentMethod>("cash");
-  const [openingFloat, setOpeningFloat] = useState("0");
+  const initialFloat = String(cashOpening.currentFloat).replace(".", ",");
+  const [openingFloat, setOpeningFloat] = useState(initialFloat);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
   const [pending, startTransition] = useTransition();
@@ -104,12 +109,12 @@ export function PaymentDialog({
     (selection: string[]) => {
       setSelected(new Set(selection));
       setMethod("cash");
-      setOpeningFloat("0");
+      setOpeningFloat(initialFloat);
       setError(null);
       setDone(null);
       setOpen(true);
     },
-    [],
+    [initialFloat],
   );
 
   const onOpenChange = (value: boolean) => {
@@ -149,7 +154,8 @@ export function PaymentDialog({
         studentId,
         invoiceIds: chosen.map((invoice) => invoice.id),
         method,
-        openingFloat: needsCashOpening ? openingFloat : undefined,
+        // Fonds inchangé : rien n'est envoyé (celui saisi entre-temps à la caisse est gardé).
+        openingFloat: cashOpening.needed && openingFloat.trim() !== initialFloat ? openingFloat : undefined,
       });
       if (!result.ok) {
         setError(result.error);
@@ -285,7 +291,7 @@ export function PaymentDialog({
               </div>
             </fieldset>
 
-            {needsCashOpening ? (
+            {cashOpening.needed ? (
               <label className="flex flex-col gap-1.5 rounded-xl border border-dashed px-4 py-3">
                 <span className="font-medium">{LABELS.cash.openingFloat}</span>
                 <span className="text-caption text-muted-foreground">{LABELS.cash.openingFloatHint}</span>

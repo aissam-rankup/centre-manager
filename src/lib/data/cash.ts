@@ -3,7 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { requireStaff } from "@/lib/auth/session";
-import type { CashSessionSummary } from "@/lib/cash";
+import type { CashOpening, CashSessionSummary } from "@/lib/cash";
 import { toISODate, today } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/receipts";
 import { createClient } from "@/lib/supabase/server";
@@ -26,6 +26,7 @@ const summarySchema = z
     closed_by_name: z.string().nullable(),
     validated_at: z.string().nullable(),
     validated_by_name: z.string().nullable(),
+    validation_notes: z.string().nullable(),
     counted_cash: nullableAmount,
     variance: nullableAmount,
     variance_reason: z.string().nullable(),
@@ -56,6 +57,18 @@ const summarySchema = z
         created_at: z.string(),
         created_by_name: z.string().nullable(),
         corrects_session_id: z.string().nullable(),
+        corrected_session_date: z.string().nullable(),
+      }),
+    ),
+    corrections: z.array(
+      z.object({
+        id: z.string(),
+        amount,
+        reason: z.string().nullable(),
+        created_at: z.string(),
+        created_by_name: z.string().nullable(),
+        cash_session_id: z.string(),
+        session_date: z.string(),
       }),
     ),
   })
@@ -73,6 +86,7 @@ const summarySchema = z
       closedByName: row.closed_by_name,
       validatedAt: row.validated_at,
       validatedByName: row.validated_by_name,
+      validationNotes: row.validation_notes,
       countedCash: row.counted_cash,
       variance: row.variance,
       varianceReason: row.variance_reason,
@@ -100,6 +114,16 @@ const summarySchema = z
         createdAt: movement.created_at,
         createdByName: movement.created_by_name,
         correctsSessionId: movement.corrects_session_id,
+        correctedSessionDate: movement.corrected_session_date,
+      })),
+      corrections: row.corrections.map((correction) => ({
+        id: correction.id,
+        amount: correction.amount,
+        reason: correction.reason,
+        createdAt: correction.created_at,
+        createdByName: correction.created_by_name,
+        cashSessionId: correction.cash_session_id,
+        sessionDate: correction.session_date,
       })),
     }),
   );
@@ -165,16 +189,17 @@ export async function getCashPage(): Promise<CashPage> {
 }
 
 /** Encaissement : faut-il demander le fonds de caisse (aucune session ouverte aujourd'hui) ? */
-export async function needsCashOpening(): Promise<boolean> {
+/** Fonds de caisse à demander avec un paiement : pas de caisse ouverte, ou ouverte sans encaissement. */
+export async function getCashOpening(): Promise<CashOpening> {
   const profile = await requireStaff();
-  if (profile.support) return false;
+  if (profile.support) return { needed: false, currentFloat: 0 };
   const supabase = await createClient();
   const todayIso = toISODate(today());
   const [center, sessions] = await Promise.all([
     supabase.from("centers").select("cash_session_per_assistant").eq("id", profile.centerId).single(),
     supabase
       .from("cash_sessions")
-      .select("id, is_shared, assistant_id")
+      .select("id, is_shared, assistant_id, opening_float")
       .eq("center_id", profile.centerId)
       .eq("status", "open")
       .eq("session_date", todayIso),
@@ -183,7 +208,7 @@ export async function needsCashOpening(): Promise<boolean> {
   if (sessions.error) throw sessions.error;
   const perAssistant = center.data.cash_session_per_assistant;
   const current = sessions.data.find((session) => (perAssistant ? session.assistant_id === profile.id : session.is_shared));
-  if (!current) return true;
+  if (!current) return { needed: true, currentFloat: 0 };
   // Caisse ouverte par une annulation ou un mouvement : le fonds reste à saisir jusqu'au premier encaissement.
   const { count, error } = await supabase
     .from("receipts")
@@ -191,7 +216,7 @@ export async function needsCashOpening(): Promise<boolean> {
     .eq("cash_session_id", current.id)
     .eq("kind", "payment");
   if (error) throw error;
-  return (count ?? 0) === 0;
+  return { needed: (count ?? 0) === 0, currentFloat: Number(current.opening_float) };
 }
 
 export type CashSettings = { perAssistant: boolean; threshold: number };

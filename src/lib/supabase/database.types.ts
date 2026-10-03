@@ -580,6 +580,7 @@ export type Database = {
           status: Database["public"]["Enums"]["cash_session_status"]
           validated_at: string | null
           validated_by: string | null
+          validation_notes: string | null
           variance: number | null
           variance_reason: string | null
         }
@@ -601,6 +602,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["cash_session_status"]
           validated_at?: string | null
           validated_by?: string | null
+          validation_notes?: string | null
           variance?: number | null
           variance_reason?: string | null
         }
@@ -622,6 +624,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["cash_session_status"]
           validated_at?: string | null
           validated_by?: string | null
+          validation_notes?: string | null
           variance?: number | null
           variance_reason?: string | null
         }

@@ -21,7 +21,7 @@ export default async function AdminCashPage({ searchParams }: PageProps<"/admin/
 
   return (
     <div className="flex flex-col gap-6">
-      <CashView page={page} fileBase={ROUTES.admin.students} />
+      <CashView page={page} fileBase={ROUTES.admin.students} cashBase={ROUTES.admin.cash} />
       {history ? <CashHistory rows={history.rows} overview={history.overview} month={month} todayIso={todayIso} LABELS={LABELS} /> : null}
     </div>
   );

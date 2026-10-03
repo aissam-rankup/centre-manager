@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
+import { toCents } from "@/lib/cash";
 import { getCashSessionSummary } from "@/lib/data/cash";
 import { formatDate } from "@/lib/format";
 import { getLabels } from "@/lib/i18n/server";
@@ -49,14 +50,17 @@ export default async function AdminCashSessionPage({ params }: PageProps<"/admin
             </Button>
             {session.status === "closed" ? (
               <>
-                <CorrectCashSessionButton sessionId={session.id} />
+                <CorrectCashSessionButton
+                  sessionId={session.id}
+                  corrected={session.corrections.reduce((sum, correction) => sum + toCents(correction.amount), 0) / 100}
+                />
                 <ValidateCashSessionButton sessionId={session.id} />
               </>
             ) : null}
           </>
         }
       />
-      <SessionPanel session={session} LABELS={LABELS} fileBase={ROUTES.admin.students} />
+      <SessionPanel session={session} LABELS={LABELS} fileBase={ROUTES.admin.students} cashBase={ROUTES.admin.cash} />
     </div>
   );
 }

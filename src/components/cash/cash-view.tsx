@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { ROUTES } from "@/lib/auth/routes";
-import type { CashSessionSummary } from "@/lib/cash";
+import { type CashSessionSummary, toCents } from "@/lib/cash";
 import type { AppLabels } from "@/lib/constants/labels";
 import type { CashPage } from "@/lib/data/cash";
 import { formatDate, formatDateTime, formatMAD, formatTime } from "@/lib/format";
@@ -15,7 +15,7 @@ import { PAYMENT_METHODS } from "@/lib/receipts";
 import { cn } from "@/lib/utils";
 
 /** Caisse du jour : ouverture, encaissements par mode, mouvements, comptage et clôture. */
-export async function CashView({ page, fileBase }: { page: CashPage; fileBase: string }) {
+export async function CashView({ page, fileBase, cashBase }: { page: CashPage; fileBase: string; cashBase?: string }) {
   const LABELS = await getLabels();
   const C = LABELS.cash;
 
@@ -44,7 +44,7 @@ export async function CashView({ page, fileBase }: { page: CashPage; fileBase: s
               <span className="font-semibold">{C.staleTitle}</span> {C.staleDescription}
             </span>
           </p>
-          <SessionPanel session={session} LABELS={LABELS} fileBase={fileBase} />
+          <SessionPanel session={session} LABELS={LABELS} fileBase={fileBase} cashBase={cashBase} />
         </div>
       ))}
 
@@ -55,7 +55,7 @@ export async function CashView({ page, fileBase }: { page: CashPage; fileBase: s
       ) : null}
 
       {page.current ? (
-        <SessionPanel session={page.current} LABELS={LABELS} fileBase={fileBase} />
+        <SessionPanel session={page.current} LABELS={LABELS} fileBase={fileBase} cashBase={cashBase} />
       ) : (
         <SectionCard title={C.closedTitle} description={C.closedDescription}>
           <OpenCashForm />
@@ -63,22 +63,27 @@ export async function CashView({ page, fileBase }: { page: CashPage; fileBase: s
       )}
 
       {page.closedToday.map((session) => (
-        <SessionPanel key={session.id} session={session} LABELS={LABELS} fileBase={fileBase} />
+        <SessionPanel key={session.id} session={session} LABELS={LABELS} fileBase={fileBase} cashBase={cashBase} />
       ))}
     </div>
   );
 }
 
-/** Une session : totaux par mode, liste des encaissements et des mouvements, clôture ou résultat. */
+/**
+ * Une session : totaux par mode, liste des encaissements et des mouvements,
+ * clôture ou résultat. `cashBase` (admin) relie une correction à la session qu'elle vise.
+ */
 export function SessionPanel({
   session,
   LABELS,
   fileBase,
+  cashBase,
   closable = true,
 }: {
   session: CashSessionSummary;
   LABELS: AppLabels;
   fileBase: string;
+  cashBase?: string;
   closable?: boolean;
 }) {
   const C = LABELS.cash;
@@ -166,6 +171,15 @@ export function SessionPanel({
                         {movement.reason ?? C.hiddenReason}
                         {movement.createdByName ? ` · ${movement.createdByName}` : ""}
                       </span>
+                      {movement.correctsSessionId && movement.correctedSessionDate ? (
+                        cashBase ? (
+                          <Link href={`${cashBase}/${movement.correctsSessionId}`} className="text-caption font-medium text-primary hover:underline">
+                            {C.correctsSession(formatDate(movement.correctedSessionDate))}
+                          </Link>
+                        ) : (
+                          <span className="text-caption text-muted-foreground">{C.correctsSession(formatDate(movement.correctedSessionDate))}</span>
+                        )
+                      ) : null}
                     </span>
                     <span className={cn("numeric shrink-0 font-semibold", movement.amount < 0 && "text-danger-ink")}>
                       {formatMAD(movement.amount)}
@@ -175,6 +189,33 @@ export function SessionPanel({
               </ul>
             )}
           </div>
+
+          {session.corrections.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <h3 className="font-semibold">{C.correctionsTitle}</h3>
+              <ul className="flex flex-col divide-y divide-divider">
+                {session.corrections.map((correction) => (
+                  <li key={correction.id} className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="font-medium">{correction.reason}</span>
+                      {cashBase ? (
+                        <Link href={`${cashBase}/${correction.cashSessionId}`} className="text-caption text-muted-foreground hover:text-primary">
+                          {C.correctionLine(formatDate(correction.sessionDate), correction.createdByName)}
+                        </Link>
+                      ) : (
+                        <span className="text-caption text-muted-foreground">
+                          {C.correctionLine(formatDate(correction.sessionDate), correction.createdByName)}
+                        </span>
+                      )}
+                    </span>
+                    <span className={cn("numeric shrink-0 font-semibold", correction.amount < 0 && "text-danger-ink")}>
+                      {formatMAD(correction.amount)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-4 rounded-xl border px-4 py-4">
@@ -197,9 +238,19 @@ export function SessionPanel({
   );
 }
 
+function varianceLabel(variance: number, LABELS: AppLabels): string {
+  const C = LABELS.cash;
+  return variance === 0 ? C.variance.none : variance < 0 ? C.variance.shortage(formatMAD(-variance)) : C.variance.surplus(formatMAD(variance));
+}
+
 function ClosedResult({ session, LABELS }: { session: CashSessionSummary; LABELS: AppLabels }) {
   const C = LABELS.cash;
   const variance = session.variance ?? 0;
+  // Écart restant une fois les corrections prises en compte (en centimes, sans erreur d'arrondi).
+  const corrected =
+    session.corrections.length > 0
+      ? (toCents(variance) + session.corrections.reduce((sum, correction) => sum + toCents(correction.amount), 0)) / 100
+      : null;
   return (
     <div className="flex flex-col gap-2">
       <p className="flex justify-between gap-3">
@@ -207,11 +258,22 @@ function ClosedResult({ session, LABELS }: { session: CashSessionSummary; LABELS
         <span className="numeric font-semibold">{formatMAD(session.countedCash ?? 0)}</span>
       </p>
       <p className={cn("rounded-lg px-3 py-2 font-semibold", variance === 0 ? "bg-success/10 text-success-ink" : "bg-danger/10 text-danger-ink")}>
-        {variance === 0 ? C.variance.none : variance < 0 ? C.variance.shortage(formatMAD(-variance)) : C.variance.surplus(formatMAD(variance))}
+        {varianceLabel(variance, LABELS)}
       </p>
       {session.varianceReason ? <p className="text-caption">{session.varianceReason}</p> : null}
+      {corrected !== null ? (
+        <p className={cn("text-caption font-semibold", corrected === 0 ? "text-success-ink" : "text-danger-ink")}>
+          {C.afterCorrections} : {varianceLabel(corrected, LABELS)}
+        </p>
+      ) : null}
       {session.notes ? <p className="text-caption text-muted-foreground">{session.notes}</p> : null}
       {session.closedAt ? <p className="text-caption text-muted-foreground">{C.closedAt(formatDateTime(session.closedAt), session.closedByName)}</p> : null}
+      {session.validationNotes ? (
+        <p className="text-caption">
+          <span className="font-medium">{C.validationNotes} : </span>
+          {session.validationNotes}
+        </p>
+      ) : null}
     </div>
   );
 }

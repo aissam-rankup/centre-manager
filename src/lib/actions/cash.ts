@@ -6,7 +6,8 @@ import { z } from "zod";
 import { type ActionResult, failure, success } from "@/lib/actions/result";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole, requireStaff } from "@/lib/auth/session";
-import { ADMIN_MOVEMENT_KINDS, parseCents } from "@/lib/cash";
+import { ADMIN_MOVEMENT_KINDS, parseCents, toCents } from "@/lib/cash";
+import { formatMAD } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,16 +37,25 @@ function fieldErrorsOf(error: z.ZodError): Record<string, string> {
   return fieldErrors;
 }
 
-/** Ouvre la caisse du jour avec son fonds (déjà ouverte : rien ne change). */
+/**
+ * Ouvre la caisse du jour avec son fonds ; déjà ouverte sans encaissement,
+ * le fonds saisi la remplace. Après un encaissement, le fonds est figé :
+ * l'écart est signalé au lieu d'un faux « enregistré ».
+ */
 export async function openCashSession(input: unknown): Promise<ActionResult> {
   const LABELS = await getLabels();
   const parsed = z.object({ openingFloat: moneySchema(LABELS.cash.amountInvalid) }).safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
   await requireStaff();
   const supabase = await createClient();
-  const { error } = await supabase.rpc("open_cash_session", { p_opening_float: parsed.data.openingFloat });
+  const { data: sessionId, error } = await supabase.rpc("open_cash_session", { p_opening_float: parsed.data.openingFloat });
   if (error) return failure(await describeCenterError(error));
   revalidateCash();
+  const { data: session, error: readError } = await supabase.from("cash_sessions").select("opening_float").eq("id", sessionId).single();
+  if (readError) return failure(await describeCenterError(readError));
+  if (toCents(Number(session.opening_float)) !== toCents(parsed.data.openingFloat)) {
+    return failure(LABELS.cash.floatLocked(formatMAD(Number(session.opening_float))));
+  }
   return success();
 }
 

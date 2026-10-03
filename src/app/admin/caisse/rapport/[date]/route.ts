@@ -7,10 +7,18 @@ import { CashReportPdf } from "@/lib/pdf/cash-report-pdf";
 import { getCenterPdfBrand } from "@/lib/pdf/center-brand";
 import { createClient } from "@/lib/supabase/server";
 
+/** « 2026-02-31 », « 0000-01-01 » : pas une date du calendrier (la base les refuserait). */
+function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const year = Number(value.slice(0, 4));
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return year >= 2000 && year <= 2100 && !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 /** Rapport de caisse d'une journée, à la marque du centre (admin, hors mode support). */
 export async function GET(_request: Request, { params }: { params: Promise<{ date: string }> }) {
   const { date } = await params;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) return new Response(null, { status: 404 });
+  if (!isCalendarDate(date)) return new Response(null, { status: 404 });
   const profile = await requireRole("admin");
   if (profile.support) return new Response(null, { status: 404 });
 

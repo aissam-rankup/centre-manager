@@ -11,11 +11,13 @@ import type { CashHistoryRow, CashMonthOverview } from "@/lib/data/cash";
 import { formatDate, formatMAD, formatMonth, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-/** « 2026-10 » → { year, month } */
+/** « 2026-10 » → { year, month } ; mois impossible ou année hors 2000-2100 : le mois en cours. */
 export function parseMonthParam(value: string | undefined, todayIso: string): { year: number; month: number } {
   const match = value && /^(\d{4})-(\d{2})$/.exec(value);
   const [year = 0, month = 1] = (match ? `${match[1]}-${match[2]}` : todayIso.slice(0, 7)).split("-").map(Number);
-  return month >= 1 && month <= 12 ? { year, month } : { year: Number(todayIso.slice(0, 4)), month: Number(todayIso.slice(5, 7)) };
+  return month >= 1 && month <= 12 && year >= 2000 && year <= 2100
+    ? { year, month }
+    : { year: Number(todayIso.slice(0, 4)), month: Number(todayIso.slice(5, 7)) };
 }
 
 function monthKey(year: number, month: number): string {
@@ -99,8 +101,8 @@ export function CashHistory({
           <p className="text-caption text-muted-foreground">{A.peopleDescription}</p>
           <ul className="flex flex-col divide-y divide-divider">
             {overview.people.map((person) => {
-              // Plusieurs écarts, tous dans le même sens : un signal à traiter.
-              const repeated = (person.shortCount >= 2 && person.surplusCount === 0) || (person.surplusCount >= 2 && person.shortCount === 0);
+              // Au moins deux écarts dans le même sens : un signal à traiter (un excédent ne masque pas des manquants).
+              const repeated = person.shortCount >= 2 || person.surplusCount >= 2;
               return (
                 <li key={person.name ?? "inconnu"} className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2">
                   <span className="flex min-w-0 flex-col">
@@ -115,7 +117,12 @@ export function CashHistory({
                       </span>
                     ) : null}
                   </span>
-                  <VarianceText variance={person.net} LABELS={LABELS} />
+                  {/* Manquants et excédents séparés : ils ne se compensent pas. */}
+                  <span className="flex flex-col items-end">
+                    {person.shortCount + person.surplusCount === 0 ? <VarianceText variance={0} LABELS={LABELS} /> : null}
+                    {person.shortCount > 0 ? <VarianceText variance={person.shortage} LABELS={LABELS} /> : null}
+                    {person.surplusCount > 0 ? <VarianceText variance={person.surplus} LABELS={LABELS} /> : null}
+                  </span>
                 </li>
               );
             })}
@@ -170,7 +177,7 @@ export function CashHistory({
                 </Button>
                 {row.status === "closed" ? (
                   <>
-                    <CorrectCashSessionButton sessionId={row.id} />
+                    <CorrectCashSessionButton sessionId={row.id} corrected={row.corrections} />
                     <ValidateCashSessionButton sessionId={row.id} />
                   </>
                 ) : null}

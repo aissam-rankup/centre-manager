@@ -2,7 +2,7 @@ import "server-only";
 
 import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
-import type { CashSessionSummary } from "@/lib/cash";
+import { type CashSessionSummary, toCents } from "@/lib/cash";
 import type { AppLabels } from "@/lib/constants/labels";
 import { formatDate, formatDateTime, formatMAD, formatTime } from "@/lib/format";
 import type { CenterPdfBrand } from "@/lib/pdf/center-brand";
@@ -70,6 +70,10 @@ function SessionBlock({ session, labels }: { session: CashSessionSummary; labels
   const P = C.admin.pdf;
   const cols = [0.8, 3, 1.6, 1.4, 1.4];
   const holder = session.isShared ? C.shared : C.personal(session.holderName);
+  const corrected =
+    session.corrections.length > 0
+      ? (toCents(session.variance ?? 0) + session.corrections.reduce((sum, correction) => sum + toCents(correction.amount), 0)) / 100
+      : null;
   return (
     <View style={styles.session}>
       <Text style={styles.sessionTitle}>{P.session(holder, C.status[session.status])}</Text>
@@ -126,9 +130,24 @@ function SessionBlock({ session, labels }: { session: CashSessionSummary; labels
               <Text style={{ flex: cols[1] + cols[2] }}>
                 {C.movementKinds[movement.kind]}
                 {movement.reason ? ` · ${movement.reason}` : ""}
+                {movement.correctedSessionDate ? ` · ${C.correctsSession(formatDate(movement.correctedSessionDate))}` : ""}
               </Text>
               <Text style={{ flex: cols[3] }}>{movement.createdByName ?? ""}</Text>
               <Text style={[{ flex: cols[4] }, styles.right]}>{money(movement.amount)}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {session.corrections.length > 0 ? (
+        <View>
+          <Text style={styles.subTitle}>{P.corrections}</Text>
+          {session.corrections.map((correction) => (
+            <View key={correction.id} style={styles.row} wrap={false}>
+              <Text style={{ flex: cols[0] + cols[1] + cols[2] }}>
+                {correction.reason ?? ""} · {C.correctionLine(formatDate(correction.sessionDate), correction.createdByName)}
+              </Text>
+              <Text style={[{ flex: cols[3] + cols[4] }, styles.right]}>{money(correction.amount)}</Text>
             </View>
           ))}
         </View>
@@ -158,6 +177,18 @@ function SessionBlock({ session, labels }: { session: CashSessionSummary; labels
             {session.varianceReason ? (
               <Text style={styles.muted}>
                 {P.reason} : {session.varianceReason}
+              </Text>
+            ) : null}
+            {corrected !== null ? (
+              <View style={styles.line}>
+                <Text>{C.afterCorrections}</Text>
+                <Text style={{ color: corrected === 0 ? SUCCESS : DANGER }}>{varianceLabel(corrected, labels)}</Text>
+              </View>
+            ) : null}
+            {session.notes ? <Text style={styles.muted}>{session.notes}</Text> : null}
+            {session.validationNotes ? (
+              <Text style={styles.muted}>
+                {P.validationNotes} : {session.validationNotes}
               </Text>
             ) : null}
           </>

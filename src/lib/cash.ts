@@ -29,6 +29,19 @@ export type CashMovement = {
   createdAt: string;
   createdByName: string | null;
   correctsSessionId: string | null;
+  /** Date de la session corrigée (correction après clôture). */
+  correctedSessionDate: string | null;
+};
+
+/** Correction enregistrée après la clôture, rattachée à la caisse du jour de l'admin. */
+export type CashCorrection = {
+  id: string;
+  amount: number;
+  reason: string | null;
+  createdAt: string;
+  createdByName: string | null;
+  cashSessionId: string;
+  sessionDate: string;
 };
 
 export type CashSessionSummary = {
@@ -44,6 +57,7 @@ export type CashSessionSummary = {
   closedByName: string | null;
   validatedAt: string | null;
   validatedByName: string | null;
+  validationNotes: string | null;
   countedCash: number | null;
   variance: number | null;
   varianceReason: string | null;
@@ -55,7 +69,15 @@ export type CashSessionSummary = {
   movementsTotal: number;
   receipts: CashReceipt[];
   movements: CashMovement[];
+  /** Corrections qui visent cette session (admin uniquement). */
+  corrections: CashCorrection[];
 };
+
+/**
+ * Fonds de caisse demandé avec un paiement (pas de caisse ouverte, ou ouverte
+ * sans encaissement), prérempli avec le fonds actuel de la session.
+ */
+export type CashOpening = { needed: boolean; currentFloat: number };
 
 const MONEY = /^\d{1,10}([.,]\d{1,2})?$/;
 

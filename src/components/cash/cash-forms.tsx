@@ -52,7 +52,9 @@ export function OpenCashForm({ initialFloat = 0, adjust = false }: { initialFloa
         startTransition(async () => {
           const result = await openCashSession({ openingFloat });
           if (!result.ok) {
-            setError(result.fieldErrors?.openingFloat ?? result.error);
+            // Hors saisie (fonds figé entre-temps) : la page s'actualise et ce formulaire peut disparaître.
+            if (result.fieldErrors?.openingFloat) setError(result.fieldErrors.openingFloat);
+            else toast.error(result.error);
             return;
           }
           toast.success(adjust ? C.floatSaved : C.opened);

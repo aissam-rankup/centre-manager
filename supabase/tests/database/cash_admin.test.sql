@@ -7,11 +7,12 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(30);
 
 insert into auth.users (id, email) values
   ('a8a00000-0000-4000-8000-000000000001', 'admin-v-p87@test.local'),
   ('a8a00000-0000-4000-8000-000000000002', 'accueil-v-p87@test.local'),
+  ('a8a00000-0000-4000-8000-000000000003', 'accueil-v2-p87@test.local'),
   ('a8a00000-0000-4000-8000-000000000004', 'admin-w-p87@test.local'),
   ('a8a00000-0000-4000-8000-000000000009', 'owner-p87@test.local');
 insert into public.centers (id, name, slug, cash_variance_alert_threshold) values
@@ -20,6 +21,7 @@ insert into public.centers (id, name, slug, cash_variance_alert_threshold) value
 insert into public.profiles (id, center_id, full_name, role) values
   ('a8a00000-0000-4000-8000-000000000001', 'c8a00000-0000-4000-8000-0000000000a1', 'Admin V', 'admin'),
   ('a8a00000-0000-4000-8000-000000000002', 'c8a00000-0000-4000-8000-0000000000a1', 'Accueil V', 'assistant'),
+  ('a8a00000-0000-4000-8000-000000000003', 'c8a00000-0000-4000-8000-0000000000a1', 'Accueil V2', 'assistant'),
   ('a8a00000-0000-4000-8000-000000000004', 'c8a00000-0000-4000-8000-0000000000b1', 'Admin W', 'admin'),
   ('a8a00000-0000-4000-8000-000000000009', null, 'Propriétaire', 'super_admin');
 insert into public.levels (id, center_id, name) values
@@ -51,7 +53,7 @@ select lives_ok($$select public.close_cash_session(current_setting('test.s1')::u
 -- Seconde session du jour, juste.
 select set_config('test.s2', (select cash_session_id from public.record_payment('58a00000-0000-4000-8000-000000000002',
   array(select id from public.invoices where student_id = '58a00000-0000-4000-8000-000000000002'), 'cash'))::text, true);
-select lives_ok($$select public.close_cash_session(current_setting('test.s2')::uuid, 300)$$, 'seconde session : caisse juste');
+select lives_ok($$select public.close_cash_session(current_setting('test.s2')::uuid, 300, null, 'Compté à deux')$$, 'seconde session : caisse juste');
 
 -- ---------------------------------------------------------------------
 -- Accès à la vue admin
@@ -90,6 +92,21 @@ select results_eq(
     from jsonb_array_elements(public.cash_month_overview() -> 'people') as x(p)$$,
   $$values ('Accueil V', 2, 1, -20.00::numeric)$$,
   'écarts par personne');
+reset role;
+-- Accueil V2 : un manquant de 100 et un excédent de 100 (solde nul) ; Accueil V : 20 manquants.
+insert into public.cash_sessions (center_id, session_date, is_shared, assistant_id, opened_by, opening_float, status, closed_at, closed_by,
+                                  expected_cash, counted_cash, variance, variance_reason, expected_by_method)
+select 'c8a00000-0000-4000-8000-0000000000a1', private.today(), false, 'a8a00000-0000-4000-8000-000000000003',
+       'a8a00000-0000-4000-8000-000000000003', 0, 'closed', now(), 'a8a00000-0000-4000-8000-000000000003',
+       500, 500 + v, v, 'Écart', '{"cash": 500}'::jsonb
+from unnest(array[-100, 100]::numeric[]) as v;
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"a8a00000-0000-4000-8000-000000000001","role":"authenticated"}';
+select results_eq(
+  $$select p ->> 'name', (p ->> 'shortage')::numeric, (p ->> 'surplus')::numeric, (p ->> 'net')::numeric
+    from jsonb_array_elements(public.cash_month_overview() -> 'people') with ordinality as x(p, n) order by n$$,
+  $$values ('Accueil V2', -100.00::numeric, 100.00::numeric, 0.00::numeric), ('Accueil V', -20.00::numeric, 0::numeric, -20.00::numeric)$$,
+  'écarts par personne : manquants et excédents séparés, le plus gros total d''écarts d''abord (un solde nul ne cache rien)');
 select results_eq(
   $$select id, session_date from public.stale_cash_sessions()$$,
   $$values ('9a800000-0000-4000-8000-000000000001'::uuid, private.today() - 1)$$,
@@ -115,20 +132,43 @@ select is((select variance from public.cash_sessions where id = current_setting(
 select is((select count(*)::int from public.center_events where entity_id = current_setting('test.s1')::uuid
            and action = 'cash_session.corrected'), 1, 'correction consignée');
 
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"a8a00000-0000-4000-8000-000000000001","role":"authenticated"}';
+select results_eq(
+  $$select (c ->> 'amount')::numeric, c ->> 'reason', (c ->> 'session_date')::date
+    from jsonb_array_elements(public.cash_session_summary(current_setting('test.s1')::uuid) -> 'corrections') c$$,
+  $$values (20.00::numeric, 'Billet retrouvé', private.today())$$,
+  'session corrigée : la correction y figure, avec la date de la caisse qui la porte');
+select is(
+  (select m ->> 'corrected_session_date' from public.cash_movements cm
+   cross join lateral jsonb_array_elements(public.cash_session_summary(cm.cash_session_id) -> 'movements') m
+   where cm.id = current_setting('test.correction')::uuid and m ->> 'id' = cm.id::text),
+  private.today()::text, 'caisse du jour : la correction indique la date de la session corrigée');
+reset role;
+
 -- ---------------------------------------------------------------------
 -- Validation
 -- ---------------------------------------------------------------------
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"a8a00000-0000-4000-8000-000000000001","role":"authenticated"}';
 select lives_ok($$select public.validate_cash_session(current_setting('test.s1')::uuid, 'Écart expliqué')$$, 'admin : session validée');
+select lives_ok($$select public.validate_cash_session(current_setting('test.s2')::uuid, 'Vu')$$, 'admin : seconde session validée');
 select throws_ok($$select public.validate_cash_session(current_setting('test.s1')::uuid)$$, '22023', null, 'déjà validée');
 select throws_ok($$select public.record_cash_correction(current_setting('test.s1')::uuid, 5, 'Encore')$$, '22023', null,
   'session validée : plus aucune correction');
 reset role;
 select results_eq(
-  $$select status::text, validated_by, notes from public.cash_sessions where id = current_setting('test.s1')::uuid$$,
-  $$values ('validated', 'a8a00000-0000-4000-8000-000000000001'::uuid, 'Écart expliqué')$$,
-  'validation : auteur et note consignés');
+  $$select status::text, validated_by, notes, validation_notes from public.cash_sessions where id = current_setting('test.s1')::uuid$$,
+  $$values ('validated', 'a8a00000-0000-4000-8000-000000000001'::uuid, null::text, 'Écart expliqué')$$,
+  'validation : auteur et note de validation consignés');
+select results_eq(
+  $$select notes, validation_notes from public.cash_sessions where id = current_setting('test.s2')::uuid$$,
+  $$values ('Compté à deux', 'Vu')$$,
+  'validation : la note de clôture reste, la note de validation s''ajoute');
+select throws_ok($$insert into public.cash_movements (center_id, cash_session_id, kind, amount, reason, corrects_session_id)
+  select cs.center_id, cs.id, 'correction', 5, 'Tardive', current_setting('test.s1')::uuid
+  from public.cash_sessions cs where cs.center_id = 'c8a00000-0000-4000-8000-0000000000a1' and cs.status = 'open' and cs.session_date = private.today()$$,
+  '23514', null, 'session validée : aucune correction, même écrite en direct');
 select throws_ok($$update public.cash_sessions set notes = 'Modifiée' where id = current_setting('test.s1')::uuid$$, '42501', null,
   'session validée : verrouillée définitivement');
 
