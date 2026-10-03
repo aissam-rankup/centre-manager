@@ -10,23 +10,37 @@
 
 type Tokens<K extends string> = Record<K, string>;
 
+/** Longueur maximale d'un modèle, vérifiée sur sa forme enregistrée (celle que la base contrôle). */
+export const TEMPLATE_MAX_LENGTH = 1000;
+
 function replaceAll(text: string, from: string, to: string): string {
   return from === to ? text : text.split(from).join(to);
 }
 
-/** Message final : chaque variable, dans l'une ou l'autre forme, remplacée par sa valeur. */
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Message final : chaque variable, dans l'une ou l'autre forme, remplacée
+ * par sa valeur, en un seul passage (une valeur insérée n'est jamais relue :
+ * un nom contenant « [élève] » reste tel quel).
+ */
 export function fillTemplate<K extends string>(
   template: string,
   tokens: Tokens<K>,
   canonical: Tokens<K>,
   values: Record<K, string>,
 ): string {
-  let message = template;
-  for (const key of Object.keys(tokens) as K[]) {
-    message = message.split(tokens[key]).join(values[key]);
-    message = message.split(canonical[key]).join(values[key]);
-  }
-  return message;
+  const keyOf = new Map<string, K>();
+  for (const key of Object.keys(tokens) as K[]) keyOf.set(tokens[key], key);
+  for (const key of Object.keys(canonical) as K[]) if (!keyOf.has(canonical[key])) keyOf.set(canonical[key], key);
+  const forms = [...keyOf.keys()].sort((a, b) => b.length - a.length).map(escapeRegExp);
+  if (forms.length === 0) return template;
+  return template.replace(new RegExp(forms.join("|"), "g"), (match) => {
+    const key = keyOf.get(match);
+    return key === undefined ? match : values[key];
+  });
 }
 
 /** Modèle à enregistrer : variables du vocabulaire du centre → forme d'origine. */

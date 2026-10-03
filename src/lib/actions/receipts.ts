@@ -17,7 +17,7 @@ import { isValidPhone, toWhatsAppHref } from "@/lib/phone";
 import { PAYMENT_METHODS, RECEIPT_FORMATS, RECEIPT_LINK_DAYS, receiptPeriodLabel, renderReceiptMessage } from "@/lib/receipts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { toCanonicalTokens } from "@/lib/templates";
+import { TEMPLATE_MAX_LENGTH, toCanonicalTokens } from "@/lib/templates";
 
 const RECEIPTS_BUCKET = "receipts";
 
@@ -173,6 +173,7 @@ export async function cancelReceipt(input: unknown): Promise<ActionResult<{ rece
 export async function updateCenterSettings(input: unknown): Promise<ActionResult> {
   const LABELS = await getLabels();
   const C = LABELS.centerSettings;
+  const canonical = labelsFor().receipts.tokens;
   const schema = z.object({
     address: z.string().trim().max(200, C.addressTooLong),
     phone: z
@@ -180,10 +181,11 @@ export async function updateCenterSettings(input: unknown): Promise<ActionResult
       .trim()
       .refine((value) => value === "" || isValidPhone(value), C.phoneInvalid),
     receiptFormat: z.enum(RECEIPT_FORMATS),
+    // Longueur contrôlée sur la forme enregistrée (variables d'origine), comme dans la base.
     whatsappTemplate: z
       .string()
       .trim()
-      .max(1000, C.templateTooLong)
+      .refine((value) => toCanonicalTokens(value, LABELS.receipts.tokens, canonical).length <= TEMPLATE_MAX_LENGTH, C.templateTooLong)
       .refine((value) => value === "" || value.includes(LABELS.receipts.tokens.link), C.templateNeedsLink),
   });
   const parsed = schema.safeParse(input);
@@ -206,7 +208,7 @@ export async function updateCenterSettings(input: unknown): Promise<ActionResult
       // variables sous leur forme d'origine (le modèle survit à un changement de vocabulaire).
       receipt_whatsapp_template:
         template && template !== LABELS.receipts.whatsappTemplate
-          ? toCanonicalTokens(template, LABELS.receipts.tokens, labelsFor().receipts.tokens)
+          ? toCanonicalTokens(template, LABELS.receipts.tokens, canonical)
           : null,
     })
     .eq("id", profile.centerId);

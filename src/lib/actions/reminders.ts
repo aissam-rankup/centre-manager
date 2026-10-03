@@ -17,7 +17,7 @@ import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { isValidPhone, toWhatsAppHref } from "@/lib/phone";
 import { REMINDER_TYPES, renderReminderMessage } from "@/lib/reminders";
 import { createClient } from "@/lib/supabase/server";
-import { toCanonicalTokens } from "@/lib/templates";
+import { TEMPLATE_MAX_LENGTH, toCanonicalTokens } from "@/lib/templates";
 
 function revalidateReminders() {
   revalidatePath(ROUTES.admin.home, "layout");
@@ -99,7 +99,12 @@ export async function sendPaymentReminder(input: unknown): Promise<ActionResult<
 export async function updateReminderSettings(input: unknown): Promise<ActionResult> {
   const LABELS = await getLabels();
   const R = LABELS.reenrollment.reminders;
-  const template = z.string().trim().max(1000, LABELS.centerSettings.templateTooLong);
+  // Longueur contrôlée sur la forme enregistrée (variables d'origine), comme dans la base.
+  const canonical = labelsFor().reenrollment.reminders.tokens;
+  const template = z
+    .string()
+    .trim()
+    .refine((value) => toCanonicalTokens(value, R.tokens, canonical).length <= TEMPLATE_MAX_LENGTH, LABELS.centerSettings.templateTooLong);
   const parsed = z
     .object({
       enabled: z.boolean(),
@@ -116,7 +121,6 @@ export async function updateReminderSettings(input: unknown): Promise<ActionResu
   const supabase = await createClient();
   // Message identique au message proposé : rien d'enregistré (il suivra les évolutions de l'application).
   // Variables enregistrées sous leur forme d'origine : le modèle survit à un changement de vocabulaire.
-  const canonical = labelsFor().reenrollment.reminders.tokens;
   const stored = Object.fromEntries(
     REMINDER_TYPES.map((type) => {
       const value = parsed.data.templates[type];

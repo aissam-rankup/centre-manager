@@ -11,7 +11,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(40);
+select plan(47);
 
 insert into auth.users (id, email) values
   ('a8f00000-0000-4000-8000-000000000001', 'admin-y-p88@test.local'),
@@ -295,6 +295,56 @@ select results_eq(
   $$values (250.50::numeric, array[current_setting('test.x_english')::uuid])$$,
   'paiement annulé : la facture redevient due et revient dans la file');
 reset role;
+
+-- =====================================================================
+-- 4. Campagne confirmée : lignes et intentions verrouillées
+-- =====================================================================
+select throws_ok($$update public.billing_run_lines set invoice_id = current_setting('test.x_english')::uuid
+  where billing_run_id = current_setting('test.run')::uuid and invoice_id = current_setting('test.x_maths')::uuid$$, '23514', null,
+  'ligne : jamais rattachée à la facture d''une autre inscription du même élève');
+update public.reenrollment_intents set decided_by = null
+where billing_run_id = current_setting('test.run')::uuid and student_id = '58f00000-0000-4000-8000-0000000000b1';
+select throws_ok($$update public.reenrollment_intents set decided_by = 'a8f00000-0000-4000-8000-000000000004'
+  where billing_run_id = current_setting('test.run')::uuid and student_id = '58f00000-0000-4000-8000-0000000000b1'$$, '42501', null,
+  'intention confirmée : aucun auteur ajouté après coup');
+
+-- =====================================================================
+-- 5. Modèles de message : ils survivent à un changement de vocabulaire
+-- =====================================================================
+-- Modèles enregistrés par un centre de formation (forme « [stagiaire] », avant la forme d'origine).
+update public.centers set center_type = 'centre_formation' where id = 'c8f00000-0000-4000-8000-0000000000a1';
+update public.centers
+set reminder_template_overdue = 'Bonjour, [stagiaire] doit [montant] pour [modules].',
+    absence_notification_template = '[stagiaire] absent en [module] avec [formateur].',
+    receipt_whatsapp_template = 'Reçu de [stagiaire] : [lien]'
+where id = 'c8f00000-0000-4000-8000-0000000000a1';
+update public.centers set center_type = 'institut_langue' where id = 'c8f00000-0000-4000-8000-0000000000a1';
+select results_eq(
+  $$select reminder_template_overdue, absence_notification_template, receipt_whatsapp_template
+    from public.centers where id = 'c8f00000-0000-4000-8000-0000000000a1'$$,
+  $$values ('Bonjour, [élève] doit [montant] pour [matières].', '[élève] absent en [matière] avec [professeur].', 'Reçu de [élève] : [lien]')$$,
+  'changement de type de centre : modèles ramenés à la forme d''origine des variables (ancien vocabulaire)');
+-- Termes personnalisés : même règle (« Apprenant » → « Stagiaire »).
+update public.centers
+set absence_notification_template = '[apprenant] absent en [langue] avec [enseignant].'
+where id = 'c8f00000-0000-4000-8000-0000000000a1';
+update public.centers set custom_terms = '{"learner": {"singular": "Stagiaire", "plural": "Stagiaires", "gender": "m"}}'
+where id = 'c8f00000-0000-4000-8000-0000000000a1';
+select is((select absence_notification_template from public.centers where id = 'c8f00000-0000-4000-8000-0000000000a1'),
+  '[élève] absent en [matière] avec [professeur].', 'termes personnalisés modifiés : modèles ramenés à la forme d''origine');
+-- Autre modification du centre : modèles inchangés.
+update public.centers set absence_notification_template = '[stagiaire] absent.' where id = 'c8f00000-0000-4000-8000-0000000000a1';
+update public.centers set name = 'Centre Y bis' where id = 'c8f00000-0000-4000-8000-0000000000a1';
+select is((select absence_notification_template from public.centers where id = 'c8f00000-0000-4000-8000-0000000000a1'),
+  '[stagiaire] absent.', 'autre modification du centre : modèles inchangés');
+-- Vocabulaire par défaut (soutien scolaire) : la forme d'origine ne bouge pas.
+update public.centers set center_type = 'soutien_scolaire', custom_terms = '{}',
+  reminder_template_overdue = '[élève] : [matières]' where id = 'c8f00000-0000-4000-8000-0000000000b1';
+update public.centers set center_type = 'auto_ecole' where id = 'c8f00000-0000-4000-8000-0000000000b1';
+select is((select reminder_template_overdue from public.centers where id = 'c8f00000-0000-4000-8000-0000000000b1'),
+  '[élève] : [matières]', 'depuis le vocabulaire par défaut : modèle inchangé');
+select is(private.canonical_template('[cours] / [cours] / [encadrant]', (select terms from public.center_types where code = 'personnalise'), 'reminder'),
+  '[matières] / [matières] / [encadrant]', 'même terme au singulier et au pluriel : chaque modèle selon ses variables');
 
 select * from finish();
 rollback;

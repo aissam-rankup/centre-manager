@@ -14,7 +14,7 @@ import { formatDate, formatDateWithWeekday } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { isValidPhone, toWhatsAppHref } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
-import { toCanonicalTokens } from "@/lib/templates";
+import { TEMPLATE_MAX_LENGTH, toCanonicalTokens } from "@/lib/templates";
 
 function revalidateAbsences() {
   revalidatePath(ROUTES.assistant.home, "layout");
@@ -103,8 +103,17 @@ export async function notifyAbsence(input: unknown): Promise<ActionResult<{ href
 /** Réglages (admin) : activation et modèle du message. */
 export async function updateAbsenceAlertsSettings(input: unknown): Promise<ActionResult> {
   const LABELS = await getLabels();
+  const A = LABELS.absenceAlerts;
+  const canonical = labelsFor().absenceAlerts.tokens;
+  // Longueur contrôlée sur la forme enregistrée (variables d'origine), comme dans la base.
   const parsed = z
-    .object({ enabled: z.boolean(), template: z.string().trim().max(1000, LABELS.centerSettings.templateTooLong) })
+    .object({
+      enabled: z.boolean(),
+      template: z
+        .string()
+        .trim()
+        .refine((value) => toCanonicalTokens(value, A.tokens, canonical).length <= TEMPLATE_MAX_LENGTH, LABELS.centerSettings.templateTooLong),
+    })
     .safeParse(input);
   if (!parsed.success) return failure(parsed.error.issues[0]?.message ?? LABELS.actions.errors.invalid);
   const profile = await requireRole("admin");
@@ -116,9 +125,7 @@ export async function updateAbsenceAlertsSettings(input: unknown): Promise<Actio
       absence_notification_enabled: parsed.data.enabled,
       // Variables sous leur forme d'origine : le modèle survit à un changement de vocabulaire.
       absence_notification_template:
-        template && template !== LABELS.absenceAlerts.template
-          ? toCanonicalTokens(template, LABELS.absenceAlerts.tokens, labelsFor().absenceAlerts.tokens)
-          : null,
+        template && template !== A.template ? toCanonicalTokens(template, A.tokens, canonical) : null,
     })
     .eq("id", profile.centerId);
   if (error) return failure(await describeCenterError(error));
