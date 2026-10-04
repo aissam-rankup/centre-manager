@@ -11,7 +11,8 @@ import { DEFAULT_VOCABULARY, translator, type Translator, type VocabularyTerms }
 /** Vocabulaire du compte connecté (centre, ou centre consulté en support) ; défaut sinon. */
 export const getVocabularyTerms = cache(async (): Promise<VocabularyTerms> => {
   const state = await getAuthState();
-  return state.status === "authenticated" ? state.profile.vocabulary : DEFAULT_VOCABULARY;
+  if (state.status === "authenticated") return state.profile.vocabulary;
+  return state.status === "student" ? state.student.vocabulary : DEFAULT_VOCABULARY;
 });
 
 /** Libellés de l'interface dans le vocabulaire du centre (Server Components, Server Actions). */
@@ -24,6 +25,6 @@ export const getLabels = cache(async (): Promise<AppLabels> => {
 export const getTranslator = cache(async (): Promise<Translator> => translator(await getVocabularyTerms()));
 
 /** Message d'erreur de la base, dans le vocabulaire du centre (les fonctions SQL écrivent « élève », « matière »…). */
-export async function describeCenterError(error: { code?: string; message?: string }): Promise<string> {
+export async function describeCenterError(error: { code?: string; message?: string; hint?: string | null }): Promise<string> {
   return (await getTranslator())(describeDatabaseError(error));
 }

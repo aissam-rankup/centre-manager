@@ -11,6 +11,7 @@ import { searchStudentDirectory, type StudentListItem } from "@/lib/data/assista
 import { formatPhone } from "@/lib/phone";
 import { isJpeg, PHOTO_BUCKET, studentPhotoPath } from "@/lib/storage/photos";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createStudentAccess, type StudentCredentials } from "@/lib/student-accounts";
 import { createClient } from "@/lib/supabase/server";
 import { assistantSchemas, PHOTO_MAX_BYTES } from "@/lib/validation/assistant";
 
@@ -78,7 +79,9 @@ export async function recordFollowUp(input: unknown): Promise<ActionResult> {
 // ---------------------------------------------------------------------
 // Nouvel élève
 // ---------------------------------------------------------------------
-export async function createStudent(formData: FormData): Promise<ActionResult<{ studentId: string }>> {
+export async function createStudent(
+  formData: FormData,
+): Promise<ActionResult<{ studentId: string; credentials: StudentCredentials | null; accessFailed: boolean }>> {
   const LABELS = await getLabels();
   const E = LABELS.actions.errors;
   const S = LABELS.assistant.newStudent;
@@ -132,8 +135,17 @@ export async function createStudent(formData: FormData): Promise<ActionResult<{ 
     return failure(await describeCenterError(error));
   }
 
+  // Accès élève dans le même geste (plateforme pédagogique) : identifiants affichés une fois.
+  let credentials: StudentCredentials | null = null;
+  let accessFailed = false;
+  if (values.studentAccess && profile.modules.includes("lms") && !profile.support) {
+    const access = await createStudentAccess(studentId);
+    if (access.ok) credentials = access.credentials;
+    else accessFailed = true;
+  }
+
   revalidateAssistant();
-  return success({ studentId });
+  return success({ studentId, credentials, accessFailed });
 }
 
 // ---------------------------------------------------------------------

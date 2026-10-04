@@ -56,6 +56,11 @@ export const ROUTES = {
   },
   /** Reçu imprimable (accueil et administration). */
   receipt: (id: string) => `/recus/${id}`,
+  /** Espace élève (rôle student_user) et sa connexion par code. */
+  student: {
+    home: "/eleve",
+    login: "/eleve/connexion",
+  },
 } as const;
 
 /** Espace d'accueil de chaque rôle. */

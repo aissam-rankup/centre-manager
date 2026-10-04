@@ -14,6 +14,8 @@ import {
 import { StudentTabs } from "@/components/students/student-tabs";
 import { ReceiptsSection } from "@/components/receipts/receipts-section";
 import { getStudentReceipts } from "@/lib/data/receipts";
+import { getStudentAccess } from "@/lib/data/student-access";
+import { StudentAccessCard } from "@/components/students/student-access-card";
 import { AttendanceSheet } from "@/components/attendance/attendance-sheet";
 import { parseAttendanceFilters } from "@/lib/attendance";
 import { getAttendanceData } from "@/lib/data/attendance";
@@ -63,7 +65,7 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
   }
 
   const levelCatalog = catalog.find((level) => level.id === student.levelId);
-  const receipts = await getStudentReceipts(student.id);
+  const [receipts, access] = await Promise.all([getStudentReceipts(student.id), getStudentAccess(student.id)]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -94,6 +96,16 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
             ...(levelCatalog?.subjects ?? []).map((subject) => ({ value: `subject:${subject.id}`, label: subject.name })),
             ...(levelCatalog?.packs ?? []).map((pack) => ({ value: `pack:${pack.id}`, label: LABELS.packs.label(pack.name) })),
           ]}
+        />
+      ) : null}
+
+      {access ? (
+        <StudentAccessCard
+          studentId={student.id}
+          studentName={student.fullName}
+          guardianPhone={student.guardianPhone}
+          access={access}
+          readOnly={Boolean(profile.support)}
         />
       ) : null}
 

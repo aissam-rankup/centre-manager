@@ -2895,6 +2895,88 @@ export type Database = {
           },
         ]
       }
+      student_accounts: {
+        Row: {
+          active: boolean
+          center_id: string
+          created_at: string
+          created_by: string | null
+          deactivated_at: string | null
+          deactivated_by: string | null
+          is_demo: boolean
+          login_code: string
+          student_id: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          center_id: string
+          created_at?: string
+          created_by?: string | null
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          is_demo?: boolean
+          login_code: string
+          student_id: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          center_id?: string
+          created_at?: string
+          created_by?: string | null
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          is_demo?: boolean
+          login_code?: string
+          student_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_accounts_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_accounts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_accounts_deactivated_by_fkey"
+            columns: ["deactivated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_accounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id", "center_id"]
+          },
+          {
+            foreignKeyName: "student_accounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "student_accounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id", "center_id"]
+          },
+        ]
+      }
       students: {
         Row: {
           center_id: string
@@ -3964,6 +4046,22 @@ export type Database = {
         }[]
       }
       my_modules: { Args: never; Returns: string[] }
+      my_student_access: {
+        Args: never
+        Returns: {
+          active: boolean
+          allowed: boolean
+          branding: Json
+          center_id: string
+          center_name: string
+          center_status: Database["public"]["Enums"]["center_status"]
+          full_name: string
+          level_id: string
+          level_name: string
+          student_id: string
+          vocabulary: Json
+        }[]
+      }
       open_attendance_conflicts: {
         Args: never
         Returns: {
@@ -4514,6 +4612,10 @@ export type Database = {
         Returns: string
       }
       reenrollment_overview: { Args: never; Returns: Json }
+      register_student_account: {
+        Args: { p_login_code: string; p_student_id: string; p_user_id: string }
+        Returns: undefined
+      }
       resolve_attendance_conflict: {
         Args: {
           p_conflict_id: string
@@ -4535,6 +4637,10 @@ export type Database = {
           p_student_id: string
         }
         Returns: undefined
+      }
+      set_student_account_active: {
+        Args: { p_active: boolean; p_student_id: string }
+        Returns: string
       }
       set_teacher_commission: {
         Args: {
@@ -4660,6 +4766,7 @@ export type Database = {
           note: string
         }[]
       }
+      student_account_user: { Args: { p_student_id: string }; Returns: string }
       student_attendance: {
         Args: { p_student_id: string }
         Returns: {

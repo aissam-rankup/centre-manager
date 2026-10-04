@@ -45,10 +45,27 @@ export type SessionProfile = {
 /** Compte d'un centre (admin, assistant, professeur). */
 export type CenterProfile = SessionProfile & { centerId: string };
 
+/** Élève connecté (rôle student_user) : sa fiche et son centre, rien d'autre. */
+export type StudentSession = {
+  userId: string;
+  studentId: string;
+  fullName: string;
+  levelId: string;
+  levelName: string;
+  centerId: string;
+  centerName: string;
+  /** Accès ouvert, actif, centre en service et plateforme pédagogique incluse. */
+  allowed: boolean;
+  vocabulary: VocabularyTerms;
+  branding: BrandingData | null;
+};
+
 export type AuthState =
   | { status: "anonymous" }
   /** Compte Auth sans profil applicatif : aucun accès. */
   | { status: "no-profile"; email: string }
+  /** Compte élève (student_user), sans profil d'équipe. */
+  | { status: "student"; student: StudentSession }
   | { status: "authenticated"; profile: SessionProfile };
 
 /**
@@ -70,7 +87,27 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
     .maybeSingle();
 
   if (error) throw error;
-  if (!profile) return { status: "no-profile", email };
+  if (!profile) {
+    // Pas de profil d'équipe : peut-être un accès élève.
+    const { data: access, error: accessError } = await supabase.rpc("my_student_access").maybeSingle();
+    if (accessError) throw accessError;
+    if (!access) return { status: "no-profile", email };
+    return {
+      status: "student",
+      student: {
+        userId,
+        studentId: access.student_id,
+        fullName: access.full_name,
+        levelId: access.level_id,
+        levelName: access.level_name,
+        centerId: access.center_id,
+        centerName: access.center_name,
+        allowed: access.allowed,
+        vocabulary: parseVocabularyTerms(access.vocabulary),
+        branding: parseBranding(access.branding),
+      },
+    };
+  }
 
   const [photos, access] = await Promise.all([
     signPhotoUrls(supabase, [profile.photo_url], STAFF_PHOTO_BUCKET),
@@ -121,6 +158,7 @@ export async function requireRole(role: CenterRole | readonly CenterRole[]): Pro
   const allowed: readonly UserRole[] = typeof role === "string" ? [role] : role;
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
+  if (state.status === "student") redirect(ROUTES.student.home);
   if (state.status === "no-profile" || !state.profile.active) redirect(ROUTES.inactive);
   if (!allowed.includes(state.profile.role)) redirect(ROLE_HOME[state.profile.role]);
   // Centre suspendu ou résilié : aucun espace, écran dédié (la RLS refuse de toute façon les données).
@@ -155,4 +193,18 @@ export function requireStaff(): Promise<CenterProfile> {
  */
 export function requireModule(profile: SessionProfile, key: ModuleKey): void {
   if (!profile.modules.includes(key)) notFound();
+}
+
+/**
+ * Garde de l'espace élève : compte élève dont l'accès est autorisé. Un compte
+ * d'équipe retourne à son espace ; un accès coupé reçoit l'écran de connexion
+ * élève avec un message (la base refuse de toute façon ses données).
+ */
+export async function requireStudent(): Promise<StudentSession> {
+  const state = await getAuthState();
+  if (state.status === "anonymous") redirect(ROUTES.student.login);
+  if (state.status === "no-profile") redirect(ROUTES.inactive);
+  if (state.status === "authenticated") redirect(state.profile.active ? ROLE_HOME[state.profile.role] : ROUTES.inactive);
+  if (!state.student.allowed) redirect(`${ROUTES.student.login}?acces=coupe`);
+  return state.student;
 }

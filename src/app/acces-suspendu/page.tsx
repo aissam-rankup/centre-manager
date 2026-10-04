@@ -23,6 +23,7 @@ export default async function SuspendedPage() {
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
   if (state.status === "no-profile") redirect(ROUTES.inactive);
+  if (state.status === "student") redirect(ROUTES.student.login);
   const { profile } = state;
   const contact = await getSuspensionContact();
   const tel = contact.phone ? toTelHref(contact.phone) : null;

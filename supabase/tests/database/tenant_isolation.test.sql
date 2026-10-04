@@ -130,6 +130,10 @@ insert into public.attendance (student_id, subject_id, teacher_id, session_date,
   ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today() - 14, 'absent', 'Malade'),
   ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today() - 7, 'absent', null),
   ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today(), 'absent', null);
+-- Accès élève de B (plateforme pédagogique : centre B en Premium).
+insert into auth.users (id, email) values ('4b0000e1-0000-4000-8000-000000000001', 'eleve-bbbbiso1@eleves.centromanager.invalid');
+insert into public.student_accounts (user_id, student_id, center_id, login_code)
+values ('4b0000e1-0000-4000-8000-000000000001', '4b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 'BBBBISO1');
 -- Saisie de l'accueil B en désaccord avec le professeur B (historique et désaccord du centre B).
 update public.attendance set status = 'present', marked_by = 'b0000000-0000-4000-8000-00000000000b', marked_by_role = 'assistant'
 where student_id = '4b000000-0000-4000-8000-000000000001' and session_date = private.today();

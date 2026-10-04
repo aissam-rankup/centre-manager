@@ -10,13 +10,13 @@ import type { Database } from "@/lib/supabase/database.types";
 
 /** Claims ajoutés par le hook public.custom_access_token_hook. */
 const appClaimsSchema = z.object({
-  user_role: z.enum(["admin", "assistant", "teacher", "super_admin"]).optional(),
+  user_role: z.enum(["admin", "assistant", "teacher", "super_admin", "student_user"]).optional(),
   profile_active: z.boolean().optional(),
   center_status: z.enum(["trial", "active", "past_due", "suspended", "cancelled"]).nullable().optional(),
 });
 
 /** Chemins accessibles sans session. */
-const PUBLIC_PATHS: readonly string[] = [ROUTES.login];
+const PUBLIC_PATHS: readonly string[] = [ROUTES.login, ROUTES.student.login];
 /** Chemins ouverts avec ou sans session, sans redirection (accueil des invités). */
 const OPEN_PATHS: readonly string[] = [ROUTES.welcome, ROUTES.suspended];
 
@@ -105,6 +105,8 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
   if (!claims) {
     if (PUBLIC_PATHS.includes(pathname)) return response;
+    // Espace élève : sa propre page de connexion (par code).
+    if (pathname === ROUTES.student.home || pathname.startsWith(`${ROUTES.student.home}/`)) return redirectTo(ROUTES.student.login);
     const next = pathname === "/" ? undefined : `${pathname}${search}`;
     return redirectTo(ROUTES.login, next ? { [NEXT_PARAM]: next } : undefined);
   }
@@ -122,6 +124,10 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // Cela évite toute boucle de redirection entre le proxy et les layouts.
   if (pathname === "/" || PUBLIC_PATHS.includes(pathname)) {
     const { user_role: role, profile_active: active } = appClaimsSchema.parse(claims);
+    // Élève : son espace (un accès coupé y reçoit le message de l'écran de connexion élève).
+    if (role === "student_user") {
+      return pathname === ROUTES.student.login ? response : redirectTo(ROUTES.student.home);
+    }
     return redirectTo(role && active !== false ? ROLE_HOME[role] : ROUTES.inactive);
   }
 

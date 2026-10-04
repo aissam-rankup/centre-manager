@@ -64,6 +64,7 @@ export const getHostCenter = cache(async (): Promise<{ centerId: string; name: s
 /** Marque des espaces d'un centre : celle du compte connecté (ou du centre consulté en support). */
 export const getSessionBrand = cache(async (): Promise<Brand> => {
   const state = await getAuthState();
+  if (state.status === "student") return brandFrom(state.student.branding, state.student.centerName);
   if (state.status !== "authenticated") return PLATFORM_BRAND;
   return brandFrom(state.profile.branding, state.profile.centerName);
 });
@@ -84,6 +85,7 @@ export const getDocumentBrand = cache(async (): Promise<Brand> => {
   const host = await getHostCenter();
   if (host) return host.brand;
   const state = await getAuthState();
+  if (state.status === "student") return brandFrom(state.student.branding, state.student.centerName);
   if (state.status !== "authenticated" || state.profile.support) return PLATFORM_BRAND;
   return brandFrom(state.profile.branding, state.profile.centerName);
 });

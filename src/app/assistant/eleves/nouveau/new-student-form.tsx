@@ -12,6 +12,7 @@ import { ChoiceItem } from "@/components/shared/choice-item";
 import { FormField } from "@/components/shared/form-field";
 import { Money } from "@/components/shared/money";
 import { StudentAvatar } from "@/components/shared/student-avatar";
+import { type ShownCredentials, StudentCredentialsDialog } from "@/components/students/student-credentials-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createStudent } from "@/lib/actions/assistant";
 import { ROUTES } from "@/lib/auth/routes";
 import { useLabels } from "@/lib/i18n/client";
+import { useModules } from "@/lib/modules-client";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
 import { formatDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
@@ -42,6 +44,9 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
   const [photo, setPhoto] = useState<CapturedPhoto | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const modules = useModules();
+  // Élève inscrit avec son accès : identifiants à montrer, puis sa fiche.
+  const [created, setCreated] = useState<{ credentials: ShownCredentials; href: string } | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const stepChanged = useRef(false);
 
@@ -63,6 +68,7 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
       formula: "unit",
       subjectIds: [],
       packId: "",
+      studentAccess: false,
     },
     mode: "onTouched",
   });
@@ -125,7 +131,11 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
         return;
       }
       toast.success(L.success, { description: L.successDescription });
-      router.push(`${ROUTES.assistant.students}/${result.data.studentId}`);
+      if (result.data.accessFailed) toast.error(LABELS.studentAccess.failed);
+      const fileHref = `${ROUTES.assistant.students}/${result.data.studentId}`;
+      // Identifiants de l'accès élève : affichés une fois avant d'ouvrir la fiche.
+      if (result.data.credentials) setCreated({ credentials: result.data.credentials, href: fileHref });
+      else router.push(fileHref);
     });
   });
 
@@ -386,6 +396,23 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
                   </span>
                 </span>
               </SummaryRow>
+              {modules.has("lms") ? (
+                <div className="pt-4">
+                  <ChoiceItem className="items-start">
+                    <Controller
+                      control={control}
+                      name="studentAccess"
+                      render={({ field }) => (
+                        <Checkbox className="mt-0.5" checked={field.value} onCheckedChange={(value) => field.onChange(value === true)} />
+                      )}
+                    />
+                    <span className="flex flex-col">
+                      <span className="font-medium">{LABELS.studentAccess.newStudentOption}</span>
+                      <span className="text-caption text-muted-foreground">{LABELS.studentAccess.newStudentHint}</span>
+                    </span>
+                  </ChoiceItem>
+                </div>
+              ) : null}
               <div className="pt-4">
                 <p className="rounded-lg bg-brand/10 px-4 py-3 text-brand-ink">
                   {L.summary.firstInvoice(
@@ -423,6 +450,15 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
           </Button>
         )}
       </div>
+      <StudentCredentialsDialog
+        credentials={created?.credentials ?? null}
+        studentName={fullName}
+        guardianPhone={guardianPhone || null}
+        onClose={() => {
+          if (created) router.push(created.href);
+          setCreated(null);
+        }}
+      />
     </form>
   );
 }

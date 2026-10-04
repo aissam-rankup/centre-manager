@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { NEXT_PARAM, safeNextPath } from "@/lib/auth/routes";
+import { NEXT_PARAM, ROUTES, safeNextPath } from "@/lib/auth/routes";
 import { LABELS } from "@/lib/constants/labels";
 
 import { LoginForm } from "./login-form";
@@ -24,6 +25,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
         </div>
         <LoginForm next={next} />
         <p className="text-caption text-muted-foreground">{L.forgotten}</p>
+        <Link href={ROUTES.student.login} className="text-caption text-muted-foreground underline-offset-4 hover:underline">
+          {LABELS.studentLogin.studentLink}
+        </Link>
       </CardContent>
     </Card>
   );
