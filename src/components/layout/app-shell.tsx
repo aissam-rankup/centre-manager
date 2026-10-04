@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { navigationFor, type NavSpace } from "@/config/navigation";
 import { signOut } from "@/lib/auth/actions";
 import { useLabels } from "@/lib/i18n/client";
+import { useModules } from "@/lib/modules-client";
 import type { NotificationItem } from "@/lib/data/notifications";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +62,8 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const LABELS = useLabels();
-  const items = navigationFor(LABELS, { brandingEditable, reenrollment })[space];
+  const { modules } = useModules();
+  const items = navigationFor(LABELS, { brandingEditable, reenrollment, modules })[space];
   const home = items[0]?.href ?? "/";
   const pathname = usePathname();
   const activeHref = findActiveHref(items, pathname);

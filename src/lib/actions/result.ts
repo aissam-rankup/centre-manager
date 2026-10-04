@@ -15,7 +15,7 @@ export function failure<T = undefined>(error: string, fieldErrors?: Record<strin
   return { ok: false, error, fieldErrors };
 }
 
-type PostgresLikeError = { code?: string; message?: string };
+type PostgresLikeError = { code?: string; message?: string; hint?: string | null };
 
 /**
  * Traduit une erreur Postgres / PostgREST en message affichable.
@@ -26,7 +26,12 @@ export function describeDatabaseError(error: PostgresLikeError): string {
   switch (error.code) {
     case "42501":
       // Mode support du super-admin : message explicite (lecture seule).
-      return error.message?.startsWith("Mode support") ? error.message : LABELS.actions.errors.forbidden;
+      if (error.message?.startsWith("Mode support")) return error.message;
+      // Module absent de l'offre du centre (RLS, pre-request de l'API, déclencheurs).
+      if (error.hint?.startsWith("module:") || error.message?.startsWith("Fonctionnalité non incluse")) {
+        return LABELS.actions.errors.moduleDisabled;
+      }
+      return LABELS.actions.errors.forbidden;
     case "22023":
     case "23514":
     case "P0002":

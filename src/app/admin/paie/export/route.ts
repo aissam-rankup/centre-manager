@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const LABELS = await getLabels();
   const P = LABELS.payroll;
   const profile = await requireRole("admin");
-  if (profile.support) return new Response(null, { status: 404 });
+  if (profile.support || !profile.modules.includes("finance")) return new Response(null, { status: 404 });
 
   const now = today();
   const current = { year: now.getFullYear(), month: now.getMonth() + 1 };

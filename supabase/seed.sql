@@ -542,11 +542,10 @@ begin
     (c_formation, v_level, 'Module JavaScript', 700);
 
   -- Auto-école en marque blanche, échéance dépassée de 3 jours.
-  insert into public.centers (id, name, slug, center_type, price,
+  insert into public.centers (id, name, slug, center_type, price, plan_key,
                               owner_contact_name, owner_contact_phone, owner_contact_email)
-  values (c_atlas, 'Auto-école Atlas — Marrakech', 'atlas', 'auto_ecole', 690,
+  values (c_atlas, 'Auto-école Atlas — Marrakech', 'atlas', 'auto_ecole', 690, 'premium',
           'Samira Ouazzani', '06 75 44 55 66', 'direction@atlas.demo');
-  update public.subscriptions set plan = 'white_label' where center_id = c_atlas;
   insert into public.center_branding (center_id, brand_name, primary_color, secondary_color, accent_color,
                                       email_sender_name, support_email, support_phone)
   values (c_atlas, 'Atlas Conduite', '#0f766e', '#134e4a', '#f59e0b',

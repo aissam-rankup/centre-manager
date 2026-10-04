@@ -26,7 +26,7 @@ export type FinancialDashboard = {
 /** Résultat financier (admin du centre ; null en mode support). */
 export async function getFinancialDashboard(): Promise<FinancialDashboard | null> {
   const profile = await requireRole("admin");
-  if (profile.support) return null;
+  if (profile.support || !profile.modules.includes("finance")) return null;
   const supabase = await createClient();
 
   const [summary, discounts] = await Promise.all([

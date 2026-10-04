@@ -797,6 +797,54 @@ export type Database = {
           },
         ]
       }
+      center_modules: {
+        Row: {
+          center_id: string
+          enabled_at: string | null
+          enabled_by: string | null
+          is_demo: boolean
+          is_enabled: boolean
+          module_key: string
+          source: Database["public"]["Enums"]["module_source"]
+          updated_at: string
+        }
+        Insert: {
+          center_id: string
+          enabled_at?: string | null
+          enabled_by?: string | null
+          is_demo?: boolean
+          is_enabled: boolean
+          module_key: string
+          source?: Database["public"]["Enums"]["module_source"]
+          updated_at?: string
+        }
+        Update: {
+          center_id?: string
+          enabled_at?: string | null
+          enabled_by?: string | null
+          is_demo?: boolean
+          is_enabled?: boolean
+          module_key?: string
+          source?: Database["public"]["Enums"]["module_source"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_modules_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "center_modules_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       center_types: {
         Row: {
           code: string
@@ -851,6 +899,7 @@ export type Database = {
           payment_due_day: number
           payment_reminders_enabled: boolean
           phone: string | null
+          plan_key: string
           price: number | null
           receipt_format: Database["public"]["Enums"]["receipt_format"]
           receipt_whatsapp_template: string | null
@@ -888,6 +937,7 @@ export type Database = {
           payment_due_day?: number
           payment_reminders_enabled?: boolean
           phone?: string | null
+          plan_key?: string
           price?: number | null
           receipt_format?: Database["public"]["Enums"]["receipt_format"]
           receipt_whatsapp_template?: string | null
@@ -925,6 +975,7 @@ export type Database = {
           payment_due_day?: number
           payment_reminders_enabled?: boolean
           phone?: string | null
+          plan_key?: string
           price?: number | null
           receipt_format?: Database["public"]["Enums"]["receipt_format"]
           receipt_whatsapp_template?: string | null
@@ -943,6 +994,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "center_types"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "centers_plan_key_fkey"
+            columns: ["plan_key"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["key"]
           },
         ]
       }
@@ -1551,6 +1609,33 @@ export type Database = {
           },
         ]
       }
+      modules: {
+        Row: {
+          category: string
+          description: string
+          is_demo: boolean
+          key: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          category: string
+          description?: string
+          is_demo?: boolean
+          key: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          category?: string
+          description?: string
+          is_demo?: boolean
+          key?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       pack_enrollments: {
         Row: {
           active: boolean
@@ -1963,6 +2048,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plan_modules: {
+        Row: {
+          is_demo: boolean
+          module_key: string
+          plan_key: string
+        }
+        Insert: {
+          is_demo?: boolean
+          module_key: string
+          plan_key: string
+        }
+        Update: {
+          is_demo?: boolean
+          module_key?: string
+          plan_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_modules_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "plan_modules_plan_key_fkey"
+            columns: ["plan_key"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          description: string
+          is_demo: boolean
+          key: string
+          monthly_price: number
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          description?: string
+          is_demo?: boolean
+          key: string
+          monthly_price?: number
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          description?: string
+          is_demo?: boolean
+          key?: string
+          monthly_price?: number
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
       }
       platform_events: {
         Row: {
@@ -2765,7 +2910,6 @@ export type Database = {
           current_period_start: string | null
           id: string
           is_demo: boolean
-          plan: Database["public"]["Enums"]["subscription_plan"]
           started_at: string
           status: Database["public"]["Enums"]["center_status"]
         }
@@ -2779,7 +2923,6 @@ export type Database = {
           current_period_start?: string | null
           id?: string
           is_demo?: boolean
-          plan?: Database["public"]["Enums"]["subscription_plan"]
           started_at?: string
           status?: Database["public"]["Enums"]["center_status"]
         }
@@ -2793,7 +2936,6 @@ export type Database = {
           current_period_start?: string | null
           id?: string
           is_demo?: boolean
-          plan?: Database["public"]["Enums"]["subscription_plan"]
           started_at?: string
           status?: Database["public"]["Enums"]["center_status"]
         }
@@ -3536,11 +3678,11 @@ export type Database = {
           favicon_url: string
           login_background_url: string
           logo_url: string
-          plan: Database["public"]["Enums"]["subscription_plan"]
           primary_color: string
           secondary_color: string
           support_email: string
           support_phone: string
+          white_label: boolean
         }[]
       }
       center_for_host: {
@@ -3630,7 +3772,8 @@ export type Database = {
           contact_phone: string
           current_period_end: string
           days_before_suspension: number
-          plan: Database["public"]["Enums"]["subscription_plan"]
+          modules: string[]
+          plan_key: string
           status: Database["public"]["Enums"]["center_status"]
           support_expires_at: string
           support_mode: boolean
@@ -3638,6 +3781,7 @@ export type Database = {
           vocabulary: Json
         }[]
       }
+      my_modules: { Args: never; Returns: string[] }
       open_cash_session: { Args: { p_opening_float?: number }; Returns: string }
       payment_reminder_queue: {
         Args: { p_run_id?: string; p_student_id?: string }
@@ -3816,7 +3960,8 @@ export type Database = {
           owner_contact_email: string
           owner_contact_name: string
           owner_contact_phone: string
-          plan: Database["public"]["Enums"]["subscription_plan"]
+          plan_key: string
+          plan_name: string
           price: number
           slug: string
           status: Database["public"]["Enums"]["center_status"]
@@ -3833,6 +3978,21 @@ export type Database = {
           event_id: number
           occurred_at: string
           payload: Json
+        }[]
+      }
+      platform_center_modules: {
+        Args: { p_center_id: string }
+        Returns: {
+          category: string
+          description: string
+          enabled_at: string
+          enabled_by_name: string
+          in_plan: boolean
+          is_enabled: boolean
+          module_key: string
+          name: string
+          source: Database["public"]["Enums"]["module_source"]
+          updated_at: string
         }[]
       }
       platform_center_users: {
@@ -3860,7 +4020,8 @@ export type Database = {
           current_period_end: string
           days_remaining: number
           name: string
-          plan: Database["public"]["Enums"]["subscription_plan"]
+          plan_key: string
+          plan_name: string
           price: number
           slug: string
           status: Database["public"]["Enums"]["center_status"]
@@ -3883,7 +4044,7 @@ export type Database = {
           p_owner_contact_email: string
           p_owner_contact_name: string
           p_owner_contact_phone: string
-          p_plan: Database["public"]["Enums"]["subscription_plan"]
+          p_plan_key: string
           p_price: number
           p_slug: string
           p_status: Database["public"]["Enums"]["center_status"]
@@ -3898,6 +4059,17 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      platform_modules: {
+        Args: never
+        Returns: {
+          category: string
+          centers_count: number
+          description: string
+          key: string
+          name: string
+          plans: string[]
+        }[]
       }
       platform_overdue_centers: {
         Args: never
@@ -3943,6 +4115,17 @@ export type Database = {
           reference: string
         }[]
       }
+      platform_plans: {
+        Args: never
+        Returns: {
+          centers_count: number
+          description: string
+          key: string
+          modules: string[]
+          monthly_price: number
+          name: string
+        }[]
+      }
       platform_record_payment: {
         Args: {
           p_amount: number
@@ -3952,6 +4135,15 @@ export type Database = {
           p_reference?: string
         }
         Returns: string
+      }
+      platform_set_center_module: {
+        Args: {
+          p_center_id: string
+          p_enabled: boolean
+          p_module_key: string
+          p_trial?: boolean
+        }
+        Returns: undefined
       }
       platform_set_domain_verified: {
         Args: { p_center_id: string; p_verified: boolean }
@@ -3966,7 +4158,7 @@ export type Database = {
           p_billing_interval: Database["public"]["Enums"]["billing_interval"]
           p_center_id: string
           p_grace_days: number
-          p_plan: Database["public"]["Enums"]["subscription_plan"]
+          p_plan_key: string
           p_price: number
         }
         Returns: undefined
@@ -4029,6 +4221,15 @@ export type Database = {
           p_owner_contact_name: string
           p_owner_contact_phone: string
           p_slug: string
+        }
+        Returns: undefined
+      }
+      platform_update_plan: {
+        Args: {
+          p_description: string
+          p_key: string
+          p_monthly_price: number
+          p_name: string
         }
         Returns: undefined
       }
@@ -4293,6 +4494,7 @@ export type Database = {
       follow_up_channel: "phone" | "whatsapp" | "in_person"
       follow_up_type: "payment" | "absence"
       invoice_status: "pending" | "paid" | "overdue"
+      module_source: "plan" | "manual" | "trial"
       notification_channel: "whatsapp" | "phone_call" | "in_person"
       pay_mode: "fixed_salary" | "commission"
       payment_method: "cash" | "bank_transfer" | "card" | "cheque"
@@ -4304,7 +4506,6 @@ export type Database = {
       reenrollment_intent: "pending" | "confirmed" | "dropped" | "paused"
       schedule_conflict_type: "room" | "teacher" | "level"
       subscription_payment_method: "bank_transfer" | "cash" | "card"
-      subscription_plan: "standard" | "white_label"
       user_role: "admin" | "assistant" | "teacher" | "super_admin"
     }
     CompositeTypes: {
@@ -4455,6 +4656,7 @@ export const Constants = {
       follow_up_channel: ["phone", "whatsapp", "in_person"],
       follow_up_type: ["payment", "absence"],
       invoice_status: ["pending", "paid", "overdue"],
+      module_source: ["plan", "manual", "trial"],
       notification_channel: ["whatsapp", "phone_call", "in_person"],
       pay_mode: ["fixed_salary", "commission"],
       payment_method: ["cash", "bank_transfer", "card", "cheque"],
@@ -4466,7 +4668,6 @@ export const Constants = {
       reenrollment_intent: ["pending", "confirmed", "dropped", "paused"],
       schedule_conflict_type: ["room", "teacher", "level"],
       subscription_payment_method: ["bank_transfer", "cash", "card"],
-      subscription_plan: ["standard", "white_label"],
       user_role: ["admin", "assistant", "teacher", "super_admin"],
     },
   },

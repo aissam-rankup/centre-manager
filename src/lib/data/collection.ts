@@ -93,7 +93,8 @@ export type ReenrollmentOverview = {
 
 /** Réinscription de la dernière campagne confirmée (sinon du brouillon) ; null sans campagne. */
 export async function getReenrollmentOverview(): Promise<ReenrollmentOverview | null> {
-  await requireRole("admin");
+  const profile = await requireRole("admin");
+  if (!profile.modules.includes("reenrollment")) return null;
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("reenrollment_overview");
   if (error) throw error;
@@ -117,7 +118,7 @@ export async function getReenrollmentOverview(): Promise<ReenrollmentOverview | 
 export async function getLateDraft(): Promise<{ id: string; year: number; month: number } | null> {
   const profile = await requireRole("admin");
   // Mode support : lecture seule, rien à confirmer.
-  if (profile.support) return null;
+  if (profile.support || !profile.modules.includes("reenrollment")) return null;
   const supabase = await createClient();
   const [year = 0, month = 1] = toISODate(today()).split("-").map(Number);
   const { data, error } = await supabase

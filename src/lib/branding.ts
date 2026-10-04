@@ -152,7 +152,8 @@ export function dnsTarget(): string | null {
 }
 
 export type BrandingSettings = {
-  plan: "standard" | "white_label";
+  /** Module marque blanche actif pour ce centre. */
+  whiteLabel: boolean;
   editable: boolean;
   domainVerified: boolean;
   values: {
@@ -177,7 +178,7 @@ export async function getBrandingSettings(centerId: string): Promise<BrandingSet
   if (error) throw error;
   if (!data) return null;
   return {
-    plan: data.plan,
+    whiteLabel: data.white_label,
     editable: data.editable,
     domainVerified: data.domain_verified,
     values: {

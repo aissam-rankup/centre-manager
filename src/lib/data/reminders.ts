@@ -41,7 +41,8 @@ export async function getReminderSettings(): Promise<ReminderSettings> {
  * sont désactivés.
  */
 export async function getReminderQueue(filter: { runId?: string; studentId?: string } = {}): Promise<ReminderItem[]> {
-  await requireStaff();
+  const profile = await requireStaff();
+  if (!profile.modules.includes("reenrollment")) return [];
   const LABELS = await getLabels();
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("payment_reminder_queue", {

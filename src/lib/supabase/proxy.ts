@@ -5,6 +5,7 @@ import { z } from "zod";
 import { NEXT_PARAM, ROLE_HOME, ROUTES } from "@/lib/auth/routes";
 import { publicEnv } from "@/lib/env";
 import { CENTER_COOKIE, resolveHost, SLUG_PATTERN } from "@/lib/hosts";
+import { moduleForPath, parseModules } from "@/lib/modules";
 import type { Database } from "@/lib/supabase/database.types";
 
 /** Claims ajoutés par le hook public.custom_access_token_hook. */
@@ -86,12 +87,18 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // afin de ne pas révéler son existence. La garde serveur requireSuperAdmin
   // revérifie le rôle en base (le JWT peut être en retard).
   // Jamais accessible depuis l'adresse d'un centre (sous-domaine ou domaine personnalisé).
-  const clientHost = resolveHost(request.headers.get("host")).kind !== "platform";
-  if (isPlatformPath(pathname) && (clientHost || appClaimsSchema.safeParse(claims ?? {}).data?.user_role !== "super_admin")) {
+  const notFound = () => {
     const url = request.nextUrl.clone();
     url.pathname = "/_introuvable";
     url.search = "";
-    return NextResponse.rewrite(url, { status: 404 });
+    const rewrite = NextResponse.rewrite(url, { status: 404 });
+    for (const cookie of response.cookies.getAll()) rewrite.cookies.set(cookie);
+    return rewrite;
+  };
+
+  const clientHost = resolveHost(request.headers.get("host")).kind !== "platform";
+  if (isPlatformPath(pathname) && (clientHost || appClaimsSchema.safeParse(claims ?? {}).data?.user_role !== "super_admin")) {
+    return notFound();
   }
 
   if (OPEN_PATHS.includes(pathname)) return response;
@@ -116,6 +123,14 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   if (pathname === "/" || PUBLIC_PATHS.includes(pathname)) {
     const { user_role: role, profile_active: active } = appClaimsSchema.parse(claims);
     return redirectTo(role && active !== false ? ROLE_HOME[role] : ROUTES.inactive);
+  }
+
+  // Route d'un module absent de l'offre du centre : 404, lu en base (center_modules).
+  // Les gardes serveur (requireModule) et la base (RLS, pre-request) le revérifient.
+  const requiredModule = moduleForPath(pathname);
+  if (requiredModule) {
+    const { data: modules, error } = await supabase.rpc("my_modules");
+    if (error || !parseModules(modules).includes(requiredModule)) return notFound();
   }
 
   return response;

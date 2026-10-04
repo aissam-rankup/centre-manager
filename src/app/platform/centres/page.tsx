@@ -16,9 +16,9 @@ import { LABELS } from "@/lib/constants/labels";
 import {
   type CenterStatus,
   getCenterTypes,
+  getPlanOptions,
   getPlatformCenters,
   type PlatformCenterRow,
-  type SubscriptionPlan,
 } from "@/lib/data/platform";
 import { formatDate } from "@/lib/format";
 
@@ -28,7 +28,6 @@ const P = LABELS.platform;
 export const metadata: Metadata = { title: L.title };
 
 const STATUSES: readonly CenterStatus[] = ["trial", "active", "past_due", "suspended", "cancelled"];
-const PLANS: readonly SubscriptionPlan[] = ["standard", "white_label"];
 
 const COLUMNS: readonly DataTableColumn<PlatformCenterRow>[] = [
   {
@@ -48,7 +47,7 @@ const COLUMNS: readonly DataTableColumn<PlatformCenterRow>[] = [
     ),
   },
   { id: "type", header: L.type, cell: (row) => row.center_type_label },
-  { id: "plan", header: L.plan, cell: (row) => (row.plan ? P.plan[row.plan] : P.notSet) },
+  { id: "plan", header: L.plan, cell: (row) => row.plan_name },
   { id: "status", header: L.status, mobile: "aside", cell: (row) => <CenterStatusBadge status={row.status} /> },
   {
     id: "activated",
@@ -78,7 +77,7 @@ const COLUMNS: readonly DataTableColumn<PlatformCenterRow>[] = [
   },
 ];
 
-type Filters = { q: string; statut: string | null; type: string | null; formule: string | null };
+type Filters = { q: string; statut: string | null; type: string | null; pack: string | null };
 
 function first(value: string | string[] | undefined): string | null {
   const v = Array.isArray(value) ? value[0] : value;
@@ -91,7 +90,7 @@ function hrefWith(filters: Filters, patch: Partial<Filters>): string {
   if (next.q) params.set("q", next.q);
   if (next.statut) params.set("statut", next.statut);
   if (next.type) params.set("type", next.type);
-  if (next.formule) params.set("formule", next.formule);
+  if (next.pack) params.set("pack", next.pack);
   const query = params.toString();
   return query ? `${ROUTES.platform.centers}?${query}` : ROUTES.platform.centers;
 }
@@ -102,16 +101,16 @@ function normalize(text: string): string {
 
 export default async function PlatformCentersPage({ searchParams }: PageProps<"/platform/centres">) {
   const params = await searchParams;
-  const [centers, types] = await Promise.all([getPlatformCenters(), getCenterTypes()]);
+  const [centers, types, plans] = await Promise.all([getPlatformCenters(), getCenterTypes(), getPlanOptions()]);
 
   const statut = first(params.statut);
   const type = first(params.type);
-  const formule = first(params.formule);
+  const pack = first(params.pack);
   const filters: Filters = {
     q: first(params.q) ?? "",
     statut: STATUSES.find((s) => s === statut) ?? null,
     type: type && types.some((t) => t.code === type) ? type : null,
-    formule: PLANS.find((p) => p === formule) ?? null,
+    pack: plans.find((p) => p.key === pack)?.key ?? null,
   };
 
   const query = normalize(filters.q.trim());
@@ -120,7 +119,7 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
       (!query || normalize(`${row.name} ${row.slug}`).includes(query)) &&
       (!filters.statut || row.status === filters.statut) &&
       (!filters.type || row.center_type === filters.type) &&
-      (!filters.formule || row.plan === filters.formule),
+      (!filters.pack || row.plan_key === filters.pack),
   );
 
   const statusOptions: FilterOption[] = [
@@ -128,7 +127,7 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
     ...STATUSES.map((s) => ({ value: s, label: P.centerStatus[s] })),
   ];
   const typeOptions: FilterOption[] = [{ value: null, label: L.allTypes }, ...types.map((t) => ({ value: t.code, label: t.label }))];
-  const planOptions: FilterOption[] = [{ value: null, label: L.allPlans }, ...PLANS.map((p) => ({ value: p, label: P.plan[p] }))];
+  const planOptions: FilterOption[] = [{ value: null, label: L.allPlans }, ...plans.map((p) => ({ value: p.key, label: p.name }))];
 
   return (
     <div className="flex flex-col gap-6">
@@ -146,7 +145,7 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
           <form action={ROUTES.platform.centers} role="search" className="flex w-full gap-2 sm:w-auto">
             {filters.statut ? <input type="hidden" name="statut" value={filters.statut} /> : null}
             {filters.type ? <input type="hidden" name="type" value={filters.type} /> : null}
-            {filters.formule ? <input type="hidden" name="formule" value={filters.formule} /> : null}
+            {filters.pack ? <input type="hidden" name="pack" value={filters.pack} /> : null}
             <label className="sr-only" htmlFor="recherche-centre">
               {L.searchLabel}
             </label>
@@ -169,7 +168,7 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
       <div className="flex flex-col gap-3">
         <FilterChips label={L.filterStatus} options={statusOptions} current={filters.statut} href={(v) => hrefWith(filters, { statut: v })} />
         <FilterChips label={L.filterType} options={typeOptions} current={filters.type} href={(v) => hrefWith(filters, { type: v })} />
-        <FilterChips label={L.filterPlan} options={planOptions} current={filters.formule} href={(v) => hrefWith(filters, { formule: v })} />
+        <FilterChips label={L.filterPlan} options={planOptions} current={filters.pack} href={(v) => hrefWith(filters, { pack: v })} />
       </div>
 
       <p className="text-section">{L.count(rows.length)}</p>

@@ -13,11 +13,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   centerDetailsSchema,
+  centerModuleSchema,
   centerPricingSchema,
   centerStatusSchema,
   dueDateSchema,
   newCenterSchema,
   parseAmount,
+  planSchema,
   platformSettingsSchema,
   resendInvitationSchema,
   subscriptionPaymentSchema,
@@ -101,7 +103,7 @@ export async function createCenter(input: unknown): Promise<ActionResult<{ cente
     p_slug: values.slug,
     p_center_type: values.centerType,
     p_custom_terms: termsToSave(values.centerType, values.customTerms),
-    p_plan: values.plan,
+    p_plan_key: values.plan,
     p_price: parseAmount(values.price),
     p_billing_interval: values.billingInterval,
     p_status: values.status,
@@ -161,13 +163,50 @@ export async function updateCenterPricing(input: unknown): Promise<ActionResult>
   const v = parsed.data;
   const { error } = await supabase.rpc("platform_set_pricing", {
     p_center_id: v.centerId,
-    p_plan: v.plan,
+    p_plan_key: v.plan,
     p_price: parseAmount(v.price),
     p_billing_interval: v.billingInterval,
     p_grace_days: Number(v.graceDays),
   });
   if (error) return failure(describeDatabaseError(error));
   revalidatePlatform(v.centerId);
+  return success();
+}
+
+// ---------------------------------------------------------------------
+// Modules et catalogue
+// ---------------------------------------------------------------------
+/** Active ou coupe un module pour un centre (journalisé dans platform_events). */
+export async function setCenterModule(input: unknown): Promise<ActionResult> {
+  const parsed = centerModuleSchema.safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid);
+  const supabase = await platform();
+  const v = parsed.data;
+  const { error } = await supabase.rpc("platform_set_center_module", {
+    p_center_id: v.centerId,
+    p_module_key: v.moduleKey,
+    p_enabled: v.enabled,
+    p_trial: v.trial,
+  });
+  if (error) return failure(describeDatabaseError(error));
+  revalidatePlatform(v.centerId);
+  return success();
+}
+
+/** Nom, description et prix catalogue d'un pack. */
+export async function updatePlan(input: unknown): Promise<ActionResult> {
+  const parsed = planSchema.safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
+  const supabase = await platform();
+  const v = parsed.data;
+  const { error } = await supabase.rpc("platform_update_plan", {
+    p_key: v.key,
+    p_name: v.name,
+    p_description: v.description,
+    p_monthly_price: parseAmount(v.monthlyPrice),
+  });
+  if (error) return failure(describeDatabaseError(error));
+  revalidatePlatform();
   return success();
 }
 
@@ -243,7 +282,7 @@ export async function resendInvitation(input: unknown): Promise<ActionResult<{ p
 
   // Marque blanche : le courriel porte le nom de marque du centre (modèles Auth : .Data.brand_name).
   const { data: branding } = await supabase.rpc("center_branding_settings", { p_center_id: centerId }).maybeSingle();
-  const brandName = branding?.plan === "white_label" ? branding.brand_name : null;
+  const brandName = branding?.white_label ? branding.brand_name : null;
   await service.auth.admin.updateUserById(userId, {
     user_metadata: { ...user.user.user_metadata, brand_name: brandName },
   });

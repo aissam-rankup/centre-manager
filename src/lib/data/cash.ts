@@ -192,7 +192,8 @@ export async function getCashPage(): Promise<CashPage> {
 /** Fonds de caisse à demander avec un paiement : pas de caisse ouverte, ou ouverte sans encaissement. */
 export async function getCashOpening(): Promise<CashOpening> {
   const profile = await requireStaff();
-  if (profile.support) return { needed: false, currentFloat: 0 };
+  // Caisse tenue avec le module Finance seulement.
+  if (profile.support || !profile.modules.includes("finance")) return { needed: false, currentFloat: 0 };
   const supabase = await createClient();
   const todayIso = toISODate(today());
   const [center, sessions] = await Promise.all([
@@ -362,7 +363,7 @@ export type StaleCashSession = { id: string; sessionDate: string; isShared: bool
 /** Caisses d'un jour précédent restées ouvertes (admin, hors support ; vide sinon). */
 export async function getStaleCashSessions(): Promise<StaleCashSession[]> {
   const profile = await requireStaff();
-  if (profile.support || profile.role !== "admin") return [];
+  if (profile.support || profile.role !== "admin" || !profile.modules.includes("finance")) return [];
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("stale_cash_sessions");
   if (error) throw error;

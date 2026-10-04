@@ -14,7 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) return new Response(null, { status: 404 });
   const profile = await requireRole("admin");
-  if (profile.support) return new Response(null, { status: 404 });
+  if (profile.support || !profile.modules.includes("finance")) return new Response(null, { status: 404 });
 
   // RLS : seules les lignes du centre de l'admin sont lisibles.
   const supabase = await createClient();

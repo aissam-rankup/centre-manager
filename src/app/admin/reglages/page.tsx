@@ -9,6 +9,7 @@ import { getReenrollmentSettings } from "@/lib/data/reenrollment";
 import { getReminderSettings } from "@/lib/data/reminders";
 import { getCashSettings } from "@/lib/data/cash";
 import { getLabels } from "@/lib/i18n/server";
+import type { ModuleKey } from "@/lib/modules";
 
 import { AbsenceSettingsForm } from "./absence-settings-form";
 import { CashSettingsForm } from "./cash-settings-form";
@@ -24,13 +25,15 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function CenterSettingsPage() {
   const LABELS = await getLabels();
   const profile = await requireRole("admin");
+  const has = (key: ModuleKey) => profile.modules.includes(key);
+  // Réglages d'un module : affichés (et lus) seulement si le centre l'a.
   const [settings, brand, absenceSettings, reenrollment, reminders, cash] = await Promise.all([
     getEditableCenterSettings(),
     getSessionBrand(),
-    getAbsenceAlertsSettings(),
-    getReenrollmentSettings(),
-    getReminderSettings(),
-    getCashSettings(),
+    has("absence_tracking") ? getAbsenceAlertsSettings() : null,
+    has("reenrollment") ? getReenrollmentSettings() : null,
+    has("reenrollment") ? getReminderSettings() : null,
+    has("finance") ? getCashSettings() : null,
   ]);
   const centerName = brand.whiteLabel ? brand.name : profile.centerName;
 
@@ -38,10 +41,10 @@ export default async function CenterSettingsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title={LABELS.centerSettings.title} description={LABELS.centerSettings.description} />
       <CenterSettingsForm settings={settings} centerName={centerName} />
-      <ReenrollmentSettingsForm settings={reenrollment} />
-      <PaymentRemindersForm settings={reminders} centerName={centerName} />
-      <CashSettingsForm settings={cash} />
-      <AbsenceSettingsForm settings={absenceSettings} centerName={centerName} />
+      {reenrollment ? <ReenrollmentSettingsForm settings={reenrollment} /> : null}
+      {reminders ? <PaymentRemindersForm settings={reminders} centerName={centerName} /> : null}
+      {cash ? <CashSettingsForm settings={cash} /> : null}
+      {absenceSettings ? <AbsenceSettingsForm settings={absenceSettings} centerName={centerName} /> : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { LABELS } from "@/lib/constants/labels";
+import { MODULE_KEYS } from "@/lib/modules";
 import { isValidPhone } from "@/lib/phone";
 
 const V = LABELS.platform.validation;
@@ -88,7 +89,7 @@ const identityFields = {
 };
 
 const pricingFields = {
-  plan: z.enum(["standard", "white_label"]),
+  plan: z.string().regex(/^[a-z][a-z_]*$/, V.planRequired),
   price: amount,
   billingInterval: z.enum(["month", "year"]),
   graceDays: z.string().trim().regex(/^\d{1,2}$/, V.graceInvalid).refine((v) => Number(v) <= 60, V.graceInvalid),
@@ -178,3 +179,22 @@ export function parseAmount(value: string): number {
 export function termsToSave(centerType: string, customTerms: CustomTermsInput): CustomTermsInput | Record<string, never> {
   return centerType === CUSTOM_CENTER_TYPE ? customTerms : {};
 }
+
+// ---------------------------------------------------------------------
+// Modules et catalogue
+// ---------------------------------------------------------------------
+export const centerModuleSchema = z.object({
+  centerId: z.uuid(),
+  moduleKey: z.enum(MODULE_KEYS),
+  enabled: z.boolean(),
+  trial: z.boolean(),
+});
+export type CenterModuleInput = z.infer<typeof centerModuleSchema>;
+
+export const planSchema = z.object({
+  key: z.string().regex(/^[a-z][a-z_]*$/, V.planRequired),
+  name: z.string().trim().min(1, V.nameRequired).max(60, V.tooLong),
+  description: optionalText(300),
+  monthlyPrice: amount,
+});
+export type PlanInput = z.infer<typeof planSchema>;

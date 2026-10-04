@@ -15,6 +15,7 @@ export const ROUTES = {
     home: "/platform",
     centers: "/platform/centres",
     newCenter: "/platform/centres/nouveau",
+    catalogue: "/platform/catalogue",
     billing: "/platform/facturation",
     settings: "/platform/reglages",
   },

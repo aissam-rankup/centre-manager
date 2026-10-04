@@ -22,6 +22,7 @@ import { ROUTES } from "@/lib/auth/routes";
 import type { CashOpening } from "@/lib/cash";
 import { formatMAD } from "@/lib/format";
 import { useLabels } from "@/lib/i18n/client";
+import { useModules } from "@/lib/modules-client";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/receipts";
 import { cn } from "@/lib/utils";
 
@@ -86,6 +87,8 @@ export function PaymentDialog({
   cashOpening = { needed: false, currentFloat: 0 },
 }: PaymentDialogProps) {
   const LABELS = useLabels();
+  // Reçus imprimables et WhatsApp : module Finance.
+  const receipts = useModules().has("finance");
   const P = LABELS.payment;
   const D = LABELS.discounts.invoice;
   const router = useRouter();
@@ -185,23 +188,25 @@ export function PaymentDialog({
                 <CircleCheck className="size-8" aria-hidden />
               </span>
               <DialogTitle className="text-section">{P.success}</DialogTitle>
-              <DialogDescription>{P.receiptHint}</DialogDescription>
+              {receipts ? <DialogDescription>{P.receiptHint}</DialogDescription> : null}
             </DialogHeader>
             <p className="rounded-xl bg-muted px-4 py-3 text-center">
               <span className="numeric text-section text-heading">
-                {P.receiptReady(done.receiptNumber, formatMAD(done.amountPaid))}
+                {receipts ? P.receiptReady(done.receiptNumber, formatMAD(done.amountPaid)) : P.recorded(formatMAD(done.amountPaid))}
               </span>
             </p>
             {/* Les deux actions côte à côte. */}
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Button asChild>
-                <a href={`${ROUTES.receipt(done.receiptId)}?imprimer=1`} target="_blank" rel="noopener">
-                  <Printer aria-hidden />
-                  {LABELS.receipts.print}
-                </a>
-              </Button>
-              <ShareReceiptButton receiptId={done.receiptId} guardianPhone={guardianPhone} variant="success" />
-            </div>
+            {receipts ? (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button asChild>
+                  <a href={`${ROUTES.receipt(done.receiptId)}?imprimer=1`} target="_blank" rel="noopener">
+                    <Printer aria-hidden />
+                    {LABELS.receipts.print}
+                  </a>
+                </Button>
+                <ShareReceiptButton receiptId={done.receiptId} guardianPhone={guardianPhone} variant="success" />
+              </div>
+            ) : null}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 {LABELS.receipts.close}

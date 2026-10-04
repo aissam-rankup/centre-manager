@@ -15,6 +15,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/lib/auth/routes";
+import { getAuthState } from "@/lib/auth/session";
 import type { AppLabels } from "@/lib/constants/labels";
 import { getLabels } from "@/lib/i18n/server";
 import type { StudentFile, StudentInvoice } from "@/lib/data/assistant";
@@ -193,7 +194,7 @@ function payableInvoices(student: StudentFile, LABELS: AppLabels): PayableInvoic
     }));
 }
 
-function paymentColumns(LABELS: AppLabels, student: StudentFile): readonly DataTableColumn<StudentInvoice>[] {
+function paymentColumns(LABELS: AppLabels, student: StudentFile, receipts: boolean): readonly DataTableColumn<StudentInvoice>[] {
   const L = LABELS.assistant.student;
   return [
     {
@@ -223,7 +224,7 @@ function paymentColumns(LABELS: AppLabels, student: StudentFile): readonly DataT
         invoice.status === "paid" ? (
           <span className="flex flex-col">
             <span className="numeric font-normal">{invoice.paidAt ? formatDate(invoice.paidAt) : LABELS.common.none}</span>
-            {invoice.receiptId && invoice.receiptNumber ? (
+            {receipts && invoice.receiptId && invoice.receiptNumber ? (
               <Link
                 href={ROUTES.receipt(invoice.receiptId)}
                 className="inline-flex items-center gap-1 text-caption font-medium text-primary underline-offset-4 hover:underline"
@@ -266,6 +267,9 @@ export async function PaymentsSection({ student }: { student: StudentFile }) {
   const L = LABELS.assistant.student;
   const payable = payableInvoices(student, LABELS);
   const cashOpening = payable.length > 0 ? await getCashOpening() : undefined;
+  const state = await getAuthState();
+  // Reçus : module Finance.
+  const receipts = state.status === "authenticated" && state.profile.modules.includes("finance");
   return (
     <SectionCard
       id="paiements"
@@ -286,7 +290,7 @@ export async function PaymentsSection({ student }: { student: StudentFile }) {
         <EmptyState icon={Receipt} title={L.payments.emptyTitle} description={L.payments.emptyDescription} />
       ) : (
         <DataTable
-          columns={paymentColumns(LABELS, student)}
+          columns={paymentColumns(LABELS, student, receipts)}
           rows={student.invoices}
           getRowId={(invoice) => invoice.id}
           caption={L.payments.caption}

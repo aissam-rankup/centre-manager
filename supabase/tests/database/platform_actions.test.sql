@@ -20,7 +20,7 @@ set local request.jwt.claims = '{"sub":"aa000000-0000-4000-8000-000000000001","r
 -- Création d'un centre et de son admin.
 select lives_ok($$
   select public.platform_create_center(
-    'Institut Horizon', 'horizon', 'institut_langue', '{}', 'white_label', 1200, 'year', 'active',
+    'Institut Horizon', 'horizon', 'institut_langue', '{}', 'premium', 1200, 'year', 'active',
     private.today() - 3, (private.today() - 3 + interval '1 year')::date, 7::smallint,
     'Rim Tazi', '0612345678', 'rim@horizon.test', 'Client référé',
     'aa000000-0000-4000-8000-000000000002', 'Rim Tazi', '0612345678')
@@ -30,17 +30,17 @@ select is(
      (select center_id from public.platform_centers() where slug = 'horizon'))),
   'active institut_langue year 7', 'centre créé : statut, type, durée, grâce');
 select is(
-  (select plan::text from public.platform_centers() where slug = 'horizon'),
-  'white_label', 'formule enregistrée');
+  (select plan_key from public.platform_centers() where slug = 'horizon'),
+  'premium', 'pack enregistré');
 select is(
   (select role::text from public.platform_center_users((select center_id from public.platform_centers() where slug = 'horizon'))),
   'admin', 'admin du centre créé');
 select throws_ok($$
-  select public.platform_create_center('Doublon', 'horizon', 'soutien_scolaire', '{}', 'standard', 100, 'month', 'trial',
+  select public.platform_create_center('Doublon', 'horizon', 'soutien_scolaire', '{}', 'starter', 100, 'month', 'trial',
     null, null, 5::smallint, null, null, null, null, 'aa000000-0000-4000-8000-000000000003', 'X', null)
 $$, '23505', null, 'adresse déjà utilisée refusée');
 select throws_ok($$
-  select public.platform_create_center('Autre', 'autre', 'soutien_scolaire', '{}', 'standard', 100, 'month', 'trial',
+  select public.platform_create_center('Autre', 'autre', 'soutien_scolaire', '{}', 'starter', 100, 'month', 'trial',
     null, null, 5::smallint, null, null, null, null, 'aa000000-0000-4000-8000-000000000002', 'X', null)
 $$, '22023', null, 'compte déjà rattaché refusé');
 

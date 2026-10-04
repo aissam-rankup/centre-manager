@@ -55,9 +55,12 @@ export async function getNotifications(): Promise<NotificationItem[]> {
       .gte("notes_updated_at", since)
       .order("notes_updated_at", { ascending: false })
       .limit(LIMIT),
-    supabase.from("open_absence_alerts").select("id, student_id, full_name, subject_name, absence_count, created_at").limit(LIMIT),
-    // Écarts de caisse au-delà du seuil, pas encore validés : pour l'admin (hors support).
-    profile.role === "admin" && !profile.support
+    // Alertes d'absences : module Suivi des absences.
+    profile.modules.includes("absence_tracking")
+      ? supabase.from("open_absence_alerts").select("id, student_id, full_name, subject_name, absence_count, created_at").limit(LIMIT)
+      : Promise.resolve({ data: [], error: null }),
+    // Écarts de caisse au-delà du seuil, pas encore validés : pour l'admin (hors support), module Finance.
+    profile.role === "admin" && !profile.support && profile.modules.includes("finance")
       ? supabase
           .from("cash_sessions")
           .select("id, session_date, variance, variance_reason, closed_at, closer:profiles!cash_sessions_closed_by_center_id_fkey(full_name), centers(cash_variance_alert_threshold)")

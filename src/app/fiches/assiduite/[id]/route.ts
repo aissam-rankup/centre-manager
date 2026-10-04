@@ -18,7 +18,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (state.status !== "authenticated" || !state.profile.active || (state.profile.blocked && !state.profile.support)) {
     return new Response(null, { status: 401 });
   }
-  if (!/^[0-9a-f-]{36}$/.test(id)) return new Response(null, { status: 404 });
+  if (!/^[0-9a-f-]{36}$/.test(id) || !state.profile.modules.includes("absence_tracking")) return new Response(null, { status: 404 });
 
   const data = await getAttendanceData(id);
   if (!data.student) return new Response(null, { status: 404 });

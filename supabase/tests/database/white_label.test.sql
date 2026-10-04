@@ -12,10 +12,9 @@ insert into auth.users (id, email) values
   ('ac000000-0000-4000-8000-000000000002', 'admin-wl-p19@test.local'),
   ('ac000000-0000-4000-8000-000000000003', 'admin-std-p19@test.local'),
   ('ac000000-0000-4000-8000-000000000004', 'prof-wl-p19@test.local');
-insert into public.centers (id, name, slug) values
-  ('cc000000-0000-4000-8000-000000000001', 'Centre marque blanche', 'marque-p19'),
-  ('cc000000-0000-4000-8000-000000000002', 'Centre standard', 'standard-p19');
-update public.subscriptions set plan = 'white_label' where center_id = 'cc000000-0000-4000-8000-000000000001';
+insert into public.centers (id, name, slug, plan_key) values
+  ('cc000000-0000-4000-8000-000000000001', 'Centre marque blanche', 'marque-p19', 'premium'),
+  ('cc000000-0000-4000-8000-000000000002', 'Centre standard', 'standard-p19', 'starter');
 insert into public.profiles (id, center_id, full_name, role) values
   ('ac000000-0000-4000-8000-000000000001', null, 'Propriétaire', 'super_admin'),
   ('ac000000-0000-4000-8000-000000000002', 'cc000000-0000-4000-8000-000000000001', 'Admin WL', 'admin'),

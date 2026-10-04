@@ -20,7 +20,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ dat
   const { date } = await params;
   if (!isCalendarDate(date)) return new Response(null, { status: 404 });
   const profile = await requireRole("admin");
-  if (profile.support) return new Response(null, { status: 404 });
+  if (profile.support || !profile.modules.includes("finance")) return new Response(null, { status: 404 });
 
   // RLS : l'admin lit toutes les sessions de son centre.
   const supabase = await createClient();

@@ -15,6 +15,7 @@ import {
   summarizeAttendance,
 } from "@/lib/attendance";
 import type { AbsenceToNotify } from "@/lib/absences";
+import { getAuthState } from "@/lib/auth/session";
 import type { AttendanceData } from "@/lib/data/attendance";
 import { formatDate, formatDateTime, formatDateWithWeekday, formatPercent, toISODate, today } from "@/lib/format";
 import { getLabels } from "@/lib/i18n/server";
@@ -31,9 +32,15 @@ type AttendanceSheetProps = {
   teacherScope?: boolean;
 };
 
-/** Fiche d'assiduité : taux, absences par matière, séries, séances manquées, relances, export PDF. */
+/**
+ * Fiche d'assiduité : taux, absences par matière, séances manquées. Avec le
+ * module Suivi des absences : séries et alertes, messages au responsable,
+ * relances et export PDF.
+ */
 export async function AttendanceSheet({ data, filters, basePath, keep = {}, teacherScope = false }: AttendanceSheetProps) {
   const LABELS = await getLabels();
+  const state = await getAuthState();
+  const detailed = state.status === "authenticated" && state.profile.modules.includes("absence_tracking");
   const L = LABELS.attendanceSheet;
   const summary = summarizeAttendance(data.records, { from: periodStart(filters.period), subjectId: filters.subjectId });
   const subjects = [...new Map(data.records.map((r) => [r.subjectId, r.subjectName])).entries()].sort((a, b) => a[1].localeCompare(b[1], "fr"));
@@ -62,7 +69,7 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
             />
           ) : null}
         </div>
-        {data.student ? (
+        {data.student && detailed ? (
           <Button asChild variant="outline" className="w-fit shrink-0">
             <a href={pdfHref} download>
               <FileDown aria-hidden />
@@ -84,7 +91,7 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
             <StatTile value={summary.sessions} label={L.sessions} />
           </StatTiles>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className={cn("grid gap-6", detailed && "lg:grid-cols-2")}>
             <SectionCard title={L.bySubject}>
               <ul className="flex flex-col gap-4">
                 {summary.bySubject.map((subject) => (
@@ -111,37 +118,39 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
               </ul>
             </SectionCard>
 
-            <SectionCard title={L.streaksTitle} description={L.alertHint}>
-              {summary.streaks.length === 0 ? (
-                <p className="text-muted-foreground">{L.streaksEmpty}</p>
-              ) : (
-                <ul className="flex flex-col gap-2">
-                  {summary.streaks.map((streak) => (
-                    <li
-                      key={`${streak.subjectName}-${streak.from}`}
-                      className={cn(
-                        "flex flex-col gap-1 rounded-lg border px-3 py-2",
-                        streak.alert ? "border-danger/40 bg-danger/5" : "border-warning/40 bg-warning/5",
-                      )}
-                    >
-                      <span className="flex flex-wrap items-center gap-2 font-medium text-heading">
-                        {L.streak(streak.length, streak.subjectName)}
-                        {streak.alert ? (
-                          <span className="inline-flex items-center gap-1 text-caption font-semibold text-danger-ink">
-                            <BellRing className="size-3.5" aria-hidden />
-                            {L.alertTriggered}
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="text-caption text-muted-foreground">
-                        {L.streakRange(formatDate(streak.from), formatDate(streak.to))}
-                        {streak.ongoing ? ` · ${L.streakOngoing}` : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </SectionCard>
+            {detailed ? (
+              <SectionCard title={L.streaksTitle} description={L.alertHint}>
+                {summary.streaks.length === 0 ? (
+                  <p className="text-muted-foreground">{L.streaksEmpty}</p>
+                ) : (
+                  <ul className="flex flex-col gap-2">
+                    {summary.streaks.map((streak) => (
+                      <li
+                        key={`${streak.subjectName}-${streak.from}`}
+                        className={cn(
+                          "flex flex-col gap-1 rounded-lg border px-3 py-2",
+                          streak.alert ? "border-danger/40 bg-danger/5" : "border-warning/40 bg-warning/5",
+                        )}
+                      >
+                        <span className="flex flex-wrap items-center gap-2 font-medium text-heading">
+                          {L.streak(streak.length, streak.subjectName)}
+                          {streak.alert ? (
+                            <span className="inline-flex items-center gap-1 text-caption font-semibold text-danger-ink">
+                              <BellRing className="size-3.5" aria-hidden />
+                              {L.alertTriggered}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="text-caption text-muted-foreground">
+                          {L.streakRange(formatDate(streak.from), formatDate(streak.to))}
+                          {streak.ongoing ? ` · ${L.streakOngoing}` : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </SectionCard>
+            ) : null}
           </div>
 
           <SectionCard title={L.listTitle} aside={<span className="text-caption text-muted-foreground">{L.absencesCount(summary.absences)}</span>}>
@@ -154,7 +163,7 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                   // Accueil et admin : notification au responsable de cette séance.
                   const notice = data.notices[absence.id];
                   const notifiable: AbsenceToNotify | null =
-                    teacherScope || !data.student
+                    teacherScope || !data.student || !detailed
                       ? null
                       : {
                           attendanceId: absence.id,
@@ -180,10 +189,14 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                       <span
                         className={cn(
                           "flex size-10 shrink-0 items-center justify-center rounded-lg",
-                          absence.triggersAlert ? "bg-danger/15 text-danger-ink" : "bg-warning/15 text-warning-ink",
+                          detailed && absence.triggersAlert ? "bg-danger/15 text-danger-ink" : "bg-warning/15 text-warning-ink",
                         )}
                       >
-                        {absence.triggersAlert ? <BellRing className="size-5" aria-hidden /> : <CalendarX className="size-5" aria-hidden />}
+                        {detailed && absence.triggersAlert ? (
+                          <BellRing className="size-5" aria-hidden />
+                        ) : (
+                          <CalendarX className="size-5" aria-hidden />
+                        )}
                       </span>
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <span className="font-medium text-heading first-letter:uppercase">{formatDateWithWeekday(absence.date)}</span>
@@ -191,7 +204,7 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                           {absence.startTime && absence.endTime ? `${absence.startTime} – ${absence.endTime}` : L.noTime} · {absence.subjectName}
                           {absence.teacherName ? ` · ${absence.teacherName}` : ""}
                         </span>
-                        {absence.streakLength >= 2 ? (
+                        {detailed && absence.streakLength >= 2 ? (
                           <span className={cn("text-caption font-medium", absence.triggersAlert ? "text-danger-ink" : "text-warning-ink")}>
                             {L.position(absence.streakPosition, absence.streakLength)}
                             {absence.triggersAlert ? ` · ${L.alertTriggered}` : ""}
@@ -213,7 +226,7 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
         </>
       )}
 
-      {!teacherScope ? (
+      {!teacherScope && detailed ? (
         <SectionCard title={L.followUpsTitle}>
           {data.followUps.length === 0 ? (
             <p className="text-muted-foreground">{L.followUpsEmpty}</p>

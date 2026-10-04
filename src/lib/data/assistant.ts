@@ -76,7 +76,7 @@ export type AssistantDashboard = {
 };
 
 export async function getAssistantDashboard(): Promise<AssistantDashboard> {
-  await requireStaff();
+  const profile = await requireStaff();
   const supabase = await createClient();
 
   const monthStart = `${toISODate(today()).slice(0, 7)}-01`;
@@ -89,7 +89,9 @@ export async function getAssistantDashboard(): Promise<AssistantDashboard> {
       .order("oldest_due_date", { ascending: true })
       .order("overdue_amount", { ascending: false })
       .limit(50),
-    supabase.from("open_absence_alerts").select("*").order("created_at", { ascending: false }).limit(50),
+    profile.modules.includes("absence_tracking")
+      ? supabase.from("open_absence_alerts").select("*").order("created_at", { ascending: false }).limit(50)
+      : Promise.resolve({ data: [], error: null }),
     supabase.from("invoices").select("amount_due, amount_paid").neq("status", "paid").gte("period_start", monthStart),
     loadDashboardStudents(supabase),
     loadSubjectPresence(supabase),
@@ -321,7 +323,9 @@ export type StudentFile = {
 };
 
 export async function getStudentFile(studentId: string): Promise<StudentFile | null> {
-  await requireStaff();
+  const profile = await requireStaff();
+  const finance = profile.modules.includes("finance");
+  const reenrollment = profile.modules.includes("reenrollment");
   const supabase = await createClient();
 
   const { data: student, error } = await supabase
@@ -372,23 +376,30 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
       .select("id, type, channel, note, created_at, profiles(full_name)")
       .eq("student_id", studentId)
       .order("created_at", { ascending: false }),
-    supabase
-      .from("discounts")
-      .select(
-        "id, type, value, scope, subject_id, pack_id, reason, reason_note, valid_from, valid_to, is_active, granted_at, subjects(name), packs(name), profiles(full_name)",
-      )
-      .eq("student_id", studentId)
-      .order("granted_at", { ascending: false }),
-    supabase.from("discount_overlaps").select("discount_id, other_discount_id").eq("student_id", studentId),
-    supabase
-      .from("payment_reminders")
-      .select(
-        "id, message_id, reminder_type, channel, sent_at, is_repeat, amount_reminded, profiles(full_name), invoices(amount_due, amount_paid, enrollments(subjects(name)), pack_enrollments(packs(name)))",
-      )
-      .eq("student_id", studentId)
-      .eq("status", "sent")
-      .order("sent_at", { ascending: false }),
-    getReminderQueue({ studentId }),
+    // Remises : module Finance ; relances de paiement : module Réinscription.
+    finance
+      ? supabase
+          .from("discounts")
+          .select(
+            "id, type, value, scope, subject_id, pack_id, reason, reason_note, valid_from, valid_to, is_active, granted_at, subjects(name), packs(name), profiles(full_name)",
+          )
+          .eq("student_id", studentId)
+          .order("granted_at", { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    finance
+      ? supabase.from("discount_overlaps").select("discount_id, other_discount_id").eq("student_id", studentId)
+      : Promise.resolve({ data: [], error: null }),
+    reenrollment
+      ? supabase
+          .from("payment_reminders")
+          .select(
+            "id, message_id, reminder_type, channel, sent_at, is_repeat, amount_reminded, profiles(full_name), invoices(amount_due, amount_paid, enrollments(subjects(name)), pack_enrollments(packs(name)))",
+          )
+          .eq("student_id", studentId)
+          .eq("status", "sent")
+          .order("sent_at", { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    reenrollment ? getReminderQueue({ studentId }) : Promise.resolve([]),
   ]);
 
   if (enrollmentsResult.error) throw enrollmentsResult.error;

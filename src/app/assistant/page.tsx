@@ -15,6 +15,7 @@ import { Money } from "@/components/shared/money";
 import { PageHeader } from "@/components/shared/page-header";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { ROUTES } from "@/lib/auth/routes";
+import { requireRole } from "@/lib/auth/session";
 import { getLabels } from "@/lib/i18n/server";
 import { getAbsenceAlertsSettings, getAbsencesToNotify } from "@/lib/data/absence-alerts";
 import { type AbsenceAlertItem, type FollowUpQueueItem, getAssistantDashboard } from "@/lib/data/assistant";
@@ -31,11 +32,14 @@ export default async function AssistantDashboardPage() {
   const LABELS = await getLabels();
   const L = LABELS.assistant.dashboard;
   const D = LABELS.dashboard;
-  const [{ stats, monthUnpaid, queue, alerts, students, presence }, absenceSettings] = await Promise.all([
+  const [profile, { stats, monthUnpaid, queue, alerts, students, presence }, absenceSettings] = await Promise.all([
+    requireRole("assistant"),
     getAssistantDashboard(),
     getAbsenceAlertsSettings(),
   ]);
-  const absences = absenceSettings.enabled ? await getAbsencesToNotify() : [];
+  // Absences à signaler et séries d'absences : module Suivi des absences.
+  const tracking = profile.modules.includes("absence_tracking");
+  const absences = tracking && absenceSettings.enabled ? await getAbsencesToNotify() : [];
   const absencesPending = absences.filter((item) => !item.notifiedAt).length;
   const dateLabel = formatDateWithWeekday(today());
 
@@ -70,7 +74,7 @@ export default async function AssistantDashboardPage() {
           </StatTiles>
         </section>
 
-        {absenceSettings.enabled ? (
+        {tracking && absenceSettings.enabled ? (
           <section aria-labelledby="absences-a-signaler" id="absences-signaler" className="flex scroll-mt-4 flex-col gap-3">
             <SectionHeading
               id="absences-a-signaler"
@@ -99,21 +103,23 @@ export default async function AssistantDashboardPage() {
           </div>
         </section>
 
-        <section aria-labelledby="alertes-titre" id="alertes" className="flex scroll-mt-4 flex-col gap-3">
-          <SectionHeading id="alertes-titre" title={L.alerts.title} actions={<CountBadge count={alerts.length} />} />
-          <div className="rounded-xl bg-card p-5 shadow-card md:p-6">
-            <p className="mb-4 text-caption text-muted-foreground">{L.alerts.description}</p>
-            {alerts.length === 0 ? (
-              <EmptyState icon={UserCheck} title={L.alerts.emptyTitle} description={L.alerts.emptyDescription} />
-            ) : (
-              <ul className="flex flex-col divide-y divide-divider">
-                {alerts.map((alert) => (
-                  <AlertRow key={alert.id} alert={alert} />
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
+        {tracking ? (
+          <section aria-labelledby="alertes-titre" id="alertes" className="flex scroll-mt-4 flex-col gap-3">
+            <SectionHeading id="alertes-titre" title={L.alerts.title} actions={<CountBadge count={alerts.length} />} />
+            <div className="rounded-xl bg-card p-5 shadow-card md:p-6">
+              <p className="mb-4 text-caption text-muted-foreground">{L.alerts.description}</p>
+              {alerts.length === 0 ? (
+                <EmptyState icon={UserCheck} title={L.alerts.emptyTitle} description={L.alerts.emptyDescription} />
+              ) : (
+                <ul className="flex flex-col divide-y divide-divider">
+                  {alerts.map((alert) => (
+                    <AlertRow key={alert.id} alert={alert} />
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+        ) : null}
 
         <StudentBoard students={students} fileBase={ROUTES.assistant.students} seeAllHref={ROUTES.assistant.students} />
       </div>

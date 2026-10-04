@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { updateCenterSettings } from "@/lib/actions/receipts";
 import type { CenterReceiptSettings } from "@/lib/data/receipts";
 import { useLabels } from "@/lib/i18n/client";
+import { useModules } from "@/lib/modules-client";
 import { RECEIPT_FORMATS, type ReceiptFormat, renderReceiptMessage } from "@/lib/receipts";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,7 @@ type Errors = Partial<Record<"address" | "phone" | "receiptFormat" | "whatsappTe
 
 export function CenterSettingsForm({ settings, centerName }: { settings: CenterReceiptSettings; centerName: string }) {
   const LABELS = useLabels();
+  const receipts = useModules().has("finance");
   const C = LABELS.centerSettings;
   const T = LABELS.receipts.tokens;
   const [address, setAddress] = useState(settings.address ?? "");
@@ -77,60 +79,63 @@ export function CenterSettingsForm({ settings, centerName }: { settings: CenterR
         </div>
       </SectionCard>
 
-      <SectionCard title={C.receiptsTitle}>
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-table font-medium">{C.format}</legend>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {RECEIPT_FORMATS.map((value) => (
-              <label
-                key={value}
-                className={cn(
-                  "flex cursor-pointer flex-col gap-0.5 rounded-xl border px-4 py-3 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
-                  format === value ? "border-primary bg-primary-soft" : "hover:bg-muted",
-                )}
-              >
-                <input
-                  type="radio"
-                  name="format-recu"
-                  value={value}
-                  checked={format === value}
-                  onChange={() => setFormat(value)}
-                  className="sr-only"
-                />
-                <span className="font-medium">{C.formats[value]}</span>
-                <span className="text-caption text-muted-foreground">{C.formatHints[value]}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
+      {/* Format et message des reçus : module Finance. */}
+      {receipts ? (
+        <SectionCard title={C.receiptsTitle}>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 text-table font-medium">{C.format}</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {RECEIPT_FORMATS.map((value) => (
+                <label
+                  key={value}
+                  className={cn(
+                    "flex cursor-pointer flex-col gap-0.5 rounded-xl border px-4 py-3 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                    format === value ? "border-primary bg-primary-soft" : "hover:bg-muted",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="format-recu"
+                    value={value}
+                    checked={format === value}
+                    onChange={() => setFormat(value)}
+                    className="sr-only"
+                  />
+                  <span className="font-medium">{C.formats[value]}</span>
+                  <span className="text-caption text-muted-foreground">{C.formatHints[value]}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
-        <div className="flex flex-col gap-2">
-          <FormField id="modele-whatsapp" label={C.template} error={errors.whatsappTemplate}>
-            <Textarea ref={templateRef} rows={6} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
-          </FormField>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-caption text-muted-foreground">{C.templateHint}</span>
-            {Object.values(T).map((token) => (
-              <button
-                key={token}
-                type="button"
-                onClick={() => insertToken(token)}
-                className="rounded-full border px-2.5 py-0.5 text-caption font-medium transition-colors hover:bg-muted"
-              >
-                {token}
-              </button>
-            ))}
-            <Button type="button" variant="ghost" className="ml-auto" onClick={() => setTemplate(LABELS.receipts.whatsappTemplate)}>
-              <RotateCcw aria-hidden />
-              {C.templateReset}
-            </Button>
+          <div className="flex flex-col gap-2">
+            <FormField id="modele-whatsapp" label={C.template} error={errors.whatsappTemplate}>
+              <Textarea ref={templateRef} rows={6} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
+            </FormField>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-caption text-muted-foreground">{C.templateHint}</span>
+              {Object.values(T).map((token) => (
+                <button
+                  key={token}
+                  type="button"
+                  onClick={() => insertToken(token)}
+                  className="rounded-full border px-2.5 py-0.5 text-caption font-medium transition-colors hover:bg-muted"
+                >
+                  {token}
+                </button>
+              ))}
+              <Button type="button" variant="ghost" className="ml-auto" onClick={() => setTemplate(LABELS.receipts.whatsappTemplate)}>
+                <RotateCcw aria-hidden />
+                {C.templateReset}
+              </Button>
+            </div>
+            <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
+              <span className="text-caption font-medium text-muted-foreground">{C.preview}</span>
+              <p className="whitespace-pre-line">{preview}</p>
+            </div>
           </div>
-          <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
-            <span className="text-caption font-medium text-muted-foreground">{C.preview}</span>
-            <p className="whitespace-pre-line">{preview}</p>
-          </div>
-        </div>
-      </SectionCard>
+        </SectionCard>
+      ) : null}
 
       {error ? (
         <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">

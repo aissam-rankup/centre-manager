@@ -37,7 +37,9 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
   const LABELS = await getLabels();
   const L = LABELS.assistant.student;
   const T = L.tabs;
-  await requireRole("admin");
+  const profile = await requireRole("admin");
+  // Remises et reçus : module Finance.
+  const finance = profile.modules.includes("finance");
   const { id } = await params;
   const query = await searchParams;
   const filters = parseAttendanceFilters(query);
@@ -82,25 +84,29 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
         levelPacks={levelCatalog?.packs ?? []}
       />
 
-      <DiscountsPanel
-        studentId={student.id}
-        discounts={student.discounts}
-        canEdit
-        todayIso={toISODate(today())}
-        targets={[
-          ...(levelCatalog?.subjects ?? []).map((subject) => ({ value: `subject:${subject.id}`, label: subject.name })),
-          ...(levelCatalog?.packs ?? []).map((pack) => ({ value: `pack:${pack.id}`, label: LABELS.packs.label(pack.name) })),
-        ]}
-      />
+      {finance ? (
+        <DiscountsPanel
+          studentId={student.id}
+          discounts={student.discounts}
+          canEdit
+          todayIso={toISODate(today())}
+          targets={[
+            ...(levelCatalog?.subjects ?? []).map((subject) => ({ value: `subject:${subject.id}`, label: subject.name })),
+            ...(levelCatalog?.packs ?? []).map((pack) => ({ value: `pack:${pack.id}`, label: LABELS.packs.label(pack.name) })),
+          ]}
+        />
+      ) : null}
 
       <StudentTabs
         defaultValue={tab}
         panels={[
           { value: "paiements", label: T.payments, count: student.invoices.length, content: <PaymentsSection student={student} /> },
-          { value: "recus", label: T.receipts, count: receipts.length, content: (
-              <ReceiptsSection receipts={receipts} guardianPhone={student.guardianPhone} canCancel={true} />
-            ),
-          },
+          ...(finance
+            ? [{ value: "recus", label: T.receipts, count: receipts.length, content: (
+                  <ReceiptsSection receipts={receipts} guardianPhone={student.guardianPhone} canCancel={true} />
+                ),
+              }]
+            : []),
           { value: "absences", label: T.absences, count: student.absences.length, content: (
               <AttendanceSheet
                 data={await getAttendanceData(student.id)}

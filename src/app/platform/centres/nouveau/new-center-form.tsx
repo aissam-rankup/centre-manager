@@ -8,6 +8,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { AccessLinkDialog } from "@/components/platform/access-link-dialog";
+import { PlanChoice } from "@/components/platform/plan-choice";
 import { VocabularyPicker } from "@/components/platform/vocabulary-picker";
 import { ChoiceItem } from "@/components/shared/choice-item";
 import { FormField } from "@/components/shared/form-field";
@@ -20,7 +21,7 @@ import { createCenter } from "@/lib/actions/platform";
 import { ROUTES } from "@/lib/auth/routes";
 import { addBillingInterval } from "@/lib/billing-interval";
 import { LABELS } from "@/lib/constants/labels";
-import type { CenterTypeOption } from "@/lib/data/platform";
+import type { CenterTypeOption, PlanOption } from "@/lib/data/platform";
 import { formatDate, formatMAD } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
@@ -49,11 +50,13 @@ function slugify(text: string): string {
 
 type NewCenterFormProps = {
   types: CenterTypeOption[];
+  /** Packs du catalogue (le premier est proposé par défaut). */
+  plans: PlanOption[];
   /** Date du jour à Casablanca (AAAA-MM-JJ). */
   todayIso: string;
 };
 
-export function NewCenterForm({ types, todayIso }: NewCenterFormProps) {
+export function NewCenterForm({ types, plans, todayIso }: NewCenterFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -81,7 +84,7 @@ export function NewCenterForm({ types, todayIso }: NewCenterFormProps) {
       notes: "",
       centerType: types[0]?.code ?? "",
       customTerms: EMPTY_TERMS,
-      plan: "standard",
+      plan: plans[0]?.key ?? "",
       price: "",
       billingInterval: "month",
       graceDays: "5",
@@ -267,19 +270,7 @@ export function NewCenterForm({ types, todayIso }: NewCenterFormProps) {
                 <Controller
                   control={control}
                   name="plan"
-                  render={({ field }) => (
-                    <RadioGroup value={field.value} onValueChange={field.onChange} className="sm:grid-cols-2">
-                      {(["standard", "white_label"] as const).map((value) => (
-                        <ChoiceItem key={value} className="items-start">
-                          <RadioGroupItem value={value} className="mt-0.5" />
-                          <span className="flex flex-col">
-                            <span className="font-medium">{P.plan[value]}</span>
-                            <span className="text-caption text-muted-foreground">{L.planHint[value]}</span>
-                          </span>
-                        </ChoiceItem>
-                      ))}
-                    </RadioGroup>
-                  )}
+                  render={({ field }) => <PlanChoice plans={plans} value={field.value} onChange={field.onChange} />}
                 />
               </fieldset>
 
@@ -367,7 +358,7 @@ export function NewCenterForm({ types, todayIso }: NewCenterFormProps) {
                   <SummaryItem label={L.name}>{name}</SummaryItem>
                   <SummaryItem label={L.slug}>{slug}</SummaryItem>
                   <SummaryItem label={L.typeLegend}>{typeLabel}</SummaryItem>
-                  <SummaryItem label={L.plan}>{P.plan[plan]}</SummaryItem>
+                  <SummaryItem label={L.plan}>{plans.find((option) => option.key === plan)?.name ?? "—"}</SummaryItem>
                   <SummaryItem label={L.price}>
                     {Number.isFinite(priceValue) ? `${formatMAD(priceValue)} ${P.interval[billingInterval]}` : "—"}
                   </SummaryItem>

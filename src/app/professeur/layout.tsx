@@ -6,6 +6,7 @@ import { BrandStyle } from "@/components/layout/brand-style";
 import { requireRole } from "@/lib/auth/session";
 import { brandMetadata, getSessionBrand } from "@/lib/branding";
 import { LabelsProvider } from "@/lib/i18n/client";
+import { ModulesProvider } from "@/lib/modules-client";
 
 /** Onglet et favicon à la marque du centre (marque blanche). */
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,8 +20,10 @@ export default async function TeacherLayout({ children }: { children: ReactNode 
   const brand = await getSessionBrand();
   return (
     <LabelsProvider terms={profile.vocabulary} brandName={brand.whiteLabel ? brand.name : null}>
-      <BrandStyle brand={brand} />
-      {children}
+      <ModulesProvider modules={profile.modules}>
+        <BrandStyle brand={brand} />
+        {children}
+      </ModulesProvider>
     </LabelsProvider>
   );
 }

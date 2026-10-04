@@ -32,7 +32,7 @@ async function editableCenter(requested: string): Promise<{ centerId: string; su
   if (state.status !== "authenticated" || !state.profile.active || state.profile.blocked) return null;
   const { profile } = state;
   if (profile.role === "super_admin" && !profile.support) return { centerId: requested, superAdmin: true };
-  if (profile.role === "admin" && !profile.support && profile.plan === "white_label" && profile.centerId === requested) {
+  if (profile.role === "admin" && !profile.support && profile.modules.includes("white_label") && profile.centerId === requested) {
     return { centerId: requested, superAdmin: false };
   }
   return null;

@@ -23,7 +23,8 @@ select no_plan();
 -- Tables globales (référentiel ou réglage de la plateforme), sans données de centre.
 create schema isolation_test;
 create table isolation_test.global_tables (tbl text primary key);
-insert into isolation_test.global_tables values ('center_types'), ('platform_settings');
+-- Catalogue commun (modules, packs) : aucune donnée de centre.
+insert into isolation_test.global_tables values ('center_types'), ('platform_settings'), ('modules'), ('plans'), ('plan_modules');
 
 -- ---------------------------------------------------------------------
 -- Contrôles structurels
@@ -94,9 +95,8 @@ select is(
 -- ---------------------------------------------------------------------
 -- Centre B complet (une ligne dans chaque table de données de centre)
 -- ---------------------------------------------------------------------
-insert into public.centers (id, name, slug, owner_contact_email, current_period_end)
-values ('cb000000-0000-4000-8000-000000000001', 'Centre B', 'iso-b', 'dir@b.test', private.today() + 7);
-update public.subscriptions set plan = 'white_label' where center_id = 'cb000000-0000-4000-8000-000000000001';
+insert into public.centers (id, name, slug, owner_contact_email, current_period_end, plan_key)
+values ('cb000000-0000-4000-8000-000000000001', 'Centre B', 'iso-b', 'dir@b.test', private.today() + 7, 'premium');
 insert into public.center_branding (center_id, brand_name, primary_color) values ('cb000000-0000-4000-8000-000000000001', 'Marque B', '#0f766e');
 insert into public.subscription_payments (center_id, amount, method) values ('cb000000-0000-4000-8000-000000000001', 500, 'cash');
 insert into public.profiles (id, center_id, full_name, role) values

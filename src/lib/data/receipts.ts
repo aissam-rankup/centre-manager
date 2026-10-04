@@ -93,7 +93,8 @@ export async function getReceipt(id: string): Promise<ReceiptView | null> {
 
 /** Reçus d'un élève, du plus récent au plus ancien. */
 export async function getStudentReceipts(studentId: string): Promise<ReceiptView[]> {
-  await requireStaff();
+  const profile = await requireStaff();
+  if (!profile.modules.includes("finance")) return [];
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("receipts")

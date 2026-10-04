@@ -7,6 +7,7 @@ import { z } from "zod";
 import { DiscountsPanel } from "@/components/discounts/discounts-panel";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
+import { requireRole } from "@/lib/auth/session";
 import { getLabels } from "@/lib/i18n/server";
 import {
   FollowUpsSection,
@@ -44,7 +45,9 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
   const query = await searchParams;
   const filters = parseAttendanceFilters(query);
   const tab = typeof query.onglet === "string" ? query.onglet : undefined;
-  const student = await loadStudent(id);
+  const [student, profile] = await Promise.all([loadStudent(id), requireRole("assistant")]);
+  // Reçus : module Finance.
+  const finance = profile.modules.includes("finance");
   const receipts = await getStudentReceipts(student.id);
 
   return (
@@ -74,10 +77,12 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
         defaultValue={tab}
         panels={[
           { value: "paiements", label: T.payments, count: student.invoices.length, content: <PaymentsSection student={student} /> },
-          { value: "recus", label: T.receipts, count: receipts.length, content: (
-              <ReceiptsSection receipts={receipts} guardianPhone={student.guardianPhone} canCancel={false} />
-            ),
-          },
+          ...(finance
+            ? [{ value: "recus", label: T.receipts, count: receipts.length, content: (
+                  <ReceiptsSection receipts={receipts} guardianPhone={student.guardianPhone} canCancel={false} />
+                ),
+              }]
+            : []),
           { value: "absences", label: T.absences, count: student.absences.length, content: (
               <AttendanceSheet
                 data={await getAttendanceData(student.id)}

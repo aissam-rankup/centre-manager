@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { requireRole } from "@/lib/auth/session";
+import { requireModule, requireRole } from "@/lib/auth/session";
 import type { AppLabels } from "@/lib/constants/labels";
 import { type ExpensesMonth, getExpensesMonth } from "@/lib/data/expenses";
 import { formatMAD, formatPercent, toISODate, today } from "@/lib/format";
@@ -26,6 +26,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/admin/c
   const LABELS = await getLabels();
   const X = LABELS.expenses;
   const profile = await requireRole("admin");
+  requireModule(profile, "finance");
   if (profile.support) return <EmptyState icon={ShieldAlert} title={X.title} description={X.supportUnavailable} />;
 
   const now = today();

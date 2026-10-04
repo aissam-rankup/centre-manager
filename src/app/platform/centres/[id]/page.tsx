@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import { CenterActions, type CenterActionsData, ResendInvitationButton } from "@/components/platform/center-actions";
 import { BrandingDialog } from "@/components/branding/branding-dialog";
+import { CenterModules } from "@/components/platform/center-modules";
 import { CenterStatusBadge } from "@/components/platform/center-status-badge";
 import { DaysRemaining } from "@/components/platform/days-remaining";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
@@ -16,6 +17,7 @@ import { ROUTES } from "@/lib/auth/routes";
 import { LABELS, labelsFor } from "@/lib/constants/labels";
 import {
   getCenterTypes,
+  getPlanOptions,
   getPlatformCenterFile,
   type PlatformCenterUser,
   type PlatformEvent,
@@ -98,18 +100,25 @@ function eventLabel(action: string): string {
   return labels[action] ?? P.eventFallback;
 }
 
-function eventDetail(event: PlatformEvent): string | null {
+function eventDetail(event: PlatformEvent, moduleNames: Record<string, string>): string | null {
   const payload = event.payload;
   if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return null;
   const from = typeof payload.from === "string" ? payload.from : null;
   const to = typeof payload.to === "string" ? payload.to : null;
   const statusLabels: Record<string, string> = P.centerStatus;
   const planLabels: Record<string, string> = P.plan;
+  const moduleName = typeof payload.module === "string" ? payload.module : null;
+  const sourceLabels: Record<string, string> = P.modules.source;
+  const source = typeof payload.source === "string" ? payload.source : null;
   switch (event.action) {
     case "center.status_changed":
       return from && to ? `${statusLabels[from] ?? from} → ${statusLabels[to] ?? to}` : null;
     case "subscription.plan_changed":
+    case "center.plan_changed":
       return from && to ? `${planLabels[from] ?? from} → ${planLabels[to] ?? to}` : null;
+    case "center.module_enabled":
+    case "center.module_disabled":
+      return moduleName ? `${moduleNames[moduleName] ?? moduleName}${source ? ` · ${sourceLabels[source] ?? source}` : ""}` : null;
     case "center.period_changed":
       return to ? `${from ? `${formatDate(from)} → ` : ""}${formatDate(to)}` : null;
     case "subscription.payment_recorded":
@@ -130,9 +139,16 @@ function eventReason(event: PlatformEvent): string | null {
 export default async function PlatformCenterPage({ params }: PageProps<"/platform/centres/[id]">) {
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const [file, types, brandingSettings] = await Promise.all([getPlatformCenterFile(id), getCenterTypes(), getBrandingSettings(id)]);
+  const [file, types, brandingSettings, plans] = await Promise.all([
+    getPlatformCenterFile(id),
+    getCenterTypes(),
+    getBrandingSettings(id),
+    getPlanOptions(),
+  ]);
   if (!file) notFound();
-  const { center, users, events, payments } = file;
+  const { center, users, events, payments, modules } = file;
+  const moduleNames = Object.fromEntries(modules.map((module) => [module.module_key, module.name]));
+  const whiteLabel = modules.some((module) => module.module_key === "white_label" && module.is_enabled);
   const tel = center.owner_contact_phone ? toTelHref(center.owner_contact_phone) : null;
   const branding = center.branding;
   const terms = customTermsSchema.safeParse(center.custom_terms);
@@ -147,7 +163,8 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
     ownerPhone: center.owner_contact_phone ?? "",
     ownerEmail: center.owner_contact_email ?? "",
     notes: center.notes ?? "",
-    plan: center.plan ?? "standard",
+    plan: center.plan_key,
+    plans,
     price: center.price,
     billingInterval: center.billing_interval,
     graceDays: center.grace_days,
@@ -169,7 +186,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
           <CenterStatusBadge status={center.status} />
         </div>
         <p className="text-muted-foreground">
-          {center.center_type_label} · {center.plan ? P.plan[center.plan] : P.notSet}
+          {center.center_type_label} · {center.plan_name}
         </p>
         <CenterActions data={actionsData} types={types} />
       </div>
@@ -218,7 +235,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
 
         <SectionCard title={L.subscription}>
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label={L.plan}>{center.plan ? P.plan[center.plan] : P.notSet}</Field>
+            <Field label={L.plan}>{center.plan_name}</Field>
             <Field label={L.price}>
               {center.price === null ? (
                 P.notSet
@@ -245,6 +262,10 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
         </SectionCard>
       </div>
 
+      <SectionCard title={P.modules.title} description={P.modules.description}>
+        <CenterModules centerId={center.center_id} modules={modules} />
+      </SectionCard>
+
       <SectionCard title={L.payments}>
         {payments.length === 0 ? (
           <p className="text-muted-foreground">{L.paymentsEmpty}</p>
@@ -257,7 +278,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
         <SectionCard
           title={L.branding}
           aside={
-            center.plan === "white_label" && brandingSettings ? (
+            whiteLabel && brandingSettings ? (
               <BrandingDialog
                 defaults={{ centerId: center.center_id, ...brandingSettings.values }}
                 domainVerified={brandingSettings.domainVerified}
@@ -266,7 +287,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
             ) : null
           }
         >
-          {center.plan !== "white_label" ? (
+          {!whiteLabel ? (
             <p className="text-muted-foreground">{L.brandingStandard}</p>
           ) : !branding ? (
             <p className="text-muted-foreground">{L.brandingEmpty}</p>
@@ -312,7 +333,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
           ) : (
             <ol className="flex max-h-[420px] flex-col divide-y divide-divider overflow-y-auto">
               {events.map((event) => {
-                const detail = eventDetail(event);
+                const detail = eventDetail(event, moduleNames);
                 const reason = eventReason(event);
                 return (
                   <li key={event.event_id} className="flex flex-col gap-0.5 py-3">

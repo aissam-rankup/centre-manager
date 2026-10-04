@@ -201,6 +201,7 @@ function toSummary(row: BillingRunRow): BillingRunSummary {
 /** Menu : réinscription automatique activée, ou campagnes déjà préparées (accueil et admin). */
 export async function hasReenrollment(): Promise<boolean> {
   const profile = await requireStaff();
+  if (!profile.modules.includes("reenrollment")) return false;
   const supabase = await createClient();
   const [center, runs] = await Promise.all([
     supabase.from("centers").select("auto_reenrollment_enabled").eq("id", profile.centerId).single(),

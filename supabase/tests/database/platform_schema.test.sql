@@ -26,8 +26,8 @@ select is((select slug from public.centers where id = 'c8000000-0000-4000-8000-0
   'centre-elan-d-ete-2', 'slug rendu unique');
 select is((select status::text from public.centers where id = 'c8000000-0000-4000-8000-000000000001'),
   'trial', 'nouveau centre : en essai');
-select is((select plan::text from public.subscriptions where center_id = 'c8000000-0000-4000-8000-000000000001'),
-  'standard', 'abonnement standard créé avec le centre');
+select is((select plan_key from public.centers where id = 'c8000000-0000-4000-8000-000000000001'),
+  'starter', 'nouveau centre : pack Débutant par défaut');
 select is((select count(*)::int from public.platform_events
            where center_id = 'c8000000-0000-4000-8000-000000000001' and action = 'center.created'),
   1, 'création du centre journalisée');

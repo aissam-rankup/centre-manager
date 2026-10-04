@@ -19,6 +19,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { AccessLinkDialog } from "@/components/platform/access-link-dialog";
+import { PlanChoice } from "@/components/platform/plan-choice";
 import { VocabularyPicker } from "@/components/platform/vocabulary-picker";
 import { ChoiceItem } from "@/components/shared/choice-item";
 import { FormField } from "@/components/shared/form-field";
@@ -47,7 +48,7 @@ import {
 } from "@/lib/actions/platform";
 import { startSupport } from "@/lib/actions/support";
 import { LABELS } from "@/lib/constants/labels";
-import type { BillingInterval, CenterStatus, CenterTypeOption, SubscriptionPlan } from "@/lib/data/platform";
+import type { BillingInterval, CenterStatus, CenterTypeOption, PlanOption } from "@/lib/data/platform";
 import {
   type CenterDetailsInput,
   centerDetailsSchema,
@@ -78,7 +79,10 @@ export type CenterActionsData = {
   ownerPhone: string;
   ownerEmail: string;
   notes: string;
-  plan: SubscriptionPlan;
+  /** Clé du pack du centre. */
+  plan: string;
+  /** Packs du catalogue. */
+  plans: PlanOption[];
   price: number | null;
   billingInterval: BillingInterval;
   graceDays: number;
@@ -264,7 +268,7 @@ function DueDateDialog({ data }: { data: CenterActionsData }) {
 }
 
 // ---------------------------------------------------------------------
-// Formule et tarif
+// Pack et tarif
 // ---------------------------------------------------------------------
 function PricingDialog({ data }: { data: CenterActionsData }) {
   const { open, setOpen, pending, run } = useAction(updateCenterPricing, A.saved);
@@ -296,19 +300,7 @@ function PricingDialog({ data }: { data: CenterActionsData }) {
         <Controller
           control={form.control}
           name="plan"
-          render={({ field }) => (
-            <RadioGroup value={field.value} onValueChange={field.onChange}>
-              {(["standard", "white_label"] as const).map((value) => (
-                <ChoiceItem key={value} className="items-start">
-                  <RadioGroupItem value={value} className="mt-0.5" />
-                  <span className="flex flex-col">
-                    <span className="font-medium">{P.plan[value]}</span>
-                    <span className="text-caption text-muted-foreground">{N.planHint[value]}</span>
-                  </span>
-                </ChoiceItem>
-              ))}
-            </RadioGroup>
-          )}
+          render={({ field }) => <PlanChoice plans={data.plans} value={field.value} onChange={field.onChange} />}
         />
       </fieldset>
       <div className="grid gap-4 sm:grid-cols-2">

@@ -9,7 +9,7 @@ import { SessionPanel } from "@/components/cash/cash-view";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { requireRole } from "@/lib/auth/session";
+import { requireModule, requireRole } from "@/lib/auth/session";
 import { toCents } from "@/lib/cash";
 import { getCashSessionSummary } from "@/lib/data/cash";
 import { formatDate } from "@/lib/format";
@@ -24,6 +24,7 @@ export default async function AdminCashSessionPage({ params }: PageProps<"/admin
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
   const profile = await requireRole("admin");
+  requireModule(profile, "finance");
   if (profile.support) notFound();
   const LABELS = await getLabels();
   const A = LABELS.cash.admin;

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { CashHistory, parseMonthParam } from "@/components/cash/cash-history";
 import { CashView } from "@/components/cash/cash-view";
 import { ROUTES } from "@/lib/auth/routes";
+import { requireModule, requireRole } from "@/lib/auth/session";
 import { getCashHistory, getCashPage } from "@/lib/data/cash";
 import { toISODate, today } from "@/lib/format";
 import { getLabels } from "@/lib/i18n/server";
@@ -13,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Caisse de l'admin : sa caisse du jour, puis l'historique des sessions et les écarts du mois. */
 export default async function AdminCashPage({ searchParams }: PageProps<"/admin/caisse">) {
+  requireModule(await requireRole("admin"), "finance");
   const { mois } = await searchParams;
   const todayIso = toISODate(today());
   const month = parseMonthParam(typeof mois === "string" ? mois : undefined, todayIso);

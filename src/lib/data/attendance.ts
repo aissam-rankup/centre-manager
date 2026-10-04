@@ -2,6 +2,7 @@ import "server-only";
 
 import type { NotificationChannel } from "@/lib/absences";
 import type { AttendanceRecord } from "@/lib/attendance";
+import { getAuthState } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 export type AbsenceFollowUp = {
@@ -39,16 +40,21 @@ export type AttendanceData = {
  */
 export async function getAttendanceData(studentId: string): Promise<AttendanceData> {
   const supabase = await createClient();
+  const state = await getAuthState();
+  // Rappels et messages au responsable : module Suivi des absences.
+  const tracking = state.status === "authenticated" && state.profile.modules.includes("absence_tracking");
   const [student, records, followUps, notices] = await Promise.all([
     supabase.from("students").select("id, full_name, guardian_name, guardian_phone, levels(name)").eq("id", studentId).maybeSingle(),
     supabase.rpc("student_attendance", { p_student_id: studentId }),
-    supabase.rpc("student_absence_follow_ups", { p_student_id: studentId }),
-    supabase
-      .from("absence_notifications")
-      .select("attendance_id, sent_at, channel, profiles(full_name)")
-      .eq("student_id", studentId)
-      .eq("status", "sent")
-      .order("sent_at", { ascending: true }),
+    tracking ? supabase.rpc("student_absence_follow_ups", { p_student_id: studentId }) : Promise.resolve({ data: [], error: null }),
+    tracking
+      ? supabase
+          .from("absence_notifications")
+          .select("attendance_id, sent_at, channel, profiles(full_name)")
+          .eq("student_id", studentId)
+          .eq("status", "sent")
+          .order("sent_at", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (student.error) throw student.error;
   if (records.error) throw records.error;

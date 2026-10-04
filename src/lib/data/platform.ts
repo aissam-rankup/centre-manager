@@ -10,7 +10,6 @@ import { type CustomTermsInput, customTermsSchema } from "@/lib/validation/platf
 type Fn<Name extends keyof Database["public"]["Functions"]> = Database["public"]["Functions"][Name]["Returns"];
 
 export type CenterStatus = Database["public"]["Enums"]["center_status"];
-export type SubscriptionPlan = Database["public"]["Enums"]["subscription_plan"];
 export type BillingInterval = Database["public"]["Enums"]["billing_interval"];
 export type SubscriptionPaymentMethod = Database["public"]["Enums"]["subscription_payment_method"];
 
@@ -24,6 +23,12 @@ export type BillingMonth = Fn<"platform_billing_months">[number];
 export type UpcomingDue = Fn<"platform_upcoming_due">[number];
 export type PreparedNotification = Fn<"platform_upcoming_notifications">[number];
 export type PlatformSettings = Fn<"platform_settings_get">[number];
+export type PlatformPlan = Fn<"platform_plans">[number];
+export type PlatformModule = Fn<"platform_modules">[number];
+export type CenterModule = Fn<"platform_center_modules">[number];
+
+/** Pack proposé dans les formulaires de la console. */
+export type PlanOption = { key: string; name: string; description: string; monthlyPrice: number };
 
 /** Marque blanche (colonnes de center_branding utiles à la fiche). */
 const brandingSchema = z
@@ -108,26 +113,30 @@ export type PlatformCenterFile = {
   users: PlatformCenterUser[];
   events: PlatformEvent[];
   payments: PlatformPayment[];
+  modules: CenterModule[];
 };
 
 export async function getPlatformCenterFile(centerId: string): Promise<PlatformCenterFile | null> {
   const supabase = await platformClient();
-  const [center, users, events, payments] = await Promise.all([
+  const [center, users, events, payments, modules] = await Promise.all([
     supabase.rpc("platform_center", { p_center_id: centerId }).maybeSingle(),
     supabase.rpc("platform_center_users", { p_center_id: centerId }),
     supabase.rpc("platform_center_events", { p_center_id: centerId }),
     supabase.rpc("platform_payments", { p_center_id: centerId }),
+    supabase.rpc("platform_center_modules", { p_center_id: centerId }),
   ]);
   if (center.error) throw center.error;
   if (users.error) throw users.error;
   if (events.error) throw events.error;
   if (payments.error) throw payments.error;
+  if (modules.error) throw modules.error;
   if (!center.data) return null;
   return {
     center: { ...center.data, branding: brandingSchema.parse(center.data.branding) },
     users: users.data,
     events: events.data,
     payments: payments.data,
+    modules: modules.data,
   };
 }
 
@@ -139,4 +148,28 @@ export async function getPlatformBilling(): Promise<PlatformBilling> {
   if (months.error) throw months.error;
   if (payments.error) throw payments.error;
   return { months: months.data, payments: payments.data };
+}
+
+export type PlatformCatalogue = { plans: PlatformPlan[]; modules: PlatformModule[] };
+
+/** Catalogue : packs (prix, modules inclus) et modules activables. */
+export async function getPlatformCatalogue(): Promise<PlatformCatalogue> {
+  const supabase = await platformClient();
+  const [plans, modules] = await Promise.all([supabase.rpc("platform_plans"), supabase.rpc("platform_modules")]);
+  if (plans.error) throw plans.error;
+  if (modules.error) throw modules.error;
+  return { plans: plans.data, modules: modules.data };
+}
+
+/** Packs proposés à la création d'un centre et au changement de pack. */
+export async function getPlanOptions(): Promise<PlanOption[]> {
+  const supabase = await platformClient();
+  const { data, error } = await supabase.rpc("platform_plans");
+  if (error) throw error;
+  return data.map((plan) => ({
+    key: plan.key,
+    name: plan.name,
+    description: plan.description,
+    monthlyPrice: Number(plan.monthly_price),
+  }));
 }

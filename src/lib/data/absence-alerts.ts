@@ -33,7 +33,8 @@ export async function getAbsenceAlertsSettings(): Promise<AbsenceAlertsSettings>
  * tête), puis celles déjà signalées.
  */
 export async function getAbsencesToNotify(): Promise<AbsenceToNotify[]> {
-  await requireStaff();
+  const profile = await requireStaff();
+  if (!profile.modules.includes("absence_tracking")) return [];
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("absences_to_notify")
