@@ -37,6 +37,10 @@ export const ROUTES = {
     call: (slotId: string) => `/professeur/appel/${slotId}`,
     /** Fiche d'assiduité d'un élève (matières du professeur). */
     student: (studentId: string) => `/professeur/eleves/${studentId}`,
+    /** Ressources pédagogiques publiées par le professeur (plateforme pédagogique). */
+    resources: "/professeur/ressources",
+    newResource: "/professeur/ressources/nouvelle",
+    resource: (id: string) => `/professeur/ressources/${id}`,
   },
   admin: {
     home: "/admin",
@@ -56,6 +60,8 @@ export const ROUTES = {
   },
   /** Reçu imprimable (accueil et administration). */
   receipt: (id: string) => `/recus/${id}`,
+  /** Fichier d'une ressource pédagogique (URL signée, après contrôle d'accès). */
+  resourceFile: (id: string) => `/ressources/${id}/fichier`,
   /** Espace élève (rôle student_user) et sa connexion par code. */
   student: {
     home: "/eleve",

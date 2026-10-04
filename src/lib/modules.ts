@@ -45,6 +45,8 @@ const MODULE_ROUTES: readonly { prefix: string; module: ModuleKey }[] = [
   { prefix: ROUTES.assistant.reenrollment, module: "reenrollment" },
   { prefix: "/fiches/assiduite", module: "absence_tracking" },
   { prefix: ROUTES.admin.branding, module: "white_label" },
+  { prefix: ROUTES.teacher.resources, module: "lms" },
+  { prefix: "/ressources", module: "lms" },
 ];
 
 /** Module dont dépend une route, ou null pour une route du socle. */

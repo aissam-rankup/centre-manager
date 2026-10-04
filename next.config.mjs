@@ -16,8 +16,9 @@ const nextConfig = {
   serverExternalPackages: ["@react-pdf/renderer"],
   experimental: {
     serverActions: {
-      // Photo élève (2 Mo max côté serveur, ~150 Ko en pratique après compression) + marge multipart.
-      bodySizeLimit: "3mb",
+      // Ressource pédagogique (8 Mo max : PDF ou image) + marge multipart, sous la limite de
+      // 10 Mo des requêtes qui traversent le proxy ; photo élève : 2 Mo.
+      bodySizeLimit: "9mb",
       ...(appHost ? { allowedOrigins: [appHost] } : {}),
     },
   },

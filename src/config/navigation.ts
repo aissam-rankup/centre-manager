@@ -9,6 +9,7 @@ import {
   CalendarSync,
   ClipboardCheck,
   Component,
+  FolderOpen,
   DoorOpen,
   GraduationCap,
   HandCoins,
@@ -63,6 +64,7 @@ export function navigationFor(
     teacher: [
       { href: ROUTES.teacher.home, label: LABELS.nav.home, icon: House },
       { href: ROUTES.teacher.schedule, label: LABELS.nav.schedule, icon: CalendarDays },
+      { href: ROUTES.teacher.resources, label: LABELS.nav.resources, icon: FolderOpen, module: "lms" },
     ],
     admin: [
       { href: ROUTES.admin.home, label: LABELS.nav.dashboard, shortLabel: LABELS.nav.short.dashboard, icon: LayoutDashboard },

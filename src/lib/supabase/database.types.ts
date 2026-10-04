@@ -1755,6 +1755,105 @@ export type Database = {
           },
         ]
       }
+      learning_resources: {
+        Row: {
+          author_id: string
+          center_id: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          is_demo: boolean
+          is_published: boolean
+          level_id: string
+          published_at: string | null
+          subject_id: string
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string
+          center_id: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          is_demo?: boolean
+          is_published?: boolean
+          level_id: string
+          published_at?: string | null
+          subject_id: string
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          center_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          is_demo?: boolean
+          is_published?: boolean
+          level_id?: string
+          published_at?: string | null
+          subject_id?: string
+          title?: string
+          type?: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_resources_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_resources_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_resources_level_id_center_id_fkey"
+            columns: ["level_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "learning_resources_subject_id_level_id_fkey"
+            columns: ["subject_id", "level_id"]
+            isOneToOne: false
+            referencedRelation: "subject_catalog"
+            referencedColumns: ["id", "level_id"]
+          },
+          {
+            foreignKeyName: "learning_resources_subject_id_level_id_fkey"
+            columns: ["subject_id", "level_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id", "level_id"]
+          },
+        ]
+      }
       levels: {
         Row: {
           center_id: string
@@ -4846,6 +4945,7 @@ export type Database = {
       receipt_format: "a5" | "ticket_80mm"
       receipt_kind: "payment" | "cancellation"
       reenrollment_intent: "pending" | "confirmed" | "dropped" | "paused"
+      resource_type: "exercise" | "exam" | "summary" | "other"
       schedule_conflict_type: "room" | "teacher" | "level"
       subscription_payment_method: "bank_transfer" | "cash" | "card"
       user_role: "admin" | "assistant" | "teacher" | "super_admin"
@@ -5009,6 +5109,7 @@ export const Constants = {
       receipt_format: ["a5", "ticket_80mm"],
       receipt_kind: ["payment", "cancellation"],
       reenrollment_intent: ["pending", "confirmed", "dropped", "paused"],
+      resource_type: ["exercise", "exam", "summary", "other"],
       schedule_conflict_type: ["room", "teacher", "level"],
       subscription_payment_method: ["bank_transfer", "cash", "card"],
       user_role: ["admin", "assistant", "teacher", "super_admin"],
