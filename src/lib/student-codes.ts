@@ -20,7 +20,11 @@ export function generateLoginCode(): string {
 
 /** Mot de passe initial : 10 caractères, minuscules et chiffres (lisible au téléphone). */
 export function generateStudentPassword(): string {
-  return randomString(PASSWORD_ALPHABET, 10);
+  // Au moins une lettre et un chiffre (politiques de mot de passe de l'authentification).
+  for (;;) {
+    const password = randomString(PASSWORD_ALPHABET, 10);
+    if (/[a-z]/.test(password) && /\d/.test(password)) return password;
+  }
 }
 
 /** Saisie de l'élève : majuscules, sans espace ni tiret. */
