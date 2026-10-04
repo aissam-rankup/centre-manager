@@ -138,6 +138,10 @@ values ('4b0000e1-0000-4000-8000-000000000001', '4b000000-0000-4000-8000-0000000
 insert into public.learning_resources (center_id, subject_id, level_id, author_id, type, title)
 select 'cb000000-0000-4000-8000-000000000001', s.id, s.level_id, 'b0000000-0000-4000-8000-00000000000c', 'summary', 'Résumé B'
 from public.subjects s where s.center_id = 'cb000000-0000-4000-8000-000000000001' limit 1;
+-- Ouverture d'une ressource de B par l'élève de B.
+insert into public.resource_views (student_id, resource_id, center_id)
+select '4b000000-0000-4000-8000-000000000001', r.id, r.center_id
+from public.learning_resources r where r.center_id = 'cb000000-0000-4000-8000-000000000001' limit 1;
 -- Saisie de l'accueil B en désaccord avec le professeur B (historique et désaccord du centre B).
 update public.attendance set status = 'present', marked_by = 'b0000000-0000-4000-8000-00000000000b', marked_by_role = 'assistant'
 where student_id = '4b000000-0000-4000-8000-000000000001' and session_date = private.today();

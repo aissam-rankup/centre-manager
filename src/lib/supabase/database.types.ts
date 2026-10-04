@@ -2804,6 +2804,72 @@ export type Database = {
           },
         ]
       }
+      resource_views: {
+        Row: {
+          center_id: string
+          first_opened_at: string
+          is_demo: boolean
+          last_opened_at: string
+          open_count: number
+          resource_id: string
+          student_id: string
+        }
+        Insert: {
+          center_id: string
+          first_opened_at?: string
+          is_demo?: boolean
+          last_opened_at?: string
+          open_count?: number
+          resource_id: string
+          student_id: string
+        }
+        Update: {
+          center_id?: string
+          first_opened_at?: string
+          is_demo?: boolean
+          last_opened_at?: string
+          open_count?: number
+          resource_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_views_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_views_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "learning_resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_views_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "resource_views_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_views_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           capacity: number | null
@@ -4119,6 +4185,10 @@ export type Database = {
         Args: { p_receipt_id: string }
         Returns: undefined
       }
+      mark_resource_opened: {
+        Args: { p_resource_id: string }
+        Returns: undefined
+      }
       mark_session_attendance: {
         Args: { p_entries: Json; p_session_date: string; p_slot_id: string }
         Returns: number
@@ -4145,6 +4215,26 @@ export type Database = {
         }[]
       }
       my_modules: { Args: never; Returns: string[] }
+      my_resources: {
+        Args: never
+        Returns: {
+          author_name: string
+          description: string
+          due_date: string
+          file_name: string
+          file_size: number
+          file_type: string
+          is_new: boolean
+          last_opened_at: string
+          level_name: string
+          published_at: string
+          resource_id: string
+          subject_id: string
+          subject_name: string
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+        }[]
+      }
       my_student_access: {
         Args: never
         Returns: {
