@@ -995,14 +995,31 @@ begin
 end;
 $$;
 
+-- Alertes : table partagée (retards de paiement, séries d'absences) ; les
+-- séries d'absences suivent le module Suivi des absences.
+create policy alerts_absence_module on public.alerts
+as restrictive for all to authenticated
+using (type <> 'consecutive_absences' or private.center_has_module(private.student_center_id(student_id), 'absence_tracking'))
+with check (type <> 'consecutive_absences' or private.center_has_module(private.student_center_id(student_id), 'absence_tracking'));
+
 -- ---------------------------------------------------------------------
 -- API : fonction appelée par PostgREST avant chaque requête
 -- ---------------------------------------------------------------------
 -- Les fonctions SECURITY DEFINER contournent la RLS : l'appel d'une table,
 -- d'une vue ou d'une fonction d'un module coupé est refusé ici (403).
--- Toute erreur imprévue laisse passer la requête (la RLS reste en place) :
--- un défaut de cette fonction ne doit jamais couper toute l'API.
-create function private.check_module_request()
+--  * Schéma dédié api_guard : PostgREST l'appelle dans le rôle de chaque
+--    requête (anon, authenticated, service_role), qui doit pouvoir
+--    l'exécuter ; le schéma private reste fermé aux anonymes.
+--  * Nom de la ressource décodé (%XX) avant comparaison : un nom encodé
+--    ne contourne pas le contrôle.
+--  * Aucune erreur avalée : un défaut refuse la requête plutôt que de la
+--    laisser passer. Sans centre (anonyme, service_role, super-admin hors
+--    support), rien à vérifier.
+create schema if not exists api_guard;
+revoke all on schema api_guard from public;
+grant usage on schema api_guard to anon, authenticated, service_role;
+
+create function api_guard.check_module_request()
 returns void
 language plpgsql
 stable
@@ -1010,28 +1027,28 @@ security definer
 set search_path = ''
 as $$
 declare
+  v_center uuid := private.auth_center_id();
+  v_name text;
+  v_hex text;
   v_module text;
-  v_blocked boolean := false;
 begin
-  begin
-    select r.module_key into v_module
-    from private.module_resources r
-    where r.name = split_part(regexp_replace(coalesce(current_setting('request.path', true), ''), '^/(rpc/)?', ''), '/', 1);
-    if v_module is not null then
-      v_blocked := not private.center_has_module(private.auth_center_id(), v_module)
-                   and private.auth_center_id() is not null;
-    end if;
-  exception when others then
-    v_blocked := false;
-  end;
-  if v_blocked then
+  if v_center is null then
+    return;
+  end if;
+  v_name := split_part(regexp_replace(coalesce(current_setting('request.path', true), ''), '^/+(rpc/+)?', ''), '/', 1);
+  while v_name ~ '%[0-9A-Fa-f]{2}' loop
+    v_hex := substring(v_name from '%([0-9A-Fa-f]{2})');
+    v_name := replace(v_name, '%' || v_hex, chr(('x' || lower(v_hex))::bit(8)::integer));
+  end loop;
+  select r.module_key into v_module from private.module_resources r where r.name = lower(v_name);
+  if v_module is not null and not private.center_has_module(v_center, v_module) then
     raise exception 'Fonctionnalité non incluse dans l''offre du centre.'
       using errcode = '42501', hint = 'module:' || v_module;
   end if;
 end;
 $$;
 
-alter role authenticator set pgrst.db_pre_request to 'private.check_module_request';
+alter role authenticator set pgrst.db_pre_request to 'api_guard.check_module_request';
 notify pgrst, 'reload config';
 
 -- ---------------------------------------------------------------------
@@ -1091,11 +1108,11 @@ begin
 end;
 $$;
 
--- Policies RLS (requêtes des comptes) et fonction pre-request (anonymes compris).
+-- Policies RLS (requêtes des comptes) ; fonction pre-request : tous les rôles de l'API.
 revoke all on function private.center_has_module(uuid, text) from public;
 grant execute on function private.center_has_module(uuid, text) to anon, authenticated;
-revoke all on function private.check_module_request() from public;
-grant execute on function private.check_module_request() to anon, authenticated;
+revoke all on function api_guard.check_module_request() from public;
+grant execute on function api_guard.check_module_request() to anon, authenticated, service_role;
 revoke all on function private.require_module(uuid, text) from public, anon;
 grant execute on function private.require_module(uuid, text) to authenticated;
 revoke all on function private.center_module_keys(uuid) from public, anon, authenticated;

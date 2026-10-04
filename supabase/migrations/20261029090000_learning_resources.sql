@@ -80,11 +80,20 @@ begin
   if tg_op = 'UPDATE' and (new.author_id, new.center_id) is distinct from (old.author_id, old.center_id) then
     raise exception 'L''auteur et le centre d''une ressource ne changent pas.' using errcode = '42501';
   end if;
+  -- Fichier : toujours dans le dossier de la ressource (<centre>/<ressource>/…).
+  if new.file_url is not null and new.file_url not like new.center_id::text || '/' || new.id::text || '/%' then
+    raise exception 'Le fichier doit se trouver dans le dossier de la ressource.' using errcode = '23514';
+  end if;
   new.title := btrim(new.title);
   new.description := nullif(btrim(coalesce(new.description, '')), '');
-  -- Chaque mise en ligne date la publication (une ressource republiée redevient une nouveauté).
+  -- Date de publication fixée ici seulement : chaque mise en ligne la date (une
+  -- ressource republiée redevient une nouveauté), sinon elle ne bouge pas.
   if new.is_published and (tg_op = 'INSERT' or not old.is_published) then
     new.published_at := now();
+  elsif tg_op = 'INSERT' then
+    new.published_at := null;
+  else
+    new.published_at := old.published_at;
   end if;
   if tg_op = 'UPDATE' then
     new.updated_at := now();

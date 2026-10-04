@@ -80,12 +80,19 @@ from public.attendance a
 join public.students st on st.id = a.student_id
 order by a.marked_at;
 
+-- Seule modification admise : l'auteur effacé (compte supprimé, ON DELETE SET
+-- NULL) ; le rôle, le statut et l'heure de la saisie restent.
 create function private.attendance_entries_append_only()
 returns trigger
 language plpgsql
 set search_path = ''
 as $$
 begin
+  if new.marked_by is null
+     and (new.id, new.attendance_id, new.center_id, new.status, new.marked_by_role, new.marked_at)
+         is not distinct from (old.id, old.attendance_id, old.center_id, old.status, old.marked_by_role, old.marked_at) then
+    return new;
+  end if;
   raise exception 'L''historique des saisies ne se modifie pas.' using errcode = '42501';
 end;
 $$;
@@ -172,7 +179,10 @@ begin
   if tg_op = 'UPDATE' and new.status is not distinct from old.status then
     -- L'autre côté confirme la valeur affichée : sa saisie est gardée et le
     -- désaccord se ferme (les deux saisies se rejoignent).
+    -- Seulement l'autre côté (professeur face à accueil ou admin) : une re-saisie
+    -- par un collègue du même côté ne clôt pas le désaccord.
     if v_uid is not null and v_uid is distinct from new.marked_by
+       and (private.attendance_marker_of(v_uid) = 'teacher') is distinct from (new.marked_by_role = 'teacher')
        and exists (select 1 from public.attendance_conflicts c where c.attendance_id = new.id and c.resolved_at is null) then
       insert into public.attendance_entries (attendance_id, center_id, status, marked_by, marked_by_role)
       values (new.id, private.student_center_id(new.student_id), new.status, v_uid, private.attendance_marker_of(v_uid));

@@ -136,9 +136,9 @@ select throws_ok($$insert into public.learning_resources (center_id, subject_id,
   values ('c9400000-0000-4000-8000-0000000000b1', 'e9400000-0000-4000-8000-0000000000b1', 'd9400000-0000-4000-8000-0000000000b1', 'summary', 'X')$$,
   '42501', null, 'sans le module : publication refusée');
 select set_config('request.path', '/learning_resources', true);
-select throws_ok($$select private.check_module_request()$$, '42501', null, 'sans le module : API refusée');
+select throws_ok($$select api_guard.check_module_request()$$, '42501', null, 'sans le module : API refusée');
 set local request.jwt.claims = '{"sub":"a9400000-0000-4000-8000-000000000003","role":"authenticated"}';
-select lives_ok($$select private.check_module_request()$$, 'avec le module : API acceptée');
+select lives_ok($$select api_guard.check_module_request()$$, 'avec le module : API acceptée');
 select set_config('request.path', '', true);
 
 -- Module retiré : ressources masquées, rien supprimé.

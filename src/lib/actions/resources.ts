@@ -220,11 +220,14 @@ export async function deleteResource(input: unknown): Promise<ActionResult> {
     .delete()
     .eq("id", parsed.data.id)
     .eq("author_id", profile.id)
-    .select("file_url");
+    .select("id, center_id, file_url");
   if (error) return failure(await describeCenterError(error));
   const deleted = data[0];
   if (!deleted) return failure(LABELS.actions.errors.notFound);
-  if (deleted.file_url) await createAdminClient().storage.from(RESOURCE_BUCKET).remove([deleted.file_url]);
+  // Uniquement un fichier du dossier de cette ressource (la base l'impose aussi).
+  if (deleted.file_url?.startsWith(`${deleted.center_id}/${deleted.id}/`)) {
+    await createAdminClient().storage.from(RESOURCE_BUCKET).remove([deleted.file_url]);
+  }
   revalidateResources();
   return success();
 }

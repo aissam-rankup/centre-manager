@@ -118,6 +118,13 @@ begin
      or exists (select 1 from public.student_accounts a where a.user_id = p_user_id) then
     raise exception 'Ce compte appartient déjà à quelqu''un.' using errcode = '22023';
   end if;
+  -- Seul le compte technique de ce code (créé à l'instant par la Server Action) se rattache.
+  if not exists (
+    select 1 from auth.users u
+    where u.id = p_user_id and u.email = 'eleve-' || lower(btrim(p_login_code)) || '@eleves.centromanager.invalid'
+  ) then
+    raise exception 'Compte de connexion invalide pour ce code.' using errcode = '22023';
+  end if;
 
   insert into public.student_accounts (user_id, student_id, center_id, login_code, created_by)
   values (p_user_id, p_student_id, v_center, upper(btrim(p_login_code)), (select auth.uid()));

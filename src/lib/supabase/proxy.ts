@@ -113,8 +113,12 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
   // Centre suspendu ou résilié (d'après le jeton) : écran dédié, sans passer par
   // les espaces. La garde serveur et la RLS relisent le statut en base.
+  // Élève : son espace s'en charge (accès refusé → écran de connexion élève avec un message).
   const appClaims = appClaimsSchema.safeParse(claims).data;
-  if (appClaims?.center_status === "suspended" || appClaims?.center_status === "cancelled") {
+  if (
+    appClaims?.user_role !== "student_user" &&
+    (appClaims?.center_status === "suspended" || appClaims?.center_status === "cancelled")
+  ) {
     return redirectTo(ROUTES.suspended);
   }
 

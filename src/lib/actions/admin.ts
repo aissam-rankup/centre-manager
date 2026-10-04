@@ -550,10 +550,15 @@ export async function deleteStudent(studentId: string): Promise<ActionResult> {
   if (!idSchema.safeParse(studentId).success) return failure(LABELS.actions.errors.invalid);
   const { supabase } = await admin();
 
-  const { data: student } = await supabase.from("students").select("photo_url").eq("id", studentId).maybeSingle();
+  const [{ data: student }, { data: access }] = await Promise.all([
+    supabase.from("students").select("photo_url").eq("id", studentId).maybeSingle(),
+    supabase.from("student_accounts").select("user_id").eq("student_id", studentId).maybeSingle(),
+  ]);
   const { error } = await supabase.from("students").delete().eq("id", studentId);
   if (error) return failure(await describeAdminError(error));
   if (student?.photo_url) await supabase.storage.from(PHOTO_BUCKET).remove([student.photo_url]);
+  // Accès élève : son compte de connexion disparaît avec la fiche (lu avant la suppression, sous la RLS).
+  if (access?.user_id) await createAdminClient().auth.admin.deleteUser(access.user_id);
 
   revalidateAdmin();
   revalidatePath(ROUTES.assistant.home, "layout");
