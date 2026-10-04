@@ -211,6 +211,28 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                           </span>
                         ) : null}
                         <span className={cn("text-caption", absence.note ? "text-foreground" : "text-subtle")}>{absence.note ?? L.noNote}</span>
+                        {absence.markedByName && absence.markedByRole ? (
+                          <span className="text-caption text-subtle">
+                            {L.markedBy(LABELS.attendanceMarkers[absence.markedByRole], absence.markedByName, formatDateTime(absence.markedAt))}
+                          </span>
+                        ) : null}
+                        {absence.history.length > 1 ? (
+                          <details className="text-caption">
+                            <summary className="cursor-pointer text-muted-foreground">{L.history}</summary>
+                            <ol className="mt-1 flex flex-col gap-0.5 pl-4">
+                              {absence.history.map((mark, index) => (
+                                <li key={`${mark.at}-${index}`} className="list-decimal text-subtle">
+                                  {L.historyItem(
+                                    mark.role ? LABELS.attendanceMarkers[mark.role] : LABELS.common.none,
+                                    mark.by ?? LABELS.common.none,
+                                    LABELS.status[mark.status],
+                                    formatDateTime(mark.at),
+                                  )}
+                                </li>
+                              ))}
+                            </ol>
+                          </details>
+                        ) : null}
                         <AbsenceNotificationStatus item={notifiable} />
                       </div>
                       <div className="flex flex-col items-start gap-2 sm:items-end">

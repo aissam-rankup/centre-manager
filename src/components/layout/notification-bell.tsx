@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, Bell, BellRing, MessageSquareText, StickyNote } from "lucide-react";
+import { Banknote, Bell, BellRing, ClipboardX, MessageSquareText, StickyNote } from "lucide-react";
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 
@@ -19,12 +19,14 @@ const KIND_ICON: Record<NotificationKind, typeof Bell> = {
   note: StickyNote,
   absenceAlert: BellRing,
   cashVariance: Banknote,
+  attendanceConflict: ClipboardX,
 };
 const KIND_TONE: Record<NotificationKind, string> = {
   followUp: "bg-primary-soft text-primary",
   note: "bg-muted text-heading",
   absenceAlert: "bg-warning/15 text-warning-ink",
   cashVariance: "bg-danger/10 text-danger-ink",
+  attendanceConflict: "bg-warning/15 text-warning-ink",
 };
 
 /** Dernière consultation (préférence locale, sans incidence si le stockage est indisponible). */

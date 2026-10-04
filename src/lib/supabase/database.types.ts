@@ -167,6 +167,10 @@ export type Database = {
           id: string
           is_demo: boolean
           marked_at: string
+          marked_by: string | null
+          marked_by_role:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
           note: string | null
           session_date: string
           status: Database["public"]["Enums"]["attendance_status"]
@@ -178,6 +182,10 @@ export type Database = {
           id?: string
           is_demo?: boolean
           marked_at?: string
+          marked_by?: string | null
+          marked_by_role?:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
           note?: string | null
           session_date: string
           status: Database["public"]["Enums"]["attendance_status"]
@@ -189,6 +197,10 @@ export type Database = {
           id?: string
           is_demo?: boolean
           marked_at?: string
+          marked_by?: string | null
+          marked_by_role?:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
           note?: string | null
           session_date?: string
           status?: Database["public"]["Enums"]["attendance_status"]
@@ -197,6 +209,13 @@ export type Database = {
           teacher_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "attendance_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "attendance_student_id_fkey"
             columns: ["student_id"]
@@ -242,6 +261,165 @@ export type Database = {
           {
             foreignKeyName: "attendance_teacher_id_fkey"
             columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_conflicts: {
+        Row: {
+          attendance_id: string
+          center_id: string
+          detected_at: string
+          id: string
+          is_demo: boolean
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_status:
+            | Database["public"]["Enums"]["attendance_status"]
+            | null
+          staff_entry_id: number
+          teacher_entry_id: number
+        }
+        Insert: {
+          attendance_id: string
+          center_id: string
+          detected_at?: string
+          id?: string
+          is_demo?: boolean
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_status?:
+            | Database["public"]["Enums"]["attendance_status"]
+            | null
+          staff_entry_id: number
+          teacher_entry_id: number
+        }
+        Update: {
+          attendance_id?: string
+          center_id?: string
+          detected_at?: string
+          id?: string
+          is_demo?: boolean
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_status?:
+            | Database["public"]["Enums"]["attendance_status"]
+            | null
+          staff_entry_id?: number
+          teacher_entry_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_conflicts_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "absences_to_notify"
+            referencedColumns: ["attendance_id"]
+          },
+          {
+            foreignKeyName: "attendance_conflicts_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_conflicts_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_conflicts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_conflicts_staff_entry_id_fkey"
+            columns: ["staff_entry_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_conflicts_teacher_entry_id_fkey"
+            columns: ["teacher_entry_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_entries: {
+        Row: {
+          attendance_id: string
+          center_id: string
+          id: number
+          is_demo: boolean
+          marked_at: string
+          marked_by: string | null
+          marked_by_role:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
+          status: Database["public"]["Enums"]["attendance_status"]
+        }
+        Insert: {
+          attendance_id: string
+          center_id: string
+          id?: never
+          is_demo?: boolean
+          marked_at?: string
+          marked_by?: string | null
+          marked_by_role?:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
+          status: Database["public"]["Enums"]["attendance_status"]
+        }
+        Update: {
+          attendance_id?: string
+          center_id?: string
+          id?: never
+          is_demo?: boolean
+          marked_at?: string
+          marked_by?: string | null
+          marked_by_role?:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_entries_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "absences_to_notify"
+            referencedColumns: ["attendance_id"]
+          },
+          {
+            foreignKeyName: "attendance_entries_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_entries_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_entries_marked_by_fkey"
+            columns: ["marked_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -3760,6 +3938,10 @@ export type Database = {
         Args: { p_receipt_id: string }
         Returns: undefined
       }
+      mark_session_attendance: {
+        Args: { p_entries: Json; p_session_date: string; p_slot_id: string }
+        Returns: number
+      }
       my_center_access: {
         Args: never
         Returns: {
@@ -3782,6 +3964,27 @@ export type Database = {
         }[]
       }
       my_modules: { Args: never; Returns: string[] }
+      open_attendance_conflicts: {
+        Args: never
+        Returns: {
+          attendance_id: string
+          conflict_id: string
+          current_status: Database["public"]["Enums"]["attendance_status"]
+          detected_at: string
+          level_name: string
+          session_date: string
+          staff_marked_at: string
+          staff_name: string
+          staff_role: Database["public"]["Enums"]["attendance_marker"]
+          staff_status: Database["public"]["Enums"]["attendance_status"]
+          student_id: string
+          student_name: string
+          subject_name: string
+          teacher_marked_at: string
+          teacher_name: string
+          teacher_status: Database["public"]["Enums"]["attendance_status"]
+        }[]
+      }
       open_cash_session: { Args: { p_opening_float?: number }; Returns: string }
       payment_reminder_queue: {
         Args: { p_run_id?: string; p_student_id?: string }
@@ -4311,6 +4514,13 @@ export type Database = {
         Returns: string
       }
       reenrollment_overview: { Args: never; Returns: Json }
+      resolve_attendance_conflict: {
+        Args: {
+          p_conflict_id: string
+          p_status: Database["public"]["Enums"]["attendance_status"]
+        }
+        Returns: undefined
+      }
       set_attendance_note: {
         Args: { p_attendance_id: string; p_note: string }
         Returns: undefined
@@ -4410,6 +4620,26 @@ export type Database = {
           teacher_name: string
         }[]
       }
+      staff_day_sessions: {
+        Args: { p_date: string }
+        Returns: {
+          absent_count: number
+          end_time: string
+          last_marked_at: string
+          level_name: string
+          marked_count: number
+          open_conflicts: number
+          room: string
+          slot_id: string
+          staff_marked: number
+          start_time: string
+          student_count: number
+          subject_id: string
+          subject_name: string
+          teacher_marked: number
+          teacher_name: string
+        }[]
+      }
       stale_cash_sessions: {
         Args: never
         Returns: {
@@ -4435,7 +4665,11 @@ export type Database = {
         Returns: {
           attendance_id: string
           end_time: string
+          history: Json
           level_name: string
+          marked_at: string
+          marked_by_name: string
+          marked_by_role: Database["public"]["Enums"]["attendance_marker"]
           note: string
           session_date: string
           start_time: string
@@ -4470,6 +4704,7 @@ export type Database = {
     Enums: {
       absence_notification_status: "prepared" | "sent" | "failed" | "no_phone"
       alert_type: "consecutive_absences" | "overdue_payment"
+      attendance_marker: "teacher" | "assistant" | "admin"
       attendance_status: "present" | "absent"
       billing_interval: "month" | "year"
       billing_run_status:
@@ -4636,6 +4871,7 @@ export const Constants = {
     Enums: {
       absence_notification_status: ["prepared", "sent", "failed", "no_phone"],
       alert_type: ["consecutive_absences", "overdue_payment"],
+      attendance_marker: ["teacher", "assistant", "admin"],
       attendance_status: ["present", "absent"],
       billing_interval: ["month", "year"],
       billing_run_status: ["draft", "confirmed", "sent", "closed", "cancelled"],

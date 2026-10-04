@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { AttendanceMarker } from "@/lib/attendance";
 import { requireRole } from "@/lib/auth/session";
 import { signPhotoUrls } from "@/lib/storage/photos";
 import { createClient } from "@/lib/supabase/server";
@@ -16,6 +17,10 @@ export type AbsenceRow = {
   guardianPhone: string | null;
   /** Série d'absences en cours dans la matière (alerte ouverte), sinon null. */
   streak: number | null;
+  /** Qui a saisi l'absence, à quel titre et quand. */
+  markedByName: string | null;
+  markedByRole: AttendanceMarker | null;
+  markedAt: string;
 };
 
 /** Élèves marqués absents à une date donnée (admin, assistant : tout le centre). */
@@ -26,7 +31,7 @@ export async function getAbsencesOn(dateIso: string): Promise<AbsenceRow[]> {
   const { data, error } = await supabase
     .from("attendance")
     .select(
-      "id, student_id, subject_id, subjects(name), teacher:profiles(full_name), students(full_name, photo_url, guardian_name, guardian_phone, levels(name))",
+      "id, student_id, subject_id, marked_by_role, marked_at, subjects(name), teacher:profiles!attendance_teacher_id_fkey(full_name), marker:profiles!attendance_marked_by_fkey(full_name), students(full_name, photo_url, guardian_name, guardian_phone, levels(name))",
     )
     .eq("session_date", dateIso)
     .eq("status", "absent");
@@ -63,6 +68,9 @@ export async function getAbsencesOn(dateIso: string): Promise<AbsenceRow[]> {
       guardianName: row.students?.guardian_name ?? null,
       guardianPhone: row.students?.guardian_phone ?? null,
       streak: streaks.get(`${row.student_id}:${row.subject_id}`) ?? null,
+      markedByName: row.marker?.full_name ?? null,
+      markedByRole: row.marked_by_role,
+      markedAt: row.marked_at,
     }))
     .sort((a, b) => (b.streak ?? 0) - (a.streak ?? 0) || a.fullName.localeCompare(b.fullName, "fr"));
 }

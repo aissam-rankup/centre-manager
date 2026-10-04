@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CalendarRange,
   CalendarSync,
+  ClipboardCheck,
   Component,
   DoorOpen,
   GraduationCap,
@@ -52,6 +53,7 @@ export function navigationFor(
       { href: ROUTES.assistant.students, label: LABELS.nav.students, icon: Users },
       { href: ROUTES.assistant.newStudent, label: LABELS.nav.newStudent, shortLabel: LABELS.nav.short.newStudent, icon: UserPlus },
       { href: ROUTES.assistant.cash, label: LABELS.nav.cash, icon: Banknote, module: "finance" },
+      { href: ROUTES.assistant.sessions, label: LABELS.nav.sessions, shortLabel: LABELS.nav.short.sessions, icon: ClipboardCheck },
       { href: ROUTES.assistant.absences, label: LABELS.nav.absences, icon: CalendarX },
       ...(options.reenrollment
         ? [{ href: ROUTES.assistant.reenrollment, label: LABELS.nav.reenrollment, icon: CalendarSync, module: "reenrollment" as const }]

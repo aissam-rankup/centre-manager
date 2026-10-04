@@ -130,6 +130,9 @@ insert into public.attendance (student_id, subject_id, teacher_id, session_date,
   ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today() - 14, 'absent', 'Malade'),
   ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today() - 7, 'absent', null),
   ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today(), 'absent', null);
+-- Saisie de l'accueil B en désaccord avec le professeur B (historique et désaccord du centre B).
+update public.attendance set status = 'present', marked_by = 'b0000000-0000-4000-8000-00000000000b', marked_by_role = 'assistant'
+where student_id = '4b000000-0000-4000-8000-000000000001' and session_date = private.today();
 insert into public.follow_ups (student_id, type, channel, note) values
   ('4b000000-0000-4000-8000-000000000001', 'absence', 'phone', 'Relance B');
 insert into public.platform_notifications (center_id, kind, scheduled_for, recipient)
@@ -165,7 +168,8 @@ insert into public.schedule_conflicts_log (center_id, attempted_slot, conflict_t
 values ('cb000000-0000-4000-8000-000000000001', '{"day_of_week": 2}', 'room');
 insert into public.absence_notifications (student_id, center_id, attendance_id, channel)
 select '4b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', a.id, 'whatsapp'
-from public.attendance a where a.student_id = '4b000000-0000-4000-8000-000000000001' limit 1;
+from public.attendance a where a.student_id = '4b000000-0000-4000-8000-000000000001' and a.status = 'absent'
+order by a.session_date limit 1;
 -- Réinscription et caisse de B : campagne (ligne, intention), rappel de paiement,
 -- session de caisse et mouvement d'espèces.
 insert into public.billing_runs (id, center_id, period_year, period_month, total_expected, student_count)

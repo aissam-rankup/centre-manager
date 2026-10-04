@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { z } from "zod";
 
 import { AbsenceChart } from "@/components/admin/absence-chart";
+import { AttendanceConflictsBanner } from "@/components/attendance/attendance-conflicts-banner";
 import { CollectionOverviewSection, LateDraftBanner, ReenrollmentOverviewCard } from "@/components/admin/collection-overview";
 import { StaleCashBanner } from "@/components/cash/stale-cash-banner";
 import { DiscountsOverview, FinanceOverview } from "@/components/admin/finance-overview";
@@ -22,6 +23,7 @@ import { getStaleCashSessions } from "@/lib/data/cash";
 import { getCollectionOverview, getLateDraft, getReenrollmentOverview } from "@/lib/data/collection";
 import { getFinancialDashboard } from "@/lib/data/finance";
 import { getRoomOccupancy } from "@/lib/data/rooms";
+import { getOpenAttendanceConflicts } from "@/lib/data/sessions";
 import { formatMAD, formatMonth, formatPercent } from "@/lib/format";
 
 
@@ -43,13 +45,14 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
   const levelId = filtered.levels.some((level) => level.id === requestedLevel) ? requestedLevel : null;
   const data = requestedLevel && !levelId ? await getAdminDashboard(null) : filtered;
   // Finances : tout le centre, jamais en mode support.
-  const [finance, occupancy, collection, reenrollment, lateDraft, staleCash] = await Promise.all([
+  const [finance, occupancy, collection, reenrollment, lateDraft, staleCash, conflicts] = await Promise.all([
     getFinancialDashboard(),
     getRoomOccupancy(),
     getCollectionOverview(),
     getReenrollmentOverview(),
     getLateDraft(),
     getStaleCashSessions(),
+    getOpenAttendanceConflicts(),
   ]);
 
   const gap = Math.max(0, data.expected - data.collected);
@@ -63,6 +66,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
 
         {lateDraft ? <LateDraftBanner draft={lateDraft} LABELS={LABELS} /> : null}
         {staleCash.length > 0 ? <StaleCashBanner sessions={staleCash} LABELS={LABELS} /> : null}
+        {conflicts.length > 0 ? <AttendanceConflictsBanner count={conflicts.length} LABELS={LABELS} /> : null}
 
         <FilterChips
           label={L.filterLabel}

@@ -27,6 +27,9 @@ export const ROUTES = {
     absences: "/assistant/absences",
     reenrollment: "/assistant/reinscriptions",
     cash: "/assistant/caisse",
+    /** Séances d'un jour (aujourd'hui par défaut) et appel d'une séance. */
+    sessions: "/assistant/seances",
+    session: (slotId: string, date: string) => `/assistant/seances/${slotId}?date=${date}`,
   },
   teacher: {
     home: "/professeur",

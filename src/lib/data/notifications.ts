@@ -6,7 +6,7 @@ import { formatDate, formatMAD } from "@/lib/format";
 import { getLabels } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
-export type NotificationKind = "followUp" | "note" | "absenceAlert" | "cashVariance";
+export type NotificationKind = "followUp" | "note" | "absenceAlert" | "cashVariance" | "attendanceConflict";
 
 export type NotificationItem = {
   id: string;
@@ -41,7 +41,7 @@ export async function getNotifications(): Promise<NotificationItem[]> {
   const supabase = await createClient();
   const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-  const [followUpsResult, notesResult, alertsResult, cashResult] = await Promise.all([
+  const [followUpsResult, notesResult, alertsResult, cashResult, conflictsResult] = await Promise.all([
     supabase
       .from("follow_ups")
       .select("id, type, channel, note, created_at, student_id, students(full_name), profiles(full_name)")
@@ -69,11 +69,14 @@ export async function getNotifications(): Promise<NotificationItem[]> {
           .order("closed_at", { ascending: false })
           .limit(LIMIT)
       : Promise.resolve({ data: [], error: null }),
+    // Appels en désaccord professeur / accueil : pour l'admin (hors support).
+    profile.role === "admin" && !profile.support ? supabase.rpc("open_attendance_conflicts") : Promise.resolve({ data: [], error: null }),
   ]);
   if (followUpsResult.error) throw followUpsResult.error;
   if (notesResult.error) throw notesResult.error;
   if (alertsResult.error) throw alertsResult.error;
   if (cashResult.error) throw cashResult.error;
+  if (conflictsResult.error) throw conflictsResult.error;
 
   const items: NotificationItem[] = [
     ...followUpsResult.data.map((row) => ({
@@ -141,6 +144,18 @@ export async function getNotifications(): Promise<NotificationItem[]> {
           ]
         : [];
     }),
+    ...conflictsResult.data.map((row) => ({
+      id: `desaccord-${row.conflict_id}`,
+      kind: "attendanceConflict" as const,
+      studentId: row.student_id,
+      studentName: row.student_name,
+      href: `${ROUTES.admin.absences}#desaccords`,
+      detail: LABELS.attendanceConflicts.notification(row.subject_name, formatDate(row.session_date)),
+      body: null,
+      author: null,
+      at: row.detected_at,
+      priority: true,
+    })),
   ];
 
   return items.sort((a, b) => Number(b.priority) - Number(a.priority) || b.at.localeCompare(a.at)).slice(0, LIMIT);
