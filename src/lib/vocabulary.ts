@@ -140,6 +140,12 @@ function buildRules(target: VocabularyTerms): Rule[] {
 
     // Accords : « matière ajoutée » → « module ajouté ».
     if (from.feminine !== to.feminine) {
+      // « toutes vos matières » → « tous vos modules ».
+      const [fromAll, toAll] = from.feminine ? ["toutes", "tous"] : ["tous", "toutes"];
+      for (const determiner of ["vos", "nos", "ses", "mes", "leurs", "ces"]) {
+        rules.push({ from: `${fromAll} ${determiner} ${from.many}`, to: `${toAll} ${determiner} ${to.many}` });
+        rules.push({ from: `${upper(fromAll)} ${determiner} ${from.many}`, to: `${upper(toAll)} ${determiner} ${to.many}` });
+      }
       for (const adjective of AGREEMENTS) {
         const fromAdj = from.feminine ? feminize(adjective) : adjective;
         const toAdj = to.feminine ? feminize(adjective) : adjective;
