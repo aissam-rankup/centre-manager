@@ -7,6 +7,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { AssignmentPicker } from "@/components/admin/assignment-picker";
+import { ResetPasswordDialog } from "@/components/password/reset-password-dialog";
 import { FormDialog } from "@/components/admin/form-dialog";
 import { useActionForm } from "@/components/admin/use-action-form";
 import { ConfirmAction } from "@/components/shared/confirm-action";
@@ -63,7 +64,14 @@ export function UsersBoard({ users, levels }: UsersBoardProps) {
       id: "lastSignIn",
       header: L.lastSignIn,
       cell: (user) => (
-        <span className="numeric font-normal">{user.lastSignInAt ? formatDateTime(user.lastSignInAt) : L.never}</span>
+        <span className="flex flex-col">
+          <span className="numeric font-normal">{user.lastSignInAt ? formatDateTime(user.lastSignInAt) : L.never}</span>
+          {user.lastPasswordReset ? (
+            <span className="text-caption text-muted-foreground">
+              {LABELS.passwords.lastReset(formatDateTime(user.lastPasswordReset.at), user.lastPasswordReset.by)}
+            </span>
+          ) : null}
+        </span>
       ),
     },
     { id: "status", header: L.status, mobile: "aside", cell: (user) => <ActiveBadge active={user.active} /> },
@@ -94,6 +102,18 @@ export function UsersBoard({ users, levels }: UsersBoardProps) {
               </Button>
             }
           />
+          {/* Mot de passe : assistants et professeurs seulement (jamais un autre administrateur). */}
+          {!user.isSelf && user.active && (user.role === "assistant" || user.role === "teacher") ? (
+            <ResetPasswordDialog
+              target={{ userId: user.id }}
+              name={user.fullName}
+              trigger={
+                <Button variant="ghost" size="icon" aria-label={LABELS.passwords.resetFor(user.fullName)}>
+                  <KeyRound aria-hidden />
+                </Button>
+              }
+            />
+          ) : null}
           {user.isSelf ? null : <ToggleActiveButton user={user} />}
         </div>
       ),

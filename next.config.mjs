@@ -20,6 +20,8 @@ const allowedOrigins = [
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
+  // Les arguments des Server Actions (mots de passe compris) ne sont jamais écrits dans les logs.
+  logging: { serverFunctions: false },
   // Moteur PDF (fiches d'assiduité) : chargé tel quel par Node, sans passer par le bundler.
   serverExternalPackages: ["@react-pdf/renderer"],
   experimental: {

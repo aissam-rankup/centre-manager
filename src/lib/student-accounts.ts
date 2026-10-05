@@ -60,22 +60,6 @@ export async function createStudentAccess(
   return { ok: false, error: null };
 }
 
-/** Nouveau mot de passe d'un accès actif (la base vérifie le centre de l'appelant). */
-export async function resetStudentAccessPassword(
-  studentId: string,
-): Promise<{ ok: true; credentials: StudentCredentials } | { ok: false; error: PostgresLikeError | null }> {
-  const supabase = await createClient();
-  const { data: userId, error } = await supabase.rpc("student_account_user", { p_student_id: studentId });
-  if (error || !userId) return { ok: false, error };
-  const { data: account } = await supabase.from("student_accounts").select("login_code").eq("student_id", studentId).maybeSingle();
-  if (!account) return { ok: false, error: null };
-
-  const password = generateStudentPassword();
-  const { error: updateError } = await createAdminClient().auth.admin.updateUserById(userId, { password });
-  if (updateError) return { ok: false, error: null };
-  return { ok: true, credentials: { code: account.login_code, password, loginUrl: await studentLoginUrl() } };
-}
-
 /** Désactive ou réactive l'accès : la base d'abord, puis le blocage du compte Auth. */
 export async function setStudentAccessActive(studentId: string, active: boolean): Promise<PostgresLikeError | null> {
   const supabase = await createClient();

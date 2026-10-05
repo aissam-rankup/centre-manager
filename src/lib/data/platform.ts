@@ -116,6 +116,17 @@ export type PlatformCenterFile = {
   modules: CenterModule[];
 };
 
+export type PlatformCenterAdmin = Fn<"platform_center_admins">[number];
+
+/** Administrateurs d'un centre (console) : contact et dernière réinitialisation du mot de passe. */
+export async function getPlatformCenterAdmins(centerId: string): Promise<PlatformCenterAdmin[]> {
+  await requireSuperAdmin();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("platform_center_admins", { p_center_id: centerId });
+  if (error) throw error;
+  return data;
+}
+
 export async function getPlatformCenterFile(centerId: string): Promise<PlatformCenterFile | null> {
   const supabase = await platformClient();
   const [center, users, events, payments, modules] = await Promise.all([

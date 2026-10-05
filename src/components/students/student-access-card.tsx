@@ -4,15 +4,16 @@ import { KeyRound, LoaderCircle, RotateCcw, UserCheck, UserX } from "lucide-reac
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { ResetPasswordDialog } from "@/components/password/reset-password-dialog";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import { SectionCard } from "@/components/shared/section-card";
 import { type ShownCredentials, StudentCredentialsDialog } from "@/components/students/student-credentials-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ActionResult } from "@/lib/actions/result";
-import { openStudentAccess, resetStudentPassword, setStudentAccess } from "@/lib/actions/student-access";
+import { openStudentAccess, setStudentAccess } from "@/lib/actions/student-access";
 import type { StudentAccess } from "@/lib/data/student-access";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { useLabels } from "@/lib/i18n/client";
 import { formatLoginCode } from "@/lib/student-codes";
 
@@ -71,6 +72,9 @@ export function StudentAccessCard({
           <div className="flex flex-col justify-end text-caption text-muted-foreground">
             {access.createdAt ? <span>{L.openedOn(formatDate(access.createdAt))}</span> : null}
             {access.status === "inactive" && access.deactivatedAt ? <span>{L.disabledOn(formatDate(access.deactivatedAt))}</span> : null}
+            {access.lastPasswordReset ? (
+              <span>{LABELS.passwords.lastReset(formatDateTime(access.lastPasswordReset.at), access.lastPasswordReset.by)}</span>
+            ) : null}
           </div>
         </dl>
       )}
@@ -89,15 +93,16 @@ export function StudentAccessCard({
           ) : null}
           {access.status === "active" ? (
             <>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={pending}
-                onClick={() => withCredentials(() => resetStudentPassword({ studentId }), L.passwordReset)}
-              >
-                {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <RotateCcw aria-hidden />}
-                {L.resetPassword}
-              </Button>
+              <ResetPasswordDialog
+                target={{ studentId }}
+                name={studentName}
+                trigger={
+                  <Button type="button" variant="outline" disabled={pending}>
+                    <RotateCcw aria-hidden />
+                    {LABELS.passwords.reset}
+                  </Button>
+                }
+              />
               <ConfirmAction
                 trigger={
                   <Button type="button" variant="outline" className="text-danger-ink">

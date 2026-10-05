@@ -42,6 +42,8 @@ export type SessionProfile = {
   /** Chemin de la photo (bucket staff-photos) et son URL signée. */
   photoPath: string | null;
   photoUrl: string | null;
+  /** Mot de passe temporaire défini par un responsable : à remplacer avant toute autre page. */
+  mustChangePassword: boolean;
 };
 
 /** Compte d'un centre (admin, assistant, professeur). */
@@ -60,6 +62,7 @@ export type StudentSession = {
   allowed: boolean;
   vocabulary: VocabularyTerms;
   branding: BrandingData | null;
+  mustChangePassword: boolean;
 };
 
 export type AuthState =
@@ -82,13 +85,21 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
   const { sub: userId, email: rawEmail } = claimsData.claims;
   const email = typeof rawEmail === "string" ? rawEmail : "";
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, role, active, center_id, photo_url, centers(name)")
-    .eq("id", userId)
-    .maybeSingle();
+  const [{ data: profile, error }, passwordState] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, role, active, center_id, photo_url, centers(name)")
+      .eq("id", userId)
+      .maybeSingle(),
+    supabase.rpc("my_password_state").maybeSingle(),
+  ]);
 
   if (error) throw error;
+  if (passwordState.error) throw passwordState.error;
+  // Session fermée par une réinitialisation du mot de passe : le jeton est
+  // encore valide quelques minutes, mais la session n'existe plus.
+  if (passwordState.data && !passwordState.data.session_valid) redirect(ROUTES.sessionClosed);
+  const mustChangePassword = passwordState.data?.must_change ?? false;
   if (!profile) {
     // Pas de profil d'équipe : peut-être un accès élève.
     const { data: access, error: accessError } = await supabase.rpc("my_student_access").maybeSingle();
@@ -107,6 +118,7 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
         allowed: access.allowed,
         vocabulary: parseVocabularyTerms(access.vocabulary),
         branding: parseBranding(access.branding),
+        mustChangePassword,
       },
     };
   }
@@ -148,6 +160,7 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
       branding: parseBranding(center?.branding),
       photoPath: profile.photo_url,
       photoUrl: profile.photo_url ? (photos.get(profile.photo_url) ?? null) : null,
+      mustChangePassword: support ? false : mustChangePassword,
     },
   };
 });
@@ -162,6 +175,7 @@ export async function requireRole(role: CenterRole | readonly CenterRole[]): Pro
   if (state.status === "anonymous") redirect(ROUTES.login);
   if (state.status === "student") redirect(ROUTES.student.home);
   if (state.status === "no-profile" || !state.profile.active) redirect(ROUTES.inactive);
+  if (state.profile.mustChangePassword) redirect(ROUTES.forcedPassword);
   if (!allowed.includes(state.profile.role)) redirect(ROLE_HOME[state.profile.role]);
   // Centre suspendu ou résilié : aucun espace, écran dédié (la RLS refuse de toute façon les données).
   // Le support (super-admin, lecture seule) reste possible sur un centre bloqué.
@@ -190,6 +204,7 @@ export async function requireSuperAdmin(): Promise<SessionProfile> {
   const state = await getAuthState();
   if (state.status !== "authenticated" || !state.profile.active) notFound();
   const { profile } = state;
+  if (profile.mustChangePassword) redirect(ROUTES.forcedPassword);
   // En support, le rôle affiché est « admin » : le vrai rôle reste super-admin.
   if (profile.role !== "super_admin" && !profile.support) notFound();
   return { ...profile, role: "super_admin", centerId: null, centerName: "", support: null, billing: null, planKey: null, modules: [], branding: null };
@@ -219,6 +234,7 @@ export async function requireStudent(): Promise<StudentSession> {
   if (state.status === "no-profile") redirect(ROUTES.inactive);
   if (state.status === "authenticated") redirect(state.profile.active ? ROLE_HOME[state.profile.role] : ROUTES.inactive);
   if (!state.student.allowed) redirect(`${ROUTES.student.login}?acces=coupe`);
+  if (state.student.mustChangePassword) redirect(ROUTES.forcedPassword);
   await requireOwnCenterHost(state.student.centerId, ROUTES.student.login);
   return state.student;
 }

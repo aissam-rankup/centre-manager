@@ -9,7 +9,6 @@ import { requireStaff } from "@/lib/auth/session";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import {
   createStudentAccess,
-  resetStudentAccessPassword,
   setStudentAccessActive,
   type StudentCredentials,
 } from "@/lib/student-accounts";
@@ -33,19 +32,6 @@ export async function openStudentAccess(input: unknown): Promise<ActionResult<St
   const result = await createStudentAccess(parsed.data.studentId);
   if (!result.ok) return failure(result.error ? await describeCenterError(result.error) : LABELS.studentAccess.failed);
   revalidateStudent(parsed.data.studentId);
-  return success(result.credentials);
-}
-
-/** Nouveau mot de passe pour un accès actif. */
-export async function resetStudentPassword(input: unknown): Promise<ActionResult<StudentCredentials>> {
-  const LABELS = await getLabels();
-  const parsed = studentIdSchema.safeParse(input);
-  if (!parsed.success) return failure(LABELS.actions.errors.invalid);
-  const profile = await requireStaff();
-  if (profile.support) return failure(LABELS.actions.errors.forbidden);
-
-  const result = await resetStudentAccessPassword(parsed.data.studentId);
-  if (!result.ok) return failure(result.error ? await describeCenterError(result.error) : LABELS.actions.errors.unexpected);
   return success(result.credentials);
 }
 

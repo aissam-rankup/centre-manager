@@ -286,3 +286,13 @@ export function centerAccessDecision(input: {
   if (input.subdomains && !input.superAdmin && input.accountCenterId) return "transfer";
   return "allow";
 }
+
+/**
+ * Adresse publique d'un chemin pour une redirection de route serveur : celle
+ * du centre résolu par le proxy (le Worker relaie avec l'hôte racine), sinon
+ * l'origine de la requête.
+ */
+export function publicUrlFor(headers: Headers, fallbackOrigin: string, path: string): URL {
+  const center = decodeCenter(headers.get(CENTER_HEADER));
+  return center ? new URL(getCenterUrl(center, path)) : new URL(path, fallbackOrigin);
+}

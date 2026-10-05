@@ -1,11 +1,13 @@
-import { LogOut } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { BrandStyle } from "@/components/layout/brand-style";
 import { Logo } from "@/components/layout/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/lib/auth/routes";
 import { requireStudent } from "@/lib/auth/session";
 import { signOutStudent } from "@/lib/auth/student-actions";
 import { brandMetadata, getSessionBrand } from "@/lib/branding";
@@ -33,6 +35,12 @@ export default async function StudentLayout({ children }: { children: ReactNode 
           <Logo name={brand.name} logoUrl={brand.logoUrl} />
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <Button asChild variant="ghost" aria-label={LABELS.passwords.mine.menu}>
+              <Link href={ROUTES.myPassword}>
+                <KeyRound aria-hidden />
+                <span className="hidden sm:inline">{LABELS.passwords.mine.menu}</span>
+              </Link>
+            </Button>
             <form action={signOutStudent}>
               <Button type="submit" variant="ghost">
                 <LogOut aria-hidden />

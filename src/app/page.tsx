@@ -7,7 +7,8 @@ import { getAuthState } from "@/lib/auth/session";
 export default async function HomePage() {
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
-  if (state.status === "student") redirect(ROUTES.student.home);
+  if (state.status === "student") redirect(state.student.mustChangePassword ? ROUTES.forcedPassword : ROUTES.student.home);
   if (state.status === "no-profile" || !state.profile.active) redirect(ROUTES.inactive);
+  if (state.profile.mustChangePassword) redirect(ROUTES.forcedPassword);
   redirect(ROLE_HOME[state.profile.role]);
 }

@@ -26,6 +26,7 @@ const appClaimsSchema = z.object({
   profile_active: z.boolean().optional(),
   center_status: z.enum(["trial", "active", "past_due", "suspended", "cancelled"]).nullable().optional(),
   center_id: z.string().nullable().optional(),
+  must_change_password: z.boolean().optional(),
 });
 
 const centerFetcher = restCenterFetcher(publicEnv.NEXT_PUBLIC_SUPABASE_URL, publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -37,7 +38,7 @@ function isStudentPath(pathname: string): boolean {
 /** Chemins accessibles sans session. */
 const PUBLIC_PATHS: readonly string[] = [ROUTES.login, ROUTES.student.login];
 /** Chemins ouverts avec ou sans session, sans redirection (accueil des invités). */
-const OPEN_PATHS: readonly string[] = [ROUTES.welcome, ROUTES.suspended];
+const OPEN_PATHS: readonly string[] = [ROUTES.welcome, ROUTES.suspended, ROUTES.sessionClosed, ROUTES.refreshSession];
 
 function isPlatformPath(pathname: string): boolean {
   return pathname === ROUTES.platform.home || pathname.startsWith(`${ROUTES.platform.home}/`);
@@ -191,6 +192,12 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     (appClaims?.center_status === "suspended" || appClaims?.center_status === "cancelled")
   ) {
     return redirectTo(ROUTES.suspended);
+  }
+
+  // Mot de passe temporaire (défini par un responsable) : à remplacer avant toute autre page.
+  // La garde serveur le relit en base (le jeton peut être en retard).
+  if (appClaims?.must_change_password) {
+    return pathname === ROUTES.forcedPassword ? response : redirectTo(ROUTES.forcedPassword);
   }
 
   // Accueil et page de connexion : envoi direct vers l'espace du rôle.

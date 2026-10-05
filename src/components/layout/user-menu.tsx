@@ -1,6 +1,7 @@
 "use client";
 
-import { Camera, ChevronDown, LogOut, Moon, Sun } from "lucide-react";
+import { Camera, ChevronDown, KeyRound, LogOut, Moon, Sun } from "lucide-react";
+import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useState, useSyncExternalStore, useTransition } from "react";
 
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { removeMyPhoto, updateMyPhoto } from "@/lib/actions/profile";
 import { signOut } from "@/lib/auth/actions";
+import { ROUTES } from "@/lib/auth/routes";
 import { LABELS } from "@/lib/constants/labels";
 
 export type ShellUser = {
@@ -66,6 +68,12 @@ export function UserMenu({ user }: { user: ShellUser }) {
               {LABELS.auth.userMenu.myPhoto}
             </DropdownMenuItem>
           ) : null}
+          <DropdownMenuItem asChild className="min-h-11 gap-3">
+            <Link href={ROUTES.myPassword}>
+              <KeyRound className="size-5" aria-hidden />
+              {LABELS.passwords.mine.menu}
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem className="min-h-11 gap-3" onSelect={() => setTheme(isDark ? "light" : "dark")}>
             {isDark ? <Sun className="size-5" aria-hidden /> : <Moon className="size-5" aria-hidden />}
             {isDark ? LABELS.theme.toggleToLight : LABELS.theme.toggleToDark}

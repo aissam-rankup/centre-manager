@@ -2,6 +2,7 @@ import "server-only";
 
 import { requireRole } from "@/lib/auth/session";
 import { type DashboardStudent, loadDashboardStudents, type SubjectPresence } from "@/lib/data/dashboard";
+import { getLastPasswordResets, type LastPasswordReset } from "@/lib/data/passwords";
 import { type DiscountSummary, parseDiscountList } from "@/lib/discounts";
 import { signPhotoUrls, STAFF_PHOTO_BUCKET } from "@/lib/storage/photos";
 import type { Database } from "@/lib/supabase/database.types";
@@ -309,6 +310,8 @@ export type AdminUser = {
   subjectIds: string[];
   isSelf: boolean;
   photoUrl: string | null;
+  /** Dernière réinitialisation du mot de passe par un responsable. */
+  lastPasswordReset: LastPasswordReset | null;
 };
 
 export async function getUsers(): Promise<AdminUser[]> {
@@ -320,11 +323,17 @@ export async function getUsers(): Promise<AdminUser[]> {
   if (usersResult.error) throw usersResult.error;
   if (assignmentsResult.error) throw assignmentsResult.error;
 
-  const photos = await signPhotoUrls(
-    supabase,
-    usersResult.data.map((user) => user.photo_url),
-    STAFF_PHOTO_BUCKET,
-  );
+  const [photos, resets] = await Promise.all([
+    signPhotoUrls(
+      supabase,
+      usersResult.data.map((user) => user.photo_url),
+      STAFF_PHOTO_BUCKET,
+    ),
+    getLastPasswordResets(
+      supabase,
+      usersResult.data.map((user) => user.id),
+    ),
+  ]);
 
   return usersResult.data.map((user) => ({
     id: user.id,
@@ -337,6 +346,7 @@ export async function getUsers(): Promise<AdminUser[]> {
     subjectIds: assignmentsResult.data.filter((a) => a.teacher_id === user.id).map((a) => a.subject_id),
     isSelf: user.id === profile.id,
     photoUrl: user.photo_url ? (photos.get(user.photo_url) ?? null) : null,
+    lastPasswordReset: resets.get(user.id) ?? null,
   }));
 }
 

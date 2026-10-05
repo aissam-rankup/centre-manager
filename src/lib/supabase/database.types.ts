@@ -2099,6 +2099,50 @@ export type Database = {
           },
         ]
       }
+      password_events: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          center_id: string | null
+          created_at: string
+          event_type: Database["public"]["Enums"]["password_event_type"]
+          id: number
+          reason: string | null
+          target_role: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          center_id?: string | null
+          created_at?: string
+          event_type: Database["public"]["Enums"]["password_event_type"]
+          id?: never
+          reason?: string | null
+          target_role?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string | null
+          center_id?: string | null
+          created_at?: string
+          event_type?: Database["public"]["Enums"]["password_event_type"]
+          id?: never
+          reason?: string | null
+          target_role?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "password_events_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_reminders: {
         Row: {
           amount_reminded: number | null
@@ -2529,6 +2573,7 @@ export type Database = {
           full_name: string
           id: string
           is_demo: boolean
+          must_change_password: boolean
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
           phone: string | null
           photo_url: string | null
@@ -2541,6 +2586,7 @@ export type Database = {
           full_name: string
           id: string
           is_demo?: boolean
+          must_change_password?: boolean
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
           phone?: string | null
           photo_url?: string | null
@@ -2553,6 +2599,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_demo?: boolean
+          must_change_password?: boolean
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
           phone?: string | null
           photo_url?: string | null
@@ -3096,6 +3143,7 @@ export type Database = {
           deactivated_by: string | null
           is_demo: boolean
           login_code: string
+          must_change_password: boolean
           student_id: string
           user_id: string
         }
@@ -3108,6 +3156,7 @@ export type Database = {
           deactivated_by?: string | null
           is_demo?: boolean
           login_code: string
+          must_change_password?: boolean
           student_id: string
           user_id: string
         }
@@ -3120,6 +3169,7 @@ export type Database = {
           deactivated_by?: string | null
           is_demo?: boolean
           login_code?: string
+          must_change_password?: boolean
           student_id?: string
           user_id?: string
         }
@@ -4023,6 +4073,19 @@ export type Database = {
           unpaid_count: number
         }[]
       }
+      authorize_password_reset: {
+        Args: { p_student_id?: string; p_target_user?: string }
+        Returns: {
+          allowed: boolean
+          center_slug: string
+          full_name: string
+          login_code: string
+          phone: string
+          reason: string
+          target_role: string
+          target_user_id: string
+        }[]
+      }
       billing_run_review: {
         Args: { p_run_id: string }
         Returns: {
@@ -4157,6 +4220,11 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_my_password_change: { Args: never; Returns: undefined }
+      complete_password_reset: {
+        Args: { p_actor: string; p_target_user: string }
+        Returns: undefined
+      }
       confirm_billing_run: { Args: { p_run_id: string }; Returns: Json }
       create_student: {
         Args: {
@@ -4243,6 +4311,13 @@ export type Database = {
       }
       my_center_slug: { Args: never; Returns: string }
       my_modules: { Args: never; Returns: string[] }
+      my_password_state: {
+        Args: never
+        Returns: {
+          must_change: boolean
+          session_valid: boolean
+        }[]
+      }
       my_resources: {
         Args: never
         Returns: {
@@ -4486,6 +4561,18 @@ export type Database = {
           students_count: number
           subscription_started_at: string
           users_count: number
+        }[]
+      }
+      platform_center_admins: {
+        Args: { p_center_id: string }
+        Returns: {
+          active: boolean
+          email: string
+          full_name: string
+          last_reset_at: string
+          last_sign_in_at: string
+          phone: string
+          user_id: string
         }[]
       }
       platform_center_events: {
@@ -5069,6 +5156,13 @@ export type Database = {
       invoice_status: "pending" | "paid" | "overdue"
       module_source: "plan" | "manual" | "trial"
       notification_channel: "whatsapp" | "phone_call" | "in_person"
+      password_event_type:
+        | "reset_by_admin"
+        | "reset_by_assistant"
+        | "reset_by_super_admin"
+        | "self_change"
+        | "forced_change_completed"
+        | "denied"
       pay_mode: "fixed_salary" | "commission"
       payment_method: "cash" | "bank_transfer" | "card" | "cheque"
       payment_reminder_status: "prepared" | "sent" | "failed" | "no_phone"
@@ -5233,6 +5327,14 @@ export const Constants = {
       invoice_status: ["pending", "paid", "overdue"],
       module_source: ["plan", "manual", "trial"],
       notification_channel: ["whatsapp", "phone_call", "in_person"],
+      password_event_type: [
+        "reset_by_admin",
+        "reset_by_assistant",
+        "reset_by_super_admin",
+        "self_change",
+        "forced_change_completed",
+        "denied",
+      ],
       pay_mode: ["fixed_salary", "commission"],
       payment_method: ["cash", "bank_transfer", "card", "cheque"],
       payment_reminder_status: ["prepared", "sent", "failed", "no_phone"],

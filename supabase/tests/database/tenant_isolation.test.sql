@@ -142,6 +142,10 @@ from public.subjects s where s.center_id = 'cb000000-0000-4000-8000-000000000001
 insert into public.resource_views (student_id, resource_id, center_id)
 select '4b000000-0000-4000-8000-000000000001', r.id, r.center_id
 from public.learning_resources r where r.center_id = 'cb000000-0000-4000-8000-000000000001' limit 1;
+-- Réinitialisation d'un mot de passe dans B (journal lisible par l'admin de B seulement).
+insert into public.password_events (center_id, actor_id, actor_role, target_user_id, target_role, event_type)
+values ('cb000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000a', 'admin',
+        'b0000000-0000-4000-8000-00000000000c', 'teacher', 'reset_by_admin');
 -- Ancienne adresse de B (historique, lisible par le super-admin seulement).
 insert into public.center_slug_history (old_slug, center_id) values ('iso-b-ancienne', 'cb000000-0000-4000-8000-000000000001');
 -- Saisie de l'accueil B en désaccord avec le professeur B (historique et désaccord du centre B).

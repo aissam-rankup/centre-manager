@@ -1,4 +1,4 @@
-import { ArrowLeft, Mail, Phone } from "lucide-react";
+import { ArrowLeft, KeyRound, Mail, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import { CenterActions, type CenterActionsData, ResendInvitationButton } from "@/components/platform/center-actions";
 import { CenterAddressLinks, ChangeSlugDialog } from "@/components/platform/center-address";
+import { ResetPasswordDialog } from "@/components/password/reset-password-dialog";
 import { BrandingDialog } from "@/components/branding/branding-dialog";
 import { CenterModules } from "@/components/platform/center-modules";
 import { CenterStatusBadge } from "@/components/platform/center-status-badge";
@@ -19,6 +20,7 @@ import { LABELS, labelsFor } from "@/lib/constants/labels";
 import {
   getCenterTypes,
   getPlanOptions,
+  getPlatformCenterAdmins,
   getPlatformCenterFile,
   type PlatformCenterUser,
   type PlatformEvent,
@@ -141,13 +143,14 @@ function eventReason(event: PlatformEvent): string | null {
 export default async function PlatformCenterPage({ params }: PageProps<"/platform/centres/[id]">) {
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const [file, types, brandingSettings, plans, addressPattern, slugHistory] = await Promise.all([
+  const [file, types, brandingSettings, plans, addressPattern, slugHistory, admins] = await Promise.all([
     getPlatformCenterFile(id),
     getCenterTypes(),
     getBrandingSettings(id),
     getPlanOptions(),
     centerAddressPattern(),
     centerSlugHistory(id),
+    getPlatformCenterAdmins(id),
   ]);
   if (!file) notFound();
   const { center, users, events, payments, modules } = file;
@@ -368,6 +371,42 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
           )}
         </SectionCard>
       </div>
+
+      <SectionCard title={admins.length > 1 ? LABELS.passwords.admins.titlePlural : LABELS.passwords.admins.title}>
+        {admins.length === 0 ? (
+          <p className="text-muted-foreground">{LABELS.passwords.admins.none}</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-divider">
+            {admins.map((admin) => (
+              <li key={admin.user_id} className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 flex-col">
+                  <span className="font-medium text-heading">{admin.full_name}</span>
+                  <span className="text-caption break-all text-muted-foreground">{admin.email}</span>
+                  <span className="text-caption text-muted-foreground">
+                    {LABELS.passwords.admins.lastSignIn} :{" "}
+                    {admin.last_sign_in_at ? formatDateTime(admin.last_sign_in_at) : LABELS.passwords.admins.never}
+                  </span>
+                  {admin.last_reset_at ? (
+                    <span className="text-caption text-muted-foreground">{LABELS.passwords.lastResetByYou(formatDateTime(admin.last_reset_at))}</span>
+                  ) : null}
+                </div>
+                {admin.active && center.status !== "cancelled" ? (
+                  <ResetPasswordDialog
+                    target={{ userId: admin.user_id }}
+                    name={admin.full_name}
+                    trigger={
+                      <Button type="button" variant="outline" className="self-start sm:self-center">
+                        <KeyRound aria-hidden />
+                        {LABELS.passwords.resetAdmin}
+                      </Button>
+                    }
+                  />
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
 
       <SectionCard title={L.usersTitle}>
         {users.length === 0 ? (
