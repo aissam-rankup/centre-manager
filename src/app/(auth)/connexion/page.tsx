@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { NEXT_PARAM, ROUTES, safeNextPath } from "@/lib/auth/routes";
 import { LABELS } from "@/lib/constants/labels";
 
+import { AuthLinkRedirect } from "./auth-link-redirect";
 import { LoginForm } from "./login-form";
 
 const L = LABELS.auth.login;
@@ -18,6 +19,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
 
   return (
     <Card className="w-full max-w-md">
+      <AuthLinkRedirect />
       <CardContent className="flex flex-col gap-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-title text-primary dark:text-foreground">{L.title}</h1>
