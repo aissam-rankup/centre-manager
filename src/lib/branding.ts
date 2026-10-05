@@ -1,14 +1,14 @@
 import "server-only";
 
 import type { Metadata } from "next";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { cache } from "react";
 
 import { getAuthState } from "@/lib/auth/session";
 import { type BrandingData, parseBranding } from "@/lib/branding-data";
 import { LABELS } from "@/lib/constants/labels";
 import { publicEnv } from "@/lib/env";
-import { CENTER_COOKIE, resolveHost, SLUG_PATTERN } from "@/lib/hosts";
+import { CENTER_HEADER, decodeCenter } from "@/lib/center-host";
 import { createClient } from "@/lib/supabase/server";
 
 /** Marque affichée : celle du centre en marque blanche, sinon celle de la plateforme. */
@@ -43,22 +43,22 @@ export function brandFrom(branding: BrandingData | null, centerName: string): Br
   };
 }
 
-/** Centre désigné par l'adresse (sous-domaine ou domaine personnalisé vérifié), sans session. */
-export const getHostCenter = cache(async (): Promise<{ centerId: string; name: string; brand: Brand; viaCookie: boolean } | null> => {
-  let target = resolveHost((await headers()).get("host"));
-  const viaCookie = target.kind === "platform";
-  if (target.kind === "platform") {
-    // Domaine unique : centre choisi par « /connexion?centre=<adresse> ».
-    const remembered = (await cookies()).get(CENTER_COOKIE)?.value;
-    if (!remembered || !SLUG_PATTERN.test(remembered)) return null;
-    target = { kind: "slug", slug: remembered };
-  }
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .rpc("center_for_host", target.kind === "slug" ? { p_slug: target.slug } : { p_domain: target.domain })
-    .maybeSingle();
-  if (error || !data) return null;
-  return { centerId: data.center_id, name: data.name, brand: brandFrom(parseBranding(data.branding), data.name), viaCookie };
+export type CurrentCenter = { centerId: string; slug: string; name: string; brand: Brand };
+
+/**
+ * Centre désigné par l'adresse (sous-domaine ou domaine personnalisé vérifié),
+ * sans session : résolu par le proxy (en-tête interne, jamais celui du client).
+ * Affichage et orientation seulement : n'autorise rien.
+ */
+export const getCurrentCenter = cache(async (): Promise<CurrentCenter | null> => {
+  const center = decodeCenter((await headers()).get(CENTER_HEADER));
+  if (!center) return null;
+  return {
+    centerId: center.id,
+    slug: center.slug,
+    name: center.name,
+    brand: brandFrom(parseBranding(center.branding), center.name),
+  };
 });
 
 /** Marque des espaces d'un centre : celle du compte connecté (ou du centre consulté en support). */
@@ -71,7 +71,7 @@ export const getSessionBrand = cache(async (): Promise<Brand> => {
 
 /** Marque des pages publiques (connexion, invitation) : celle de l'adresse, sinon de la session. */
 export const getPublicBrand = cache(async (): Promise<Brand> => {
-  const host = await getHostCenter();
+  const host = await getCurrentCenter();
   if (host) return host.brand;
   return getSessionBrand();
 });
@@ -82,7 +82,7 @@ export const getPublicBrand = cache(async (): Promise<Brand> => {
  * à la marque de la plateforme.
  */
 export const getDocumentBrand = cache(async (): Promise<Brand> => {
-  const host = await getHostCenter();
+  const host = await getCurrentCenter();
   if (host) return host.brand;
   const state = await getAuthState();
   if (state.status === "student") return brandFrom(state.student.branding, state.student.centerName);
@@ -146,9 +146,9 @@ export function brandMetadata(brand: Brand): Metadata {
   };
 }
 
-/** Cible DNS des domaines personnalisés : PLATFORM_CNAME_TARGET, sinon le domaine racine ou l'hôte de l'application. */
+/** Cible DNS des domaines personnalisés : PLATFORM_CNAME_TARGET, sinon ROOT_DOMAIN ou l'hôte de l'application. */
 export function dnsTarget(): string | null {
-  const explicit = process.env.PLATFORM_CNAME_TARGET ?? process.env.PLATFORM_ROOT_DOMAIN;
+  const explicit = process.env.PLATFORM_CNAME_TARGET ?? process.env.ROOT_DOMAIN?.replace(/:\d+$/, "");
   if (explicit) return explicit.toLowerCase().replace(/\.$/, "");
   return publicEnv.NEXT_PUBLIC_APP_URL ? new URL(publicEnv.NEXT_PUBLIC_APP_URL).hostname : null;
 }

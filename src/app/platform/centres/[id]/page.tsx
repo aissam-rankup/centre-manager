@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { CenterActions, type CenterActionsData, ResendInvitationButton } from "@/components/platform/center-actions";
+import { CenterAddressLinks, ChangeSlugDialog } from "@/components/platform/center-address";
 import { BrandingDialog } from "@/components/branding/branding-dialog";
 import { CenterModules } from "@/components/platform/center-modules";
 import { CenterStatusBadge } from "@/components/platform/center-status-badge";
@@ -24,7 +25,8 @@ import {
   type PlatformPayment,
 } from "@/lib/data/platform";
 import { formatDate, formatDateTime, toISODate, today } from "@/lib/format";
-import { appOrigin, dnsTarget, getBrandingSettings } from "@/lib/branding";
+import { dnsTarget, getBrandingSettings } from "@/lib/branding";
+import { centerAddressPattern, centerSlugHistory, centerUrl } from "@/lib/center-url";
 import { formatPhone, toTelHref } from "@/lib/phone";
 import { customTermsSchema, EMPTY_TERMS } from "@/lib/validation/platform";
 
@@ -86,9 +88,9 @@ const userColumns = (centerId: string, canInvite: boolean): readonly DataTableCo
   },
 ];
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <div className="flex min-w-0 flex-col gap-0.5">
+    <div className={`flex min-w-0 flex-col gap-0.5 ${className ?? ""}`}>
       <dt className="text-caption text-muted-foreground">{label}</dt>
       <dd className="min-w-0 font-medium break-words text-heading">{children}</dd>
     </div>
@@ -139,14 +141,17 @@ function eventReason(event: PlatformEvent): string | null {
 export default async function PlatformCenterPage({ params }: PageProps<"/platform/centres/[id]">) {
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const [file, types, brandingSettings, plans] = await Promise.all([
+  const [file, types, brandingSettings, plans, addressPattern, slugHistory] = await Promise.all([
     getPlatformCenterFile(id),
     getCenterTypes(),
     getBrandingSettings(id),
     getPlanOptions(),
+    centerAddressPattern(),
+    centerSlugHistory(id),
   ]);
   if (!file) notFound();
   const { center, users, events, payments, modules } = file;
+  const address = await centerUrl(center.slug, "");
   const moduleNames = Object.fromEntries(modules.map((module) => [module.module_key, module.name]));
   const whiteLabel = modules.some((module) => module.module_key === "white_label" && module.is_enabled);
   const tel = center.owner_contact_phone ? toTelHref(center.owner_contact_phone) : null;
@@ -194,9 +199,20 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title={L.identity}>
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label={L.slug}>{center.slug}</Field>
-            <Field label={L.loginUrl}>
-              <span className="break-all font-normal">{`${await appOrigin()}${ROUTES.login}?centre=${center.slug}`}</span>
+            <Field label={L.slug} className="sm:col-span-2">
+              <div className="flex flex-col gap-2">
+                <CenterAddressLinks url={address} />
+                {center.status !== "cancelled" ? (
+                  <div>
+                    <ChangeSlugDialog centerId={center.center_id} slug={center.slug} pattern={addressPattern} />
+                  </div>
+                ) : null}
+                {slugHistory.length > 0 ? (
+                  <p className="text-caption font-normal text-muted-foreground">
+                    {L.formerSlugs(slugHistory.map((entry) => entry.slug).join(", "))}
+                  </p>
+                ) : null}
+              </div>
             </Field>
             <Field label={L.type}>{center.center_type_label}</Field>
             <Field label={L.createdAt}>{formatDate(center.created_at)}</Field>

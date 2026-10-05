@@ -1,9 +1,11 @@
 import "server-only";
 
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
 import { type CenterRole, ROLE_HOME, ROUTES, type UserRole } from "@/lib/auth/routes";
+import { CENTER_HEADER, decodeCenter } from "@/lib/center-host";
 import type { Database } from "@/lib/supabase/database.types";
 import { type BrandingData, parseBranding } from "@/lib/branding-data";
 import { type ModuleKey, parseModules } from "@/lib/modules";
@@ -166,7 +168,18 @@ export async function requireRole(role: CenterRole | readonly CenterRole[]): Pro
   if (state.profile.blocked && !state.profile.support) redirect(ROUTES.suspended);
   const { centerId } = state.profile;
   if (!centerId) redirect(ROUTES.inactive);
+  if (!state.profile.support) await requireOwnCenterHost(centerId, ROUTES.login);
   return { ...state.profile, centerId };
+}
+
+/**
+ * Adresse d'un autre centre que celui du compte : écran de connexion (le proxy
+ * y ferme la session et donne l'adresse du bon centre). Double du contrôle du
+ * proxy, sur chaque page protégée ; l'adresse n'autorise jamais rien.
+ */
+async function requireOwnCenterHost(accountCenterId: string | null, loginPath: string): Promise<void> {
+  const current = decodeCenter((await headers()).get(CENTER_HEADER));
+  if (current && current.id !== accountCenterId) redirect(loginPath);
 }
 
 /**
@@ -206,5 +219,6 @@ export async function requireStudent(): Promise<StudentSession> {
   if (state.status === "no-profile") redirect(ROUTES.inactive);
   if (state.status === "authenticated") redirect(state.profile.active ? ROLE_HOME[state.profile.role] : ROUTES.inactive);
   if (!state.student.allowed) redirect(`${ROUTES.student.login}?acces=coupe`);
+  await requireOwnCenterHost(state.student.centerId, ROUTES.student.login);
   return state.student;
 }

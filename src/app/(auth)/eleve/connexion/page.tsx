@@ -3,9 +3,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { CenterNotice } from "@/components/auth/center-notice";
 import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/lib/auth/routes";
 import { getAuthState } from "@/lib/auth/session";
+import { getCurrentCenter } from "@/lib/branding";
 import { LABELS } from "@/lib/constants/labels";
 
 import { StudentLoginForm } from "./student-login-form";
@@ -19,7 +21,9 @@ export default async function StudentLoginPage({ searchParams }: PageProps<"/ele
   const state = await getAuthState();
   // Élève déjà connecté avec un accès valide : son espace.
   if (state.status === "student" && state.student.allowed) redirect(ROUTES.student.home);
-  const { acces } = await searchParams;
+  const params = await searchParams;
+  const { acces } = params;
+  const current = await getCurrentCenter();
   const disabled = acces === "coupe" || (state.status === "student" && !state.student.allowed);
 
   return (
@@ -35,6 +39,7 @@ export default async function StudentLoginPage({ searchParams }: PageProps<"/ele
             {L.disabled}
           </p>
         ) : null}
+        <CenterNotice params={params} currentSlug={current?.slug ?? null} />
         <StudentLoginForm />
         <Link href={ROUTES.login} className="text-caption text-muted-foreground underline-offset-4 hover:underline">
           {L.staffLink}

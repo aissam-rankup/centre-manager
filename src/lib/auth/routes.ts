@@ -11,6 +11,8 @@ export const ROUTES = {
   welcome: "/bienvenue",
   /** Centre suspendu ou résilié : écran explicatif et contact. */
   suspended: "/acces-suspendu",
+  /** Sous-domaine sans centre : page sobre avec un lien vers le domaine racine. */
+  centerNotFound: "/centre-introuvable",
   platform: {
     home: "/platform",
     centers: "/platform/centres",
@@ -79,6 +81,13 @@ export const ROLE_HOME: Record<UserRole, string> = {
 
 /** Paramètre de requête portant la page demandée avant la connexion. */
 export const NEXT_PARAM = "suivant";
+
+/** Écran de connexion du centre après transfert depuis le domaine racine (se reconnecter une fois). */
+export const TRANSFER_PARAM = "transfert";
+
+/** Compte refusé sur l'adresse d'un autre centre : adresse (slug) de son centre, « plateforme » pour la console. */
+export const OTHER_CENTER_PARAM = "centre-du-compte";
+export const PLATFORM_ACCOUNT = "plateforme";
 
 /** Rôle propriétaire d'un chemin, ou null si le chemin n'appartient à aucun espace. */
 export function roleForPath(pathname: string): UserRole | null {

@@ -1023,6 +1023,32 @@ export type Database = {
           },
         ]
       }
+      center_slug_history: {
+        Row: {
+          center_id: string
+          changed_at: string
+          old_slug: string
+        }
+        Insert: {
+          center_id: string
+          changed_at?: string
+          old_slug: string
+        }
+        Update: {
+          center_id?: string
+          changed_at?: string
+          old_slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_slug_history_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       center_types: {
         Row: {
           code: string
@@ -4115,6 +4141,7 @@ export type Database = {
         Returns: {
           branding: Json
           center_id: string
+          moved: boolean
           name: string
           slug: string
           white_label: boolean
@@ -4214,6 +4241,7 @@ export type Database = {
           vocabulary: Json
         }[]
       }
+      my_center_slug: { Args: never; Returns: string }
       my_modules: { Args: never; Returns: string[] }
       my_resources: {
         Args: never
@@ -4485,6 +4513,13 @@ export type Database = {
           updated_at: string
         }[]
       }
+      platform_center_slug_history: {
+        Args: { p_center_id: string }
+        Returns: {
+          changed_at: string
+          old_slug: string
+        }[]
+      }
       platform_center_users: {
         Args: { p_center_id: string }
         Returns: {
@@ -4517,6 +4552,10 @@ export type Database = {
           status: Database["public"]["Enums"]["center_status"]
           students_count: number
         }[]
+      }
+      platform_change_center_slug: {
+        Args: { p_center_id: string; p_slug: string }
+        Returns: undefined
       }
       platform_create_center: {
         Args: {
@@ -4670,6 +4709,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      platform_slug_availability: {
+        Args: { p_center_id?: string; p_slug: string }
+        Returns: string
+      }
       platform_start_support: {
         Args: { p_center_id: string; p_reason: string }
         Returns: string
@@ -4710,7 +4753,6 @@ export type Database = {
           p_owner_contact_email: string
           p_owner_contact_name: string
           p_owner_contact_phone: string
-          p_slug: string
         }
         Returns: undefined
       }

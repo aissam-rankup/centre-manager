@@ -1,7 +1,7 @@
 import "server-only";
 
 import { ROUTES } from "@/lib/auth/routes";
-import { appOrigin } from "@/lib/branding";
+import { myCenterUrl } from "@/lib/center-url";
 import { generateLoginCode, generateStudentPassword, studentAuthEmail } from "@/lib/student-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -14,8 +14,9 @@ type PostgresLikeError = { code?: string; message?: string; hint?: string | null
 /** Durée de blocage d'un compte Auth désactivé (100 ans) ; « none » le débloque. */
 const BANNED = "876000h";
 
+/** Écran de connexion élève, à l'adresse du centre (lien transmis au responsable). */
 export async function studentLoginUrl(): Promise<string> {
-  return `${await appOrigin()}${ROUTES.student.login}`;
+  return myCenterUrl(ROUTES.student.login);
 }
 
 /**

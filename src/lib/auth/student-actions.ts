@@ -1,19 +1,18 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { centerLoginRedirect } from "@/lib/auth/center-login";
 import { ROUTES } from "@/lib/auth/routes";
-import { getHostCenter } from "@/lib/branding";
 import { LABELS } from "@/lib/constants/labels";
-import { CENTER_COOKIE } from "@/lib/hosts";
 import { LOGIN_CODE_PATTERN, normalizeLoginCode, studentAuthEmail } from "@/lib/student-codes";
 import { createClient } from "@/lib/supabase/server";
 
 const L = LABELS.studentLogin;
 
-export type StudentLoginResult = { error: string };
+/** Voir LoginResult : message, ou adresse à ouvrir (navigation complète). */
+export type StudentLoginResult = { error: string } | { location: string };
 
 const studentLoginSchema = z.object({
   code: z.string().transform(normalizeLoginCode).pipe(z.string().regex(LOGIN_CODE_PATTERN, L.codeRequired)),
@@ -23,7 +22,8 @@ const studentLoginSchema = z.object({
 /**
  * Connexion d'un élève par son code et son mot de passe. Refusée si l'accès
  * est désactivé, si la plateforme pédagogique n'est plus dans l'offre du
- * centre, ou si le code appartient à un autre centre que l'adresse visitée.
+ * centre, ou si le code appartient à un autre centre que l'adresse visitée
+ * (déconnexion et lien vers l'adresse de son centre).
  */
 export async function signInStudent(input: unknown): Promise<StudentLoginResult> {
   const parsed = studentLoginSchema.safeParse(input);
@@ -47,17 +47,13 @@ export async function signInStudent(input: unknown): Promise<StudentLoginResult>
     return { error: access ? L.disabled : L.invalid };
   }
 
-  const hostCenter = await getHostCenter();
-  if (hostCenter && access.center_id !== hostCenter.centerId) {
-    if (hostCenter.viaCookie) {
-      (await cookies()).delete(CENTER_COOKIE);
-    } else {
-      await supabase.auth.signOut();
-      return { error: L.wrongCenter };
-    }
-  }
-
-  redirect(ROUTES.student.home);
+  const elsewhere = await centerLoginRedirect(supabase, {
+    accountCenterId: access.center_id,
+    superAdmin: false,
+    loginPath: ROUTES.student.login,
+    next: null,
+  });
+  return { location: elsewhere ?? ROUTES.student.home };
 }
 
 export async function signOutStudent(): Promise<void> {

@@ -340,7 +340,6 @@ function DetailsDialog({ data, types }: { data: CenterActionsData; types: Center
   const defaults: CenterDetailsInput = {
     centerId: data.centerId,
     name: data.name,
-    slug: data.slug,
     ownerName: data.ownerName,
     ownerPhone: data.ownerPhone,
     ownerEmail: data.ownerEmail,
@@ -369,19 +368,10 @@ function DetailsDialog({ data, types }: { data: CenterActionsData; types: Center
         if (next) form.reset(defaults);
       }}
       pending={pending}
-      onSubmit={() =>
-        void form.handleSubmit((values) =>
-          run(values, (fieldErrors) => {
-            if (fieldErrors.slug) form.setError("slug", { message: fieldErrors.slug });
-          }),
-        )()
-      }
+      onSubmit={() => void form.handleSubmit((values) => run(values))()}
     >
       <FormField id="details-name" label={N.name} error={errors.name?.message}>
         <Input autoComplete="off" {...form.register("name")} />
-      </FormField>
-      <FormField id="details-slug" label={N.slug} hint={N.slugHint} error={errors.slug?.message}>
-        <Input autoComplete="off" autoCapitalize="none" {...form.register("slug")} />
       </FormField>
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField id="details-owner" label={N.ownerName} error={errors.ownerName?.message}>

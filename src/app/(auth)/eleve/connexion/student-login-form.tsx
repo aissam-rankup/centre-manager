@@ -24,7 +24,8 @@ export function StudentLoginForm() {
     startTransition(async () => {
       // En cas de succès, la Server Action redirige : aucun retour.
       const result = await signInStudent({ code, password });
-      if (result?.error) setError(result.error);
+      if ("location" in result) window.location.assign(result.location);
+      else setError(result.error);
     });
   };
 

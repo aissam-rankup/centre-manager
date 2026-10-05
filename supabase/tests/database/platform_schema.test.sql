@@ -33,7 +33,7 @@ select is((select count(*)::int from public.platform_events
   1, 'création du centre journalisée');
 select throws_ok(
   $$insert into public.centers (name, slug) values ('X', 'platform')$$,
-  '23514', null, 'slug réservé refusé');
+  '22023', 'Cette adresse est réservée.', 'slug réservé refusé');
 select is(jsonb_array_length(to_jsonb(array(select code from public.center_types))), 6, 'six types d''établissement');
 select throws_ok(
   $$update public.centers set custom_terms = '{"learner": {"singular": "Élève"}}' where id = 'c8000000-0000-4000-8000-000000000001'$$,

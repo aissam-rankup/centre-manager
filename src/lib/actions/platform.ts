@@ -1,19 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 
 import { type ActionResult, describeDatabaseError, failure, success } from "@/lib/actions/result";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireSuperAdmin } from "@/lib/auth/session";
+import { RESERVED_SLUGS } from "@/lib/center-host";
+import { centerUrl, centerUrlById } from "@/lib/center-url";
 import { LABELS } from "@/lib/constants/labels";
-import { publicEnv } from "@/lib/env";
 import { formatPhone } from "@/lib/phone";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   centerDetailsSchema,
   centerModuleSchema,
+  centerSlugSchema,
   centerPricingSchema,
   centerStatusSchema,
   dueDateSchema,
@@ -22,6 +23,7 @@ import {
   planSchema,
   platformSettingsSchema,
   resendInvitationSchema,
+  slugSchema,
   subscriptionPaymentSchema,
   termsToSave,
 } from "@/lib/validation/platform";
@@ -50,10 +52,9 @@ function revalidatePlatform(centerId?: string) {
   if (centerId) revalidatePath(`${ROUTES.platform.centers}/${centerId}`);
 }
 
-/** Page d'accueil des invités (choix du mot de passe), sur l'hôte courant. */
-async function welcomeUrl(): Promise<string> {
-  const origin = (await headers()).get("origin") ?? publicEnv.NEXT_PUBLIC_APP_URL ?? "";
-  return `${origin}${ROUTES.welcome}`;
+/** Page d'accueil des invités (choix du mot de passe), à l'adresse du centre. */
+function welcomeUrl(slug: string): Promise<string> {
+  return centerUrl(slug, ROUTES.welcome);
 }
 
 const phoneOrNull = (value: string) => (value ? formatPhone(value) : null);
@@ -71,7 +72,7 @@ export async function createCenter(input: unknown): Promise<ActionResult<{ cente
   //    Si le courriel ne peut pas partir (limite d'envoi du service de courriel), le
   //    compte est créé avec un lien d'invitation que le super-admin transmet lui-même.
   const service = createAdminClient();
-  const redirectTo = await welcomeUrl();
+  const redirectTo = await welcomeUrl(values.slug);
   const metadata = { full_name: values.adminName };
   let userId: string;
   let inviteLink: string | null = null;
@@ -140,7 +141,6 @@ export async function updateCenterDetails(input: unknown): Promise<ActionResult>
   const { error } = await supabase.rpc("platform_update_center", {
     p_center_id: v.centerId,
     p_name: v.name,
-    p_slug: v.slug,
     p_center_type: v.centerType,
     p_custom_terms: termsToSave(v.centerType, v.customTerms),
     p_owner_contact_name: v.ownerName,
@@ -148,11 +148,46 @@ export async function updateCenterDetails(input: unknown): Promise<ActionResult>
     p_owner_contact_email: v.ownerEmail,
     p_notes: v.notes,
   });
+  if (error) return failure(describeDatabaseError(error));
+  revalidatePlatform(v.centerId);
+  return success();
+}
+
+const SLUG_AVAILABILITY = ["available", "invalid", "reserved", "taken", "current"] as const;
+export type SlugAvailability = (typeof SLUG_AVAILABILITY)[number];
+
+/** Disponibilité d'une adresse (saisie de la console, vérifiée en direct). */
+export async function checkSlugAvailability(slug: string, centerId: string | null): Promise<SlugAvailability> {
+  const parsed = slugSchema.safeParse(slug);
+  if (!parsed.success) {
+    return RESERVED_SLUGS.includes(slug.trim().toLowerCase()) ? "reserved" : "invalid";
+  }
+  const supabase = await platform();
+  const { data, error } = await supabase.rpc("platform_slug_availability", {
+    p_slug: parsed.data,
+    p_center_id: centerId ?? undefined,
+  });
+  if (error) return "invalid";
+  return SLUG_AVAILABILITY.find((value) => value === data) ?? "invalid";
+}
+
+/**
+ * Nouvelle adresse d'un centre (super-admin, après confirmation). L'ancienne
+ * est gardée dans l'historique et redirige vers la nouvelle.
+ */
+export async function changeCenterSlug(input: unknown): Promise<ActionResult> {
+  const parsed = centerSlugSchema.safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
+  const supabase = await platform();
+  const { error } = await supabase.rpc("platform_change_center_slug", {
+    p_center_id: parsed.data.centerId,
+    p_slug: parsed.data.slug,
+  });
   if (error) {
     if (error.code === "23505") return failure(E.slugTaken, { slug: E.slugTaken });
     return failure(describeDatabaseError(error));
   }
-  revalidatePlatform(v.centerId);
+  revalidatePlatform(parsed.data.centerId);
   return success();
 }
 
@@ -287,7 +322,7 @@ export async function resendInvitation(input: unknown): Promise<ActionResult<{ p
     user_metadata: { ...user.user.user_metadata, brand_name: brandName },
   });
 
-  const redirectTo = await welcomeUrl();
+  const redirectTo = await centerUrlById(centerId, ROUTES.welcome);
   const { error } = passwordLink
     ? await service.auth.resetPasswordForEmail(user.user.email, { redirectTo })
     : await service.auth.admin.inviteUserByEmail(user.user.email, { redirectTo });

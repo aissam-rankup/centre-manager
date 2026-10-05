@@ -31,9 +31,10 @@ export function LoginForm({ next }: { next: string | null }) {
   const onSubmit = handleSubmit((values) => {
     setServerError(null);
     startTransition(async () => {
-      // En cas de succès, la Server Action redirige : aucun retour.
+      // Succès : navigation complète vers l'espace du rôle (ou l'adresse du centre).
       const result = await signIn(values, next);
-      if (result?.error) setServerError(result.error);
+      if ("location" in result) window.location.assign(result.location);
+      else setServerError(result.error);
     });
   });
 

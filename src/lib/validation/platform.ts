@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { RESERVED_SLUGS, SLUG_PATTERN } from "@/lib/center-host";
 import { LABELS } from "@/lib/constants/labels";
 import { MODULE_KEYS } from "@/lib/modules";
 import { isValidPhone } from "@/lib/phone";
@@ -11,7 +12,6 @@ export const CUSTOM_CENTER_TYPE = "personnalise";
 export const VOCABULARY_KEYS = ["learner", "group", "course", "instructor", "session"] as const;
 export type VocabularyKey = (typeof VOCABULARY_KEYS)[number];
 
-const RESERVED_SLUGS = ["www", "app", "api", "admin", "platform", "plateforme", "mail", "static", "assets"];
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, V.dateInvalid);
 const optionalText = (max: number) => z.string().trim().max(max, V.tooLong);
@@ -33,7 +33,7 @@ export const slugSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, V.slugInvalid)
+  .regex(SLUG_PATTERN, V.slugInvalid)
   .min(2, V.slugInvalid)
   .max(63, V.slugInvalid)
   .refine((value) => !RESERVED_SLUGS.includes(value), V.slugReserved);
@@ -81,7 +81,6 @@ function refineVocabulary(values: { centerType: string; customTerms: CustomTerms
 
 const identityFields = {
   name: z.string().trim().min(1, V.nameRequired).max(120, V.tooLong),
-  slug: slugSchema,
   ownerName: optionalText(120),
   ownerPhone: optionalPhone,
   ownerEmail: optionalEmail,
@@ -101,6 +100,7 @@ const pricingFields = {
 export const newCenterSchema = z
   .object({
     ...identityFields,
+    slug: slugSchema,
     ...vocabularyFields,
     ...pricingFields,
     status: z.enum(["trial", "active"]),
@@ -134,6 +134,10 @@ export const centerDetailsSchema = z
   .object({ centerId, ...identityFields, ...vocabularyFields })
   .superRefine((values, ctx) => refineVocabulary(values, ctx));
 export type CenterDetailsInput = z.infer<typeof centerDetailsSchema>;
+
+/** Changement d'adresse (super-admin, confirmation explicite). */
+export const centerSlugSchema = z.object({ centerId, slug: slugSchema });
+export type CenterSlugInput = z.infer<typeof centerSlugSchema>;
 
 export const centerPricingSchema = z.object({ centerId, ...pricingFields });
 export type CenterPricingInput = z.infer<typeof centerPricingSchema>;

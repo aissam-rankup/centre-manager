@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { FilterChips, type FilterOption } from "@/components/admin/filter-chips";
+import { CenterAddressLinks } from "@/components/platform/center-address";
 import { CenterStatusBadge } from "@/components/platform/center-status-badge";
 import { DaysRemaining } from "@/components/platform/days-remaining";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
@@ -12,6 +13,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/lib/auth/routes";
+import { addressFor } from "@/lib/center-host";
+import { centerAddressPattern } from "@/lib/center-url";
 import { LABELS } from "@/lib/constants/labels";
 import {
   type CenterStatus,
@@ -29,7 +32,7 @@ export const metadata: Metadata = { title: L.title };
 
 const STATUSES: readonly CenterStatus[] = ["trial", "active", "past_due", "suspended", "cancelled"];
 
-const COLUMNS: readonly DataTableColumn<PlatformCenterRow>[] = [
+const columns = (addressPattern: string): readonly DataTableColumn<PlatformCenterRow>[] => [
   {
     id: "name",
     header: L.name,
@@ -42,9 +45,14 @@ const COLUMNS: readonly DataTableColumn<PlatformCenterRow>[] = [
         >
           {row.name}
         </Link>
-        <span className="truncate text-caption text-muted-foreground">{row.slug}</span>
       </span>
     ),
+  },
+  {
+    id: "address",
+    header: L.address,
+    mobile: "wide",
+    cell: (row) => <CenterAddressLinks url={addressFor(addressPattern, row.slug)} compact />,
   },
   { id: "type", header: L.type, cell: (row) => row.center_type_label },
   { id: "plan", header: L.plan, cell: (row) => row.plan_name },
@@ -101,7 +109,12 @@ function normalize(text: string): string {
 
 export default async function PlatformCentersPage({ searchParams }: PageProps<"/platform/centres">) {
   const params = await searchParams;
-  const [centers, types, plans] = await Promise.all([getPlatformCenters(), getCenterTypes(), getPlanOptions()]);
+  const [centers, types, plans, addressPattern] = await Promise.all([
+    getPlatformCenters(),
+    getCenterTypes(),
+    getPlanOptions(),
+    centerAddressPattern(),
+  ]);
 
   const statut = first(params.statut);
   const type = first(params.type);
@@ -176,7 +189,7 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
       {rows.length === 0 ? (
         <EmptyState icon={Building2} title={L.empty} description={L.emptyDescription} />
       ) : (
-        <DataTable columns={COLUMNS} rows={rows} getRowId={(row) => row.center_id} caption={L.caption} />
+        <DataTable columns={columns(addressPattern)} rows={rows} getRowId={(row) => row.center_id} caption={L.caption} />
       )}
     </div>
   );
