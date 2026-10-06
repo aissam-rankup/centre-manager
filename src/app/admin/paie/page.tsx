@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, ShieldAlert, Users } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";

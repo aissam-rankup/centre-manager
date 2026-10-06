@@ -1,6 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { redirect } from "next/navigation";
 
 import { CenterNotice } from "@/components/auth/center-notice";

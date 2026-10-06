@@ -1,6 +1,6 @@
 import { CalendarClock, FileText, FolderOpen, Plus } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { FilterChips } from "@/components/admin/filter-chips";
 import { ResourceActions } from "@/components/resources/resource-actions";

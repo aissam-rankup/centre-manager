@@ -1,7 +1,7 @@
 "use client";
 
 import { MoreVertical } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";

@@ -1,6 +1,6 @@
 import { Building2, Plus, Search } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { FilterChips, type FilterOption } from "@/components/admin/filter-chips";
 import { CenterAddressLinks } from "@/components/platform/center-address";

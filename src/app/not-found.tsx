@@ -1,5 +1,5 @@
 import { SearchX } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { Logo } from "@/components/brand/logo";
 import { EmptyState } from "@/components/shared/empty-state";

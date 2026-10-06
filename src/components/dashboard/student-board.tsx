@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, MessageCircle, MoreVertical, Phone, Search, UserRound, Users } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useMemo, useState } from "react";
 
 import { SectionHeading } from "@/components/dashboard/section-heading";

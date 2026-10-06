@@ -1,6 +1,6 @@
 import { CalendarX2, SearchX, Users } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import type { ReactNode } from "react";
 import { z } from "zod";
 

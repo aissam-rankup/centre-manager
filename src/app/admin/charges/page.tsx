@@ -1,6 +1,6 @@
 import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Minus, ShieldAlert } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { ExpenseIcon } from "@/components/expenses/expense-icon";
 import { EmptyState } from "@/components/shared/empty-state";

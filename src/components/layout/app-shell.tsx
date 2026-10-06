@@ -1,7 +1,7 @@
 "use client";
 
 import { Ellipsis, GraduationCap, LogOut, Search } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useTransition } from "react";
 

@@ -1,6 +1,6 @@
 import { CircleCheckBig, UserCheck } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { AbsenceAlertsBlock } from "@/components/absences/absence-alerts";
 import { ContactButtons } from "@/components/assistant/contact-buttons";

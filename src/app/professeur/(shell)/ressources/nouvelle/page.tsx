@@ -1,6 +1,6 @@
 import { ArrowLeft, FolderOpen } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { ResourceForm } from "@/components/resources/resource-form";
 import { EmptyState } from "@/components/shared/empty-state";

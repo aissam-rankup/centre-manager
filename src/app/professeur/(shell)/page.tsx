@@ -1,6 +1,6 @@
 import { CalendarDays, CalendarOff, ClipboardCheck, PencilLine, Users } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { ProgressRing, ProgressTile } from "@/components/dashboard/progress-tile";
 import { SectionHeading } from "@/components/dashboard/section-heading";

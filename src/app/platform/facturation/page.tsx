@@ -1,6 +1,6 @@
 import { Wallet } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { StatTile, StatTiles } from "@/components/dashboard/stat-tile";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";

@@ -1,6 +1,6 @@
 import { CalendarClock, CircleCheck, Mail, MailCheck, Phone } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { SectionHeading } from "@/components/dashboard/section-heading";
 import { StatTile, StatTiles } from "@/components/dashboard/stat-tile";

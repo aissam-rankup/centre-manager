@@ -1,5 +1,5 @@
 import { CalendarSync, ListChecks, Settings, TriangleAlert, Users, Wallet } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { FilterChips } from "@/components/admin/filter-chips";
 import { CampaignStudents } from "@/components/reenrollment/campaign-students";

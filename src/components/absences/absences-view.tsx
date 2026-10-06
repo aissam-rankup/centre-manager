@@ -1,5 +1,5 @@
 import { CalendarCheck, CalendarDays, UserRound } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { ContactButtons } from "@/components/assistant/contact-buttons";
 import { FollowUpDialog } from "@/components/assistant/follow-up-dialog";

@@ -1,5 +1,5 @@
 import { CalendarCheck, CircleDollarSign, MessageSquareText, Receipt, ReceiptText, StickyNote } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import type { ReactNode } from "react";
 
 import { ContactButtons } from "@/components/assistant/contact-buttons";

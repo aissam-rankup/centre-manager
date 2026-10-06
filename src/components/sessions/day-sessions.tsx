@@ -1,5 +1,5 @@
 import { AlertTriangle, CalendarOff, ChevronLeft, ChevronRight, ClipboardCheck, DoorOpen, UserRound } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { AutoRefresh } from "@/components/sessions/auto-refresh";
 import { EmptyState } from "@/components/shared/empty-state";

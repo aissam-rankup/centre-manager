@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { CenterNotice } from "@/components/auth/center-notice";
 import { Card, CardContent } from "@/components/ui/card";

@@ -1,5 +1,5 @@
 import { ArrowRight, TriangleAlert } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { CollectionChart } from "@/components/admin/collection-chart";
 import { SectionHeading } from "@/components/dashboard/section-heading";

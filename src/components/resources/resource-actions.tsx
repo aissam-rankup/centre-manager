@@ -1,7 +1,7 @@
 "use client";
 
 import { Eye, EyeOff, LoaderCircle, Pencil, Trash2 } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useTransition } from "react";
 import { toast } from "sonner";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight, LoaderCircle, Search, SearchX, Users, X } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";

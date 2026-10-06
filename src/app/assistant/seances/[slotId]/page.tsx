@@ -1,6 +1,6 @@
 import { ArrowLeft, SearchX, Users } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { z } from "zod";
 
 import { SessionRosterForm } from "@/components/sessions/session-roster-form";

@@ -1,7 +1,7 @@
 "use client";
 
 import { Camera, ChevronDown, KeyRound, LogOut, Moon, Sun } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useTheme } from "next-themes";
 import { useState, useSyncExternalStore, useTransition } from "react";
 

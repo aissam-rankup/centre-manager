@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import type { ReactNode } from "react";
 
 import { LABELS } from "@/lib/constants/labels";

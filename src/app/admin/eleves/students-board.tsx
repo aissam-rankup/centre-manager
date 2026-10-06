@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, SearchX } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useDeferredValue, useMemo, useState } from "react";
 
 import { DiscountBadges } from "@/components/discounts/discount-badge";

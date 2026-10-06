@@ -1,7 +1,7 @@
 "use client";
 
 import { Banknote, Bell, BellRing, ClipboardX, MessageSquareText, StickyNote } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";

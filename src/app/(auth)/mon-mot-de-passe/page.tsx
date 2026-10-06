@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { redirect } from "next/navigation";
 
 import { ChangePasswordForm } from "@/components/password/change-password-form";

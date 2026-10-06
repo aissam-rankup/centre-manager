@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircle, TriangleAlert, UserRound } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useId, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 

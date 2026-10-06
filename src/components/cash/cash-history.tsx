@@ -1,5 +1,5 @@
 import { FileDown, TriangleAlert } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { FilterChips } from "@/components/admin/filter-chips";
 import { CorrectCashSessionButton, ValidateCashSessionButton } from "@/components/cash/cash-admin-actions";

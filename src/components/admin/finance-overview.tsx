@@ -1,5 +1,5 @@
 import { ArrowRight, Tag, TrendingDown, TrendingUp } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { FinanceChart } from "@/components/admin/finance-chart";
 import { SectionHeading } from "@/components/dashboard/section-heading";

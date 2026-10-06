@@ -1,7 +1,7 @@
 "use client";
 
 import { BellRing, Check, ChevronDown, LoaderCircle, MessageCircle, Phone, SkipForward, UserCheck, Users } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";

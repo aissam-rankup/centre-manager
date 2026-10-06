@@ -1,5 +1,5 @@
 import { Banknote, Lock, ShieldAlert, TriangleAlert } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { CashMovementDialog, CloseCashForm, OpenCashForm } from "@/components/cash/cash-forms";
 import { EmptyState } from "@/components/shared/empty-state";

@@ -1,6 +1,6 @@
 import { ArrowLeft, KeyRound, Mail, Phone } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 

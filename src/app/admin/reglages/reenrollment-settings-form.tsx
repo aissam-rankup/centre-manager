@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarClock, CalendarSync, LoaderCircle, Save, Sparkles, TriangleAlert } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useState } from "react";
 
 import { useLabels } from "@/lib/i18n/client";
