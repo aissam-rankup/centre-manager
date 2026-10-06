@@ -1,8 +1,8 @@
-<!-- CentroManager — lien de mot de passe (Supabase Auth → Email Templates → Reset password). -->
+<!-- dirassty — lien de mot de passe (Supabase Auth → Email Templates → Reset password). -->
 <div style="font-family: Arial, Helvetica, sans-serif; color: #3b3f5c; max-width: 520px; margin: 0 auto; padding: 24px;">
   <h1 style="font-size: 22px; color: #6c2bf5; margin: 0 0 16px;">Choisir un mot de passe</h1>
   <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
-    Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe et accéder à votre espace {{ if .Data.brand_name }}{{ .Data.brand_name }}{{ else }}CentroManager{{ end }}.
+    Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe et accéder à votre espace {{ if .Data.brand_name }}{{ .Data.brand_name }}{{ else }}dirassty{{ end }}.
   </p>
   <p style="margin: 24px 0;">
     <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery"

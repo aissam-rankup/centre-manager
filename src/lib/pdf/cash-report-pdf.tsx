@@ -6,6 +6,7 @@ import { type CashSessionSummary, toCents } from "@/lib/cash";
 import type { AppLabels } from "@/lib/constants/labels";
 import { formatDate, formatDateTime, formatMAD, formatTime } from "@/lib/format";
 import type { CenterPdfBrand } from "@/lib/pdf/center-brand";
+import { PdfEditedWith, pdfHeaderLogo } from "@/lib/pdf/dirassty";
 import { PAYMENT_METHODS } from "@/lib/receipts";
 
 Font.registerHyphenationCallback((word) => [word]);
@@ -47,7 +48,7 @@ const styles = StyleSheet.create({
 });
 
 function Header({ brand }: { brand: CenterPdfBrand }) {
-  const logo = brand.logoUrl && /\.(png|jpe?g)(\?|$)/i.test(brand.logoUrl) ? brand.logoUrl : null;
+  const logo = pdfHeaderLogo(brand.logoUrl, brand.whiteLabel);
   return (
     <View style={[styles.header, { borderBottomColor: brand.color }]}>
       {/* eslint-disable-next-line jsx-a11y/alt-text -- composant PDF, pas d'image HTML */}
@@ -231,6 +232,7 @@ export function CashReportPdf({
         <Text style={styles.signature}>{P.signature}</Text>
         <View style={styles.footer} fixed>
           <Text>{brand.name}</Text>
+          <PdfEditedWith whiteLabel={brand.whiteLabel} />
           <Text>{P.generatedAt(formatDateTime(generatedAt))}</Text>
         </View>
       </Page>

@@ -27,7 +27,9 @@ function ofMonth(month: string): string {
  */
 const TEXTS = {
   app: {
-    name: "CentroManager",
+    name: "dirassty",
+    tagline: "Gérez votre centre, simplement.",
+    poweredBy: "Propulsé par dirassty",
     metaDescription: "Abonnements, paiements et présences de votre centre de langue ou de soutien scolaire.",
   },
   common: {
@@ -654,7 +656,7 @@ const TEXTS = {
     optional: "facultatif",
   },
   platform: {
-    brand: "CentroManager",
+    brand: "dirassty",
     centerStatus: {
       trial: "Essai",
       active: "Actif",
@@ -790,7 +792,7 @@ const TEXTS = {
       historyEmpty: "Aucun événement.",
       automatic: "Automatique",
       branding: "Marque blanche",
-      brandingStandard: "Module marque blanche non activé : l'interface est aux couleurs de CentroManager.",
+      brandingStandard: "Module marque blanche non activé : l'interface est aux couleurs de dirassty.",
       brandingEmpty: "Aucun réglage de marque enregistré.",
       brandName: "Nom de marque",
       colors: "Couleurs",
@@ -1037,7 +1039,7 @@ const TEXTS = {
       description: "Contact affiché aux centres suspendus pour régulariser leur abonnement.",
       contactTitle: "Contact de régularisation",
       name: "Nom affiché",
-      namePlaceholder: "Service client CentroManager",
+      namePlaceholder: "Service client dirassty",
       phone: "Téléphone",
       email: "Courriel",
       saved: "Réglages enregistrés",
@@ -1249,6 +1251,7 @@ const TEXTS = {
     cancelReason: "Motif",
     cancelledNotice: (number: string, date: string) => `Reçu annulé le ${date} (reçu d'annulation n° ${number}).`,
     thanks: "Merci de votre confiance.",
+    editedWith: "Édité avec dirassty",
     phone: (phone: string) => `Tél. ${phone}`,
     print: "Imprimer",
     printAgain: "Réimprimer",
@@ -2846,7 +2849,7 @@ const TEXTS = {
         copy: "Copier les identifiants",
         copied: "Identifiants copiés",
         credentials: (email: string, password: string) =>
-          `CentroManager\nEmail : ${email}\nMot de passe provisoire : ${password}`,
+          `dirassty\nEmail : ${email}\nMot de passe provisoire : ${password}`,
         another: "Créer un autre professeur",
       },
       noSubjectsTitle: "Aucune matière configurée",
@@ -2866,7 +2869,7 @@ const TEXTS = {
   styleguide: {
     tokens: {
       title: "Charte graphique",
-      description: "Couleurs, typographie et formes de CentroManager.",
+      description: "Couleurs, typographie et formes de dirassty.",
     },
     components: {
       title: "Composants",

@@ -35,6 +35,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       labels,
       brandName: brand.whiteLabel ? brand.name : state.profile.centerName || brand.name,
       logoUrl: brand.logoUrl && /\.(png|jpe?g)$/i.test(brand.logoUrl) ? brand.logoUrl : null,
+      whiteLabel: brand.whiteLabel,
       color: brand.colors.primary ?? "#6c2bf5",
       student: data.student,
       periodLabel: labels.attendanceSheet.periods[filters.period],

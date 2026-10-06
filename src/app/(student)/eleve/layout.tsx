@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { PoweredBy } from "@/components/brand/powered-by";
 import { BrandStyle } from "@/components/layout/brand-style";
 import { Logo } from "@/components/layout/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -32,7 +33,7 @@ export default async function StudentLayout({ children }: { children: ReactNode 
       <BrandStyle brand={brand} />
       <div className="flex min-h-dvh flex-col bg-background">
         <header className="flex h-16 items-center justify-between gap-3 border-b border-divider px-4 md:px-6">
-          <Logo name={brand.name} logoUrl={brand.logoUrl} />
+          <Logo name={brand.name} logoUrl={brand.logoUrl} whiteLabel={brand.whiteLabel} />
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button asChild variant="ghost" aria-label={LABELS.passwords.mine.menu}>
@@ -52,6 +53,11 @@ export default async function StudentLayout({ children }: { children: ReactNode 
         <main id="contenu" className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 md:px-6">
           {children}
         </main>
+        {brand.whiteLabel ? null : (
+          <footer className="flex justify-center px-4 pb-6">
+            <PoweredBy />
+          </footer>
+        )}
       </div>
     </LabelsProvider>
   );

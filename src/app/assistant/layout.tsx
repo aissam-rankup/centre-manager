@@ -33,6 +33,7 @@ export default async function AssistantLayout({ children }: { children: ReactNod
           space="assistant"
           user={toShellUser(profile, LABELS)}
           logoUrl={brand.logoUrl}
+          whiteLabel={brand.whiteLabel}
           reenrollment={reenrollment}
           spaceLabel={LABELS.spaces.assistant}
           todayLabel={formatLongDate(new Date())}

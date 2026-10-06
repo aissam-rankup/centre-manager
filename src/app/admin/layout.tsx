@@ -34,6 +34,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           space="admin"
           user={toShellUser(profile, LABELS)}
           logoUrl={brand.logoUrl}
+          whiteLabel={brand.whiteLabel}
           reenrollment={reenrollment}
           brandingEditable={profile.modules.includes("white_label") && !profile.support}
           spaceLabel={LABELS.spaces.admin}

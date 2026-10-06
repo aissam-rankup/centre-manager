@@ -1,5 +1,5 @@
 -- =====================================================================
--- CentroManager — seed de démonstration (local uniquement)
+-- dirassty — seed de démonstration (local uniquement)
 --
 -- 1 super-admin (console /platform) · 3 centres de types différents ; le centre principal :
 -- 1 centre · 3 niveaux · 6 matières · 1 admin · 1 assistant · 3 professeurs
@@ -564,5 +564,5 @@ $$;
 
 -- Contact affiché sur l'écran de suspension (réglages de la plateforme).
 update public.platform_settings
-set support_name = 'Service client CentroManager', support_phone = '05 22 00 00 00', support_email = 'support@centro.demo'
+set support_name = 'Service client dirassty', support_phone = '05 22 00 00 00', support_email = 'support@centro.demo'
 where id = 1;

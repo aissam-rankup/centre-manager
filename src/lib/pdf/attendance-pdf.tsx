@@ -6,12 +6,15 @@ import type { AttendanceSummary } from "@/lib/attendance";
 import type { AppLabels } from "@/lib/constants/labels";
 import type { AbsenceFollowUp, AttendanceStudent } from "@/lib/data/attendance";
 import { formatDate, formatDateTime, formatDateWithWeekday, formatPercent } from "@/lib/format";
+import { PdfEditedWith, pdfHeaderLogo } from "@/lib/pdf/dirassty";
 
 type AttendancePdfProps = {
   labels: AppLabels;
   brandName: string;
   /** Logo PNG ou JPEG (les autres formats ne sont pas lus par le moteur PDF). */
   logoUrl: string | null;
+  /** Centre en marque blanche : ni symbole ni mention dirassty. */
+  whiteLabel: boolean;
   color: string;
   student: AttendanceStudent;
   periodLabel: string;
@@ -62,6 +65,7 @@ export function AttendancePdf({
   labels,
   brandName,
   logoUrl,
+  whiteLabel,
   color,
   student,
   periodLabel,
@@ -71,6 +75,7 @@ export function AttendancePdf({
   generatedAt,
 }: AttendancePdfProps) {
   const L = labels.attendanceSheet;
+  const logo = pdfHeaderLogo(logoUrl, whiteLabel);
   const rate = summary.rate === null ? L.noRate : formatPercent(summary.rate);
 
   return (
@@ -79,7 +84,7 @@ export function AttendancePdf({
         <View style={styles.header} fixed>
           <View style={styles.brand}>
             {/* eslint-disable-next-line jsx-a11y/alt-text -- composant PDF, pas d'image HTML */}
-            {logoUrl ? <Image src={logoUrl} style={styles.logo} /> : null}
+            {logo ? <Image src={logo} style={styles.logo} /> : null}
             <Text style={[styles.brandName, { color }]}>{brandName}</Text>
           </View>
           <Text style={styles.muted}>{L.pdfGeneratedOn(formatDateTime(generatedAt))}</Text>
@@ -189,6 +194,7 @@ export function AttendancePdf({
           <Text>
             {brandName} · {student.fullName}
           </Text>
+          <PdfEditedWith whiteLabel={whiteLabel} />
           <Text render={({ pageNumber, totalPages }) => L.pdfPage(pageNumber, totalPages)} />
         </View>
       </Page>

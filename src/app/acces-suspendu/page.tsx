@@ -34,7 +34,7 @@ export default async function SuspendedPage() {
     <div className="flex min-h-dvh flex-col bg-background">
       <BrandStyle brand={brand} />
       <header className="flex h-16 items-center px-4 md:px-6">
-        <Logo name={brand.name} logoUrl={brand.logoUrl} />
+        <Logo name={brand.name} logoUrl={brand.logoUrl} whiteLabel={brand.whiteLabel} />
       </header>
       <main className="flex flex-1 items-center justify-center px-4 pb-16">
         {profile.blocked ? (

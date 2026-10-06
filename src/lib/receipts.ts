@@ -33,6 +33,8 @@ export type ReceiptCenter = {
   phone: string | null;
   logoUrl: string | null;
   color: string | null;
+  /** Centre en marque blanche à l'émission : aucune mention dirassty sur le reçu. */
+  whiteLabel: boolean;
 };
 
 export type ReceiptView = {
@@ -88,7 +90,7 @@ export function parseReceiptLines(value: Json): ReceiptLine[] {
 
 /** Coordonnées figées : nom de marque (marque blanche) sinon nom du centre. */
 export function parseReceiptCenter(value: Json): ReceiptCenter {
-  if (!isRecord(value)) return { name: "", address: null, phone: null, logoUrl: null, color: null };
+  if (!isRecord(value)) return { name: "", address: null, phone: null, logoUrl: null, color: null, whiteLabel: false };
   const branding = isRecord(value.branding) ? value.branding : null;
   return {
     name: text(branding?.brand_name) ?? text(value.name) ?? "",
@@ -96,6 +98,7 @@ export function parseReceiptCenter(value: Json): ReceiptCenter {
     phone: text(value.phone) ?? text(branding?.support_phone),
     logoUrl: text(branding?.logo_url),
     color: text(branding?.primary_color),
+    whiteLabel: branding !== null,
   };
 }
 

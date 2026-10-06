@@ -17,6 +17,7 @@ export default async function TeacherShellLayout({ children }: { children: React
       space="teacher"
       user={toShellUser(profile, LABELS)}
       logoUrl={brand.logoUrl}
+      whiteLabel={brand.whiteLabel}
       spaceLabel={LABELS.spaces.teacher}
       todayLabel={formatLongDate(new Date())}
     >

@@ -6,7 +6,7 @@ import { getCenterReceiptSettings } from "@/lib/data/receipts";
 import { getLabels } from "@/lib/i18n/server";
 import { formatPhone } from "@/lib/phone";
 
-export type CenterPdfBrand = { name: string; contact: string | null; logoUrl: string | null; color: string };
+export type CenterPdfBrand = { name: string; contact: string | null; logoUrl: string | null; color: string; whiteLabel: boolean };
 
 /** En-tête des documents du centre : sa marque en marque blanche, sinon son nom ; jamais la plateforme. */
 export async function getCenterPdfBrand(): Promise<CenterPdfBrand> {
@@ -18,5 +18,6 @@ export async function getCenterPdfBrand(): Promise<CenterPdfBrand> {
     contact: contact || null,
     logoUrl: brand.logoUrl,
     color: brand.colors.primary ?? "#6c2bf5",
+    whiteLabel: brand.whiteLabel,
   };
 }

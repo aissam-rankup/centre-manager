@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useTransition } from "react";
 
+import { Logo } from "@/components/brand/logo";
 import { findActiveHref, type NavItem } from "@/components/layout/nav-types";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { type ShellUser, UserMenu } from "@/components/layout/user-menu";
@@ -34,8 +35,10 @@ type AppShellProps = {
   notifications?: { items: NotificationItem[]; fileBase: string };
   /** Bandeaux permanents en haut de page (retard de paiement, mode support). */
   banners?: ReactNode;
-  /** Logo de la marque du centre (marque blanche) ; icône de la plateforme sinon. */
+  /** Logo de la marque du centre (marque blanche) ; symbole dirassty sinon. */
   logoUrl?: string | null;
+  /** Centre en marque blanche : ni symbole dirassty, ni mention « Propulsé par ». */
+  whiteLabel?: boolean;
   /** Entrée « Marque » (administrateur d'un centre en marque blanche). */
   brandingEditable?: boolean;
   /** Réinscription automatique activée (ou campagnes existantes) : entrée « Réinscriptions ». */
@@ -57,6 +60,7 @@ export function AppShell({
   notifications,
   banners,
   logoUrl = null,
+  whiteLabel = false,
   brandingEditable = false,
   reenrollment = false,
   children,
@@ -79,7 +83,16 @@ export function AppShell({
       </a>
 
       <div className="flex min-h-dvh bg-background md:h-[calc(100dvh-32px)] md:min-h-0 md:overflow-hidden md:rounded-4xl md:shadow-shell lg:h-[calc(100dvh-64px)]">
-        <Sidebar items={items} activeHref={activeHref} home={home} label={spaceLabel} withSignOut={Boolean(user)} logoUrl={logoUrl} />
+        <Sidebar
+          items={items}
+          activeHref={activeHref}
+          home={home}
+          label={spaceLabel}
+          withSignOut={Boolean(user)}
+          logoUrl={logoUrl}
+          whiteLabel={whiteLabel}
+          poweredBy={Boolean(user) && !whiteLabel && space !== "platform"}
+        />
 
         <div className="flex min-w-0 flex-1 flex-col">
           {banners}
@@ -147,9 +160,12 @@ type SidebarProps = {
   label?: string;
   withSignOut: boolean;
   logoUrl: string | null;
+  whiteLabel: boolean;
+  /** Mention « Propulsé par dirassty » en bas de la barre. */
+  poweredBy: boolean;
 };
 
-function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl }: SidebarProps) {
+function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl, whiteLabel, poweredBy }: SidebarProps) {
   const LABELS = useLabels();
   const [pending, startTransition] = useTransition();
 
@@ -163,8 +179,10 @@ function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl }: Sideb
           // Logo du client (marque blanche) : image externe du bucket public, taille fixe.
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt="" className="size-10 rounded-lg bg-white object-contain p-1" />
-        ) : (
+        ) : whiteLabel ? (
           <GraduationCap className="size-6" aria-hidden />
+        ) : (
+          <Logo variant="mark" tone="white" height={36} priority />
         )}
       </Link>
 
@@ -178,22 +196,34 @@ function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl }: Sideb
         ))}
       </nav>
 
-      {withSignOut ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => startTransition(() => signOut())}
-              aria-label={LABELS.common.signOut}
-              className="mt-auto flex size-10 shrink-0 items-center justify-center rounded-lg text-sidebar-muted transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            >
-              <LogOut className="size-5" aria-hidden />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">{LABELS.common.signOut}</TooltipContent>
-        </Tooltip>
-      ) : null}
+      <div className="mt-auto flex flex-col items-center gap-4">
+        {withSignOut ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => startTransition(() => signOut())}
+                aria-label={LABELS.common.signOut}
+                className="flex size-10 shrink-0 items-center justify-center rounded-lg text-sidebar-muted transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              >
+                <LogOut className="size-5" aria-hidden />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{LABELS.common.signOut}</TooltipContent>
+          </Tooltip>
+        ) : null}
+        {poweredBy ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={0} role="img" aria-label={LABELS.app.poweredBy} className="flex shrink-0 opacity-70">
+                <Logo variant="mark" tone="white" height={16} decorative />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="right">{LABELS.app.poweredBy}</TooltipContent>
+          </Tooltip>
+        ) : null}
+      </div>
     </aside>
   );
 }

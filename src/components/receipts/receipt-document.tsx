@@ -1,3 +1,4 @@
+import { Logo } from "@/components/brand/logo";
 import type { AppLabels } from "@/lib/constants/labels";
 import { discountBadgeLabel } from "@/lib/discounts";
 import { formatDate, formatDateTime, formatMAD } from "@/lib/format";
@@ -33,7 +34,10 @@ export function ReceiptDocument({ receipt, format, labels }: ReceiptDocumentProp
           // Logo du client (bucket public de la marque) : taille fixe, aucune optimisation nécessaire.
           // eslint-disable-next-line @next/next/no-img-element
           <img src={receipt.center.logoUrl} alt="" className={cn("object-contain", ticket ? "size-10" : "size-12")} />
-        ) : null}
+        ) : receipt.center.whiteLabel ? null : (
+          // Centre sans logo (hors marque blanche) : symbole dirassty monochrome ; « eager » pour l'impression.
+          <Logo variant="mark" tone="mono" height={ticket ? 40 : 48} priority />
+        )}
         <div className="flex min-w-0 flex-col">
           <p className={cn("font-bold", ticket ? "text-[14px]" : "text-[17px]")} style={{ color }}>
             {receipt.center.name}
@@ -125,6 +129,12 @@ export function ReceiptDocument({ receipt, format, labels }: ReceiptDocumentProp
         {[receipt.center.address, phone].filter(Boolean).length > 0 ? (
           <p>{[receipt.center.address, phone].filter(Boolean).join(" · ")}</p>
         ) : null}
+        {receipt.center.whiteLabel ? null : (
+          <p className="mt-2 flex items-center justify-center gap-1.5 text-[10px] text-[#8a90a6]">
+            <Logo variant="mark" tone="mono" height={10} priority decorative />
+            {labels.receipts.editedWith}
+          </p>
+        )}
       </footer>
     </article>
   );

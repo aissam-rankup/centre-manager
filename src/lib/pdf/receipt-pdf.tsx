@@ -5,6 +5,7 @@ import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/
 import type { AppLabels } from "@/lib/constants/labels";
 import { discountBadgeLabel } from "@/lib/discounts";
 import { formatDate, formatDateTime, formatMAD } from "@/lib/format";
+import { PdfEditedWith, pdfHeaderLogo } from "@/lib/pdf/dirassty";
 import { formatPhone } from "@/lib/phone";
 import { receiptPeriodLabel, type ReceiptView } from "@/lib/receipts";
 
@@ -51,7 +52,7 @@ export function ReceiptPdf({ receipt, labels }: ReceiptPdfProps) {
   const L = labels.receipts;
   const cancellation = receipt.kind === "cancellation";
   const color = receipt.center.color ?? "#6c2bf5";
-  const logo = receipt.center.logoUrl && /\.(png|jpe?g)(\?|$)/i.test(receipt.center.logoUrl) ? receipt.center.logoUrl : null;
+  const logo = pdfHeaderLogo(receipt.center.logoUrl, receipt.center.whiteLabel);
   const contact = [receipt.center.address, receipt.center.phone ? L.phone(formatPhone(receipt.center.phone)) : null]
     .filter(Boolean)
     .join(" · ");
@@ -158,6 +159,7 @@ export function ReceiptPdf({ receipt, labels }: ReceiptPdfProps) {
           <Text style={{ color: INK }}>{L.thanks}</Text>
           <Text>{receipt.center.name}</Text>
           {contact ? <Text>{contact}</Text> : null}
+          <PdfEditedWith whiteLabel={receipt.center.whiteLabel} />
         </View>
       </Page>
     </Document>

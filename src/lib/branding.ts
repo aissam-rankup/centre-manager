@@ -14,7 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 /** Marque affichée : celle du centre en marque blanche, sinon celle de la plateforme. */
 export type Brand = {
   whiteLabel: boolean;
-  /** Nom affiché (onglet, logo, textes) : nom de marque du centre ou « CentroManager ». */
+  /** Nom affiché (onglet, logo, textes) : nom de marque du centre ou « dirassty ». */
   name: string;
   logoUrl: string | null;
   faviconUrl: string | null;
@@ -135,14 +135,18 @@ export function brandCss(brand: Brand): string {
   return `:root{${light.join(";")}}.dark{${dark.join(";")}}`;
 }
 
-/** Titre d'onglet et favicon : marque du centre, ou plateforme. */
+/** Titre d'onglet, favicon et aperçu des liens : marque du centre, ou plateforme (métadonnées du layout racine). */
 export function brandMetadata(brand: Brand): Metadata {
   if (!brand.whiteLabel) return {};
   return {
     title: { template: `%s · ${brand.name}`, default: brand.name },
     applicationName: brand.name,
     description: null,
-    icons: brand.faviconUrl ? { icon: brand.faviconUrl } : undefined,
+    // Sans favicon : aucune icône dirassty déclarée (le navigateur retombe sur /favicon.ico).
+    icons: brand.faviconUrl ? { icon: brand.faviconUrl, apple: brand.faviconUrl } : { icon: [], apple: [] },
+    // Aucun aperçu dirassty (image, titre) sur les liens d'un centre en marque blanche.
+    openGraph: { type: "website", siteName: brand.name, title: brand.name },
+    twitter: { card: "summary", title: brand.name },
   };
 }
 

@@ -6,6 +6,7 @@ import type { AppLabels } from "@/lib/constants/labels";
 import type { PayrollLineView, PayrollView } from "@/lib/data/payroll";
 import { formatDate, formatDateTime, formatMAD } from "@/lib/format";
 import { formatRate, monthLabel } from "@/lib/payroll";
+import { PdfEditedWith, pdfHeaderLogo } from "@/lib/pdf/dirassty";
 
 Font.registerHyphenationCallback((word) => [word]);
 
@@ -42,10 +43,10 @@ const styles = StyleSheet.create({
   footer: { position: "absolute", bottom: 24, left: 36, right: 36, flexDirection: "row", justifyContent: "space-between", fontSize: 7.5, color: MUTED },
 });
 
-export type PayrollPdfBrand = { name: string; contact: string | null; logoUrl: string | null; color: string };
+export type PayrollPdfBrand = { name: string; contact: string | null; logoUrl: string | null; color: string; whiteLabel: boolean };
 
 function Header({ brand }: { brand: PayrollPdfBrand }) {
-  const logo = brand.logoUrl && /\.(png|jpe?g)(\?|$)/i.test(brand.logoUrl) ? brand.logoUrl : null;
+  const logo = pdfHeaderLogo(brand.logoUrl, brand.whiteLabel);
   return (
     <View style={[styles.header, { borderBottomColor: brand.color }]}>
       {/* eslint-disable-next-line jsx-a11y/alt-text -- composant PDF, pas d'image HTML */}
@@ -62,6 +63,7 @@ function Footer({ brand, labels, generatedAt }: { brand: PayrollPdfBrand; labels
   return (
     <View style={styles.footer} fixed>
       <Text>{brand.name}</Text>
+      <PdfEditedWith whiteLabel={brand.whiteLabel} />
       <Text>{labels.payroll.pdf.generatedAt(formatDateTime(generatedAt))}</Text>
     </View>
   );
