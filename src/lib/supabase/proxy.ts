@@ -143,6 +143,8 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
   if (!claims) {
     if (PUBLIC_PATHS.includes(pathname)) return response;
+    // Domaine racine : la vitrine. Adresse d'un centre : son écran de connexion.
+    if (pathname === "/" && !clientHost) return response;
     // Espace élève : sa propre page de connexion (par code).
     if (isStudentPath(pathname)) return redirectTo(ROUTES.student.login);
     const next = pathname === "/" ? undefined : `${pathname}${search}`;
