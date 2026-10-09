@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
 import { setLocale } from "@/lib/i18n/actions";
@@ -11,14 +10,18 @@ const SHORT: Record<Locale, string> = { fr: "FR", en: "EN", ar: "ع" };
 
 /** Choix de la langue : mémorisé dans le navigateur (un an), page rendue à nouveau. */
 export function LanguageSwitcher({ locale, label, className }: { locale: Locale; label: string; className?: string }) {
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
+  // Une seule requête : un cookie modifié par l'action fait déjà rendre la page à nouveau.
+  // Hébergeur indisponible (429…) : la page reste affichée, sans écran d'erreur.
   const choose = (next: Locale) => {
     if (next === locale) return;
     startTransition(async () => {
-      await setLocale(next);
-      router.refresh();
+      try {
+        await setLocale(next);
+      } catch {
+        // Nouvel essai au prochain clic.
+      }
     });
   };
 
