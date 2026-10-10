@@ -16,7 +16,7 @@ import { Money } from "@/components/shared/money";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS, labelsFor } from "@/lib/constants/labels";
+import type { AppLabels } from "@/lib/constants/labels";
 import {
   getCenterTypes,
   getPlanOptions,
@@ -29,66 +29,72 @@ import {
 import { formatDate, formatDateTime, toISODate, today } from "@/lib/format";
 import { dnsTarget, getBrandingSettings } from "@/lib/branding";
 import { centerAddressPattern, centerSlugHistory, centerUrl } from "@/lib/center-url";
+import { getLabels } from "@/lib/i18n/server";
 import { formatPhone, toTelHref } from "@/lib/phone";
 import { customTermsSchema, EMPTY_TERMS } from "@/lib/validation/platform";
 
-const P = LABELS.platform;
-const L = P.center;
-
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export const metadata: Metadata = { title: P.centers.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).platform.centers.title };
+}
 
-const PAYMENT_COLUMNS: readonly DataTableColumn<PlatformPayment>[] = [
-  { id: "paid", header: L.paidAt, mobile: "title", cell: (row) => <span className="numeric font-medium">{formatDate(row.paid_at)}</span> },
-  { id: "amount", header: L.amount, align: "end", mobile: "aside", cell: (row) => <Money amount={row.amount} className="font-semibold" /> },
-  {
-    id: "period",
-    header: L.periodCovered,
-    mobile: "wide",
-    cell: (row) =>
-      row.period_covered_start && row.period_covered_end ? (
-        <span className="numeric">{L.periodRange(formatDate(row.period_covered_start), formatDate(row.period_covered_end))}</span>
-      ) : (
-        "—"
+function paymentColumns(P: AppLabels["platform"]): readonly DataTableColumn<PlatformPayment>[] {
+  const L = P.center;
+  return [
+    { id: "paid", header: L.paidAt, mobile: "title", cell: (row) => <span className="numeric font-medium">{formatDate(row.paid_at)}</span> },
+    { id: "amount", header: L.amount, align: "end", mobile: "aside", cell: (row) => <Money amount={row.amount} className="font-semibold" /> },
+    {
+      id: "period",
+      header: L.periodCovered,
+      mobile: "wide",
+      cell: (row) =>
+        row.period_covered_start && row.period_covered_end ? (
+          <span className="numeric">{L.periodRange(formatDate(row.period_covered_start), formatDate(row.period_covered_end))}</span>
+        ) : (
+          "—"
+        ),
+    },
+    { id: "method", header: L.method, cell: (row) => P.paymentMethod[row.method] },
+    { id: "reference", header: L.reference, cell: (row) => row.reference ?? "—" },
+    { id: "by", header: L.recordedBy, cell: (row) => row.recorded_by_name ?? L.automatic },
+  ];
+}
+
+function userColumns(centerId: string, canInvite: boolean, LABELS: AppLabels): readonly DataTableColumn<PlatformCenterUser>[] {
+  const L = LABELS.platform.center;
+  return [
+    { id: "name", header: L.userName, mobile: "title", cell: (row) => <span className="font-medium text-heading">{row.full_name}</span> },
+    { id: "email", header: L.userEmail, mobile: "wide", cell: (row) => <span className="break-all">{row.email}</span> },
+    { id: "role", header: L.userRole, cell: (row) => LABELS.roles[row.role] },
+    {
+      id: "state",
+      header: L.userState,
+      mobile: "aside",
+      cell: (row) => (
+        <span className={row.active ? "text-success-ink" : "text-muted-foreground"}>{row.active ? L.userActive : L.userInactive}</span>
       ),
-  },
-  { id: "method", header: L.method, cell: (row) => P.paymentMethod[row.method] },
-  { id: "reference", header: L.reference, cell: (row) => row.reference ?? "—" },
-  { id: "by", header: L.recordedBy, cell: (row) => row.recorded_by_name ?? L.automatic },
-];
-
-const userColumns = (centerId: string, canInvite: boolean): readonly DataTableColumn<PlatformCenterUser>[] => [
-  { id: "name", header: L.userName, mobile: "title", cell: (row) => <span className="font-medium text-heading">{row.full_name}</span> },
-  { id: "email", header: L.userEmail, mobile: "wide", cell: (row) => <span className="break-all">{row.email}</span> },
-  { id: "role", header: L.userRole, cell: (row) => labelsFor().roles[row.role] },
-  {
-    id: "state",
-    header: L.userState,
-    mobile: "aside",
-    cell: (row) => (
-      <span className={row.active ? "text-success-ink" : "text-muted-foreground"}>{row.active ? L.userActive : L.userInactive}</span>
-    ),
-  },
-  {
-    id: "last",
-    header: L.lastSignIn,
-    cell: (row) => (
-      <span className="flex flex-wrap items-center gap-2">
-        {row.last_sign_in_at ? <span className="numeric">{formatDateTime(row.last_sign_in_at)}</span> : L.never}
-        {canInvite ? (
-          <ResendInvitationButton
-            centerId={centerId}
-            userId={row.user_id}
-            name={row.full_name}
-            email={row.email}
-            signedIn={row.confirmed || Boolean(row.last_sign_in_at)}
-          />
-        ) : null}
-      </span>
-    ),
-  },
-];
+    },
+    {
+      id: "last",
+      header: L.lastSignIn,
+      cell: (row) => (
+        <span className="flex flex-wrap items-center gap-2">
+          {row.last_sign_in_at ? <span className="numeric">{formatDateTime(row.last_sign_in_at)}</span> : L.never}
+          {canInvite ? (
+            <ResendInvitationButton
+              centerId={centerId}
+              userId={row.user_id}
+              name={row.full_name}
+              email={row.email}
+              signedIn={row.confirmed || Boolean(row.last_sign_in_at)}
+            />
+          ) : null}
+        </span>
+      ),
+    },
+  ];
+}
 
 function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
@@ -99,12 +105,13 @@ function Field({ label, children, className }: { label: string; children: ReactN
   );
 }
 
-function eventLabel(action: string): string {
+function eventLabel(action: string, P: AppLabels["platform"]): string {
   const labels: Record<string, string> = P.events;
   return labels[action] ?? P.eventFallback;
 }
 
-function eventDetail(event: PlatformEvent, moduleNames: Record<string, string>): string | null {
+function eventDetail(event: PlatformEvent, moduleNames: Record<string, string>, LABELS: AppLabels): string | null {
+  const P = LABELS.platform;
   const payload = event.payload;
   if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return null;
   const from = typeof payload.from === "string" ? payload.from : null;
@@ -141,6 +148,9 @@ function eventReason(event: PlatformEvent): string | null {
 }
 
 export default async function PlatformCenterPage({ params }: PageProps<"/platform/centres/[id]">) {
+  const LABELS = await getLabels();
+  const P = LABELS.platform;
+  const L = P.center;
   const { id } = await params;
   if (!UUID.test(id)) notFound();
   const [file, types, brandingSettings, plans, addressPattern, slugHistory, admins] = await Promise.all([
@@ -289,7 +299,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
         {payments.length === 0 ? (
           <p className="text-muted-foreground">{L.paymentsEmpty}</p>
         ) : (
-          <DataTable columns={PAYMENT_COLUMNS} rows={payments} getRowId={(row) => row.payment_id} caption={L.payments} variant="plain" />
+          <DataTable columns={paymentColumns(P)} rows={payments} getRowId={(row) => row.payment_id} caption={L.payments} variant="plain" />
         )}
       </SectionCard>
 
@@ -352,12 +362,12 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
           ) : (
             <ol className="flex max-h-[420px] flex-col divide-y divide-divider overflow-y-auto">
               {events.map((event) => {
-                const detail = eventDetail(event, moduleNames);
+                const detail = eventDetail(event, moduleNames, LABELS);
                 const reason = eventReason(event);
                 return (
                   <li key={event.event_id} className="flex flex-col gap-0.5 py-3">
                     <span className="font-medium text-heading">
-                      {eventLabel(event.action)}
+                      {eventLabel(event.action, P)}
                       {detail ? <span className="font-normal text-foreground"> · {detail}</span> : null}
                     </span>
                     {reason ? <span className="text-caption text-foreground">{P.reason(reason)}</span> : null}
@@ -383,7 +393,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
                   <span className="font-medium text-heading">{admin.full_name}</span>
                   <span className="text-caption break-all text-muted-foreground">{admin.email}</span>
                   <span className="text-caption text-muted-foreground">
-                    {LABELS.passwords.admins.lastSignIn} :{" "}
+                    {LABELS.passwords.admins.lastSignIn}{LABELS.common.colon}{" "}
                     {admin.last_sign_in_at ? formatDateTime(admin.last_sign_in_at) : LABELS.passwords.admins.never}
                   </span>
                   {admin.last_reset_at ? (
@@ -412,7 +422,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
         {users.length === 0 ? (
           <p className="text-muted-foreground">{L.usersEmpty}</p>
         ) : (
-          <DataTable columns={userColumns(center.center_id, center.status !== "cancelled")} rows={users} getRowId={(row) => row.user_id} caption={L.usersTitle} variant="plain" />
+          <DataTable columns={userColumns(center.center_id, center.status !== "cancelled", LABELS)} rows={users} getRowId={(row) => row.user_id} caption={L.usersTitle} variant="plain" />
         )}
       </SectionCard>
     </div>

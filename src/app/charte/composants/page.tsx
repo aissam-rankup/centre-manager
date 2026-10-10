@@ -9,14 +9,16 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { LABELS } from "@/lib/constants/labels";
+import type { AppLabels } from "@/lib/constants/labels";
 import { formatDate, formatPercent } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
+import { getLabels } from "@/lib/i18n/server";
 
 import { Section } from "../section";
 
-const L = LABELS.styleguide;
-
-export const metadata: Metadata = { title: L.components.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).styleguide.components.title };
+}
 
 // Données fictives de démonstration — remplacées par Supabase à partir de la phase 2.
 type DemoRow = {
@@ -34,7 +36,7 @@ const DEMO_ROWS: readonly DemoRow[] = [
   { id: "3", name: "Omar Tazi", level: "Tronc commun", amount: 300, dueDate: "2026-09-12", status: "overdue" },
 ];
 
-const COLUMNS: readonly DataTableColumn<DemoRow>[] = [
+const columns = (L: AppLabels["styleguide"]): readonly DataTableColumn<DemoRow>[] => [
   {
     id: "student",
     header: L.table.student,
@@ -55,7 +57,10 @@ const COLUMNS: readonly DataTableColumn<DemoRow>[] = [
   { id: "status", header: L.table.status, mobile: "aside", cell: (row) => <StatusBadge status={row.status} /> },
 ];
 
-export default function ComponentsPage() {
+export default async function ComponentsPage() {
+  const LABELS = await getLabels();
+  const L = LABELS.styleguide;
+  const locale = await getAppLocale();
   return (
     <div className="flex flex-col gap-12">
       <PageHeader title={L.components.title} description={L.components.description} />
@@ -125,7 +130,7 @@ export default function ComponentsPage() {
       </Section>
 
       <Section title={L.sections.table}>
-        <DataTable columns={COLUMNS} rows={DEMO_ROWS} getRowId={(row) => row.id} caption={L.sections.table} />
+        <DataTable columns={columns(L)} rows={DEMO_ROWS} getRowId={(row) => row.id} caption={L.sections.table} />
       </Section>
 
       <Section title={L.sections.stats}>
@@ -135,7 +140,7 @@ export default function ComponentsPage() {
             value={<Money amount={48600} />}
             icon={Wallet}
             tone="success"
-            hint={`+${formatPercent(0.082)} ${L.stats.vsLastMonth}`}
+            hint={`+${formatPercent(0.082, locale)} ${L.stats.vsLastMonth}`}
           />
           <StatCard label={L.stats.expected} value={<Money amount={56200} />} icon={Wallet} tone="brand" />
           <StatCard label={L.stats.unpaid} value="14" icon={AlertTriangle} tone="danger" />

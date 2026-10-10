@@ -9,12 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { setCenterModule } from "@/lib/actions/platform";
-import { LABELS } from "@/lib/constants/labels";
 import type { CenterModule } from "@/lib/data/platform";
 import { formatDate } from "@/lib/format";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { MODULE_KEYS, type ModuleKey } from "@/lib/modules";
-
-const M = LABELS.platform.modules;
 
 const isModuleKey = (value: string): value is ModuleKey => (MODULE_KEYS as readonly string[]).includes(value);
 
@@ -23,6 +21,8 @@ const isModuleKey = (value: string): value is ModuleKey => (MODULE_KEYS as reado
  * Un module coupé est masqué et bloqué côté serveur ; ses données restent.
  */
 export function CenterModules({ centerId, modules }: { centerId: string; modules: readonly CenterModule[] }) {
+  const M = useLabels().platform.modules;
+  const message = useMessage();
   const [pending, startTransition] = useTransition();
 
   const toggle = (moduleKey: string, enabled: boolean, trial = false) => {
@@ -30,7 +30,7 @@ export function CenterModules({ centerId, modules }: { centerId: string; modules
     startTransition(async () => {
       const result = await setCenterModule({ centerId, moduleKey, enabled, trial });
       if (result.ok) toast.success(M.saved);
-      else toast.error(result.error);
+      else toast.error(message(result.error));
     });
   };
 

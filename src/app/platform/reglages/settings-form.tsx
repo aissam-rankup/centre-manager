@@ -10,12 +10,13 @@ import { FormField } from "@/components/shared/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updatePlatformSettings } from "@/lib/actions/platform";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { type PlatformSettingsInput, platformSettingsSchema } from "@/lib/validation/platform";
 
-const L = LABELS.platform.settings;
-
 export function SettingsForm({ defaults }: { defaults: PlatformSettingsInput }) {
+  const LABELS = useLabels();
+  const L = LABELS.platform.settings;
+  const message = useMessage();
   const [pending, startTransition] = useTransition();
   const form = useForm<PlatformSettingsInput>({ resolver: zodResolver(platformSettingsSchema), defaultValues: defaults });
   const errors = form.formState.errors;
@@ -24,7 +25,7 @@ export function SettingsForm({ defaults }: { defaults: PlatformSettingsInput }) 
     startTransition(async () => {
       const result = await updatePlatformSettings(values);
       if (result.ok) toast.success(L.saved);
-      else toast.error(result.error);
+      else toast.error(message(result.error));
     }),
   );
 

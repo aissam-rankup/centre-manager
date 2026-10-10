@@ -47,8 +47,8 @@ import {
   updateCenterStatus,
 } from "@/lib/actions/platform";
 import { startSupport } from "@/lib/actions/support";
-import { LABELS } from "@/lib/constants/labels";
 import type { BillingInterval, CenterStatus, CenterTypeOption, PlanOption } from "@/lib/data/platform";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import {
   type CenterDetailsInput,
   centerDetailsSchema,
@@ -62,10 +62,6 @@ import {
   type SubscriptionPaymentInput,
   subscriptionPaymentSchema,
 } from "@/lib/validation/platform";
-
-const P = LABELS.platform;
-const A = P.actions;
-const N = P.newCenter;
 
 /** Données de la fiche nécessaires aux formulaires. */
 export type CenterActionsData = {
@@ -113,10 +109,12 @@ function ActionDialog({
   open,
   onOpenChange,
   pending,
-  submitLabel = A.save,
+  submitLabel,
   onSubmit,
   children,
 }: ActionDialogProps) {
+  const LABELS = useLabels();
+  const A = LABELS.platform.actions;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
@@ -145,7 +143,7 @@ function ActionDialog({
             </Button>
             <Button type="submit" variant={variant === "destructive" ? "destructive" : "default"} disabled={pending}>
               {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
-              {pending ? A.saving : submitLabel}
+              {pending ? A.saving : (submitLabel ?? A.save)}
             </Button>
           </DialogFooter>
         </form>
@@ -156,13 +154,14 @@ function ActionDialog({
 
 /** Ouverture, envoi et retour d'une action : toast, fermeture, erreurs de champs. */
 function useAction<T>(action: (input: T) => Promise<ActionResult>, successMessage: string) {
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const run = (values: T, onFieldErrors?: (errors: Record<string, string>) => void) =>
     startTransition(async () => {
       const result = await action(values);
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(message(result.error));
         if (result.fieldErrors) onFieldErrors?.(result.fieldErrors);
         return;
       }
@@ -176,6 +175,8 @@ function useAction<T>(action: (input: T) => Promise<ActionResult>, successMessag
 // Paiement
 // ---------------------------------------------------------------------
 function PaymentDialog({ data }: { data: CenterActionsData }) {
+  const P = useLabels().platform;
+  const A = P.actions;
   const { open, setOpen, pending, run } = useAction(recordSubscriptionPayment, A.paymentSaved);
   const defaults: SubscriptionPaymentInput = {
     centerId: data.centerId,
@@ -238,6 +239,7 @@ function PaymentDialog({ data }: { data: CenterActionsData }) {
 // Échéance
 // ---------------------------------------------------------------------
 function DueDateDialog({ data }: { data: CenterActionsData }) {
+  const A = useLabels().platform.actions;
   const { open, setOpen, pending, run } = useAction(updateCenterDueDate, A.saved);
   const defaults: DueDateInput = { centerId: data.centerId, dueDate: data.dueDate ?? data.todayIso, reason: "" };
   const form = useForm<DueDateInput>({ resolver: zodResolver(dueDateSchema), defaultValues: defaults });
@@ -271,6 +273,9 @@ function DueDateDialog({ data }: { data: CenterActionsData }) {
 // Pack et tarif
 // ---------------------------------------------------------------------
 function PricingDialog({ data }: { data: CenterActionsData }) {
+  const P = useLabels().platform;
+  const A = P.actions;
+  const N = P.newCenter;
   const { open, setOpen, pending, run } = useAction(updateCenterPricing, A.saved);
   const defaults: CenterPricingInput = {
     centerId: data.centerId,
@@ -336,6 +341,9 @@ function PricingDialog({ data }: { data: CenterActionsData }) {
 // Informations et vocabulaire
 // ---------------------------------------------------------------------
 function DetailsDialog({ data, types }: { data: CenterActionsData; types: CenterTypeOption[] }) {
+  const P = useLabels().platform;
+  const A = P.actions;
+  const N = P.newCenter;
   const { open, setOpen, pending, run } = useAction(updateCenterDetails, A.saved);
   const defaults: CenterDetailsInput = {
     centerId: data.centerId,
@@ -411,27 +419,29 @@ function DetailsDialog({ data, types }: { data: CenterActionsData; types: Center
 // ---------------------------------------------------------------------
 type ManualStatus = CenterStatusInput["status"];
 
-const STATUS_ACTION: Record<ManualStatus, { trigger: string; icon: LucideIcon; variant: "outline" | "destructive" }> = {
-  active: { trigger: A.reactivate, icon: CircleCheck, variant: "outline" },
-  suspended: { trigger: A.suspend, icon: PauseCircle, variant: "outline" },
-  cancelled: { trigger: A.cancel, icon: Ban, variant: "destructive" },
+const STATUS_ACTION: Record<ManualStatus, { trigger: "reactivate" | "suspend" | "cancel"; icon: LucideIcon; variant: "outline" | "destructive" }> = {
+  active: { trigger: "reactivate", icon: CircleCheck, variant: "outline" },
+  suspended: { trigger: "suspend", icon: PauseCircle, variant: "outline" },
+  cancelled: { trigger: "cancel", icon: Ban, variant: "destructive" },
 };
 
 function StatusDialog({ centerId, status }: { centerId: string; status: ManualStatus }) {
+  const A = useLabels().platform.actions;
   const { open, setOpen, pending, run } = useAction(updateCenterStatus, A.statusSaved[status]);
   const defaults: CenterStatusInput = { centerId, status, reason: "" };
   const form = useForm<CenterStatusInput>({ resolver: zodResolver(centerStatusSchema), defaultValues: defaults });
   const error = form.formState.errors.reason?.message;
   const config = STATUS_ACTION[status];
+  const trigger = A[config.trigger];
 
   return (
     <ActionDialog
-      trigger={config.trigger}
+      trigger={trigger}
       icon={config.icon}
       variant={config.variant}
       title={A.statusTitle[status]}
       description={A.statusDescription[status]}
-      submitLabel={config.trigger}
+      submitLabel={trigger}
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
@@ -451,6 +461,9 @@ function StatusDialog({ centerId, status }: { centerId: string; status: ManualSt
 // Accès support (lecture seule)
 // ---------------------------------------------------------------------
 function SupportDialog({ centerId }: { centerId: string }) {
+  const P = useLabels().platform;
+  const A = P.actions;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [reason, setReason] = useState("");
@@ -480,7 +493,7 @@ function SupportDialog({ centerId }: { centerId: string }) {
         startTransition(async () => {
           // Succès : redirection vers l'espace administration du centre.
           const result = await startSupport({ centerId, reason });
-          if (result && !result.ok) toast.error(result.error);
+          if (result && !result.ok) toast.error(message(result.error));
         });
       }}
     >
@@ -546,6 +559,8 @@ export function ResendInvitationButton({
   email: string;
   signedIn: boolean;
 }) {
+  const A = useLabels().platform.actions;
+  const message = useMessage();
   const [pending, startTransition] = useTransition();
   const [link, setLink] = useState<string | null>(null);
   const label = signedIn ? A.passwordLink : A.resendInvitation;
@@ -559,7 +574,7 @@ export function ResendInvitationButton({
       onClick={() =>
         startTransition(async () => {
           const result = await resendInvitation({ centerId, userId });
-          if (!result.ok) toast.error(result.error);
+          if (!result.ok) toast.error(message(result.error));
           else if (result.data.link) setLink(result.data.link);
           else toast.success(result.data.passwordLink ? A.passwordLinkSent : A.invitationSent);
         })

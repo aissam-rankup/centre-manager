@@ -8,7 +8,8 @@ const TONES = ["bg-muted", "bg-danger", "bg-warning", "bg-success", "bg-success"
 
 /** Robustesse indicative du mot de passe saisi (4 segments et libellé). */
 export function PasswordStrength({ password, id }: { password: string; id?: string }) {
-  const S = useLabels().passwords.strength;
+  const LABELS = useLabels();
+  const S = LABELS.passwords.strength;
   const score = passwordStrength(password);
   if (!password) return null;
   return (
@@ -19,7 +20,7 @@ export function PasswordStrength({ password, id }: { password: string; id?: stri
         ))}
       </div>
       <span className="text-caption text-muted-foreground">
-        {S.label} : <span className="font-medium text-foreground">{S.levels[score]}</span>
+        {S.label}{LABELS.common.colon} <span className="font-medium text-foreground">{S.levels[score]}</span>
       </span>
     </div>
   );

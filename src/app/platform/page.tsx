@@ -11,18 +11,21 @@ import { Money } from "@/components/shared/money";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
 import { type CenterStatus, getPlatformDashboard } from "@/lib/data/platform";
 import { formatDate, formatMAD } from "@/lib/format";
+import { getLabels } from "@/lib/i18n/server";
 import { formatPhone, toTelHref } from "@/lib/phone";
 
-const L = LABELS.platform.dashboard;
 const STATUSES: readonly CenterStatus[] = ["trial", "active", "past_due", "suspended", "cancelled"];
-const REMINDER_KINDS: Record<string, string> = L.reminderKinds;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).platform.dashboard.title };
+}
 
 export default async function PlatformDashboardPage() {
+  const LABELS = await getLabels();
+  const L = LABELS.platform.dashboard;
+  const REMINDER_KINDS: Record<string, string> = L.reminderKinds;
   const { overview, overdue, upcoming, notifications } = await getPlatformDashboard();
   const statusCounts: Record<CenterStatus, number> = {
     trial: overview.trial_count,

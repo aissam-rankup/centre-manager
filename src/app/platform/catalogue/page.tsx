@@ -4,17 +4,19 @@ import { Money } from "@/components/shared/money";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { Badge } from "@/components/ui/badge";
-import { LABELS } from "@/lib/constants/labels";
 import { getPlatformCatalogue } from "@/lib/data/platform";
+import { getLabels } from "@/lib/i18n/server";
 
 import { PlanDialog } from "./plan-dialog";
 
-const C = LABELS.platform.catalogue;
-
-export const metadata: Metadata = { title: C.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).platform.catalogue.title };
+}
 
 /** Catalogue : packs commerciaux, modules activables, socle, et règle des demandes futures. */
 export default async function CataloguePage() {
+  const LABELS = await getLabels();
+  const C = LABELS.platform.catalogue;
   const { plans, modules } = await getPlatformCatalogue();
   const moduleNames = new Map(modules.map((module) => [module.key, module.name]));
   const planNames = new Map(plans.map((plan) => [plan.key, plan.name]));
@@ -85,7 +87,7 @@ export default async function CataloguePage() {
               </div>
               <div className="flex shrink-0 flex-col gap-1 text-caption sm:items-end">
                 <span>
-                  {C.inPlans} :{" "}
+                  {C.inPlans}{LABELS.common.colon}{" "}
                   {module.plans.length > 0 ? module.plans.map((key) => planNames.get(key) ?? key).join(", ") : C.noPlan}
                 </span>
                 <span className="text-muted-foreground">{C.centersCount(module.centers_count)}</span>

@@ -54,6 +54,7 @@ export const EN_PART1: Pick<
     skipToContent: "Skip to main content",
     signOut: "Sign out",
     language: "Language",
+    colon: ":",
     seeAll: "See all",
     show: "Show",
     none: "—",

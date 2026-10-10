@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { ROUTES } from "@/lib/auth/routes";
 import { addressFor } from "@/lib/center-host";
 import { centerAddressPattern } from "@/lib/center-url";
-import { LABELS } from "@/lib/constants/labels";
+import type { AppLabels } from "@/lib/constants/labels";
 import {
   type CenterStatus,
   getCenterTypes,
@@ -24,66 +24,69 @@ import {
   type PlatformCenterRow,
 } from "@/lib/data/platform";
 import { formatDate } from "@/lib/format";
+import { getLabels } from "@/lib/i18n/server";
 
-const L = LABELS.platform.centers;
-const P = LABELS.platform;
-
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).platform.centers.title };
+}
 
 const STATUSES: readonly CenterStatus[] = ["trial", "active", "past_due", "suspended", "cancelled"];
 
-const columns = (addressPattern: string): readonly DataTableColumn<PlatformCenterRow>[] => [
-  {
-    id: "name",
-    header: L.name,
-    mobile: "title",
-    cell: (row) => (
-      <span className="flex min-w-0 flex-col">
-        <Link
-          href={`${ROUTES.platform.centers}/${row.center_id}`}
-          className="truncate rounded-sm font-semibold text-heading hover:text-primary"
-        >
-          {row.name}
-        </Link>
-      </span>
-    ),
-  },
-  {
-    id: "address",
-    header: L.address,
-    mobile: "wide",
-    cell: (row) => <CenterAddressLinks url={addressFor(addressPattern, row.slug)} compact />,
-  },
-  { id: "type", header: L.type, cell: (row) => row.center_type_label },
-  { id: "plan", header: L.plan, cell: (row) => row.plan_name },
-  { id: "status", header: L.status, mobile: "aside", cell: (row) => <CenterStatusBadge status={row.status} /> },
-  {
-    id: "activated",
-    header: L.activatedAt,
-    mobile: "hidden",
-    cell: (row) => (row.activated_at ? <span className="numeric">{formatDate(row.activated_at)}</span> : "—"),
-  },
-  {
-    id: "due",
-    header: L.dueDate,
-    cell: (row) => (row.current_period_end ? <span className="numeric">{formatDate(row.current_period_end)}</span> : "—"),
-  },
-  { id: "remaining", header: L.remaining, cell: (row) => <DaysRemaining days={row.days_remaining} /> },
-  { id: "students", header: L.students, align: "end", cell: (row) => <span className="numeric">{row.students_count}</span> },
-  {
-    id: "price",
-    header: L.price,
-    align: "end",
-    cell: (row) =>
-      row.price === null ? (
-        <span className="text-muted-foreground">{P.notSet}</span>
-      ) : (
-        <span className="whitespace-nowrap">
-          <Money amount={row.price} /> <span className="text-caption text-muted-foreground">{P.intervalShort[row.billing_interval]}</span>
+function columns(addressPattern: string, P: AppLabels["platform"]): readonly DataTableColumn<PlatformCenterRow>[] {
+  const L = P.centers;
+  return [
+    {
+      id: "name",
+      header: L.name,
+      mobile: "title",
+      cell: (row) => (
+        <span className="flex min-w-0 flex-col">
+          <Link
+            href={`${ROUTES.platform.centers}/${row.center_id}`}
+            className="truncate rounded-sm font-semibold text-heading hover:text-primary"
+          >
+            {row.name}
+          </Link>
         </span>
       ),
-  },
-];
+    },
+    {
+      id: "address",
+      header: L.address,
+      mobile: "wide",
+      cell: (row) => <CenterAddressLinks url={addressFor(addressPattern, row.slug)} compact />,
+    },
+    { id: "type", header: L.type, cell: (row) => row.center_type_label },
+    { id: "plan", header: L.plan, cell: (row) => row.plan_name },
+    { id: "status", header: L.status, mobile: "aside", cell: (row) => <CenterStatusBadge status={row.status} /> },
+    {
+      id: "activated",
+      header: L.activatedAt,
+      mobile: "hidden",
+      cell: (row) => (row.activated_at ? <span className="numeric">{formatDate(row.activated_at)}</span> : "—"),
+    },
+    {
+      id: "due",
+      header: L.dueDate,
+      cell: (row) => (row.current_period_end ? <span className="numeric">{formatDate(row.current_period_end)}</span> : "—"),
+    },
+    { id: "remaining", header: L.remaining, cell: (row) => <DaysRemaining days={row.days_remaining} /> },
+    { id: "students", header: L.students, align: "end", cell: (row) => <span className="numeric">{row.students_count}</span> },
+    {
+      id: "price",
+      header: L.price,
+      align: "end",
+      cell: (row) =>
+        row.price === null ? (
+          <span className="text-muted-foreground">{P.notSet}</span>
+        ) : (
+          <span className="whitespace-nowrap">
+            <Money amount={row.price} /> <span className="text-caption text-muted-foreground">{P.intervalShort[row.billing_interval]}</span>
+          </span>
+        ),
+    },
+  ];
+}
 
 type Filters = { q: string; statut: string | null; type: string | null; pack: string | null };
 
@@ -108,6 +111,8 @@ function normalize(text: string): string {
 }
 
 export default async function PlatformCentersPage({ searchParams }: PageProps<"/platform/centres">) {
+  const P = (await getLabels()).platform;
+  const L = P.centers;
   const params = await searchParams;
   const [centers, types, plans, addressPattern] = await Promise.all([
     getPlatformCenters(),
@@ -189,7 +194,7 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
       {rows.length === 0 ? (
         <EmptyState icon={Building2} title={L.empty} description={L.emptyDescription} />
       ) : (
-        <DataTable columns={columns(addressPattern)} rows={rows} getRowId={(row) => row.center_id} caption={L.caption} />
+        <DataTable columns={columns(addressPattern, P)} rows={rows} getRowId={(row) => row.center_id} caption={L.caption} />
       )}
     </div>
   );

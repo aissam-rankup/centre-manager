@@ -12,14 +12,15 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { updatePlan } from "@/lib/actions/platform";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { type PlanInput, planSchema } from "@/lib/validation/platform";
-
-const C = LABELS.platform.catalogue;
-const A = LABELS.platform.actions;
 
 /** Nom, description et prix catalogue d'un pack (sa composition est fixée par les migrations). */
 export function PlanDialog({ defaults }: { defaults: PlanInput }) {
+  const LABELS = useLabels();
+  const C = LABELS.platform.catalogue;
+  const A = LABELS.platform.actions;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const form = useForm<PlanInput>({ resolver: zodResolver(planSchema), defaultValues: defaults });
@@ -29,7 +30,7 @@ export function PlanDialog({ defaults }: { defaults: PlanInput }) {
     startTransition(async () => {
       const result = await updatePlan(values);
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(message(result.error));
         return;
       }
       toast.success(C.saved);

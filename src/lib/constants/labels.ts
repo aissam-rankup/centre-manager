@@ -49,6 +49,8 @@ const TEXTS = {
     skipToContent: "Aller au contenu principal",
     signOut: "Se déconnecter",
     language: "Langue",
+    /** Deux-points avant une valeur : espace en français, aucune en anglais. */
+    colon: " :",
     seeAll: "Voir tout",
     show: "Afficher",
     none: "—",

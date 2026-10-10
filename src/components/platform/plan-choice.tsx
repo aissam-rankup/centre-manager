@@ -2,11 +2,9 @@
 
 import { ChoiceItem } from "@/components/shared/choice-item";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { LABELS } from "@/lib/constants/labels";
 import type { PlanOption } from "@/lib/data/platform";
 import { formatMAD } from "@/lib/format";
-
-const N = LABELS.platform.newCenter;
+import { useLabels } from "@/lib/i18n/client";
 
 /** Choix du pack d'un centre (catalogue : nom, contenu, prix indicatif). */
 export function PlanChoice({
@@ -18,6 +16,7 @@ export function PlanChoice({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const N = useLabels().platform.newCenter;
   return (
     <RadioGroup value={value} onValueChange={onChange}>
       {plans.map((plan) => (

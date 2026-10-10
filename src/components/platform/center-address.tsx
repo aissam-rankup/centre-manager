@@ -21,15 +21,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { changeCenterSlug, checkSlugAvailability, type SlugAvailability } from "@/lib/actions/platform";
 import { type AddressPattern, addressFor } from "@/lib/center-host";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
-
-const L = LABELS.centerAddress;
 
 const withoutProtocol = (url: string) => url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
 /** Adresse d'un centre avec « Copier » et « Ouvrir » (liste et fiche de la console). */
 export function CenterAddressLinks({ url, compact = false }: { url: string; compact?: boolean }) {
+  const L = useLabels().centerAddress;
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
@@ -100,13 +99,15 @@ export function SlugPreview({
   availability: SlugAvailability | "checking" | null;
   id?: string;
 }) {
+  const LABELS = useLabels();
+  const L = LABELS.centerAddress;
   const value = slug.trim().toLowerCase();
   if (!value) return null;
   const ok = availability === "available" || availability === "current";
   return (
     <div id={id} className="flex flex-col gap-1 rounded-lg bg-muted/60 px-3 py-2 text-caption" aria-live="polite">
       <span className="text-muted-foreground">
-        {L.preview} : <span className="font-medium break-all text-foreground">{withoutProtocol(addressFor(pattern, value))}</span>
+        {L.preview}{LABELS.common.colon} <span className="font-medium break-all text-foreground">{withoutProtocol(addressFor(pattern, value))}</span>
       </span>
       {availability === "checking" ? (
         <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -128,6 +129,8 @@ export function SlugPreview({
  * puis confirmation explicite. L'ancienne adresse continue de rediriger.
  */
 export function ChangeSlugDialog({ centerId, slug, pattern }: { centerId: string; slug: string; pattern: AddressPattern }) {
+  const L = useLabels().centerAddress;
+  const message = useMessage();
   const router = useRouter();
   const inputId = useId();
   const [open, setOpen] = useState(false);
@@ -144,7 +147,7 @@ export function ChangeSlugDialog({ centerId, slug, pattern }: { centerId: string
       setError(null);
       const result = await changeCenterSlug({ centerId, slug: next });
       if (!result.ok) {
-        setError(result.fieldErrors?.slug ?? result.error);
+        setError(message(result.fieldErrors?.slug ?? result.error));
         return;
       }
       toast.success(L.changed);

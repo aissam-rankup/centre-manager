@@ -22,9 +22,9 @@ import { createCenter } from "@/lib/actions/platform";
 import { ROUTES } from "@/lib/auth/routes";
 import { addBillingInterval } from "@/lib/billing-interval";
 import { addressFor } from "@/lib/center-host";
-import { LABELS } from "@/lib/constants/labels";
 import type { CenterTypeOption, PlanOption } from "@/lib/data/platform";
 import { formatDate, formatMAD } from "@/lib/format";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import {
   CUSTOM_CENTER_TYPE,
@@ -34,10 +34,6 @@ import {
   newCenterSchema,
   VOCABULARY_KEYS,
 } from "@/lib/validation/platform";
-
-const P = LABELS.platform;
-const L = P.newCenter;
-const STEP_COUNT = L.steps.length;
 
 /** « Centre Élan — Rabat » → « centre-elan-rabat » */
 function slugify(text: string): string {
@@ -61,6 +57,11 @@ type NewCenterFormProps = {
 };
 
 export function NewCenterForm({ types, plans, todayIso, addressPattern }: NewCenterFormProps) {
+  const LABELS = useLabels();
+  const P = LABELS.platform;
+  const L = P.newCenter;
+  const STEP_COUNT = L.steps.length;
+  const message = useMessage();
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -170,10 +171,10 @@ export function NewCenterForm({ types, plans, todayIso, addressPattern }: NewCen
       const result = await createCenter(values);
       if (!result.ok) {
         setServerError(result.error);
-        for (const [field, message] of Object.entries(result.fieldErrors ?? {})) {
+        for (const [field, text] of Object.entries(result.fieldErrors ?? {})) {
           const known = NEW_CENTER_STEP_FIELDS.findIndex((fields) => (fields as readonly string[]).includes(field));
           if (known >= 0) {
-            setError(field as keyof NewCenterInput, { message });
+            setError(field as keyof NewCenterInput, { message: text });
             goTo(known);
           }
         }
@@ -388,7 +389,7 @@ export function NewCenterForm({ types, plans, todayIso, addressPattern }: NewCen
 
           {serverError ? (
             <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-              {serverError}
+              {message(serverError)}
             </p>
           ) : null}
         </CardContent>
@@ -425,6 +426,8 @@ function SummaryItem({ label, children }: { label: string; children: React.React
 }
 
 function Stepper({ current }: { current: number }) {
+  const L = useLabels().platform.newCenter;
+  const STEP_COUNT = L.steps.length;
   return (
     <ol className="flex items-center gap-2" aria-label={L.progress(current + 1, STEP_COUNT)}>
       {L.steps.map((label, index) => {

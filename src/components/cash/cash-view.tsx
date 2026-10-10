@@ -263,14 +263,14 @@ function ClosedResult({ session, LABELS }: { session: CashSessionSummary; LABELS
       {session.varianceReason ? <p className="text-caption">{session.varianceReason}</p> : null}
       {corrected !== null ? (
         <p className={cn("text-caption font-semibold", corrected === 0 ? "text-success-ink" : "text-danger-ink")}>
-          {C.afterCorrections} : {varianceLabel(corrected, LABELS)}
+          {C.afterCorrections}{LABELS.common.colon} {varianceLabel(corrected, LABELS)}
         </p>
       ) : null}
       {session.notes ? <p className="text-caption text-muted-foreground">{session.notes}</p> : null}
       {session.closedAt ? <p className="text-caption text-muted-foreground">{C.closedAt(formatDateTime(session.closedAt), session.closedByName)}</p> : null}
       {session.validationNotes ? (
         <p className="text-caption">
-          <span className="font-medium">{C.validationNotes} : </span>
+          <span className="font-medium">{C.validationNotes}{LABELS.common.colon} </span>
           {session.validationNotes}
         </p>
       ) : null}

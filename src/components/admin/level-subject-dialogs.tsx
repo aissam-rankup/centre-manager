@@ -77,7 +77,7 @@ export function SubjectDialog({ trigger, levelId, levelName, subject }: SubjectD
       onOpenChange={onOpenChange}
       trigger={trigger}
       title={subject ? L.editSubject : L.newSubject}
-      description={`${L.level} : ${levelName}`}
+      description={`${L.level}${LABELS.common.colon} ${levelName}`}
       pending={pending}
       error={error}
       onSubmit={onSubmit}
@@ -137,7 +137,7 @@ export function PackDialog({ trigger, levelId, levelName, subjects, pack }: Pack
       onOpenChange={onOpenChange}
       trigger={trigger}
       title={pack ? L.editPack : L.newPack}
-      description={`${L.level} : ${levelName}`}
+      description={`${L.level}${LABELS.common.colon} ${levelName}`}
       pending={pending}
       error={error}
       onSubmit={onSubmit}
