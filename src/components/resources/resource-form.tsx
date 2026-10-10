@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createResource, updateResource } from "@/lib/actions/resources";
 import { ROUTES } from "@/lib/auth/routes";
 import type { TeachingOption } from "@/lib/data/resources";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import {
   RESOURCE_MAX_BYTES,
   RESOURCE_MIME_TYPES,
@@ -40,6 +40,7 @@ export type ResourceFormDefaults = {
 /** Publication ou modification d'une ressource : type, matière et niveau, titre, description, fichier, échéance. */
 export function ResourceForm({ options, defaults }: { options: TeachingOption[]; defaults: ResourceFormDefaults }) {
   const LABELS = useLabels();
+  const message = useMessage();
   const L = LABELS.resources;
   const F = L.fields;
   const router = useRouter();
@@ -88,7 +89,7 @@ export function ResourceForm({ options, defaults }: { options: TeachingOption[];
     startTransition(async () => {
       const result = editing ? await updateResource(data) : await createResource(data);
       if (!result.ok) {
-        setServerError(result.error);
+        setServerError(message(result.error));
         setErrors(result.fieldErrors ?? {});
         return;
       }

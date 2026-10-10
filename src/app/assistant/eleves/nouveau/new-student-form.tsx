@@ -21,7 +21,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { createStudent } from "@/lib/actions/assistant";
 import { ROUTES } from "@/lib/auth/routes";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { useModules } from "@/lib/modules-client";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
 import { formatDate } from "@/lib/format";
@@ -37,6 +37,7 @@ type NewStudentFormProps = {
 
 export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
   const LABELS = useLabels();
+  const message = useMessage();
   const L = LABELS.assistant.newStudent;
   const STEP_COUNT = L.steps.length;
   const router = useRouter();
@@ -127,7 +128,7 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
     startTransition(async () => {
       const result = await createStudent(data);
       if (!result.ok) {
-        setServerError(result.error);
+        setServerError(message(result.error));
         return;
       }
       toast.success(L.success, { description: L.successDescription });

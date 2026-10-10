@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { getSessionRoster, parseSessionDate } from "@/lib/data/sessions";
 import { formatDateWithWeekday } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -47,7 +48,7 @@ export default async function AssistantSessionPage({ params, searchParams }: Pag
   }
 
   const { session } = roster;
-  const dayLabel = formatDateWithWeekday(dateIso);
+  const dayLabel = formatDateWithWeekday(dateIso, await getAppLocale());
   return (
     <div className="flex flex-col gap-6">
       {back}

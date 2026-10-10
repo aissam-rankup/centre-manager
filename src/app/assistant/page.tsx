@@ -16,6 +16,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { getAbsenceAlertsSettings, getAbsencesToNotify } from "@/lib/data/absence-alerts";
 import { type AbsenceAlertItem, type FollowUpQueueItem, getAssistantDashboard } from "@/lib/data/assistant";
@@ -41,7 +42,7 @@ export default async function AssistantDashboardPage() {
   const tracking = profile.modules.includes("absence_tracking");
   const absences = tracking && absenceSettings.enabled ? await getAbsencesToNotify() : [];
   const absencesPending = absences.filter((item) => !item.notifiedAt).length;
-  const dateLabel = formatDateWithWeekday(today());
+  const dateLabel = formatDateWithWeekday(today(), await getAppLocale());
 
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">

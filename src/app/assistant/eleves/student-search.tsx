@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { searchStudents } from "@/lib/actions/assistant";
 import { ROUTES } from "@/lib/auth/routes";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import type { StudentListItem } from "@/lib/data/assistant";
 
 const DEBOUNCE_MS = 200;
@@ -23,6 +23,7 @@ type StudentSearchProps = { initialResults: StudentListItem[]; initialQuery?: st
 
 export function StudentSearch({ initialResults, initialQuery = "" }: StudentSearchProps) {
   const LABELS = useLabels();
+  const message = useMessage();
   const L = LABELS.assistant.search;
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState(initialResults);
@@ -101,7 +102,7 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
       </p>
 
       {error ? (
-        <ErrorState description={error} onRetry={() => setAttempt((value) => value + 1)} />
+        <ErrorState description={message(error)} onRetry={() => setAttempt((value) => value + 1)} />
       ) : pending && results.length === 0 ? (
         <ResultsSkeleton />
       ) : results.length === 0 ? (

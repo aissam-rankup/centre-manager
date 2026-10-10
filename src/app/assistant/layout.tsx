@@ -9,6 +9,7 @@ import { requireRole } from "@/lib/auth/session";
 import { brandMetadata, getSessionBrand } from "@/lib/branding";
 import { LabelsProvider } from "@/lib/i18n/client";
 import { ModulesProvider } from "@/lib/modules-client";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { getNotifications } from "@/lib/data/notifications";
 import { hasReenrollment } from "@/lib/data/reenrollment";
@@ -36,7 +37,7 @@ export default async function AssistantLayout({ children }: { children: ReactNod
           whiteLabel={brand.whiteLabel}
           reenrollment={reenrollment}
           spaceLabel={LABELS.spaces.assistant}
-          todayLabel={formatLongDate(new Date())}
+          todayLabel={formatLongDate(new Date(), await getAppLocale())}
           searchHref={ROUTES.assistant.students}
           notifications={{ items: notifications, fileBase: ROUTES.assistant.students }}
         >
