@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInStudent } from "@/lib/auth/student-actions";
-import { LABELS } from "@/lib/constants/labels";
-
-const L = LABELS.studentLogin;
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 export function StudentLoginForm() {
+  const LABELS = useLabels();
+  const L = LABELS.studentLogin;
+  const message = useMessage();
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +35,7 @@ export function StudentLoginForm() {
       {error ? (
         <div role="alert" className="flex items-start gap-3 rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
           <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden />
-          <p>{error}</p>
+          <p>{message(error)}</p>
         </div>
       ) : null}
       <div className="flex flex-col gap-2">

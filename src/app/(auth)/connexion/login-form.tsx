@@ -10,11 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from "@/lib/auth/actions";
 import { type LoginInput, loginSchema } from "@/lib/auth/schemas";
-import { LABELS } from "@/lib/constants/labels";
-
-const L = LABELS.auth.login;
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 export function LoginForm({ next }: { next: string | null }) {
+  const L = useLabels().auth.login;
+  const message = useMessage();
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -46,7 +46,7 @@ export function LoginForm({ next }: { next: string | null }) {
           className="flex items-start gap-3 rounded-lg bg-danger/10 px-4 py-3 text-danger-ink"
         >
           <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden />
-          <p>{serverError}</p>
+          <p>{message(serverError)}</p>
         </div>
       ) : null}
 
@@ -65,7 +65,7 @@ export function LoginForm({ next }: { next: string | null }) {
         />
         {errors.email ? (
           <p id="email-error" className="text-caption text-danger-ink">
-            {errors.email.message}
+            {message(errors.email.message ?? "")}
           </p>
         ) : null}
       </div>
@@ -96,7 +96,7 @@ export function LoginForm({ next }: { next: string | null }) {
         </div>
         {errors.password ? (
           <p id="password-error" className="text-caption text-danger-ink">
-            {errors.password.message}
+            {message(errors.password.message ?? "")}
           </p>
         ) : null}
       </div>

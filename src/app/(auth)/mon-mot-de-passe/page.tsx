@@ -8,14 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/lib/auth/routes";
 import { getAuthState } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 
-const P = LABELS.passwords;
-
-export const metadata: Metadata = { title: P.mine.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).passwords.mine.title };
+}
 
 /** « Mon mot de passe » : tous les rôles (équipe, élève, console). */
 export default async function MyPasswordPage() {
+  const P = (await getLabels()).passwords;
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
   if (state.status === "no-profile") redirect(ROUTES.inactive);

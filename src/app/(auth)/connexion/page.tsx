@@ -5,16 +5,18 @@ import { CenterNotice } from "@/components/auth/center-notice";
 import { Card, CardContent } from "@/components/ui/card";
 import { NEXT_PARAM, ROUTES, safeNextPath } from "@/lib/auth/routes";
 import { getCurrentCenter } from "@/lib/branding";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 
 import { AuthLinkRedirect } from "./auth-link-redirect";
 import { LoginForm } from "./login-form";
 
-const L = LABELS.auth.login;
-
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).auth.login.title };
+}
 
 export default async function LoginPage({ searchParams }: PageProps<"/connexion">) {
+  const LABELS = await getLabels();
+  const L = LABELS.auth.login;
   const params = await searchParams;
   const rawNext = params[NEXT_PARAM];
   const next = safeNextPath(typeof rawNext === "string" ? rawNext : null);

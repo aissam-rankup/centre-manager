@@ -8,6 +8,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { brandMetadata, getDocumentBrand } from "@/lib/branding";
 import { getRootUrl } from "@/lib/center-host";
 import { LABELS } from "@/lib/constants/labels";
+import { LabelsProvider, LocaleProvider } from "@/lib/i18n/client";
+import { getAppLocale } from "@/lib/i18n/request-locale";
+import { DEFAULT_VOCABULARY } from "@/lib/vocabulary";
 
 import "./globals.css";
 
@@ -75,14 +78,20 @@ export const viewport: Viewport = {
   themeColor: "#6C2BF5",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+// Langue de l'utilisateur pour toute l'application ; les espaces d'un centre y ajoutent son vocabulaire.
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const locale = await getAppLocale();
   return (
-    <html lang="fr" className={poppins.variable} suppressHydrationWarning>
+    <html lang={locale} className={poppins.variable} suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-          <TooltipProvider>{children}</TooltipProvider>
-          <Toaster position="top-center" closeButton />
-        </ThemeProvider>
+        <LocaleProvider locale={locale}>
+          <LabelsProvider terms={DEFAULT_VOCABULARY}>
+            <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+              <TooltipProvider>{children}</TooltipProvider>
+              <Toaster position="top-center" closeButton />
+            </ThemeProvider>
+          </LabelsProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

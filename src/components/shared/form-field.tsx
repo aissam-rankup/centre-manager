@@ -1,6 +1,9 @@
+"use client";
+
 import { cloneElement, type ReactElement } from "react";
 
 import { Label } from "@/components/ui/label";
+import { useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 type FieldControlProps = {
@@ -19,8 +22,12 @@ type FormFieldProps = {
   className?: string;
 };
 
-/** Libellé + champ + aide + message d'erreur, reliés pour les lecteurs d'écran. */
+/**
+ * Libellé + champ + aide + message d'erreur, reliés pour les lecteurs d'écran.
+ * Le message d'erreur (validation, serveur) est affiché dans la langue de l'utilisateur.
+ */
 export function FormField({ id, label, hint, error, children, className }: FormFieldProps) {
+  const message = useMessage();
   const hintId = hint ? `${id}-aide` : undefined;
   const errorId = error ? `${id}-erreur` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
@@ -40,7 +47,7 @@ export function FormField({ id, label, hint, error, children, className }: FormF
       ) : null}
       {error ? (
         <p id={errorId} className="text-caption text-danger-ink">
-          {error}
+          {message(error)}
         </p>
       ) : null}
     </div>

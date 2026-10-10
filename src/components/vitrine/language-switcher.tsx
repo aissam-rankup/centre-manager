@@ -9,7 +9,18 @@ import { cn } from "@/lib/utils";
 const SHORT: Record<Locale, string> = { fr: "FR", en: "EN", ar: "ع" };
 
 /** Choix de la langue : mémorisé dans le navigateur (un an), page rendue à nouveau. */
-export function LanguageSwitcher({ locale, label, className }: { locale: Locale; label: string; className?: string }) {
+export function LanguageSwitcher({
+  locale,
+  label,
+  locales = LOCALES,
+  className,
+}: {
+  locale: Locale;
+  label: string;
+  /** Langues proposées (toutes par défaut). */
+  locales?: readonly Locale[];
+  className?: string;
+}) {
   const [pending, startTransition] = useTransition();
 
   // Une seule requête : un cookie modifié par l'action fait déjà rendre la page à nouveau.
@@ -31,7 +42,7 @@ export function LanguageSwitcher({ locale, label, className }: { locale: Locale;
       aria-label={label}
       className={cn("inline-flex items-center rounded-full border border-border bg-card p-0.5", pending && "opacity-70", className)}
     >
-      {LOCALES.map((option) => (
+      {locales.map((option) => (
         <button
           key={option}
           type="button"

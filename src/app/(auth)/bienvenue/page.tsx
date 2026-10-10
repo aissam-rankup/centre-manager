@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 
 import { WelcomeForm } from "./welcome-form";
 
-const L = LABELS.welcome;
-
-export const metadata: Metadata = { title: L.title, robots: { index: false, follow: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).welcome.title, robots: { index: false, follow: false } };
+}
 
 /** Accueil d'un compte invité : ouverture de la session depuis le lien, puis choix du mot de passe. */
-export default function WelcomePage() {
+export default async function WelcomePage() {
+  const L = (await getLabels()).welcome;
   return (
     <Card className="w-full max-w-md">
       <CardContent className="flex flex-col gap-6">

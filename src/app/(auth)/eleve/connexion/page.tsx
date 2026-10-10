@@ -8,16 +8,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/lib/auth/routes";
 import { getAuthState } from "@/lib/auth/session";
 import { getCurrentCenter } from "@/lib/branding";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 
 import { StudentLoginForm } from "./student-login-form";
 
-const L = LABELS.studentLogin;
-
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).studentLogin.title };
+}
 
 /** Connexion de l'élève par le code fourni par son centre. */
 export default async function StudentLoginPage({ searchParams }: PageProps<"/eleve/connexion">) {
+  const L = (await getLabels()).studentLogin;
   const state = await getAuthState();
   // Élève déjà connecté avec un accès valide : son espace.
   if (state.status === "student" && state.student.allowed) redirect(ROUTES.student.home);

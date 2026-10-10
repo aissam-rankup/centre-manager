@@ -1,4 +1,7 @@
+import { TEXTS_EN } from "@/lib/constants/labels-en";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale";
 import { DEFAULT_VOCABULARY, translateTree, translator, type VocabularyTerms } from "@/lib/vocabulary";
+import { englishTranslator } from "@/lib/vocabulary-en";
 
 /** Heure parlée : « 15:00 » → « 15h », « 15:30 » → « 15h30 ». */
 function hourLabel(time: string): string {
@@ -45,6 +48,7 @@ const TEXTS = {
     openMenu: "Ouvrir le menu",
     skipToContent: "Aller au contenu principal",
     signOut: "Se déconnecter",
+    language: "Langue",
     seeAll: "Voir tout",
     show: "Afficher",
     none: "—",
@@ -2983,26 +2987,114 @@ type CenterNamespaces =
   | "reenrollment"
   | "cash";
 
-export type AppLabels = typeof TEXTS;
+/** Forme d'un arbre de libellés : même structure, textes quelconques (chaque langue a les siens). */
+type LabelTree<T> = T extends string
+  ? string
+  : T extends (...args: infer A) => infer R
+    ? (...args: A) => LabelTree<R>
+    : T extends readonly (infer U)[]
+      ? readonly LabelTree<U>[]
+      : T extends object
+        ? { readonly [K in keyof T]: LabelTree<T[K]> }
+        : T;
 
-/** Libellés neutres, identiques pour tous les centres. */
+export type AppLabels = LabelTree<typeof TEXTS>;
+
+/** Libellés neutres, identiques pour tous les centres (français). */
 export const LABELS: Omit<AppLabels, CenterNamespaces> = TEXTS;
+
+/** Libellés de chaque langue : la vérification de type impose la même structure partout. */
+const TEXTS_BY_LOCALE: Record<Locale, AppLabels> = { fr: TEXTS, en: TEXTS_EN, ar: TEXTS };
 
 const cache = new Map<string, AppLabels>();
 
 /**
- * Libellés complets dans le vocabulaire d'un centre ; en marque blanche,
- * le nom de la plateforme est remplacé par celui de la marque du centre.
+ * Libellés complets dans la langue de l'utilisateur et le vocabulaire d'un centre ;
+ * en marque blanche, le nom de la plateforme est remplacé par celui de la marque du centre.
+ * Sans langue : français (référence des modèles de messages).
  */
-export function labelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName?: string | null): AppLabels {
-  const key = JSON.stringify([terms, brandName ?? null]);
+export function labelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName?: string | null, locale: Locale = DEFAULT_LOCALE): AppLabels {
+  const key = JSON.stringify([terms, brandName ?? null, locale]);
   let labels = cache.get(key);
   if (!labels) {
-    const vocabulary = translator(terms);
+    const vocabulary = locale === "en" ? englishTranslator(terms) : translator(terms);
     const platformName = TEXTS.app.name;
     const translate = brandName && brandName !== platformName ? (text: string) => vocabulary(text).replaceAll(platformName, brandName) : vocabulary;
-    labels = translateTree(TEXTS, translate);
+    labels = translateTree(TEXTS_BY_LOCALE[locale], translate);
+    // Modèles de messages (WhatsApp, reçus) et leurs variables : dans la langue du centre (français).
+    if (locale !== DEFAULT_LOCALE) labels = withMessageTemplates(labels, labelsFor(terms, brandName));
     cache.set(key, labels);
   }
   return labels;
+}
+
+/**
+ * Modèles de messages envoyés aux familles (WhatsApp, reçus), leurs variables et
+ * les exemples de l'aperçu : gardés en français quelle que soit la langue de l'interface.
+ */
+const MESSAGE_TEMPLATE_PATHS: readonly string[] = [
+  "receipts.tokens",
+  "receipts.whatsappTemplate",
+  "reenrollment.reminders.tokens",
+  "reenrollment.reminders.templates",
+  "reenrollment.reminders.settings.sample",
+  "absenceAlerts.tokens",
+  "absenceAlerts.template",
+  "absenceAlerts.seriesTemplate",
+  "absenceAlerts.settings.sample",
+  "centerSettings.sample",
+];
+
+function withMessageTemplates<T>(tree: T, french: T): T {
+  const copy = structuredCloneTree(tree);
+  for (const path of MESSAGE_TEMPLATE_PATHS) {
+    const keys = path.split(".");
+    const last = keys.pop();
+    let target: unknown = copy;
+    let source: unknown = french;
+    for (const key of keys) {
+      target = (target as Record<string, unknown> | undefined)?.[key];
+      source = (source as Record<string, unknown> | undefined)?.[key];
+    }
+    if (last && target && typeof target === "object" && source && typeof source === "object" && last in source) {
+      (target as Record<string, unknown>)[last] = (source as Record<string, unknown>)[last];
+    }
+  }
+  return copy;
+}
+
+/** Copie des objets de l'arbre (fonctions et textes partagés), pour ne pas modifier l'arbre mis en cache. */
+function structuredCloneTree<T>(tree: T): T {
+  if (!tree || typeof tree !== "object" || Array.isArray(tree)) return tree;
+  return Object.fromEntries(Object.entries(tree).map(([k, v]) => [k, structuredCloneTree(v)])) as T;
+}
+
+const messageTranslators = new Map<string, (text: string) => string>();
+
+/**
+ * Message déjà rédigé en français (erreur de validation, d'action serveur…) →
+ * même libellé dans la langue de l'utilisateur. Un texte inconnu (message de la
+ * base, texte calculé) est rendu tel quel.
+ */
+export function messageTranslator(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName?: string | null, locale: Locale = DEFAULT_LOCALE): (text: string) => string {
+  if (locale === DEFAULT_LOCALE) return (text) => text;
+  const key = JSON.stringify([terms, brandName ?? null, locale]);
+  let translate = messageTranslators.get(key);
+  if (!translate) {
+    const map = new Map<string, string>();
+    const collect = (source: unknown, target: unknown) => {
+      if (typeof source === "string") {
+        if (typeof target === "string" && !map.has(source)) map.set(source, target);
+        return;
+      }
+      if (!source || typeof source !== "object" || !target || typeof target !== "object") return;
+      for (const [k, v] of Object.entries(source)) collect(v, (target as Record<string, unknown>)[k]);
+    };
+    // Textes neutres (LABELS) puis textes dans le vocabulaire du centre.
+    collect(TEXTS, labelsFor(terms, brandName, locale));
+    collect(labelsFor(terms, brandName), labelsFor(terms, brandName, locale));
+    translate = (text) => map.get(text) ?? text;
+    messageTranslators.set(key, translate);
+  }
+  return translate;
 }

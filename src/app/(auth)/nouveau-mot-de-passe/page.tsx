@@ -9,14 +9,16 @@ import { signOut } from "@/lib/auth/actions";
 import { signOutStudent } from "@/lib/auth/student-actions";
 import { ROUTES } from "@/lib/auth/routes";
 import { getAuthState } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 
-const P = LABELS.passwords;
-
-export const metadata: Metadata = { title: P.forced.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).passwords.forced.title };
+}
 
 /** Mot de passe temporaire (défini par un responsable) : à remplacer avant toute autre page. */
 export default async function ForcedPasswordPage() {
+  const LABELS = await getLabels();
+  const P = LABELS.passwords;
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
   if (state.status === "no-profile") redirect(ROUTES.inactive);

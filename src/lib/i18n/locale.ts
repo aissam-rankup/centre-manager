@@ -20,6 +20,18 @@ export function isLocale(value: string | null | undefined): value is Locale {
   return value !== null && value !== undefined && (LOCALES as readonly string[]).includes(value);
 }
 
+/**
+ * Langues proposées dans l'application (la vitrine les a toutes). L'anglais n'est
+ * ouvert en production qu'une fois tous les écrans traduits (phase 2) ; l'arabe
+ * arrive en phase 3.
+ */
+export const APP_LOCALES: readonly Locale[] = process.env.NODE_ENV === "development" ? ["fr", "en"] : ["fr"];
+
+/** Langue des écrans de l'application (hors vitrine) : français pour une langue pas encore proposée. */
+export function appLocale(locale: Locale): Locale {
+  return APP_LOCALES.includes(locale) ? locale : DEFAULT_LOCALE;
+}
+
 /** Sens d'écriture : l'arabe se lit de droite à gauche. */
 export function dirFor(locale: Locale): "ltr" | "rtl" {
   return locale === "ar" ? "rtl" : "ltr";

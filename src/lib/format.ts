@@ -1,8 +1,9 @@
 import { TZDate } from "@date-fns/tz";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { enGB, fr } from "date-fns/locale";
 
 import { LABELS } from "@/lib/constants/labels";
+import type { Locale } from "@/lib/i18n/locale";
 
 /** Fuseau horaire de référence de l'application. */
 export const TIME_ZONE = "Africa/Casablanca";
@@ -36,6 +37,9 @@ export function formatMAD(amount: number): string {
 export function formatPercent(ratio: number): string {
   return percentFormatter.format(ratio);
 }
+
+/** Noms des jours et des mois dans la langue de l'interface (l'arabe arrive en phase 3). */
+const DATE_LOCALES = { fr, en: enGB, ar: fr } as const;
 
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -73,21 +77,21 @@ export function formatDateTime(date: Date | string): string {
   return format(inAppTimeZone(date), "dd/MM/yyyy HH:mm", { locale: fr });
 }
 
-/** « jeudi 24/09/2026 » */
-export function formatDateWithWeekday(date: Date | string): string {
-  return format(inAppTimeZone(date), "EEEE dd/MM/yyyy", { locale: fr });
+/** « jeudi 24/09/2026 » ; « Thursday 24/09/2026 » */
+export function formatDateWithWeekday(date: Date | string, locale: Locale = "fr"): string {
+  return format(inAppTimeZone(date), "EEEE dd/MM/yyyy", { locale: DATE_LOCALES[locale] });
 }
 
-/** « 27 septembre 2026 » */
-export function formatLongDate(date: Date | string): string {
-  return format(inAppTimeZone(date), "d MMMM yyyy", { locale: fr });
+/** « 27 septembre 2026 » ; « 27 September 2026 » */
+export function formatLongDate(date: Date | string, locale: Locale = "fr"): string {
+  return format(inAppTimeZone(date), "d MMMM yyyy", { locale: DATE_LOCALES[locale] });
 }
 
-/** « 5 novembre », « 1er décembre » */
-export function formatDayMonth(date: Date | string): string {
+/** « 5 novembre », « 1er décembre » ; « 5 November », « 1 December » */
+export function formatDayMonth(date: Date | string, locale: Locale = "fr"): string {
   const zoned = inAppTimeZone(date);
   const day = zoned.getDate();
-  return `${day === 1 ? "1er" : day} ${format(zoned, "MMMM", { locale: fr })}`;
+  return `${day === 1 && locale !== "en" ? "1er" : day} ${format(zoned, "MMMM", { locale: DATE_LOCALES[locale] })}`;
 }
 
 /** « 2026-09-24 » — format des colonnes `date` Postgres, au fuseau de Casablanca. */
@@ -95,7 +99,7 @@ export function toISODate(date: Date | string): string {
   return format(inAppTimeZone(date), "yyyy-MM-dd");
 }
 
-/** « septembre 2026 » */
-export function formatMonth(date: Date | string): string {
-  return format(inAppTimeZone(date), "MMMM yyyy", { locale: fr });
+/** « septembre 2026 » ; « September 2026 » */
+export function formatMonth(date: Date | string, locale: Locale = "fr"): string {
+  return format(inAppTimeZone(date), "MMMM yyyy", { locale: DATE_LOCALES[locale] });
 }

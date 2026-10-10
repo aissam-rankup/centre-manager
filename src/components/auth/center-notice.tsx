@@ -2,9 +2,7 @@ import { Info, TriangleAlert } from "lucide-react";
 
 import { OTHER_CENTER_PARAM, PLATFORM_ACCOUNT, SESSION_CLOSED_PARAM, TRANSFER_PARAM } from "@/lib/auth/routes";
 import { centerAddress, getCenterUrl, getRootUrl, SLUG_PATTERN } from "@/lib/center-host";
-import { LABELS } from "@/lib/constants/labels";
-
-const L = LABELS.centerHost;
+import { getLabels } from "@/lib/i18n/server";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -14,7 +12,9 @@ type SearchParams = Record<string, string | string[] | undefined>;
  * (déconnecté, lien vers l'adresse de son centre) ou transfert depuis le
  * domaine racine (se reconnecter une fois sur l'adresse du centre).
  */
-export function CenterNotice({ params, currentSlug }: { params: SearchParams; currentSlug: string | null }) {
+export async function CenterNotice({ params, currentSlug }: { params: SearchParams; currentSlug: string | null }) {
+  const LABELS = await getLabels();
+  const L = LABELS.centerHost;
   // Session fermée par une réinitialisation du mot de passe.
   if (params[SESSION_CLOSED_PARAM] === "fermee") {
     return (

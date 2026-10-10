@@ -70,7 +70,8 @@ export async function sendPaymentReminder(input: unknown): Promise<ActionResult<
         subjects: item.subjectNames.join(", "),
         amount: formatMAD(item.amountDue),
         date: formatDayMonth(item.dueDate),
-        days: R.days(item.daysOverdue ?? 0),
+        // Message aux familles : en français, quelle que soit la langue de l'utilisateur.
+        days: labelsFor().reenrollment.reminders.days(item.daysOverdue ?? 0),
         center: brand.whiteLabel ? brand.name : profile.centerName,
       },
       LABELS,
