@@ -5,14 +5,15 @@ import { requireRole } from "@/lib/auth/session";
 import { toCsv } from "@/lib/csv";
 import { getPayroll } from "@/lib/data/payroll";
 import { formatDate, today } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
-import { getCenterPdfBrand } from "@/lib/pdf/center-brand";
+import { getStaffPdfContext } from "@/lib/pdf/center-brand";
 import { PayrollSummaryPdf } from "@/lib/pdf/payroll-pdf";
 import { compareMonths, monthKey, parsePayrollMonth } from "@/lib/payroll";
 
-/** Récapitulatif mensuel de la paie : ?mois=AAAA-MM&format=pdf|csv (admin, hors mode support). */
+/** Récapitulatif mensuel de la paie : ?mois=AAAA-MM&format=pdf|csv (admin, hors mode support), dans la langue de l'utilisateur. */
 export async function GET(request: NextRequest) {
-  const LABELS = await getLabels();
+  const [LABELS, locale] = await Promise.all([getLabels(), getAppLocale()]);
   const P = LABELS.payroll;
   const profile = await requireRole("admin");
   if (profile.support || !profile.modules.includes("finance")) return new Response(null, { status: 404 });
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
         line.final,
         line.paidAt && line.paymentMethod ? P.paidOn(formatDate(line.paidAt), LABELS.paymentMethods[line.paymentMethod]) : "",
       ]),
+      locale,
     );
     return new Response(csv, {
       headers: {
@@ -48,9 +50,8 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const buffer = await renderToBuffer(
-    PayrollSummaryPdf({ brand: await getCenterPdfBrand(), labels: LABELS, payroll, generatedAt: new Date() }),
-  );
+  const pdf = await getStaffPdfContext();
+  const buffer = await renderToBuffer(PayrollSummaryPdf({ ...pdf, payroll, generatedAt: new Date() }));
   return new Response(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",

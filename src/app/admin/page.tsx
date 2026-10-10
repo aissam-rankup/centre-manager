@@ -87,15 +87,15 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
               links={[{ href: ROUTES.admin.students, label: D.detail }]}
             />
             <StatTile
-              value={formatMAD(data.collected)}
+              value={formatMAD(data.collected, locale)}
               label={L.stats.collectedMonth}
               detail={L.stats.collectedHint(data.paidCount, data.invoiceCount)}
               links={[{ href: ROUTES.admin.reports, label: D.detail }]}
             />
             <StatTile
-              value={formatMAD(gap)}
+              value={formatMAD(gap, locale)}
               label={L.stats.shortfall}
-              detail={L.stats.shortfallDetail(formatPercent(gapRatio, locale), formatMAD(data.expected))}
+              detail={L.stats.shortfallDetail(formatPercent(gapRatio, locale), formatMAD(data.expected, locale))}
               links={[{ href: `${ROUTES.admin.students}?statut=retard`, label: D.detail }]}
             />
           </StatTiles>
@@ -126,7 +126,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
       <aside className="flex flex-col gap-6" aria-label={D.reminder.title}>
         {reenrollment ? <ReenrollmentOverviewCard data={reenrollment} LABELS={LABELS} locale={locale} /> : null}
 
-        {finance ? <DiscountsOverview data={finance} LABELS={LABELS} /> : null}
+        {finance ? <DiscountsOverview data={finance} LABELS={LABELS} locale={locale} /> : null}
 
         <section aria-labelledby="rappel" className="flex flex-col gap-3">
           <SectionHeading id="rappel" title={D.reminder.title} href={`${ROUTES.admin.students}?statut=retard`} />

@@ -29,7 +29,7 @@ export function TeacherPaySettingsSection({ teachers, defaultFrom }: { teachers:
           const summary =
             teacher.payMode === "fixed_salary"
               ? teacher.currentSalary !== null
-                ? S.current.salary(formatMAD(teacher.currentSalary))
+                ? S.current.salary(formatMAD(teacher.currentSalary, locale))
                 : S.current.none
               : teacher.payMode === "commission"
                 ? rated.map((subject) => `${subject.subject} (${subject.level}) ${formatRate(subject.currentRate ?? 0, locale)}`).join(" · ") ||
@@ -212,7 +212,7 @@ function TeacherPayDialog({ teacher, defaultFrom }: { teacher: TeacherPaySetting
               {teacher.salaryHistory.length > 0 ? (
                 <div className="flex flex-col gap-1">
                   <span className="text-caption font-medium">{P.modes.fixed_salary}</span>
-                  <HistoryList entries={teacher.salaryHistory} format={formatMAD} />
+                  <HistoryList entries={teacher.salaryHistory} format={(value) => formatMAD(value, locale)} />
                 </div>
               ) : null}
               {teacher.subjects

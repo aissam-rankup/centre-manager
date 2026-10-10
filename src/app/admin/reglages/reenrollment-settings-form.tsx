@@ -119,7 +119,7 @@ export function ReenrollmentSettingsForm({ settings }: { settings: ReenrollmentS
           ) : run ? (
             <>
               <p className="font-medium">
-                {S.runStatus[run.status]} · {S.runSummary(monthName, run.studentCount, formatMAD(run.totalExpected))}
+                {S.runStatus[run.status]} · {S.runSummary(monthName, run.studentCount, formatMAD(run.totalExpected, locale))}
               </p>
               <p className="text-caption text-muted-foreground">
                 {run.automatic ? S.generatedAuto(formatDateTime(run.generatedAt)) : S.generatedBy(formatDateTime(run.generatedAt))}

@@ -90,7 +90,7 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
                 monthName={monthName}
                 students={run.studentCount}
                 invoices={keptLines}
-                total={formatMAD(run.totalExpected)}
+                total={formatMAD(run.totalExpected, locale)}
                 pending={counts.pending}
                 dropped={counts.dropped}
                 paused={counts.paused}
@@ -174,7 +174,7 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
                   </a>
                   <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption">
                     {student.overdueAmount > 0 ? (
-                      <span className="font-medium text-danger-ink">{R.risk.overdue(formatMAD(student.overdueAmount))}</span>
+                      <span className="font-medium text-danger-ink">{R.risk.overdue(formatMAD(student.overdueAmount, locale))}</span>
                     ) : null}
                     {student.lowAttendance && student.attendanceRate !== null ? (
                       <span className="font-medium text-warning-ink">{R.risk.attendance(formatPercent(student.attendanceRate, locale))}</span>

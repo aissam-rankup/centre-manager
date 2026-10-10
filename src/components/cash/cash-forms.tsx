@@ -31,7 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { closeCashSession, openCashSession, recordCashMovement } from "@/lib/actions/cash";
 import { ADMIN_MOVEMENT_KINDS, ASSISTANT_MOVEMENT_KINDS, parseCents, varianceCents } from "@/lib/cash";
 import { formatMAD } from "@/lib/format";
-import { useLabels, useMessage } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 /** Ouvrir la caisse maintenant avec le fonds de caisse, ou corriger le fonds avant le premier encaissement. */
@@ -79,6 +79,7 @@ export function OpenCashForm({ initialFloat = 0, adjust = false }: { initialFloa
  */
 export function CloseCashForm({ sessionId, expectedCash }: { sessionId: string; expectedCash: number }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const C = LABELS.cash;
   const message = useMessage();
   const [counted, setCounted] = useState("");
@@ -134,8 +135,8 @@ export function CloseCashForm({ sessionId, expectedCash }: { sessionId: string; 
           : variance === 0
             ? C.variance.none
             : variance < 0
-              ? C.variance.shortage(formatMAD(-variance / 100))
-              : C.variance.surplus(formatMAD(variance / 100))}
+              ? C.variance.shortage(formatMAD(-variance / 100, locale))
+              : C.variance.surplus(formatMAD(variance / 100, locale))}
       </p>
 
       {needsReason ? (
@@ -167,12 +168,12 @@ export function CloseCashForm({ sessionId, expectedCash }: { sessionId: string; 
           </AlertDialogHeader>
           {variance !== null ? (
             <p className={cn("rounded-lg px-4 py-3 font-semibold", variance === 0 ? "bg-success/10 text-success-ink" : "bg-danger/10 text-danger-ink")}>
-              {C.countedCash} : {formatMAD((cents ?? 0) / 100)} ·{" "}
+              {C.countedCash} : {formatMAD((cents ?? 0) / 100, locale)} ·{" "}
               {variance === 0
                 ? C.variance.none
                 : variance < 0
-                  ? C.variance.shortage(formatMAD(-variance / 100))
-                  : C.variance.surplus(formatMAD(variance / 100))}
+                  ? C.variance.shortage(formatMAD(-variance / 100, locale))
+                  : C.variance.surplus(formatMAD(variance / 100, locale))}
             </p>
           ) : null}
           {errors.server ? (

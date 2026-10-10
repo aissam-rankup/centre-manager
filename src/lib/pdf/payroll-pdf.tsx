@@ -4,19 +4,26 @@ import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/
 
 import type { AppLabels } from "@/lib/constants/labels";
 import type { PayrollLineView, PayrollView } from "@/lib/data/payroll";
-import { formatDate, formatDateTime, formatMAD } from "@/lib/format";
-import { formatRate, monthLabel } from "@/lib/payroll";
+import { formatDate, formatDateTime, formatMAD, formatMonth } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
+import { formatRate, monthKey, type PayrollMonth } from "@/lib/payroll";
 import { PdfEditedWith, pdfHeaderLogo } from "@/lib/pdf/dirassty";
 
 Font.registerHyphenationCallback((word) => [word]);
 
 /** Montant lisible par les polices PDF standard (pas de signe moins typographique). */
-function money(amount: number): string {
-  return formatMAD(amount).replace(/−/g, "-");
+function money(amount: number, locale: Locale): string {
+  return formatMAD(amount, locale).replace(/−/g, "-");
 }
 
-function signed(amount: number): string {
-  return amount === 0 ? money(0) : `${amount > 0 ? "+" : "-"} ${money(Math.abs(amount))}`;
+function signed(amount: number, locale: Locale): string {
+  return amount === 0 ? money(0, locale) : `${amount > 0 ? "+" : "-"} ${money(Math.abs(amount), locale)}`;
+}
+
+/** « Octobre 2026 » ; « October 2026 » */
+function monthLabel(value: PayrollMonth, locale: Locale): string {
+  const label = formatMonth(`${monthKey(value)}-01`, locale);
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 const INK = "#3b3f5c";
@@ -63,7 +70,7 @@ function Footer({ brand, labels, generatedAt }: { brand: PayrollPdfBrand; labels
   return (
     <View style={styles.footer} fixed>
       <Text>{brand.name}</Text>
-      <PdfEditedWith whiteLabel={brand.whiteLabel} />
+      <PdfEditedWith whiteLabel={brand.whiteLabel} label={labels.receipts.editedWith} />
       <Text>{labels.payroll.pdf.generatedAt(formatDateTime(generatedAt))}</Text>
     </View>
   );
@@ -73,16 +80,18 @@ function modeLabel(line: PayrollLineView, labels: AppLabels): string {
   return line.payMode ? labels.payroll.modes[line.payMode] : labels.payroll.modes.none;
 }
 
-/** Fiche de paie individuelle. */
+/** Fiche de paie individuelle, dans la langue des libellés fournis. */
 export function PayslipPdf({
   brand,
   labels,
+  locale,
   payroll,
   line,
   generatedAt,
 }: {
   brand: PayrollPdfBrand;
   labels: AppLabels;
+  locale: Locale;
   payroll: PayrollView;
   line: PayrollLineView;
   generatedAt: Date;
@@ -93,7 +102,7 @@ export function PayslipPdf({
   const cols = [3, 2.2, 1.6, 1, 1, 1.6];
 
   return (
-    <Document title={`${P.pdf.payslipTitle} — ${line.teacherName}`} author={brand.name} creator={brand.name} producer={brand.name}>
+    <Document title={`${P.pdf.payslipTitle} — ${line.teacherName}`} language={locale} author={brand.name} creator={brand.name} producer={brand.name}>
       <Page size="A4" style={styles.page}>
         <Header brand={brand} />
         <Text style={styles.title}>{P.pdf.payslipTitle}</Text>
@@ -106,7 +115,7 @@ export function PayslipPdf({
           </View>
           <View>
             <Text style={styles.fieldLabel}>{P.pdf.period}</Text>
-            <Text style={styles.fieldValue}>{monthLabel(payroll.month)}</Text>
+            <Text style={styles.fieldValue}>{monthLabel(payroll.month, locale)}</Text>
           </View>
           <View>
             <Text style={styles.fieldLabel}>{P.columns.mode}</Text>
@@ -128,10 +137,10 @@ export function PayslipPdf({
               <View key={subject.subjectId} style={styles.row} wrap={false}>
                 <Text style={{ flex: cols[0] }}>{subject.subject}</Text>
                 <Text style={{ flex: cols[1] }}>{subject.level}</Text>
-                <Text style={[{ flex: cols[2] }, styles.right]}>{money(subject.monthlyPrice)}</Text>
+                <Text style={[{ flex: cols[2] }, styles.right]}>{money(subject.monthlyPrice, locale)}</Text>
                 <Text style={[{ flex: cols[3] }, styles.right]}>{subject.enrolled}</Text>
-                <Text style={[{ flex: cols[4] }, styles.right]}>{subject.ratePercent === null ? "-" : formatRate(subject.ratePercent)}</Text>
-                <Text style={[{ flex: cols[5] }, styles.right]}>{money(subject.subtotal)}</Text>
+                <Text style={[{ flex: cols[4] }, styles.right]}>{subject.ratePercent === null ? "-" : formatRate(subject.ratePercent, locale)}</Text>
+                <Text style={[{ flex: cols[5] }, styles.right]}>{money(subject.subtotal, locale)}</Text>
               </View>
             ))}
             <Text style={[styles.muted, { marginTop: 6 }]}>{D.fullPriceNote}</Text>
@@ -139,7 +148,7 @@ export function PayslipPdf({
         ) : detail.kind === "fixed_salary" ? (
           <Text>
             {detail.monthlyAmount !== null && detail.effectiveFrom
-              ? D.salary(money(detail.monthlyAmount), formatDate(detail.effectiveFrom))
+              ? D.salary(money(detail.monthlyAmount, locale), formatDate(detail.effectiveFrom))
               : D.noSalary}
           </Text>
         ) : null}
@@ -147,7 +156,7 @@ export function PayslipPdf({
         <View style={styles.totals}>
           <View style={styles.totalRow}>
             <Text style={styles.muted}>{P.columns.computed}</Text>
-            <Text>{money(line.computed)}</Text>
+            <Text>{money(line.computed, locale)}</Text>
           </View>
           {line.adjustment !== 0 ? (
             <View style={styles.totalRow}>
@@ -155,12 +164,12 @@ export function PayslipPdf({
                 {P.columns.adjustment}
                 {line.adjustmentReason ? ` (${line.adjustmentReason})` : ""}
               </Text>
-              <Text>{signed(line.adjustment)}</Text>
+              <Text>{signed(line.adjustment, locale)}</Text>
             </View>
           ) : null}
           <View style={styles.grand}>
             <Text>{P.columns.final}</Text>
-            <Text style={{ color: brand.color }}>{money(line.final)}</Text>
+            <Text style={{ color: brand.color }}>{money(line.final, locale)}</Text>
           </View>
           {line.paidAt && line.paymentMethod ? (
             <Text style={[styles.muted, styles.right]}>{P.paidOn(formatDate(line.paidAt), labels.paymentMethods[line.paymentMethod])}</Text>
@@ -174,15 +183,17 @@ export function PayslipPdf({
   );
 }
 
-/** Récapitulatif mensuel de la paie. */
+/** Récapitulatif mensuel de la paie, dans la langue des libellés fournis. */
 export function PayrollSummaryPdf({
   brand,
   labels,
+  locale,
   payroll,
   generatedAt,
 }: {
   brand: PayrollPdfBrand;
   labels: AppLabels;
+  locale: Locale;
   payroll: PayrollView;
   generatedAt: Date;
 }) {
@@ -191,11 +202,11 @@ export function PayrollSummaryPdf({
   const cols = [3, 1.6, 1.4, 1.4, 1.4, 2.2];
 
   return (
-    <Document title={`${P.pdf.summaryTitle} — ${monthLabel(payroll.month)}`} author={brand.name} creator={brand.name} producer={brand.name}>
+    <Document title={`${P.pdf.summaryTitle} — ${monthLabel(payroll.month, locale)}`} language={locale} author={brand.name} creator={brand.name} producer={brand.name}>
       <Page size="A4" orientation="landscape" style={styles.page}>
         <Header brand={brand} />
         <Text style={styles.title}>
-          {P.pdf.summaryTitle} — {monthLabel(payroll.month)}
+          {P.pdf.summaryTitle} — {monthLabel(payroll.month, locale)}
         </Text>
         <Text style={[styles.muted, { marginBottom: 12 }]}>{P.status[payroll.status]}</Text>
 
@@ -214,9 +225,9 @@ export function PayrollSummaryPdf({
               {line.adjustmentReason ? <Text style={styles.muted}>{line.adjustmentReason}</Text> : null}
             </View>
             <Text style={{ flex: cols[1] }}>{modeLabel(line, labels)}</Text>
-            <Text style={[{ flex: cols[2] }, styles.right]}>{money(line.computed)}</Text>
-            <Text style={[{ flex: cols[3] }, styles.right]}>{line.adjustment === 0 ? "-" : signed(line.adjustment)}</Text>
-            <Text style={[{ flex: cols[4] }, styles.right, { fontFamily: "Helvetica-Bold" }]}>{money(line.final)}</Text>
+            <Text style={[{ flex: cols[2] }, styles.right]}>{money(line.computed, locale)}</Text>
+            <Text style={[{ flex: cols[3] }, styles.right]}>{line.adjustment === 0 ? "-" : signed(line.adjustment, locale)}</Text>
+            <Text style={[{ flex: cols[4] }, styles.right, { fontFamily: "Helvetica-Bold" }]}>{money(line.final, locale)}</Text>
             <Text style={[{ flex: cols[5] }, styles.right]}>
               {line.paidAt && line.paymentMethod ? P.paidOn(formatDate(line.paidAt), labels.paymentMethods[line.paymentMethod]) : "-"}
             </Text>
@@ -224,7 +235,7 @@ export function PayrollSummaryPdf({
         ))}
         <View style={[styles.grand, { marginTop: 8 }]}>
           <Text>{P.total}</Text>
-          <Text style={{ color: brand.color }}>{money(payroll.total)}</Text>
+          <Text style={{ color: brand.color }}>{money(payroll.total, locale)}</Text>
         </View>
         <Footer brand={brand} labels={labels} generatedAt={generatedAt} />
       </Page>

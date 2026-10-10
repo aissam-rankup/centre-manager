@@ -21,7 +21,7 @@ import { recordPayment } from "@/lib/actions/receipts";
 import { ROUTES } from "@/lib/auth/routes";
 import type { CashOpening } from "@/lib/cash";
 import { formatMAD } from "@/lib/format";
-import { useLabels, useMessage } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { useModules } from "@/lib/modules-client";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/receipts";
 import { cn } from "@/lib/utils";
@@ -87,6 +87,7 @@ export function PaymentDialog({
   cashOpening = { needed: false, currentFloat: 0 },
 }: PaymentDialogProps) {
   const LABELS = useLabels();
+  const locale = useLocale();
   // Reçus imprimables et WhatsApp : module Finance.
   const receipts = useModules().has("finance");
   const P = LABELS.payment;
@@ -165,7 +166,7 @@ export function PaymentDialog({
         setError(message(result.error));
         return;
       }
-      toast.success(P.success, { description: P.receiptReady(result.data.receiptNumber, formatMAD(result.data.amountPaid)) });
+      toast.success(P.success, { description: P.receiptReady(result.data.receiptNumber, formatMAD(result.data.amountPaid, locale)) });
       if (result.data.floatNotice) toast.warning(message(result.data.floatNotice));
       setDone(result.data);
     });
@@ -193,7 +194,7 @@ export function PaymentDialog({
             </DialogHeader>
             <p className="rounded-xl bg-muted px-4 py-3 text-center">
               <span className="numeric text-section text-heading">
-                {receipts ? P.receiptReady(done.receiptNumber, formatMAD(done.amountPaid)) : P.recorded(formatMAD(done.amountPaid))}
+                {receipts ? P.receiptReady(done.receiptNumber, formatMAD(done.amountPaid, locale)) : P.recorded(formatMAD(done.amountPaid, locale))}
               </span>
             </p>
             {/* Les deux actions côte à côte. */}
@@ -259,12 +260,12 @@ export function PaymentDialog({
                         {invoice.discountAmount > 0 ? (
                           <span className="numeric text-caption text-muted-foreground line-through">
                             <span className="sr-only">{D.full} : </span>
-                            {formatMAD(invoice.amountFull)}
+                            {formatMAD(invoice.amountFull, locale)}
                           </span>
                         ) : null}
                         <span className="numeric font-semibold">
                           <span className="sr-only">{D.net} : </span>
-                          {formatMAD(invoice.amountDue)}
+                          {formatMAD(invoice.amountDue, locale)}
                         </span>
                       </span>
                     </label>
@@ -316,17 +317,17 @@ export function PaymentDialog({
                 <>
                   <div className="flex justify-between gap-4 text-muted-foreground">
                     <dt>{P.totalFull}</dt>
-                    <dd className="numeric line-through">{formatMAD(totalFull)}</dd>
+                    <dd className="numeric line-through">{formatMAD(totalFull, locale)}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt>{P.totalDiscount}</dt>
-                    <dd className="numeric">− {formatMAD(totalDiscount)}</dd>
+                    <dd className="numeric">− {formatMAD(totalDiscount, locale)}</dd>
                   </div>
                 </>
               ) : null}
               <div className="flex items-baseline justify-between gap-4">
                 <dt className="font-semibold">{P.total}</dt>
-                <dd className="numeric text-section text-heading">{formatMAD(total)}</dd>
+                <dd className="numeric text-section text-heading">{formatMAD(total, locale)}</dd>
               </div>
             </dl>
 
@@ -342,7 +343,7 @@ export function PaymentDialog({
               </Button>
               <Button type="button" variant="success" onClick={confirm} disabled={pending || chosen.length === 0}>
                 {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <CircleCheck aria-hidden />}
-                {P.confirm(formatMAD(total))}
+                {P.confirm(formatMAD(total, locale))}
               </Button>
             </DialogFooter>
           </div>

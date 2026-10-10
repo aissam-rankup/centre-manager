@@ -8,27 +8,42 @@ import { intlLocale, type Locale } from "@/lib/i18n/locale";
 /** Fuseau horaire de référence de l'application. */
 export const TIME_ZONE = "Africa/Casablanca";
 
-const amountFormatter = new Intl.NumberFormat("fr-FR", {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
+/** Formateurs de montant d'une langue : sans centimes, avec centimes (toujours deux décimales, « 1 732,50 »). */
+type AmountFormatters = { whole: Intl.NumberFormat; cents: Intl.NumberFormat };
 
-/** Montant avec centimes : toujours deux décimales (« 1 732,50 »). */
-const centsFormatter = new Intl.NumberFormat("fr-FR", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+/** Un jeu de formateurs de montant par locale Intl, créé à la première demande. */
+const amountFormatters = new Map<string, AmountFormatters>();
+
+function amountFormattersFor(intl: string): AmountFormatters {
+  let formatters = amountFormatters.get(intl);
+  if (!formatters) {
+    formatters = {
+      whole: new Intl.NumberFormat(intl, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+      cents: new Intl.NumberFormat(intl, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    };
+    amountFormatters.set(intl, formatters);
+  }
+  return formatters;
+}
+
+/** Nom de la devise en arabe, après le montant (« 1.200 درهم »). */
+const ARABIC_CURRENCY = "درهم";
 
 /** Un formateur de pourcentage par langue, créé à la première demande. */
 const percentFormatters = new Map<Locale, Intl.NumberFormat>();
 
-/** « 1 200 MAD », « 1 732,50 MAD » */
-export function formatMAD(amount: number): string {
-  // Espace insécable classique pour les milliers, pour un rendu « 1 200 MAD » homogène.
+/**
+ * « 1 200 MAD », « 1 732,50 MAD » (français et anglais) ; « 1.200 درهم », « 1.732,50 درهم » (arabe, chiffres occidentaux).
+ * Les messages et documents destinés aux familles gardent la langue par défaut.
+ */
+export function formatMAD(amount: number, locale: Locale = "fr"): string {
   const rounded = Math.round(amount * 100) / 100;
-  const formatter = Number.isInteger(rounded) ? amountFormatter : centsFormatter;
+  const arabic = locale === "ar";
+  const { whole, cents } = amountFormattersFor(arabic ? intlLocale("ar") : "fr-FR");
+  const formatter = Number.isInteger(rounded) ? whole : cents;
+  // Espace insécable classique pour les milliers, pour un rendu « 1 200 MAD » homogène.
   const digits = formatter.format(rounded).replace(/ /g, " ");
-  return `${digits} ${LABELS.currency.code}`;
+  return `${digits} ${arabic ? ARABIC_CURRENCY : LABELS.currency.code}`;
 }
 
 /** « 12,5 % » ; « 12.5% » */

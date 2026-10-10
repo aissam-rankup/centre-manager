@@ -57,11 +57,11 @@ export default async function AssistantDashboardPage() {
             <StatTile
               value={stats.overdueCount}
               label={L.stats.overduePayments}
-              detail={L.stats.overduePaymentsDetail(LABELS.billing.studentsCount(stats.overdueStudents), formatMAD(stats.overdueAmount))}
+              detail={L.stats.overduePaymentsDetail(LABELS.billing.studentsCount(stats.overdueStudents), formatMAD(stats.overdueAmount, locale))}
               links={[{ href: "#relances", label: D.detail }]}
             />
             <StatTile
-              value={formatMAD(monthUnpaid.amount)}
+              value={formatMAD(monthUnpaid.amount, locale)}
               label={L.stats.monthUnpaid}
               detail={L.stats.monthUnpaidDetail(monthUnpaid.count)}
               links={[{ href: ROUTES.assistant.students, label: D.detail }]}

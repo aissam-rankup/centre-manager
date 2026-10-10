@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { requireSuperAdmin } from "@/lib/auth/session";
+import { getLabels } from "@/lib/i18n/server";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { type CustomTermsInput, customTermsSchema } from "@/lib/validation/platform";
@@ -87,22 +88,40 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
   return data;
 }
 
+/**
+ * Libellés à clé fixe (types d'établissement, modules) dans la langue de l'utilisateur ;
+ * le texte lu en base sert de repli pour une clé inconnue.
+ */
+async function catalogueNames() {
+  const P = (await getLabels()).platform;
+  return {
+    centerType: (code: string, fallback: string) => P.centerTypeNames[code] ?? fallback,
+    module: <T extends { name: string; description: string }>(key: string, row: T): T => {
+      const known = P.moduleCatalogue[key];
+      return known ? { ...row, name: known.name, description: known.description } : row;
+    },
+  };
+}
+
 export async function getPlatformCenters(): Promise<PlatformCenterRow[]> {
   const supabase = await platformClient();
-  const { data, error } = await supabase.rpc("platform_centers");
+  const [{ data, error }, names] = await Promise.all([supabase.rpc("platform_centers"), catalogueNames()]);
   if (error) throw error;
-  return data;
+  return data.map((row) => ({ ...row, center_type_label: names.centerType(row.center_type, row.center_type_label) }));
 }
 
 export type CenterTypeOption = { code: string; label: string; isCustom: boolean; terms: CustomTermsInput };
 
 export async function getCenterTypes(): Promise<CenterTypeOption[]> {
   const supabase = await platformClient();
-  const { data, error } = await supabase.from("center_types").select("code, label, is_custom, terms").order("sort_order");
+  const [{ data, error }, names] = await Promise.all([
+    supabase.from("center_types").select("code, label, is_custom, terms").order("sort_order"),
+    catalogueNames(),
+  ]);
   if (error) throw error;
   return data.map((row) => ({
     code: row.code,
-    label: row.label,
+    label: names.centerType(row.code, row.label),
     isCustom: row.is_custom,
     terms: customTermsSchema.parse(row.terms),
   }));
@@ -142,12 +161,17 @@ export async function getPlatformCenterFile(centerId: string): Promise<PlatformC
   if (payments.error) throw payments.error;
   if (modules.error) throw modules.error;
   if (!center.data) return null;
+  const names = await catalogueNames();
   return {
-    center: { ...center.data, branding: brandingSchema.parse(center.data.branding) },
+    center: {
+      ...center.data,
+      center_type_label: names.centerType(center.data.center_type, center.data.center_type_label),
+      branding: brandingSchema.parse(center.data.branding),
+    },
     users: users.data,
     events: events.data,
     payments: payments.data,
-    modules: modules.data,
+    modules: modules.data.map((row) => names.module(row.module_key, row)),
   };
 }
 
@@ -166,10 +190,10 @@ export type PlatformCatalogue = { plans: PlatformPlan[]; modules: PlatformModule
 /** Catalogue : packs (prix, modules inclus) et modules activables. */
 export async function getPlatformCatalogue(): Promise<PlatformCatalogue> {
   const supabase = await platformClient();
-  const [plans, modules] = await Promise.all([supabase.rpc("platform_plans"), supabase.rpc("platform_modules")]);
+  const [plans, modules, names] = await Promise.all([supabase.rpc("platform_plans"), supabase.rpc("platform_modules"), catalogueNames()]);
   if (plans.error) throw plans.error;
   if (modules.error) throw modules.error;
-  return { plans: plans.data, modules: modules.data };
+  return { plans: plans.data, modules: modules.data.map((row) => names.module(row.key, row)) };
 }
 
 /** Packs proposés à la création d'un centre et au changement de pack. */

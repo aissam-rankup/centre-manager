@@ -101,7 +101,7 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
               {student.overdueAmount > 0 ? (
                 <span className="inline-flex items-center gap-1">
                   <TriangleAlert className="size-3.5" aria-hidden />
-                  {R.risk.overdue(formatMAD(student.overdueAmount))}
+                  {R.risk.overdue(formatMAD(student.overdueAmount, locale))}
                 </span>
               ) : null}
               {student.lowAttendance && student.attendanceRate !== null ? (
@@ -154,7 +154,7 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
                     </span>
                     <span className="text-caption text-muted-foreground">
                       {cancelled ? null : kept ? R.due(formatDate(line.dueDate)) : R.lineRemoved}
-                      {kept && line.discountAmount > 0 ? ` · ${R.full} ${formatMAD(line.amountFull)} − ${formatMAD(line.discountAmount)}` : null}
+                      {kept && line.discountAmount > 0 ? ` · ${R.full} ${formatMAD(line.amountFull, locale)} − ${formatMAD(line.discountAmount, locale)}` : null}
                     </span>
                     {line.discountConflict && kept ? <span className="text-caption text-warning-ink">{R.conflict}</span> : null}
                   </div>

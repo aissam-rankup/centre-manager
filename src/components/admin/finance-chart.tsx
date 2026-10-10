@@ -122,7 +122,7 @@ export function FinanceChart({ months }: { months: FinanceMonth[] }) {
                   <td className="px-2 capitalize">{formatMonth(month.monthStart, locale)}</td>
                   {SERIES.map((series) => (
                     <td key={series.key} className="numeric px-2 text-end font-normal">
-                      {formatMAD(month[series.key])}
+                      {formatMAD(month[series.key], locale)}
                     </td>
                   ))}
                 </tr>
@@ -150,7 +150,7 @@ function FinanceTooltip({ active, payload }: TooltipContentProps) {
             <span className="size-2 rounded-full" style={{ background: series.color }} aria-hidden />
             {C.series[series.key]}
           </span>
-          <span className="numeric font-medium">{formatMAD(row[series.key])}</span>
+          <span className="numeric font-medium">{formatMAD(row[series.key], locale)}</span>
         </p>
       ))}
     </div>

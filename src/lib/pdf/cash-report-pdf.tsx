@@ -5,6 +5,7 @@ import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/
 import { type CashSessionSummary, toCents } from "@/lib/cash";
 import type { AppLabels } from "@/lib/constants/labels";
 import { formatDate, formatDateTime, formatMAD, formatTime } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
 import type { CenterPdfBrand } from "@/lib/pdf/center-brand";
 import { PdfEditedWith, pdfHeaderLogo } from "@/lib/pdf/dirassty";
 import { PAYMENT_METHODS } from "@/lib/receipts";
@@ -12,8 +13,13 @@ import { PAYMENT_METHODS } from "@/lib/receipts";
 Font.registerHyphenationCallback((word) => [word]);
 
 /** Montant lisible par les polices PDF standard (pas de signe moins typographique). */
-function money(amount: number): string {
-  return formatMAD(amount).replace(/−/g, "-");
+function money(amount: number, locale: Locale): string {
+  return formatMAD(amount, locale).replace(/−/g, "-");
+}
+
+/** « Motif : … » en français, « Reason: … » en anglais. */
+function labelled(label: string, value: string, locale: Locale): string {
+  return `${label}${locale === "fr" ? " " : ""}: ${value}`;
 }
 
 const INK = "#3b3f5c";
@@ -61,12 +67,16 @@ function Header({ brand }: { brand: CenterPdfBrand }) {
   );
 }
 
-function varianceLabel(variance: number, labels: AppLabels): string {
+function varianceLabel(variance: number, labels: AppLabels, locale: Locale): string {
   const C = labels.cash;
-  return variance === 0 ? C.variance.none : variance < 0 ? C.variance.shortage(money(-variance)) : C.variance.surplus(money(variance));
+  return variance === 0
+    ? C.variance.none
+    : variance < 0
+      ? C.variance.shortage(money(-variance, locale))
+      : C.variance.surplus(money(variance, locale));
 }
 
-function SessionBlock({ session, labels }: { session: CashSessionSummary; labels: AppLabels }) {
+function SessionBlock({ session, labels, locale }: { session: CashSessionSummary; labels: AppLabels; locale: Locale }) {
   const C = labels.cash;
   const P = C.admin.pdf;
   const cols = [0.8, 3, 1.6, 1.4, 1.4];
@@ -88,7 +98,7 @@ function SessionBlock({ session, labels }: { session: CashSessionSummary; labels
         {PAYMENT_METHODS.map((method) => (
           <View key={method} style={styles.method}>
             <Text style={styles.methodLabel}>{C.methods[method]}</Text>
-            <Text style={styles.methodValue}>{money(session.byMethod[method])}</Text>
+            <Text style={styles.methodValue}>{money(session.byMethod[method], locale)}</Text>
           </View>
         ))}
       </View>
@@ -116,7 +126,7 @@ function SessionBlock({ session, labels }: { session: CashSessionSummary; labels
               </Text>
               <Text style={{ flex: cols[2] }}>{receipt.number}</Text>
               <Text style={{ flex: cols[3] }}>{receipt.method ? C.methods[receipt.method] : "-"}</Text>
-              <Text style={[{ flex: cols[4] }, styles.right, receipt.amount < 0 ? { color: DANGER } : {}]}>{money(receipt.amount)}</Text>
+              <Text style={[{ flex: cols[4] }, styles.right, receipt.amount < 0 ? { color: DANGER } : {}]}>{money(receipt.amount, locale)}</Text>
             </View>
           ))}
         </View>
@@ -134,7 +144,7 @@ function SessionBlock({ session, labels }: { session: CashSessionSummary; labels
                 {movement.correctedSessionDate ? ` · ${C.correctsSession(formatDate(movement.correctedSessionDate))}` : ""}
               </Text>
               <Text style={{ flex: cols[3] }}>{movement.createdByName ?? ""}</Text>
-              <Text style={[{ flex: cols[4] }, styles.right]}>{money(movement.amount)}</Text>
+              <Text style={[{ flex: cols[4] }, styles.right]}>{money(movement.amount, locale)}</Text>
             </View>
           ))}
         </View>
@@ -148,7 +158,7 @@ function SessionBlock({ session, labels }: { session: CashSessionSummary; labels
               <Text style={{ flex: cols[0] + cols[1] + cols[2] }}>
                 {correction.reason ?? ""} · {C.correctionLine(formatDate(correction.sessionDate), correction.createdByName)}
               </Text>
-              <Text style={[{ flex: cols[3] + cols[4] }, styles.right]}>{money(correction.amount)}</Text>
+              <Text style={[{ flex: cols[3] + cols[4] }, styles.right]}>{money(correction.amount, locale)}</Text>
             </View>
           ))}
         </View>
@@ -157,40 +167,36 @@ function SessionBlock({ session, labels }: { session: CashSessionSummary; labels
       <View style={styles.closing} wrap={false}>
         <View style={styles.line}>
           <Text>{P.float}</Text>
-          <Text>{money(session.openingFloat)}</Text>
+          <Text>{money(session.openingFloat, locale)}</Text>
         </View>
         <View style={styles.line}>
           <Text style={styles.strong}>{P.expectedCash}</Text>
-          <Text style={styles.strong}>{money(session.expectedCash)}</Text>
+          <Text style={styles.strong}>{money(session.expectedCash, locale)}</Text>
         </View>
         {session.countedCash !== null ? (
           <>
             <View style={styles.line}>
               <Text>{P.counted}</Text>
-              <Text>{money(session.countedCash)}</Text>
+              <Text>{money(session.countedCash, locale)}</Text>
             </View>
             <View style={styles.line}>
               <Text style={styles.strong}>{P.variance}</Text>
               <Text style={[styles.strong, { color: (session.variance ?? 0) === 0 ? SUCCESS : DANGER }]}>
-                {varianceLabel(session.variance ?? 0, labels)}
+                {varianceLabel(session.variance ?? 0, labels, locale)}
               </Text>
             </View>
             {session.varianceReason ? (
-              <Text style={styles.muted}>
-                {P.reason} : {session.varianceReason}
-              </Text>
+              <Text style={styles.muted}>{labelled(P.reason, session.varianceReason, locale)}</Text>
             ) : null}
             {corrected !== null ? (
               <View style={styles.line}>
                 <Text>{C.afterCorrections}</Text>
-                <Text style={{ color: corrected === 0 ? SUCCESS : DANGER }}>{varianceLabel(corrected, labels)}</Text>
+                <Text style={{ color: corrected === 0 ? SUCCESS : DANGER }}>{varianceLabel(corrected, labels, locale)}</Text>
               </View>
             ) : null}
             {session.notes ? <Text style={styles.muted}>{session.notes}</Text> : null}
             {session.validationNotes ? (
-              <Text style={styles.muted}>
-                {P.validationNotes} : {session.validationNotes}
-              </Text>
+              <Text style={styles.muted}>{labelled(P.validationNotes, session.validationNotes, locale)}</Text>
             ) : null}
           </>
         ) : null}
@@ -199,16 +205,18 @@ function SessionBlock({ session, labels }: { session: CashSessionSummary; labels
   );
 }
 
-/** Rapport de caisse d'une journée : chaque session, ses encaissements, ses mouvements, son comptage. */
+/** Rapport de caisse d'une journée : chaque session, ses encaissements, ses mouvements, son comptage (langue des libellés fournis). */
 export function CashReportPdf({
   brand,
   labels,
+  locale,
   date,
   sessions,
   generatedAt,
 }: {
   brand: CenterPdfBrand;
   labels: AppLabels;
+  locale: Locale;
   date: string;
   sessions: CashSessionSummary[];
   generatedAt: Date;
@@ -217,22 +225,22 @@ export function CashReportPdf({
   const title = P.title(formatDate(date));
   const dayTotal = sessions.reduce((sum, session) => sum + PAYMENT_METHODS.reduce((total, method) => total + session.byMethod[method], 0), 0);
   return (
-    <Document title={title} author={brand.name} creator={brand.name} producer={brand.name}>
+    <Document title={title} language={locale} author={brand.name} creator={brand.name} producer={brand.name}>
       <Page size="A4" style={styles.page}>
         <Header brand={brand} />
         <Text style={styles.title}>{title}</Text>
         {sessions.length === 0 ? <Text style={styles.muted}>{P.empty}</Text> : null}
         {sessions.map((session) => (
-          <SessionBlock key={session.id} session={session} labels={labels} />
+          <SessionBlock key={session.id} session={session} labels={labels} locale={locale} />
         ))}
         <View style={styles.dayTotal} wrap={false}>
           <Text>{P.dayTotal}</Text>
-          <Text>{money(dayTotal)}</Text>
+          <Text>{money(dayTotal, locale)}</Text>
         </View>
         <Text style={styles.signature}>{P.signature}</Text>
         <View style={styles.footer} fixed>
           <Text>{brand.name}</Text>
-          <PdfEditedWith whiteLabel={brand.whiteLabel} />
+          <PdfEditedWith whiteLabel={brand.whiteLabel} label={labels.receipts.editedWith} />
           <Text>{P.generatedAt(formatDateTime(generatedAt))}</Text>
         </View>
       </Page>

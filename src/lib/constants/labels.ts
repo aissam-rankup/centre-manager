@@ -1,6 +1,7 @@
 import { TEXTS_AR } from "@/lib/constants/labels-ar";
 import { TEXTS_EN } from "@/lib/constants/labels-en";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale";
+import { translateDbMessage } from "@/lib/i18n/translate-db-message";
 import { DEFAULT_VOCABULARY, translateTree, translator, type VocabularyTerms } from "@/lib/vocabulary";
 import { arabicTranslator } from "@/lib/vocabulary-ar";
 import { englishTranslator } from "@/lib/vocabulary-en";
@@ -664,6 +665,38 @@ const TEXTS = {
     optional: "facultatif",
   },
   platform: {
+    /** Modules (clé fixe) : nom et description affichés, quelle que soit la langue de la base. */
+    moduleCatalogue: {
+      finance: {
+        name: "Finance",
+        description: "Paie des professeurs (salaire fixe, commissions), reçus imprimables et WhatsApp, charges et revenu net, remises, caisse journalière.",
+      },
+      reenrollment: {
+        name: "Réinscription",
+        description: "Campagnes de réinscription automatique chaque mois, intentions des élèves, rappels de paiement.",
+      },
+      absence_tracking: {
+        name: "Suivi des absences",
+        description: "Fiche d'assiduité détaillée, alerte après trois absences, absences à signaler et messages WhatsApp au tuteur.",
+      },
+      white_label: {
+        name: "Marque blanche",
+        description: "Interface aux couleurs du centre : nom, logo, favicon, couleurs, domaine personnalisé.",
+      },
+      lms: {
+        name: "Plateforme pédagogique",
+        description: "Espace professeur de publication (exercices, examens, résumés de cours) et espace élève de consultation.",
+      },
+    } as Record<string, { name: string; description: string }>,
+    /** Types d'établissement (code fixe). */
+    centerTypeNames: {
+      soutien_scolaire: "Soutien scolaire",
+      centre_formation: "Centre de formation",
+      institut_langue: "Institut de langue",
+      auto_ecole: "Auto-école",
+      soutien_universitaire: "Centre de soutien universitaire",
+      personnalise: "Personnalisé",
+    } as Record<string, string>,
     brand: "dirassty",
     centerStatus: {
       trial: "Essai",
@@ -3076,12 +3109,12 @@ function structuredCloneTree<T>(tree: T): T {
 const messageTranslators = new Map<string, (text: string) => string>();
 
 /**
- * Message déjà rédigé en français (erreur de validation, d'action serveur…) →
- * même libellé dans la langue de l'utilisateur. Un texte inconnu (message de la
- * base, texte calculé) est rendu tel quel.
+ * Message déjà rédigé en français (erreur de validation, d'action serveur, message
+ * d'une fonction SQL) → même message dans la langue de l'utilisateur. Un texte
+ * inconnu (texte calculé) est rendu tel quel.
  */
 export function messageTranslator(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName?: string | null, locale: Locale = DEFAULT_LOCALE): (text: string) => string {
-  if (locale === DEFAULT_LOCALE) return (text) => text;
+  if (locale === "fr") return (text) => text;
   const key = JSON.stringify([terms, brandName ?? null, locale]);
   let translate = messageTranslators.get(key);
   if (!translate) {
@@ -3097,7 +3130,14 @@ export function messageTranslator(terms: VocabularyTerms = DEFAULT_VOCABULARY, b
     // Textes neutres (LABELS) puis textes dans le vocabulaire du centre.
     collect(TEXTS, labelsFor(terms, brandName, locale));
     collect(labelsFor(terms, brandName), labelsFor(terms, brandName, locale));
-    translate = (text) => map.get(text) ?? text;
+    // Message d'une fonction SQL (vocabulaire par défaut) : dictionnaire des messages de la base.
+    const vocabulary = locale === "en" ? englishTranslator(terms) : arabicTranslator(terms);
+    translate = (text) => {
+      const known = map.get(text);
+      if (known !== undefined) return known;
+      const fromDatabase = translateDbMessage(text, locale);
+      return fromDatabase === null ? text : vocabulary(fromDatabase);
+    };
     messageTranslators.set(key, translate);
   }
   return translate;

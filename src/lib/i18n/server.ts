@@ -7,7 +7,10 @@ import { getAuthState } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
 import { type AppLabels, labelsFor, messageTranslator } from "@/lib/constants/labels";
 import { getAppLocale } from "@/lib/i18n/request-locale";
+import { translateDbMessage } from "@/lib/i18n/translate-db-message";
 import { DEFAULT_VOCABULARY, translator, type Translator, type VocabularyTerms } from "@/lib/vocabulary";
+import { arabicTranslator } from "@/lib/vocabulary-ar";
+import { englishTranslator } from "@/lib/vocabulary-en";
 
 /** Vocabulaire du compte connecté (centre, ou centre consulté en support) ; défaut sinon. */
 export const getVocabularyTerms = cache(async (): Promise<VocabularyTerms> => {
@@ -40,7 +43,16 @@ export const getMessageTranslator = cache(async (): Promise<(text: string) => st
 /** Résolution du vocabulaire pour un texte libre (ex. message d'erreur de la base). */
 export const getTranslator = cache(async (): Promise<Translator> => translator(await getVocabularyTerms()));
 
-/** Message d'erreur de la base, dans le vocabulaire du centre (les fonctions SQL écrivent « élève », « matière »…). */
+/**
+ * Message d'erreur de la base dans la langue de l'utilisateur et le vocabulaire du centre
+ * (les fonctions SQL écrivent en français : « élève », « matière »…).
+ */
 export async function describeCenterError(error: { code?: string; message?: string; hint?: string | null }): Promise<string> {
-  return (await getTranslator())(describeDatabaseError(error));
+  const text = describeDatabaseError(error);
+  const locale = await getAppLocale();
+  if (locale === "fr") return (await getTranslator())(text);
+  const translated = translateDbMessage(text, locale);
+  if (!translated) return (await getMessageTranslator())(text);
+  const terms = await getVocabularyTerms();
+  return (locale === "en" ? englishTranslator(terms) : arabicTranslator(terms))(translated);
 }

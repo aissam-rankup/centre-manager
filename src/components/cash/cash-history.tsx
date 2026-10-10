@@ -34,12 +34,12 @@ function recentMonths(todayIso: string): { year: number; month: number }[] {
   });
 }
 
-function VarianceText({ variance, LABELS }: { variance: number | null; LABELS: AppLabels }) {
+function VarianceText({ variance, LABELS, locale }: { variance: number | null; LABELS: AppLabels; locale: Locale }) {
   const C = LABELS.cash;
   if (variance === null) return <span className="text-muted-foreground">{LABELS.common.none}</span>;
   return (
     <span className={cn("font-semibold", variance === 0 ? "text-success-ink" : "text-danger-ink")}>
-      {variance === 0 ? C.variance.none : variance < 0 ? C.variance.shortage(formatMAD(-variance)) : C.variance.surplus(formatMAD(variance))}
+      {variance === 0 ? C.variance.none : variance < 0 ? C.variance.shortage(formatMAD(-variance, locale)) : C.variance.surplus(formatMAD(variance, locale))}
     </span>
   );
 }
@@ -79,11 +79,11 @@ export function CashHistory({
       <dl className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <div className="flex flex-col rounded-lg bg-danger/10 px-3 py-2">
           <dt className="text-caption text-muted-foreground">{A.indicators.shortage}</dt>
-          <dd className="numeric font-semibold text-danger-ink">{formatMAD(Math.abs(overview.shortage))}</dd>
+          <dd className="numeric font-semibold text-danger-ink">{formatMAD(Math.abs(overview.shortage), locale)}</dd>
         </div>
         <div className="flex flex-col rounded-lg bg-warning/10 px-3 py-2">
           <dt className="text-caption text-muted-foreground">{A.indicators.surplus}</dt>
-          <dd className="numeric font-semibold text-warning-ink">{formatMAD(overview.surplus)}</dd>
+          <dd className="numeric font-semibold text-warning-ink">{formatMAD(overview.surplus, locale)}</dd>
         </div>
         <div className="flex flex-col rounded-lg bg-success/10 px-3 py-2">
           <dt className="text-caption text-muted-foreground">{A.indicators.exact}</dt>
@@ -92,11 +92,11 @@ export function CashHistory({
         </div>
         <div className="flex flex-col rounded-lg bg-muted px-3 py-2">
           <dt className="text-caption text-muted-foreground">{A.indicators.collected}</dt>
-          <dd className="numeric font-semibold">{formatMAD(overview.collected)}</dd>
+          <dd className="numeric font-semibold">{formatMAD(overview.collected, locale)}</dd>
           <dd className="text-caption text-muted-foreground">{A.indicators.validated(overview.validated)}</dd>
         </div>
       </dl>
-      <p className="text-caption text-muted-foreground">{A.indicators.net(formatMAD(overview.net))}</p>
+      <p className="text-caption text-muted-foreground">{A.indicators.net(formatMAD(overview.net, locale))}</p>
 
       {overview.people.length > 0 ? (
         <div className="flex flex-col gap-2">
@@ -122,9 +122,9 @@ export function CashHistory({
                   </span>
                   {/* Manquants et excédents séparés : ils ne se compensent pas. */}
                   <span className="flex flex-col items-end">
-                    {person.shortCount + person.surplusCount === 0 ? <VarianceText variance={0} LABELS={LABELS} /> : null}
-                    {person.shortCount > 0 ? <VarianceText variance={person.shortage} LABELS={LABELS} /> : null}
-                    {person.surplusCount > 0 ? <VarianceText variance={person.surplus} LABELS={LABELS} /> : null}
+                    {person.shortCount + person.surplusCount === 0 ? <VarianceText variance={0} LABELS={LABELS} locale={locale} /> : null}
+                    {person.shortCount > 0 ? <VarianceText variance={person.shortage} LABELS={LABELS} locale={locale} /> : null}
+                    {person.surplusCount > 0 ? <VarianceText variance={person.surplus} LABELS={LABELS} locale={locale} /> : null}
                   </span>
                 </li>
               );
@@ -150,24 +150,24 @@ export function CashHistory({
                     {row.validatedByName ? ` · ${row.validatedByName}` : ""}
                   </span>
                 </div>
-                <VarianceText variance={row.variance} LABELS={LABELS} />
+                <VarianceText variance={row.variance} LABELS={LABELS} locale={locale} />
               </div>
               <dl className="grid grid-cols-3 gap-2 text-caption">
                 <div className="flex flex-col">
                   <dt className="text-muted-foreground">{A.columns.collected}</dt>
-                  <dd className="numeric font-semibold">{formatMAD(row.totalCollected)}</dd>
+                  <dd className="numeric font-semibold">{formatMAD(row.totalCollected, locale)}</dd>
                 </div>
                 <div className="flex flex-col">
                   <dt className="text-muted-foreground">{A.columns.expected}</dt>
-                  <dd className="numeric font-semibold">{formatMAD(row.expectedCash)}</dd>
+                  <dd className="numeric font-semibold">{formatMAD(row.expectedCash, locale)}</dd>
                 </div>
                 <div className="flex flex-col">
                   <dt className="text-muted-foreground">{A.columns.counted}</dt>
-                  <dd className="numeric font-semibold">{row.countedCash === null ? LABELS.common.none : formatMAD(row.countedCash)}</dd>
+                  <dd className="numeric font-semibold">{row.countedCash === null ? LABELS.common.none : formatMAD(row.countedCash, locale)}</dd>
                 </div>
               </dl>
               {row.varianceReason ? <p className="text-caption">{row.varianceReason}</p> : null}
-              {row.corrections !== 0 ? <p className="text-caption text-muted-foreground">{A.corrections(formatMAD(row.corrections))}</p> : null}
+              {row.corrections !== 0 ? <p className="text-caption text-muted-foreground">{A.corrections(formatMAD(row.corrections, locale))}</p> : null}
               <div className="flex flex-wrap gap-2">
                 <Button asChild variant="ghost" className="min-h-11">
                   <Link href={`${ROUTES.admin.cash}/${row.id}`}>{A.open}</Link>

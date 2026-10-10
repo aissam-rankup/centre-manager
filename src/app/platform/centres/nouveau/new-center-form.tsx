@@ -24,7 +24,7 @@ import { addBillingInterval } from "@/lib/billing-interval";
 import { addressFor } from "@/lib/center-host";
 import type { CenterTypeOption, PlanOption } from "@/lib/data/platform";
 import { formatDate, formatMAD } from "@/lib/format";
-import { useLabels, useMessage } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import {
   CUSTOM_CENTER_TYPE,
@@ -58,6 +58,7 @@ type NewCenterFormProps = {
 
 export function NewCenterForm({ types, plans, todayIso, addressPattern }: NewCenterFormProps) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const P = LABELS.platform;
   const L = P.newCenter;
   const STEP_COUNT = L.steps.length;
@@ -377,7 +378,7 @@ export function NewCenterForm({ types, plans, todayIso, addressPattern }: NewCen
                   <SummaryItem label={L.typeLegend}>{typeLabel}</SummaryItem>
                   <SummaryItem label={L.plan}>{plans.find((option) => option.key === plan)?.name ?? "—"}</SummaryItem>
                   <SummaryItem label={L.price}>
-                    {Number.isFinite(priceValue) ? `${formatMAD(priceValue)} ${P.interval[billingInterval]}` : "—"}
+                    {Number.isFinite(priceValue) ? `${formatMAD(priceValue, locale)} ${P.interval[billingInterval]}` : "—"}
                   </SummaryItem>
                   <SummaryItem label={L.status}>{L.statusOptions[status]}</SummaryItem>
                   <SummaryItem label={L.activationDate}>{formatDate(activationDate)}</SummaryItem>

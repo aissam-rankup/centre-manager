@@ -10,13 +10,15 @@ import { type CashSessionSummary, toCents } from "@/lib/cash";
 import type { AppLabels } from "@/lib/constants/labels";
 import type { CashPage } from "@/lib/data/cash";
 import { formatDate, formatDateTime, formatMAD, formatTime } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { PAYMENT_METHODS } from "@/lib/receipts";
 import { cn } from "@/lib/utils";
 
 /** Caisse du jour : ouverture, encaissements par mode, mouvements, comptage et clôture. */
 export async function CashView({ page, fileBase, cashBase }: { page: CashPage; fileBase: string; cashBase?: string }) {
-  const LABELS = await getLabels();
+  const [LABELS, locale] = await Promise.all([getLabels(), getAppLocale()]);
   const C = LABELS.cash;
 
   if (page.support) {
@@ -44,7 +46,7 @@ export async function CashView({ page, fileBase, cashBase }: { page: CashPage; f
               <span className="font-semibold">{C.staleTitle}</span> {C.staleDescription}
             </span>
           </p>
-          <SessionPanel session={session} LABELS={LABELS} fileBase={fileBase} cashBase={cashBase} />
+          <SessionPanel session={session} LABELS={LABELS} locale={locale} fileBase={fileBase} cashBase={cashBase} />
         </div>
       ))}
 
@@ -55,7 +57,7 @@ export async function CashView({ page, fileBase, cashBase }: { page: CashPage; f
       ) : null}
 
       {page.current ? (
-        <SessionPanel session={page.current} LABELS={LABELS} fileBase={fileBase} cashBase={cashBase} />
+        <SessionPanel session={page.current} LABELS={LABELS} locale={locale} fileBase={fileBase} cashBase={cashBase} />
       ) : (
         <SectionCard title={C.closedTitle} description={C.closedDescription}>
           <OpenCashForm />
@@ -63,7 +65,7 @@ export async function CashView({ page, fileBase, cashBase }: { page: CashPage; f
       )}
 
       {page.closedToday.map((session) => (
-        <SessionPanel key={session.id} session={session} LABELS={LABELS} fileBase={fileBase} cashBase={cashBase} />
+        <SessionPanel key={session.id} session={session} LABELS={LABELS} locale={locale} fileBase={fileBase} cashBase={cashBase} />
       ))}
     </div>
   );
@@ -76,12 +78,14 @@ export async function CashView({ page, fileBase, cashBase }: { page: CashPage; f
 export function SessionPanel({
   session,
   LABELS,
+  locale,
   fileBase,
   cashBase,
   closable = true,
 }: {
   session: CashSessionSummary;
   LABELS: AppLabels;
+  locale: Locale;
   fileBase: string;
   cashBase?: string;
   closable?: boolean;
@@ -94,7 +98,7 @@ export function SessionPanel({
   return (
     <SectionCard
       title={title}
-      description={C.openedAt(formatTime(session.openedAt), session.openedByName, formatMAD(session.openingFloat))}
+      description={C.openedAt(formatTime(session.openedAt), session.openedByName, formatMAD(session.openingFloat, locale))}
       aside={
         <span
           className={cn(
@@ -111,12 +115,12 @@ export function SessionPanel({
         {PAYMENT_METHODS.map((method) => (
           <div key={method} className="flex flex-col rounded-lg bg-muted px-3 py-2">
             <dt className="text-caption text-muted-foreground">{C.methods[method]}</dt>
-            <dd className="numeric font-semibold">{formatMAD(session.byMethod[method])}</dd>
+            <dd className="numeric font-semibold">{formatMAD(session.byMethod[method], locale)}</dd>
           </div>
         ))}
         <div className="col-span-2 flex flex-col rounded-lg bg-primary-soft px-3 py-2 md:col-span-1">
           <dt className="text-caption text-muted-foreground">{C.total}</dt>
-          <dd className="numeric font-semibold">{formatMAD(total)}</dd>
+          <dd className="numeric font-semibold">{formatMAD(total, locale)}</dd>
           <dd className="text-caption text-muted-foreground">{C.transactions(session.transactions)}</dd>
         </div>
       </dl>
@@ -148,7 +152,7 @@ export function SessionPanel({
                       </Link>
                     </span>
                     <span className={cn("numeric shrink-0 font-semibold", receipt.amount < 0 && "text-danger-ink")}>
-                      {formatMAD(receipt.amount)}
+                      {formatMAD(receipt.amount, locale)}
                     </span>
                   </li>
                 ))}
@@ -182,7 +186,7 @@ export function SessionPanel({
                       ) : null}
                     </span>
                     <span className={cn("numeric shrink-0 font-semibold", movement.amount < 0 && "text-danger-ink")}>
-                      {formatMAD(movement.amount)}
+                      {formatMAD(movement.amount, locale)}
                     </span>
                   </li>
                 ))}
@@ -209,7 +213,7 @@ export function SessionPanel({
                       )}
                     </span>
                     <span className={cn("numeric shrink-0 font-semibold", correction.amount < 0 && "text-danger-ink")}>
-                      {formatMAD(correction.amount)}
+                      {formatMAD(correction.amount, locale)}
                     </span>
                   </li>
                 ))}
@@ -221,16 +225,16 @@ export function SessionPanel({
         <div className="flex flex-col gap-4 rounded-xl border px-4 py-4">
           <div className="flex flex-col gap-1">
             <h3 className="font-semibold">{C.expected.title}</h3>
-            <p className="numeric text-2xl font-bold text-heading">{formatMAD(session.expectedCash)}</p>
+            <p className="numeric text-2xl font-bold text-heading">{formatMAD(session.expectedCash, locale)}</p>
             <p className="text-caption text-muted-foreground">
-              {C.expected.formula(formatMAD(session.openingFloat), formatMAD(session.byMethod.cash), formatMAD(session.movementsTotal))}
+              {C.expected.formula(formatMAD(session.openingFloat, locale), formatMAD(session.byMethod.cash, locale), formatMAD(session.movementsTotal, locale))}
             </p>
             <p className="text-caption text-muted-foreground">{C.expected.note}</p>
           </div>
           {open && closable ? (
             <CloseCashForm sessionId={session.id} expectedCash={session.expectedCash} />
           ) : !open ? (
-            <ClosedResult session={session} LABELS={LABELS} />
+            <ClosedResult session={session} LABELS={LABELS} locale={locale} />
           ) : null}
         </div>
       </div>
@@ -238,12 +242,12 @@ export function SessionPanel({
   );
 }
 
-function varianceLabel(variance: number, LABELS: AppLabels): string {
+function varianceLabel(variance: number, LABELS: AppLabels, locale: Locale): string {
   const C = LABELS.cash;
-  return variance === 0 ? C.variance.none : variance < 0 ? C.variance.shortage(formatMAD(-variance)) : C.variance.surplus(formatMAD(variance));
+  return variance === 0 ? C.variance.none : variance < 0 ? C.variance.shortage(formatMAD(-variance, locale)) : C.variance.surplus(formatMAD(variance, locale));
 }
 
-function ClosedResult({ session, LABELS }: { session: CashSessionSummary; LABELS: AppLabels }) {
+function ClosedResult({ session, LABELS, locale }: { session: CashSessionSummary; LABELS: AppLabels; locale: Locale }) {
   const C = LABELS.cash;
   const variance = session.variance ?? 0;
   // Écart restant une fois les corrections prises en compte (en centimes, sans erreur d'arrondi).
@@ -255,15 +259,15 @@ function ClosedResult({ session, LABELS }: { session: CashSessionSummary; LABELS
     <div className="flex flex-col gap-2">
       <p className="flex justify-between gap-3">
         <span className="text-muted-foreground">{C.countedCash}</span>
-        <span className="numeric font-semibold">{formatMAD(session.countedCash ?? 0)}</span>
+        <span className="numeric font-semibold">{formatMAD(session.countedCash ?? 0, locale)}</span>
       </p>
       <p className={cn("rounded-lg px-3 py-2 font-semibold", variance === 0 ? "bg-success/10 text-success-ink" : "bg-danger/10 text-danger-ink")}>
-        {varianceLabel(variance, LABELS)}
+        {varianceLabel(variance, LABELS, locale)}
       </p>
       {session.varianceReason ? <p className="text-caption">{session.varianceReason}</p> : null}
       {corrected !== null ? (
         <p className={cn("text-caption font-semibold", corrected === 0 ? "text-success-ink" : "text-danger-ink")}>
-          {C.afterCorrections}{LABELS.common.colon} {varianceLabel(corrected, LABELS)}
+          {C.afterCorrections}{LABELS.common.colon} {varianceLabel(corrected, LABELS, locale)}
         </p>
       ) : null}
       {session.notes ? <p className="text-caption text-muted-foreground">{session.notes}</p> : null}

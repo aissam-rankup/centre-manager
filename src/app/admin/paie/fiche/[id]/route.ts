@@ -3,13 +3,12 @@ import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/session";
 import { getPayroll } from "@/lib/data/payroll";
-import { getLabels } from "@/lib/i18n/server";
-import { getCenterPdfBrand } from "@/lib/pdf/center-brand";
+import { getStaffPdfContext } from "@/lib/pdf/center-brand";
 import { PayslipPdf } from "@/lib/pdf/payroll-pdf";
 import { monthKey } from "@/lib/payroll";
 import { createClient } from "@/lib/supabase/server";
 
-/** Fiche de paie d'un professeur pour un mois (admin, hors mode support). */
+/** Fiche de paie d'un professeur pour un mois (admin, hors mode support), dans la langue de l'utilisateur. */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) return new Response(null, { status: 404 });
@@ -26,13 +25,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const period = line?.payroll_periods;
   if (!period) return new Response(null, { status: 404 });
 
-  const [LABELS, payroll] = await Promise.all([getLabels(), getPayroll({ year: period.year, month: period.month })]);
+  const [pdf, payroll] = await Promise.all([getStaffPdfContext(), getPayroll({ year: period.year, month: period.month })]);
   const view = payroll?.lines.find((item) => item.id === id);
   if (!payroll || !view) return new Response(null, { status: 404 });
 
-  const buffer = await renderToBuffer(
-    PayslipPdf({ brand: await getCenterPdfBrand(), labels: LABELS, payroll, line: view, generatedAt: new Date() }),
-  );
+  const buffer = await renderToBuffer(PayslipPdf({ ...pdf, payroll, line: view, generatedAt: new Date() }));
   const name = view.teacherName.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
   return new Response(new Uint8Array(buffer), {
     headers: {

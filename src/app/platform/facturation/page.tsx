@@ -21,11 +21,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getLabels()).platform.billing.title };
 }
 
-function Gap({ value }: { value: number }) {
+function Gap({ value, locale }: { value: number; locale: Locale }) {
   return (
     <span className={cn("numeric whitespace-nowrap", value < 0 ? "text-danger-ink" : value > 0 ? "text-success-ink" : "text-muted-foreground")}>
       {value > 0 ? "+" : ""}
-      {formatMAD(value)}
+      {formatMAD(value, locale)}
     </span>
   );
 }
@@ -45,7 +45,7 @@ function monthColumns(L: AppLabels["platform"]["billing"], locale: Locale): read
       header: L.gap,
       align: "end",
       mobile: "aside",
-      cell: (row) => (row.expected === null ? <span className="text-muted-foreground">—</span> : <Gap value={row.collected - row.expected} />),
+      cell: (row) => (row.expected === null ? <span className="text-muted-foreground">—</span> : <Gap value={row.collected - row.expected} locale={locale} />),
     },
   ];
 }
@@ -95,9 +95,9 @@ export default async function PlatformBillingPage() {
 
       {current ? (
         <StatTiles>
-          <StatTile value={formatMAD(current.collected)} label={`${L.collected} · ${L.currentMonth}`} />
-          <StatTile value={formatMAD(expected)} label={`${L.expected} · ${L.currentMonth}`} />
-          <StatTile value={<Gap value={current.collected - expected} />} label={`${L.gap} · ${L.currentMonth}`} />
+          <StatTile value={formatMAD(current.collected, locale)} label={`${L.collected} · ${L.currentMonth}`} />
+          <StatTile value={formatMAD(expected, locale)} label={`${L.expected} · ${L.currentMonth}`} />
+          <StatTile value={<Gap value={current.collected - expected} locale={locale} />} label={`${L.gap} · ${L.currentMonth}`} />
         </StatTiles>
       ) : null}
 

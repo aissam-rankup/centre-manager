@@ -196,7 +196,7 @@ function payableInvoices(student: StudentFile, LABELS: AppLabels, locale: Locale
     }));
 }
 
-function paymentColumns(LABELS: AppLabels, student: StudentFile, receipts: boolean): readonly DataTableColumn<StudentInvoice>[] {
+function paymentColumns(LABELS: AppLabels, locale: Locale, student: StudentFile, receipts: boolean): readonly DataTableColumn<StudentInvoice>[] {
   const L = LABELS.assistant.student;
   return [
     {
@@ -211,7 +211,7 @@ function paymentColumns(LABELS: AppLabels, student: StudentFile, receipts: boole
       ),
     },
     { id: "period", header: L.payments.period, mobile: "hidden", cell: (invoice) => periodLabel(invoice, LABELS) },
-    { id: "amount", header: L.payments.amount, align: "end", cell: (invoice) => <InvoiceAmount invoice={invoice} LABELS={LABELS} /> },
+    { id: "amount", header: L.payments.amount, align: "end", cell: (invoice) => <InvoiceAmount invoice={invoice} LABELS={LABELS} locale={locale} /> },
     {
       id: "dueDate",
       header: L.payments.dueDate,
@@ -244,17 +244,17 @@ function paymentColumns(LABELS: AppLabels, student: StudentFile, receipts: boole
 }
 
 /** Montant d'une facture : net en évidence ; avec remise, tarif plein barré et remise. */
-function InvoiceAmount({ invoice, LABELS }: { invoice: StudentInvoice; LABELS: AppLabels }) {
+function InvoiceAmount({ invoice, LABELS, locale }: { invoice: StudentInvoice; LABELS: AppLabels; locale: Locale }) {
   if (invoice.discountAmount <= 0) return <Money amount={invoice.amountDue} />;
   const D = LABELS.discounts.invoice;
   return (
     <span className="inline-flex flex-col items-end gap-0.5">
       <span className="numeric text-caption font-normal text-muted-foreground line-through">
         <span className="sr-only">{D.full} : </span>
-        {formatMAD(invoice.amountFull)}
+        {formatMAD(invoice.amountFull, locale)}
       </span>
       <span className="numeric text-caption font-medium text-foreground">
-        <span className="sr-only">{D.discount} : </span>− {formatMAD(invoice.discountAmount)}
+        <span className="sr-only">{D.discount} : </span>− {formatMAD(invoice.discountAmount, locale)}
       </span>
       <span className="font-semibold">
         <span className="sr-only">{D.net} : </span>
@@ -267,7 +267,8 @@ function InvoiceAmount({ invoice, LABELS }: { invoice: StudentInvoice; LABELS: A
 export async function PaymentsSection({ student }: { student: StudentFile }) {
   const LABELS = await getLabels();
   const L = LABELS.assistant.student;
-  const payable = payableInvoices(student, LABELS, await getAppLocale());
+  const locale = await getAppLocale();
+  const payable = payableInvoices(student, LABELS, locale);
   const cashOpening = payable.length > 0 ? await getCashOpening() : undefined;
   const state = await getAuthState();
   // Reçus : module Finance.
@@ -292,7 +293,7 @@ export async function PaymentsSection({ student }: { student: StudentFile }) {
         <EmptyState icon={Receipt} title={L.payments.emptyTitle} description={L.payments.emptyDescription} />
       ) : (
         <DataTable
-          columns={paymentColumns(LABELS, student, receipts)}
+          columns={paymentColumns(LABELS, locale, student, receipts)}
           rows={student.invoices}
           getRowId={(invoice) => invoice.id}
           caption={L.payments.caption}
@@ -370,7 +371,7 @@ export async function AbsencesSection({ student }: { student: StudentFile }) {
 // Relances
 // ---------------------------------------------------------------------
 export async function FollowUpsSection({ student }: { student: StudentFile }) {
-  const LABELS = await getLabels();
+  const [LABELS, locale] = await Promise.all([getLabels(), getAppLocale()]);
   const L = LABELS.assistant.student;
   const R = LABELS.reenrollment.reminders;
   // Relances saisies et rappels de paiement envoyés, dans un seul historique.
@@ -405,7 +406,7 @@ export async function FollowUpsSection({ student }: { student: StudentFile }) {
                   <span className="text-caption text-muted-foreground">·</span>
                   <span className="text-caption text-muted-foreground">{LABELS.absenceAlerts.channelNames[entry.reminder.channel]}</span>
                 </div>
-                <p>{R.historyDetail(formatMAD(entry.reminder.amount), entry.reminder.subjectNames.join(", "))}</p>
+                <p>{R.historyDetail(formatMAD(entry.reminder.amount, locale), entry.reminder.subjectNames.join(", "))}</p>
                 <p className="text-caption text-muted-foreground">
                   {formatDateTime(entry.reminder.sentAt)}
                   {entry.reminder.authorName ? ` ${L.followUps.by(entry.reminder.authorName)}` : ""}

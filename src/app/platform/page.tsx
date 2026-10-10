@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { type CenterStatus, getPlatformDashboard } from "@/lib/data/platform";
 import { formatDate, formatMAD } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { formatPhone, toTelHref } from "@/lib/phone";
 
@@ -23,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PlatformDashboardPage() {
-  const LABELS = await getLabels();
+  const [LABELS, locale] = await Promise.all([getLabels(), getAppLocale()]);
   const L = LABELS.platform.dashboard;
   const REMINDER_KINDS: Record<string, string> = L.reminderKinds;
   const { overview, overdue, upcoming, notifications } = await getPlatformDashboard();
@@ -40,8 +41,8 @@ export default async function PlatformDashboardPage() {
       <PageHeader title={L.title} description={L.description} />
 
       <StatTiles>
-        <StatTile value={formatMAD(overview.monthly_recurring_revenue)} label={L.mrr} detail={L.mrrDetail} />
-        <StatTile value={formatMAD(overview.collected_this_month)} label={L.collected} href={ROUTES.platform.billing} />
+        <StatTile value={formatMAD(overview.monthly_recurring_revenue, locale)} label={L.mrr} detail={L.mrrDetail} />
+        <StatTile value={formatMAD(overview.collected_this_month, locale)} label={L.collected} href={ROUTES.platform.billing} />
         <StatTile
           value={overview.students_count}
           label={L.students}

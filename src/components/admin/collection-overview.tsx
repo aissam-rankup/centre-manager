@@ -25,9 +25,9 @@ export function CollectionOverviewSection({ data, LABELS, locale }: { data: Coll
       <div className="flex flex-col gap-5 rounded-xl bg-card p-5 shadow-card md:p-6">
         <p className="text-caption text-muted-foreground">{C.description(formatMonth(data.monthStart, locale))}</p>
         <dl className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <Kpi label={C.expected} value={formatMAD(data.expected)} detail={C.expectedHint(data.invoices)} />
-          <Kpi label={C.collected} value={formatMAD(data.collected)} detail={C.collectedHint(data.paidInvoices, data.invoices)} />
-          <Kpi label={C.remaining} value={formatMAD(remaining)} />
+          <Kpi label={C.expected} value={formatMAD(data.expected, locale)} detail={C.expectedHint(data.invoices)} />
+          <Kpi label={C.collected} value={formatMAD(data.collected, locale)} detail={C.collectedHint(data.paidInvoices, data.invoices)} />
+          <Kpi label={C.remaining} value={formatMAD(remaining, locale)} />
           <Kpi
             label={C.rate}
             value={rate === null ? "—" : formatPercent(rate, locale)}

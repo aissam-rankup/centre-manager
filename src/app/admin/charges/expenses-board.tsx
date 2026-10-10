@@ -23,7 +23,7 @@ import {
 } from "@/lib/actions/expenses";
 import { EXPENSE_RECEIPT_TYPES, type ExpenseCategoryView, type ExpenseView } from "@/lib/expenses";
 import { formatDate, formatMAD } from "@/lib/format";
-import { useLabels, useMessage } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { PAYMENT_METHODS } from "@/lib/receipts";
 
 import { CategoriesDialog } from "./categories-dialog";
@@ -241,6 +241,7 @@ function ExpensesList({
   total: number;
 }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const L = LABELS.expenses.list;
   const [filter, setFilter] = useState("");
   const shown = filter ? expenses.filter((expense) => expense.categoryId === filter) : expenses;
@@ -275,7 +276,7 @@ function ExpensesList({
         <span className="font-semibold">
           {L.total} <span className="text-caption font-normal text-muted-foreground">· {L.count(expenses.length)}</span>
         </span>
-        <span className="numeric text-section text-heading">{formatMAD(total)}</span>
+        <span className="numeric text-section text-heading">{formatMAD(total, locale)}</span>
       </div>
     </SectionCard>
   );
@@ -291,6 +292,7 @@ function ExpenseRow({
   categories: ExpenseCategoryView[];
 }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const L = LABELS.expenses.list;
   const message = useMessage();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -329,7 +331,7 @@ function ExpenseRow({
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 md:justify-end">
-        <span className="numeric me-2 font-semibold">{formatMAD(expense.amount)}</span>
+        <span className="numeric me-2 font-semibold">{formatMAD(expense.amount, locale)}</span>
         {expense.receiptUrl ? (
           <Button asChild variant="outline">
             <a href={expense.receiptUrl} target="_blank" rel="noopener">

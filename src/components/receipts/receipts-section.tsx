@@ -67,7 +67,7 @@ export async function ReceiptsSection({ receipts, guardianPhone, canCancel }: Re
 
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   <span className={cn("numeric me-2 font-semibold", cancellation && "text-danger-ink")}>
-                    {formatMAD(receipt.amountPaid)}
+                    {formatMAD(receipt.amountPaid, locale)}
                   </span>
                   <Button asChild variant="outline">
                     <a href={ROUTES.receipt(receipt.id)}>

@@ -106,7 +106,7 @@ function Breakdown({ data, LABELS, locale }: { data: ExpensesMonth; LABELS: AppL
                     <span className="truncate font-medium">{category?.name}</span>
                   </span>
                   <span className="shrink-0 text-end">
-                    <span className="numeric font-semibold">{formatMAD(row.current)}</span>
+                    <span className="numeric font-semibold">{formatMAD(row.current, locale)}</span>
                     <span className="block text-caption text-muted-foreground">{B.share(formatPercent(share, locale))}</span>
                   </span>
                 </div>
@@ -134,8 +134,8 @@ function Comparison({ data, LABELS, locale }: { data: ExpensesMonth; LABELS: App
     if (previous === 0) return { icon: ArrowUpRight, text: C.newSpend };
     const percent = formatPercent(Math.abs(diff) / previous, locale);
     return diff > 0
-      ? { icon: ArrowUpRight, text: C.up(formatMAD(diff), percent) }
-      : { icon: ArrowDownRight, text: C.down(formatMAD(-diff), percent) };
+      ? { icon: ArrowUpRight, text: C.up(formatMAD(diff, locale), percent) }
+      : { icon: ArrowDownRight, text: C.down(formatMAD(-diff, locale), percent) };
   };
   const overall = delta(data.total, data.previousTotal);
 
@@ -144,11 +144,11 @@ function Comparison({ data, LABELS, locale }: { data: ExpensesMonth; LABELS: App
       <dl className="grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-muted px-3 py-2">
           <dt className="text-caption text-muted-foreground">{C.current}</dt>
-          <dd className="numeric font-semibold">{formatMAD(data.total)}</dd>
+          <dd className="numeric font-semibold">{formatMAD(data.total, locale)}</dd>
         </div>
         <div className="rounded-xl bg-muted px-3 py-2">
           <dt className="text-caption text-muted-foreground">{C.previous}</dt>
-          <dd className="numeric font-semibold">{formatMAD(data.previousTotal)}</dd>
+          <dd className="numeric font-semibold">{formatMAD(data.previousTotal, locale)}</dd>
         </div>
       </dl>
       {data.previousTotal === 0 && data.total === 0 ? null : (

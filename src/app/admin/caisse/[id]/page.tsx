@@ -13,6 +13,7 @@ import { requireModule, requireRole } from "@/lib/auth/session";
 import { toCents } from "@/lib/cash";
 import { getCashSessionSummary } from "@/lib/data/cash";
 import { formatDate } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,7 +27,7 @@ export default async function AdminCashSessionPage({ params }: PageProps<"/admin
   const profile = await requireRole("admin");
   requireModule(profile, "finance");
   if (profile.support) notFound();
-  const LABELS = await getLabels();
+  const [LABELS, locale] = await Promise.all([getLabels(), getAppLocale()]);
   const A = LABELS.cash.admin;
   const session = await getCashSessionSummary(id).catch(() => null);
   if (!session) notFound();
@@ -61,7 +62,7 @@ export default async function AdminCashSessionPage({ params }: PageProps<"/admin
           </>
         }
       />
-      <SessionPanel session={session} LABELS={LABELS} fileBase={ROUTES.admin.students} cashBase={ROUTES.admin.cash} />
+      <SessionPanel session={session} LABELS={LABELS} locale={locale} fileBase={ROUTES.admin.students} cashBase={ROUTES.admin.cash} />
     </div>
   );
 }

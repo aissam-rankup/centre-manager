@@ -139,7 +139,7 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
                   <td className="px-2">{day.day}</td>
                   {series.map((series) => (
                     <td key={series.key} className="numeric px-2 text-end font-normal">
-                      {day[series.key] === null ? "—" : formatMAD(day[series.key] ?? 0)}
+                      {day[series.key] === null ? "—" : formatMAD(day[series.key] ?? 0, locale)}
                     </td>
                   ))}
                 </tr>
@@ -154,6 +154,7 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
 
 function CollectionTooltip({ active, payload }: TooltipContentProps) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const C = LABELS.financeDashboard.collection.chart;
   const row = payload?.[0]?.payload as CollectionDay | undefined;
   if (!active || !row) return null;
@@ -167,7 +168,7 @@ function CollectionTooltip({ active, payload }: TooltipContentProps) {
               <span className="size-2 rounded-full" style={{ background: series.color }} aria-hidden />
               {C.series[series.key]}
             </span>
-            <span className="numeric font-medium">{formatMAD(row[series.key] ?? 0)}</span>
+            <span className="numeric font-medium">{formatMAD(row[series.key] ?? 0, locale)}</span>
           </p>
         ),
       )}

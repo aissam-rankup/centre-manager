@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { savePack, saveLevel, saveSubject } from "@/lib/actions/admin";
-import { useLabels, useMessage } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { formatMAD } from "@/lib/format";
 import { adminSchemas } from "@/lib/validation/admin";
 
@@ -109,6 +109,7 @@ type PackDialogProps = {
 
 export function PackDialog({ trigger, levelId, levelName, subjects, pack }: PackDialogProps) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const message = useMessage();
   const L = LABELS.admin.subjects;
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
@@ -191,7 +192,7 @@ export function PackDialog({ trigger, levelId, levelName, subjects, pack }: Pack
       <FormField
         id="pack-price"
         label={L.packPrice}
-        hint={pack ? `${L.unitTotal(formatMAD(unitTotal))} ${L.packPriceHint}` : L.unitTotal(formatMAD(unitTotal))}
+        hint={pack ? `${L.unitTotal(formatMAD(unitTotal, locale))} ${L.packPriceHint}` : L.unitTotal(formatMAD(unitTotal, locale))}
         error={errors.monthlyPrice?.message}
       >
         <Input

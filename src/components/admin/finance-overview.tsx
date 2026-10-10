@@ -24,17 +24,17 @@ export function FinanceOverview({ data, LABELS, locale }: { data: FinancialDashb
       <SectionHeading id="resultat" title={F.title} />
       <div className="grid gap-4 rounded-xl bg-card p-5 shadow-card md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:p-6">
         <dl className="flex flex-col divide-y divide-divider">
-          <Row label={F.collected} value={formatMAD(month.collected)} />
-          <Row label={F.expected} value={formatMAD(month.expected)} detail={F.unpaid(formatMAD(gap))} />
+          <Row label={F.collected} value={formatMAD(month.collected, locale)} />
+          <Row label={F.expected} value={formatMAD(month.expected, locale)} detail={F.unpaid(formatMAD(gap, locale))} />
           <Row
             label={F.payroll}
-            value={`− ${formatMAD(month.payroll)}`}
+            value={`− ${formatMAD(month.payroll, locale)}`}
             detail={F.payrollHint}
             link={{ href: ROUTES.admin.payroll, label: F.details.payroll }}
           />
           <Row
             label={F.expenses}
-            value={`− ${formatMAD(month.expenses)}`}
+            value={`− ${formatMAD(month.expenses, locale)}`}
             link={{ href: ROUTES.admin.expenses, label: F.details.expenses }}
           />
         </dl>
@@ -48,7 +48,7 @@ export function FinanceOverview({ data, LABELS, locale }: { data: FinancialDashb
           <p className="text-caption font-medium text-muted-foreground">{F.net}</p>
           <p className={cn("numeric flex items-center gap-2 text-[2.25rem] leading-tight font-bold", positive ? "text-success-ink" : "text-danger-ink")}>
             <NetIcon className="size-8 shrink-0" aria-hidden />
-            {formatMAD(month.net)}
+            {formatMAD(month.net, locale)}
           </p>
           <p className={cn("text-caption font-semibold", positive ? "text-success-ink" : "text-danger-ink")}>
             {positive ? F.positive : F.negative}
@@ -101,7 +101,7 @@ function Row({
 }
 
 /** Remises du mois : total, élèves concernés, répartition par motif. */
-export function DiscountsOverview({ data, LABELS }: { data: FinancialDashboard; LABELS: AppLabels }) {
+export function DiscountsOverview({ data, LABELS, locale }: { data: FinancialDashboard; LABELS: AppLabels; locale: Locale }) {
   const D = LABELS.financeDashboard.discounts;
   const total = data.current.discounts;
 
@@ -119,7 +119,7 @@ export function DiscountsOverview({ data, LABELS }: { data: FinancialDashboard; 
                 <Tag className="size-5 text-highlight" aria-hidden />
               </span>
               <div className="flex flex-col">
-                <span className="numeric text-section text-heading">{formatMAD(total)}</span>
+                <span className="numeric text-section text-heading">{formatMAD(total, locale)}</span>
                 <span className="text-caption text-muted-foreground">{D.students(data.current.discountStudents)}</span>
               </div>
             </div>
@@ -131,7 +131,7 @@ export function DiscountsOverview({ data, LABELS }: { data: FinancialDashboard; 
                     <span className="flex justify-between gap-3 text-caption">
                       <span className="font-medium">{LABELS.discounts.reasonOptions[row.reason]}</span>
                       <span className="numeric">
-                        {formatMAD(row.amount)} · {D.students(row.students)}
+                        {formatMAD(row.amount, locale)} · {D.students(row.students)}
                       </span>
                     </span>
                     <span className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>

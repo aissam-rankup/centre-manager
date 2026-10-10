@@ -14,6 +14,36 @@ const centersCount = (n: number) =>
 /** Libellés arabes : platform. */
 export const AR_PART3: Pick<AppLabels, "platform"> = {
   platform: {
+    moduleCatalogue: {
+      finance: {
+        name: "المالية",
+        description: "أجور {the instructors} (أجر ثابت، عمولات)، وصولات قابلة للطباعة وعبر واتساب، المصاريف والدخل الصافي، التخفيضات، الصندوق اليومي.",
+      },
+      reenrollment: {
+        name: "إعادة التسجيل",
+        description: "حملات إعادة تسجيل تلقائية كل شهر، نوايا {the learners}، تذكيرات الأداء.",
+      },
+      absence_tracking: {
+        name: "تتبع الغياب",
+        description: "بطاقة مواظبة مفصلة، تنبيه بعد ثلاث غيابات، غيابات يجب الإبلاغ عنها ورسائل واتساب إلى ولي الأمر.",
+      },
+      white_label: {
+        name: "العلامة البيضاء",
+        description: "واجهة بألوان المركز: الاسم، الشعار، أيقونة الموقع، الألوان، نطاق خاص.",
+      },
+      lms: {
+        name: "المنصة البيداغوجية",
+        description: "فضاء {the instructors} للنشر (تمارين، امتحانات، ملخصات دروس) وفضاء {the learners} للاطلاع.",
+      },
+    },
+    centerTypeNames: {
+      soutien_scolaire: "مركز دعم مدرسي",
+      centre_formation: "مركز تكوين",
+      institut_langue: "معهد لغات",
+      auto_ecole: "مدرسة لتعليم السياقة",
+      soutien_universitaire: "مركز دعم جامعي",
+      personnalise: "مخصص",
+    },
     brand: "dirassty",
     centerStatus: {
       trial: "تجريبي",

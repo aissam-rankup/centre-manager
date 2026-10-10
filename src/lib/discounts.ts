@@ -51,7 +51,7 @@ export function discountValueLabel(discount: Pick<DiscountSummary, "type" | "val
     const digits = new Intl.NumberFormat(intlLocale(locale), { maximumFractionDigits: 2 }).format(discount.value);
     return locale === "en" ? `${digits}%` : `${digits} %`;
   }
-  return formatMAD(discount.value);
+  return formatMAD(discount.value, locale);
 }
 
 /** Motif lisible : la précision saisie prime pour le motif « autre ». */

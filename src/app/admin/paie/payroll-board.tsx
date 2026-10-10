@@ -28,9 +28,9 @@ const STATUS_TONE = {
 } as const;
 
 /** Montant signé : « + 300 MAD » / « − 200 MAD ». */
-function signedMAD(amount: number): string {
-  if (amount === 0) return formatMAD(0);
-  return `${amount > 0 ? "+" : "−"} ${formatMAD(Math.abs(amount))}`;
+function signedMAD(amount: number, locale: Locale): string {
+  if (amount === 0) return formatMAD(0, locale);
+  return `${amount > 0 ? "+" : "−"} ${formatMAD(Math.abs(amount), locale)}`;
 }
 
 /** Mois affiché (« Octobre 2026 ») dans la langue de l'utilisateur. */
@@ -152,6 +152,7 @@ function UnlockDialog({ periodId }: { periodId: string }) {
 
 export function PayrollBoard({ payroll, todayIso }: { payroll: PayrollView; todayIso: string }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const P = LABELS.payroll;
   const C = P.columns;
 
@@ -174,7 +175,7 @@ export function PayrollBoard({ payroll, todayIso }: { payroll: PayrollView; toda
         <span className="font-semibold">
           {P.total} <span className="text-caption font-normal text-muted-foreground">· {P.teachersCount(payroll.lines.length)}</span>
         </span>
-        <span className="numeric text-section text-heading">{formatMAD(payroll.total)}</span>
+        <span className="numeric text-section text-heading">{formatMAD(payroll.total, locale)}</span>
       </div>
     </section>
   );
@@ -182,6 +183,7 @@ export function PayrollBoard({ payroll, todayIso }: { payroll: PayrollView; toda
 
 function PayrollLineRow({ line, payroll, todayIso }: { line: PayrollLineView; payroll: PayrollView; todayIso: string }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const P = LABELS.payroll;
   const C = P.columns;
   const [open, setOpen] = useState(false);
@@ -194,12 +196,12 @@ function PayrollLineRow({ line, payroll, todayIso }: { line: PayrollLineView; pa
           <span className="font-medium">{line.teacherName}</span>
           <span className={cn("text-caption", line.payMode ? "text-muted-foreground" : "font-medium text-warning-ink")}>{mode}</span>
         </div>
-        <Amount label={C.computed} value={formatMAD(line.computed)} />
+        <Amount label={C.computed} value={formatMAD(line.computed, locale)} />
         <div className="flex justify-between gap-3 lg:flex-col lg:items-end lg:gap-0">
           <span className="text-caption text-muted-foreground lg:hidden">{C.adjustment}</span>
           <span className="flex flex-col items-end">
             <span className={cn("numeric", line.adjustment > 0 && "text-success-ink", line.adjustment < 0 && "text-danger-ink")}>
-              {line.adjustment === 0 ? LABELS.common.none : signedMAD(line.adjustment)}
+              {line.adjustment === 0 ? LABELS.common.none : signedMAD(line.adjustment, locale)}
             </span>
             {line.adjustmentReason ? (
               <span className="max-w-48 truncate text-caption text-muted-foreground" title={line.adjustmentReason}>
@@ -208,7 +210,7 @@ function PayrollLineRow({ line, payroll, todayIso }: { line: PayrollLineView; pa
             ) : null}
           </span>
         </div>
-        <Amount label={C.final} value={formatMAD(line.final)} strong />
+        <Amount label={C.final} value={formatMAD(line.final, locale)} strong />
         <div className="flex justify-between gap-3 lg:block">
           <span className="text-caption text-muted-foreground lg:hidden">{C.payment}</span>
           <span className={cn("text-caption font-medium", line.paidAt ? "text-success-ink" : "text-muted-foreground")}>
@@ -284,16 +286,16 @@ function PayrollDetailPanel({ line }: { line: PayrollLineView }) {
                     <tr key={subject.subjectId} className="border-t border-divider">
                       <td className="py-2 pe-3 font-medium">{subject.subject}</td>
                       <td className="py-2 pe-3 text-muted-foreground">{subject.level}</td>
-                      <td className="numeric py-2 pe-3 text-end font-normal">{formatMAD(subject.monthlyPrice)}</td>
+                      <td className="numeric py-2 pe-3 text-end font-normal">{formatMAD(subject.monthlyPrice, locale)}</td>
                       <td className="numeric py-2 pe-3 text-end font-normal">{subject.enrolled}</td>
                       <td className="numeric py-2 pe-3 text-end font-normal">
                         {subject.ratePercent === null ? <span className="text-warning-ink">{D.noRate}</span> : formatRate(subject.ratePercent, locale)}
                       </td>
                       <td className="numeric py-2 text-end font-semibold">
-                        {formatMAD(subject.subtotal)}
+                        {formatMAD(subject.subtotal, locale)}
                         {subject.ratePercent !== null ? (
                           <span className="block text-caption font-normal text-muted-foreground">
-                            {D.formula(formatMAD(subject.monthlyPrice), subject.enrolled, formatRate(subject.ratePercent, locale), formatMAD(subject.subtotal))}
+                            {D.formula(formatMAD(subject.monthlyPrice, locale), subject.enrolled, formatRate(subject.ratePercent, locale), formatMAD(subject.subtotal, locale))}
                           </span>
                         ) : null}
                       </td>
@@ -311,7 +313,7 @@ function PayrollDetailPanel({ line }: { line: PayrollLineView }) {
       ) : detail.kind === "fixed_salary" ? (
         <p>
           {detail.monthlyAmount !== null && detail.effectiveFrom
-            ? D.salary(formatMAD(detail.monthlyAmount), formatDate(detail.effectiveFrom))
+            ? D.salary(formatMAD(detail.monthlyAmount, locale), formatDate(detail.effectiveFrom))
             : D.noSalary}
         </p>
       ) : (
@@ -405,6 +407,7 @@ function AdjustmentDialog({ line }: { line: PayrollLineView }) {
 
 function PayLineDialog({ line, todayIso }: { line: PayrollLineView; todayIso: string }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const Y = LABELS.payroll.pay;
   const message = useMessage();
   const [open, setOpen] = useState(false);
@@ -448,7 +451,7 @@ function PayLineDialog({ line, todayIso }: { line: PayrollLineView; todayIso: st
     >
       <p className="flex items-baseline justify-between rounded-xl bg-muted px-4 py-3">
         <span>{Y.amount}</span>
-        <span className="numeric text-section text-heading">{formatMAD(line.final)}</span>
+        <span className="numeric text-section text-heading">{formatMAD(line.final, locale)}</span>
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField id={`versement-date-${line.id}`} label={Y.date}>

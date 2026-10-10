@@ -7,6 +7,36 @@ function plural(n: number, singular: string, pluralForm: string): string {
 /** Libellés anglais : platform. */
 export const EN_PART3: Pick<AppLabels, "platform"> = {
   platform: {
+    moduleCatalogue: {
+      finance: {
+        name: "Finance",
+        description: "{Instructor} payroll (fixed salary, commissions), printable and WhatsApp receipts, expenses and net revenue, discounts, daily cash desk.",
+      },
+      reenrollment: {
+        name: "Re-enrolment",
+        description: "Automatic monthly re-enrolment campaigns, {learner} intentions, payment reminders.",
+      },
+      absence_tracking: {
+        name: "Absence tracking",
+        description: "Detailed attendance report, alert after three absences, absences to report and WhatsApp messages to the guardian.",
+      },
+      white_label: {
+        name: "White label",
+        description: "Interface in the centre's colours: name, logo, favicon, colours, custom domain.",
+      },
+      lms: {
+        name: "Learning platform",
+        description: "{Instructor} space to publish (exercises, exams, course summaries) and {learner} space to view them.",
+      },
+    },
+    centerTypeNames: {
+      soutien_scolaire: "Tutoring centre",
+      centre_formation: "Training centre",
+      institut_langue: "Language institute",
+      auto_ecole: "Driving school",
+      soutien_universitaire: "University tutoring centre",
+      personnalise: "Custom",
+    },
     brand: "dirassty",
     centerStatus: {
       trial: "Trial",

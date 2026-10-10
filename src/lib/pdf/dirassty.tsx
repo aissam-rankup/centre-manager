@@ -32,15 +32,15 @@ export function pdfHeaderLogo(logoUrl: string | null, whiteLabel: boolean): stri
   return own ?? (whiteLabel ? null : dirasstyMark());
 }
 
-/** Ligne « Édité avec dirassty », en monochrome ; masquée en marque blanche. */
-export function PdfEditedWith({ whiteLabel }: { whiteLabel: boolean }) {
+/** Ligne « Édité avec dirassty », en monochrome ; masquée en marque blanche. Libellé en français par défaut. */
+export function PdfEditedWith({ whiteLabel, label = LABELS.receipts.editedWith }: { whiteLabel: boolean; label?: string }) {
   if (whiteLabel) return null;
   const logo = dirasstyMark();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
       {/* eslint-disable-next-line jsx-a11y/alt-text -- composant PDF, pas d'image HTML */}
       {logo ? <Image src={logo} style={{ width: 6, height: 8 }} /> : null}
-      <Text>{LABELS.receipts.editedWith}</Text>
+      <Text>{label}</Text>
     </View>
   );
 }
