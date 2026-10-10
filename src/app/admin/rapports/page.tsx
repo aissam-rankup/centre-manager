@@ -20,6 +20,8 @@ import {
   type SubjectReportRow,
 } from "@/lib/data/admin";
 import { formatPercent } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 
 const PERIODS: readonly ReportPeriod[] = ["30", "90", "all"];
 
@@ -87,7 +89,7 @@ function packColumns(LABELS: AppLabels): readonly DataTableColumn<PackReportRow>
 
 type RankedRate = AbsenceRate & { rank: number };
 
-function absenceColumns(LABELS: AppLabels): readonly DataTableColumn<RankedRate>[] {
+function absenceColumns(LABELS: AppLabels, locale: Locale): readonly DataTableColumn<RankedRate>[] {
   const L = LABELS.admin.reports;
   return [
     { id: "rank", header: L.rank, mobile: "hidden", cell: (row) => <span className="numeric">{row.rank}</span> },
@@ -108,7 +110,7 @@ function absenceColumns(LABELS: AppLabels): readonly DataTableColumn<RankedRate>
     { id: "level", header: L.level, mobile: "hidden", cell: (row) => row.levelName },
     { id: "absences", header: L.absences, align: "end", cell: (row) => <span className="numeric font-normal">{row.absentCount}</span> },
     { id: "records", header: L.records, align: "end", cell: (row) => <span className="numeric font-normal">{row.totalCount}</span> },
-    { id: "rate", header: L.rate, align: "end", mobile: "aside", cell: (row) => <span className="numeric">{formatPercent(row.rate)}</span> },
+    { id: "rate", header: L.rate, align: "end", mobile: "aside", cell: (row) => <span className="numeric">{formatPercent(row.rate, locale)}</span> },
   ];
 }
 
@@ -127,6 +129,7 @@ async function ExportButton({ type, period }: { type: string; period: ReportPeri
 
 export default async function AdminReportsPage({ searchParams }: PageProps<"/admin/rapports">) {
   const LABELS = await getLabels();
+  const locale = await getAppLocale();
   const L = LABELS.admin.reports;
   const params = await searchParams;
   const period: ReportPeriod = PERIODS.find((value) => value === params.periode) ?? "30";
@@ -178,7 +181,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
             {ranking.length === 0 ? (
               <EmptyState icon={BarChart3} title={L.emptyTitle} description={L.emptyDescription} />
             ) : (
-              <DataTable columns={absenceColumns(LABELS)} rows={ranking} getRowId={(row) => row.subjectId} caption={L.absenceRanking} variant="plain" />
+              <DataTable columns={absenceColumns(LABELS, locale)} rows={ranking} getRowId={(row) => row.subjectId} caption={L.absenceRanking} variant="plain" />
             )}
           </SectionCard>
         </>

@@ -87,7 +87,7 @@ export function CashHistory({
         </div>
         <div className="flex flex-col rounded-lg bg-success/10 px-3 py-2">
           <dt className="text-caption text-muted-foreground">{A.indicators.exact}</dt>
-          <dd className="numeric font-semibold text-success-ink">{exactRate === null ? LABELS.common.none : formatPercent(exactRate)}</dd>
+          <dd className="numeric font-semibold text-success-ink">{exactRate === null ? LABELS.common.none : formatPercent(exactRate, locale)}</dd>
           <dd className="text-caption text-muted-foreground">{A.indicators.exactHint(overview.exact, overview.sessions)}</dd>
         </div>
         <div className="flex flex-col rounded-lg bg-muted px-3 py-2">

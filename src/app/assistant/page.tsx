@@ -42,7 +42,8 @@ export default async function AssistantDashboardPage() {
   const tracking = profile.modules.includes("absence_tracking");
   const absences = tracking && absenceSettings.enabled ? await getAbsencesToNotify() : [];
   const absencesPending = absences.filter((item) => !item.notifiedAt).length;
-  const dateLabel = formatDateWithWeekday(today(), await getAppLocale());
+  const locale = await getAppLocale();
+  const dateLabel = formatDateWithWeekday(today(), locale);
 
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
@@ -147,7 +148,7 @@ export default async function AssistantDashboardPage() {
                 <ProgressTile
                   key={subject.subjectId}
                   index={index}
-                  ring={<ProgressRing value={subject.rate} caption={D.presence.ring} />}
+                  ring={<ProgressRing value={subject.rate} caption={D.presence.ring} locale={locale} />}
                   title={subject.subjectName}
                   description={D.presence.detail(subject.levelName, subject.students)}
                 />

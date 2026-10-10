@@ -21,7 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { setReenrollmentIntent } from "@/lib/actions/reenrollment";
 import { formatDate, formatDateTime, formatMAD, formatPercent } from "@/lib/format";
-import { useLabels, useMessage } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { isLeaving, type ReenrollmentIntent, type ReviewStudent } from "@/lib/reenrollment";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +43,7 @@ type StudentIntentCardProps = {
 /** Un élève dans la revue : lignes du mois, risques, intention (reconduit, abandonne, en pause). */
 export function StudentIntentCard({ runId, student, editable, issued, cancelled, fileHref }: StudentIntentCardProps) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const message = useMessage();
   const R = LABELS.reenrollment.review;
   const [pending, startTransition] = useTransition();
@@ -106,7 +107,7 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
               {student.lowAttendance && student.attendanceRate !== null ? (
                 <span className="inline-flex items-center gap-1">
                   <TriangleAlert className="size-3.5" aria-hidden />
-                  {R.risk.attendance(formatPercent(student.attendanceRate))}
+                  {R.risk.attendance(formatPercent(student.attendanceRate, locale))}
                 </span>
               ) : null}
             </span>

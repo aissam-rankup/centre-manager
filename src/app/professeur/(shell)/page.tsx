@@ -29,7 +29,8 @@ export default async function TeacherHomePage() {
   const L = LABELS.teacher.home;
   const profile = await requireRole("teacher");
   const { sessions, students, studentCount, subjectCount, presenceRate } = await getTeacherDashboard();
-  const dateLabel = formatDateWithWeekday(today(), await getAppLocale());
+  const locale = await getAppLocale();
+  const dateLabel = formatDateWithWeekday(today(), locale);
   const firstName = profile.fullName.split(" ")[0] ?? profile.fullName;
   const doneCount = sessions.filter((session) => isDone(session)).length;
 
@@ -54,7 +55,7 @@ export default async function TeacherHomePage() {
             />
             <StatTile value={studentCount} label={L.stats.followedStudents} detail={L.stats.followedStudentsDetail(subjectCount)} />
             <StatTile
-              value={presenceRate === null ? LABELS.common.none : formatPercent(presenceRate)}
+              value={presenceRate === null ? LABELS.common.none : formatPercent(presenceRate, locale)}
               label={L.stats.presenceRate}
               detail={L.stats.presenceRateDetail}
             />
@@ -102,13 +103,14 @@ function isDone(session: TodaySession): boolean {
 async function SessionTile({ session, index }: { session: TodaySession; index: number }) {
   const LABELS = await getLabels();
   const L = LABELS.teacher.home;
+  const locale = await getAppLocale();
   const done = isDone(session);
   const progress = session.studentCount > 0 ? session.markedCount / session.studentCount : 0;
 
   return (
     <ProgressTile
       index={index}
-      ring={<ProgressRing value={progress} caption={done ? L.attendanceDone : L.attendanceTodo} />}
+      ring={<ProgressRing value={progress} caption={done ? L.attendanceDone : L.attendanceTodo} locale={locale} />}
       title={`${session.subjectName} · ${session.levelName}`}
       description={`${L.sessionDetail(LABELS.teacher.schedule.time(session.startTime, session.endTime), session.room)} · ${L.studentsCount(session.studentCount)}`}
     >

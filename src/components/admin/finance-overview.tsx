@@ -7,10 +7,11 @@ import { ROUTES } from "@/lib/auth/routes";
 import type { AppLabels } from "@/lib/constants/labels";
 import type { FinancialDashboard } from "@/lib/data/finance";
 import { formatMAD, formatPercent } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 /** Bloc « Résultat du mois » : encaissé, masse salariale, charges, revenu net et marge, puis 12 mois. */
-export function FinanceOverview({ data, LABELS }: { data: FinancialDashboard; LABELS: AppLabels }) {
+export function FinanceOverview({ data, LABELS, locale }: { data: FinancialDashboard; LABELS: AppLabels; locale: Locale }) {
   const F = LABELS.financeDashboard;
   const month = data.current;
   const gap = Math.max(0, month.expected - month.collected);
@@ -55,7 +56,7 @@ export function FinanceOverview({ data, LABELS }: { data: FinancialDashboard; LA
           <p className="text-caption text-muted-foreground">{F.netFormula}</p>
           <div className="mt-2 border-t border-divider pt-2">
             <p className="text-caption text-muted-foreground">{F.margin}</p>
-            <p className="numeric text-section text-heading">{margin === null ? "—" : formatPercent(margin)}</p>
+            <p className="numeric text-section text-heading">{margin === null ? "—" : formatPercent(margin, locale)}</p>
             <p className="text-caption text-subtle">{margin === null ? F.marginNone : F.marginHint}</p>
           </div>
         </div>

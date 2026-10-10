@@ -89,7 +89,7 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
         <>
           <StatTiles>
             <StatTile value={summary.absences} label={L.totalAbsences} detail={L.periods[filters.period]} />
-            <StatTile value={summary.rate === null ? L.noRate : formatPercent(summary.rate)} label={L.rate} />
+            <StatTile value={summary.rate === null ? L.noRate : formatPercent(summary.rate, locale)} label={L.rate} />
             <StatTile value={summary.sessions} label={L.sessions} />
           </StatTiles>
 
@@ -101,13 +101,13 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="truncate font-medium text-heading">{subject.subjectName}</span>
                       <span className="numeric shrink-0 text-caption text-muted-foreground">
-                        {L.absencesCount(subject.absences)} · {subject.rate === null ? L.noRate : formatPercent(subject.rate)}
+                        {L.absencesCount(subject.absences)} · {subject.rate === null ? L.noRate : formatPercent(subject.rate, locale)}
                       </span>
                     </div>
                     <div
                       className="h-2 overflow-hidden rounded-full bg-muted"
                       role="img"
-                      aria-label={`${subject.subjectName} : ${L.rate} ${subject.rate === null ? L.noRate : formatPercent(subject.rate)}`}
+                      aria-label={`${subject.subjectName} : ${L.rate} ${subject.rate === null ? L.noRate : formatPercent(subject.rate, locale)}`}
                     >
                       <div
                         className={cn("h-full rounded-full", (subject.rate ?? 1) < 0.8 ? "bg-warning" : "bg-success")}

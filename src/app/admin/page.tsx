@@ -95,7 +95,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
             <StatTile
               value={formatMAD(gap)}
               label={L.stats.shortfall}
-              detail={L.stats.shortfallDetail(formatPercent(gapRatio), formatMAD(data.expected))}
+              detail={L.stats.shortfallDetail(formatPercent(gapRatio, locale), formatMAD(data.expected))}
               links={[{ href: `${ROUTES.admin.students}?statut=retard`, label: D.detail }]}
             />
           </StatTiles>
@@ -103,7 +103,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
 
         {collection ? <CollectionOverviewSection data={collection} LABELS={LABELS} locale={locale} /> : null}
 
-        {finance ? <FinanceOverview data={finance} LABELS={LABELS} /> : null}
+        {finance ? <FinanceOverview data={finance} LABELS={LABELS} locale={locale} /> : null}
 
         <RoomOccupancyOverview data={occupancy} LABELS={LABELS} locale={locale} />
 
@@ -148,7 +148,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
                 <ProgressTile
                   key={subject.subjectId}
                   index={index}
-                  ring={<ProgressRing value={subject.rate} caption={D.presence.ring} />}
+                  ring={<ProgressRing value={subject.rate} caption={D.presence.ring} locale={locale} />}
                   title={subject.subjectName}
                   description={D.presence.detail(subject.levelName, subject.students)}
                   href={`${ROUTES.admin.reports}#absences`}

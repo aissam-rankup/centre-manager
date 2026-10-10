@@ -255,6 +255,7 @@ function Amount({ label, value, strong = false }: { label: string; value: string
 
 function PayrollDetailPanel({ line }: { line: PayrollLineView }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const D = LABELS.payroll.detail;
   const detail = line.detail;
 
@@ -286,13 +287,13 @@ function PayrollDetailPanel({ line }: { line: PayrollLineView }) {
                       <td className="numeric py-2 pr-3 text-right font-normal">{formatMAD(subject.monthlyPrice)}</td>
                       <td className="numeric py-2 pr-3 text-right font-normal">{subject.enrolled}</td>
                       <td className="numeric py-2 pr-3 text-right font-normal">
-                        {subject.ratePercent === null ? <span className="text-warning-ink">{D.noRate}</span> : formatRate(subject.ratePercent)}
+                        {subject.ratePercent === null ? <span className="text-warning-ink">{D.noRate}</span> : formatRate(subject.ratePercent, locale)}
                       </td>
                       <td className="numeric py-2 text-right font-semibold">
                         {formatMAD(subject.subtotal)}
                         {subject.ratePercent !== null ? (
                           <span className="block text-caption font-normal text-muted-foreground">
-                            {D.formula(formatMAD(subject.monthlyPrice), subject.enrolled, formatRate(subject.ratePercent), formatMAD(subject.subtotal))}
+                            {D.formula(formatMAD(subject.monthlyPrice), subject.enrolled, formatRate(subject.ratePercent, locale), formatMAD(subject.subtotal))}
                           </span>
                         ) : null}
                       </td>

@@ -177,7 +177,7 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
                       <span className="font-medium text-danger-ink">{R.risk.overdue(formatMAD(student.overdueAmount))}</span>
                     ) : null}
                     {student.lowAttendance && student.attendanceRate !== null ? (
-                      <span className="font-medium text-warning-ink">{R.risk.attendance(formatPercent(student.attendanceRate))}</span>
+                      <span className="font-medium text-warning-ink">{R.risk.attendance(formatPercent(student.attendanceRate, locale))}</span>
                     ) : null}
                     <span className="text-muted-foreground">{R.intent[student.intent]}</span>
                   </span>

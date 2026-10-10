@@ -17,6 +17,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/lib/auth/routes";
 import { getAuthState } from "@/lib/auth/session";
 import type { AppLabels } from "@/lib/constants/labels";
+import type { Locale } from "@/lib/i18n/locale";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import type { StudentFile, StudentInvoice } from "@/lib/data/assistant";
 import { getCashOpening } from "@/lib/data/cash";
@@ -175,7 +177,7 @@ function periodLabel(invoice: StudentInvoice, LABELS: AppLabels): string {
   return LABELS.billing.period(formatDate(invoice.periodStart), formatDate(invoice.periodEnd));
 }
 
-function payableInvoices(student: StudentFile, LABELS: AppLabels): PayableInvoice[] {
+function payableInvoices(student: StudentFile, LABELS: AppLabels, locale: Locale): PayableInvoice[] {
   const todayIso = toISODate(today());
   return student.invoices
     .filter((invoice) => invoice.status !== "paid")
@@ -189,7 +191,7 @@ function payableInvoices(student: StudentFile, LABELS: AppLabels): PayableInvoic
       dueNow: invoice.dueDate <= todayIso,
       amountFull: invoice.amountFull,
       discountAmount: invoice.discountAmount,
-      discountLabel: invoice.discount ? discountBadgeLabel(invoice.discount, LABELS) : null,
+      discountLabel: invoice.discount ? discountBadgeLabel(invoice.discount, LABELS, locale) : null,
       amountDue: invoice.amountDue,
     }));
 }
@@ -265,7 +267,7 @@ function InvoiceAmount({ invoice, LABELS }: { invoice: StudentInvoice; LABELS: A
 export async function PaymentsSection({ student }: { student: StudentFile }) {
   const LABELS = await getLabels();
   const L = LABELS.assistant.student;
-  const payable = payableInvoices(student, LABELS);
+  const payable = payableInvoices(student, LABELS, await getAppLocale());
   const cashOpening = payable.length > 0 ? await getCashOpening() : undefined;
   const state = await getAuthState();
   // Reçus : module Finance.

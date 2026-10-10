@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { enGB, fr } from "date-fns/locale";
 
 import { LABELS } from "@/lib/constants/labels";
-import type { Locale } from "@/lib/i18n/locale";
+import { intlLocale, type Locale } from "@/lib/i18n/locale";
 
 /** Fuseau horaire de référence de l'application. */
 export const TIME_ZONE = "Africa/Casablanca";
@@ -19,10 +19,8 @@ const centsFormatter = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 2,
 });
 
-const percentFormatter = new Intl.NumberFormat("fr-FR", {
-  style: "percent",
-  maximumFractionDigits: 1,
-});
+/** Un formateur de pourcentage par langue, créé à la première demande. */
+const percentFormatters = new Map<Locale, Intl.NumberFormat>();
 
 /** « 1 200 MAD », « 1 732,50 MAD » */
 export function formatMAD(amount: number): string {
@@ -33,9 +31,14 @@ export function formatMAD(amount: number): string {
   return `${digits} ${LABELS.currency.code}`;
 }
 
-/** « 12,5 % » */
-export function formatPercent(ratio: number): string {
-  return percentFormatter.format(ratio);
+/** « 12,5 % » ; « 12.5% » */
+export function formatPercent(ratio: number, locale: Locale = "fr"): string {
+  let formatter = percentFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(intlLocale(locale), { style: "percent", maximumFractionDigits: 1 });
+    percentFormatters.set(locale, formatter);
+  }
+  return formatter.format(ratio);
 }
 
 /** Noms des jours et des mois dans la langue de l'interface (l'arabe arrive en phase 3). */

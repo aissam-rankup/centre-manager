@@ -1,4 +1,5 @@
 import { formatMonth } from "@/lib/format";
+import { intlLocale, type Locale } from "@/lib/i18n/locale";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
 export type PayMode = Database["public"]["Enums"]["pay_mode"];
@@ -88,7 +89,8 @@ export function parsePayrollDetail(mode: PayMode | null, value: Json): PayrollDe
   return { kind: "none" };
 }
 
-/** « 30 % » */
-export function formatRate(rate: number): string {
-  return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(rate)} %`;
+/** « 30 % » ; « 30% » */
+export function formatRate(rate: number, locale: Locale = "fr"): string {
+  const digits = new Intl.NumberFormat(intlLocale(locale), { maximumFractionDigits: 2 }).format(rate);
+  return locale === "en" ? `${digits}%` : `${digits} %`;
 }

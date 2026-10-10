@@ -12,12 +12,13 @@ import { Input } from "@/components/ui/input";
 import { saveTeacherPay } from "@/lib/actions/payroll";
 import type { PayHistoryEntry, TeacherPaySettings } from "@/lib/data/payroll";
 import { formatDate, formatMAD } from "@/lib/format";
-import { useLabels, useMessage } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { formatRate, PAY_MODES, type PayMode } from "@/lib/payroll";
 import { cn } from "@/lib/utils";
 
 export function TeacherPaySettingsSection({ teachers, defaultFrom }: { teachers: TeacherPaySettings[]; defaultFrom: string }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const S = LABELS.payroll.settings;
 
   return (
@@ -31,7 +32,7 @@ export function TeacherPaySettingsSection({ teachers, defaultFrom }: { teachers:
                 ? S.current.salary(formatMAD(teacher.currentSalary))
                 : S.current.none
               : teacher.payMode === "commission"
-                ? rated.map((subject) => `${subject.subject} (${subject.level}) ${formatRate(subject.currentRate ?? 0)}`).join(" · ") ||
+                ? rated.map((subject) => `${subject.subject} (${subject.level}) ${formatRate(subject.currentRate ?? 0, locale)}`).join(" · ") ||
                   S.current.none
                 : S.current.none;
           return (
@@ -72,6 +73,7 @@ function HistoryList({ entries, format }: { entries: PayHistoryEntry[]; format: 
 
 function TeacherPayDialog({ teacher, defaultFrom }: { teacher: TeacherPaySettings; defaultFrom: string }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const P = LABELS.payroll;
   const S = P.settings;
   const message = useMessage();
@@ -218,7 +220,7 @@ function TeacherPayDialog({ teacher, defaultFrom }: { teacher: TeacherPaySetting
                 .map((subject) => (
                   <div key={subject.subjectId} className="flex flex-col gap-1">
                     <span className="text-caption font-medium">{S.rateFor(subject.subject, subject.level)}</span>
-                    <HistoryList entries={subject.history} format={formatRate} />
+                    <HistoryList entries={subject.history} format={(value) => formatRate(value, locale)} />
                   </div>
                 ))}
             </div>

@@ -30,13 +30,13 @@ export function CollectionOverviewSection({ data, LABELS, locale }: { data: Coll
           <Kpi label={C.remaining} value={formatMAD(remaining)} />
           <Kpi
             label={C.rate}
-            value={rate === null ? "—" : formatPercent(rate)}
+            value={rate === null ? "—" : formatPercent(rate, locale)}
             detail={rate === null ? C.rateNone : undefined}
             emphasis
           />
         </dl>
         {rate !== null && previousRate !== null ? (
-          <p className="text-caption text-muted-foreground">{C.comparison(formatPercent(rate), formatPercent(previousRate))}</p>
+          <p className="text-caption text-muted-foreground">{C.comparison(formatPercent(rate, locale), formatPercent(previousRate, locale))}</p>
         ) : previousRate === null ? (
           <p className="text-caption text-muted-foreground">{C.comparisonNone}</p>
         ) : null}

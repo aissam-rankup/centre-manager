@@ -1,5 +1,6 @@
 import type { AppLabels } from "@/lib/constants/labels";
 import { formatMAD } from "@/lib/format";
+import { intlLocale, type Locale } from "@/lib/i18n/locale";
 import type { Database, Json } from "@/lib/supabase/database.types";
 
 export type DiscountType = Database["public"]["Enums"]["discount_type"];
@@ -44,10 +45,11 @@ export function discountState(discount: StudentDiscount, todayIso: string): Disc
   return "active";
 }
 
-/** « 25 % » ou « 100 MAD ». */
-export function discountValueLabel(discount: Pick<DiscountSummary, "type" | "value">): string {
+/** « 25 % » ou « 100 MAD » ; « 25% » en anglais. */
+export function discountValueLabel(discount: Pick<DiscountSummary, "type" | "value">, locale: Locale = "fr"): string {
   if (discount.type === "percentage") {
-    return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(discount.value)} %`;
+    const digits = new Intl.NumberFormat(intlLocale(locale), { maximumFractionDigits: 2 }).format(discount.value);
+    return locale === "en" ? `${digits}%` : `${digits} %`;
   }
   return formatMAD(discount.value);
 }
@@ -59,8 +61,8 @@ export function discountReasonLabel(discount: Pick<DiscountSummary, "reason" | "
 }
 
 /** « Remise 25 % — fratrie » */
-export function discountBadgeLabel(discount: DiscountSummary, LABELS: AppLabels): string {
-  return LABELS.discounts.badge(discountValueLabel(discount), discountReasonLabel(discount, LABELS));
+export function discountBadgeLabel(discount: DiscountSummary, LABELS: AppLabels, locale: Locale = "fr"): string {
+  return LABELS.discounts.badge(discountValueLabel(discount, locale), discountReasonLabel(discount, LABELS));
 }
 
 /** Portée : « toutes les matières » ou la matière visée. */

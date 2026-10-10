@@ -36,7 +36,7 @@ export function RoomOccupancyOverview({ data, LABELS, locale }: { data: Occupanc
         ) : (
           <>
             <dl className="grid gap-3 sm:grid-cols-3">
-              <KeyFigure label={O.overall} value={formatPercent(data.rate)} detail={O.overallHint} strong />
+              <KeyFigure label={O.overall} value={formatPercent(data.rate, locale)} detail={O.overallHint} strong />
               <KeyFigure
                 label={O.peak}
                 value={data.peak ? O.peakValue(LABELS.days[data.peak.day] ?? "", data.peak.hour) : O.noPeak}
@@ -50,7 +50,7 @@ export function RoomOccupancyOverview({ data, LABELS, locale }: { data: Occupanc
                 <h3 className="font-semibold">{O.roomsTitle}</h3>
                 <ul className="flex flex-col divide-y divide-divider">
                   {data.rooms.map((room) => (
-                    <RoomRow key={room.roomId} room={room} openMinutes={data.openMinutes} hours={hours} LABELS={LABELS} />
+                    <RoomRow key={room.roomId} room={room} openMinutes={data.openMinutes} hours={hours} LABELS={LABELS} locale={locale} />
                   ))}
                 </ul>
               </div>
@@ -81,11 +81,13 @@ function RoomRow({
   openMinutes,
   hours,
   LABELS,
+  locale,
 }: {
   room: RoomOccupancy;
   openMinutes: number;
   hours: (minutes: number) => string;
   LABELS: AppLabels;
+  locale: Locale;
 }) {
   const O = LABELS.roomOccupancy;
   const { icon: Icon, ink } = STATUS[room.status];
@@ -124,13 +126,13 @@ function RoomRow({
         >
           <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(room.rate > 0 ? 2 : 0, room.rate * 100)}%` }} />
         </div>
-        <span className="numeric w-12 shrink-0 text-right text-table font-semibold">{formatPercent(room.rate)}</span>
+        <span className="numeric w-12 shrink-0 text-right text-table font-semibold">{formatPercent(room.rate, locale)}</span>
       </div>
       <p className="flex flex-wrap gap-x-3 gap-y-0.5 text-caption text-muted-foreground">
         <span>{O.used(hours(room.usedMinutes), hours(openMinutes))}</span>
         {room.fill !== null ? (
           <span title={O.fillHint} className={cn(room.fill > 1 && "font-semibold text-danger-ink")}>
-            {O.fill(formatPercent(room.fill))}
+            {O.fill(formatPercent(room.fill, locale))}
           </span>
         ) : null}
       </p>

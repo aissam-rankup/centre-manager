@@ -2,6 +2,7 @@ import Link from "@/components/shared/app-link";
 import type { ReactNode } from "react";
 
 import { formatPercent } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 /** Couleurs des cartes, dans l'ordre ; elles tournent au-delà de 4. */
@@ -21,16 +22,18 @@ type ProgressRingProps = {
   /** Valeur entre 0 et 1. */
   value: number;
   caption: string;
+  /** Langue de l'interface (format du pourcentage). */
+  locale: Locale;
   size?: number;
 };
 
 /** Anneau de progression : piste blanche à 30 %, arc blanc, pourcentage au centre. */
-export function ProgressRing({ value, caption, size = 56 }: ProgressRingProps) {
+export function ProgressRing({ value, caption, locale, size = 56 }: ProgressRingProps) {
   const stroke = 4;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.min(1, Math.max(0, value));
-  const label = formatPercent(clamped);
+  const label = formatPercent(clamped, locale);
 
   return (
     <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>

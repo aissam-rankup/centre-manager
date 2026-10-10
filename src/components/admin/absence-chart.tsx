@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, type TooltipContentProps, XAxis, YAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale } from "@/lib/i18n/client";
 import type { AbsenceRate } from "@/lib/data/admin";
 import { formatPercent } from "@/lib/format";
 
@@ -21,6 +21,7 @@ type ChartRow = AbsenceRate & { label: string };
  */
 export function AbsenceChart({ rates }: { rates: AbsenceRate[] }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const L = LABELS.admin.dashboard.chart;
   const [showTable, setShowTable] = useState(false);
   const data: ChartRow[] = rates.map((rate) => ({ ...rate, label: `${rate.subjectName} · ${rate.levelName}` }));
@@ -35,7 +36,7 @@ export function AbsenceChart({ rates }: { rates: AbsenceRate[] }) {
             <XAxis
               type="number"
               domain={[0, Math.min(1, Math.ceil(max * 10) / 10)]}
-              tickFormatter={(value: number) => formatPercent(value)}
+              tickFormatter={(value: number) => formatPercent(value, locale)}
               tick={{ fill: "var(--muted-foreground)", fontSize: 13 }}
               axisLine={false}
               tickLine={false}
@@ -79,7 +80,7 @@ export function AbsenceChart({ rates }: { rates: AbsenceRate[] }) {
                   <td className="px-2 text-muted-foreground">{rate.levelName}</td>
                   <td className="numeric px-2 text-right font-normal">{rate.absentCount}</td>
                   <td className="numeric px-2 text-right font-normal">{rate.totalCount}</td>
-                  <td className="numeric px-2 text-right">{formatPercent(rate.rate)}</td>
+                  <td className="numeric px-2 text-right">{formatPercent(rate.rate, locale)}</td>
                 </tr>
               ))}
             </tbody>
@@ -92,13 +93,14 @@ export function AbsenceChart({ rates }: { rates: AbsenceRate[] }) {
 
 function ChartTooltip({ active, payload }: TooltipContentProps) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const L = LABELS.admin.dashboard.chart;
   const row = payload?.[0]?.payload as ChartRow | undefined;
   if (!active || !row) return null;
   return (
     <div className="rounded-lg bg-popover px-3 py-2 text-popover-foreground shadow-raised">
       <p className="font-medium">{row.label}</p>
-      <p className="numeric text-lg">{formatPercent(row.rate)}</p>
+      <p className="numeric text-lg">{formatPercent(row.rate, locale)}</p>
       <p className="text-caption text-muted-foreground">{L.tooltip(row.absentCount, row.totalCount)}</p>
     </div>
   );
