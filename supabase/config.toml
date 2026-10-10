@@ -247,12 +247,12 @@ otp_expiry = 3600
 
 # Invitation (comptes créés depuis la console /platform) : lien vers /bienvenue.
 [auth.email.template.invite]
-subject = "Votre accès à CentroManager"
+subject = "Votre accès · الولوج إلى حسابك · Your access"
 content_path = "./supabase/templates/invite.html"
 
 # Lien de mot de passe (envoyé depuis la console) : lien vers /bienvenue.
 [auth.email.template.recovery]
-subject = "Choisir votre mot de passe CentroManager"
+subject = "Mot de passe · كلمة المرور · Password"
 content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize notification email template

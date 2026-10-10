@@ -1,17 +1,39 @@
 <!-- Marque blanche : .Data.brand_name (métadonnée du compte) remplace « dirassty ». -->
 <!-- dirassty — invitation d'un compte (Supabase Auth → Email Templates → Invite user). -->
+<!-- Un seul modèle pour tous : français, puis arabe (de droite à gauche), puis anglais. -->
 <div style="font-family: Arial, Helvetica, sans-serif; color: #3b3f5c; max-width: 520px; margin: 0 auto; padding: 24px;">
   <h1 style="font-size: 22px; color: #6c2bf5; margin: 0 0 16px;">Bienvenue sur {{ if .Data.brand_name }}{{ .Data.brand_name }}{{ else }}dirassty{{ end }}</h1>
   <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
     Un compte a été créé pour vous. Cliquez sur le bouton ci-dessous pour choisir votre mot de passe et accéder à votre espace.
   </p>
-  <p style="margin: 24px 0;">
+
+  <div dir="rtl" lang="ar" style="text-align: right; border-top: 1px solid #e6e8f0; padding-top: 16px; margin-top: 16px;">
+    <h2 style="font-size: 20px; color: #6c2bf5; margin: 0 0 12px;">مرحبًا بك في {{ if .Data.brand_name }}{{ .Data.brand_name }}{{ else }}dirassty{{ end }}</h2>
+    <p style="font-size: 15px; line-height: 1.8; margin: 0 0 16px;">
+      تم إنشاء حساب لك. اضغط على الزر أدناه لاختيار كلمة المرور والولوج إلى فضائك.
+    </p>
+  </div>
+
+  <div lang="en" style="border-top: 1px solid #e6e8f0; padding-top: 16px; margin-top: 16px;">
+    <h2 style="font-size: 20px; color: #6c2bf5; margin: 0 0 12px;">Welcome to {{ if .Data.brand_name }}{{ .Data.brand_name }}{{ else }}dirassty{{ end }}</h2>
+    <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
+      An account has been created for you. Click the button below to choose your password and access your space.
+    </p>
+  </div>
+
+  <p style="margin: 24px 0; text-align: center;">
     <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite"
        style="background: #6c2bf5; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; display: inline-block;">
-      Choisir mon mot de passe
+      Choisir mon mot de passe · <span lang="ar">اختيار كلمة المرور</span> · Choose my password
     </a>
   </p>
-  <p style="font-size: 13px; line-height: 1.6; color: #8a90a6; margin: 0;">
+  <p style="font-size: 13px; line-height: 1.6; color: #8a90a6; margin: 0 0 8px;">
     Ce lien est personnel et expire après 24 heures. Si vous n'attendiez pas ce message, ignorez-le.
+  </p>
+  <p dir="rtl" lang="ar" style="font-size: 13px; line-height: 1.8; color: #8a90a6; margin: 0 0 8px; text-align: right;">
+    هذا الرابط شخصي وتنتهي صلاحيته بعد 24 ساعة. إذا لم تكن تنتظر هذه الرسالة، فتجاهلها.
+  </p>
+  <p lang="en" style="font-size: 13px; line-height: 1.6; color: #8a90a6; margin: 0;">
+    This link is personal and expires after 24 hours. If you were not expecting this message, please ignore it.
   </p>
 </div>
