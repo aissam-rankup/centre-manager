@@ -30,7 +30,7 @@ export default async function AssistantSessionPage({ params, searchParams }: Pag
   const backHref = `${ROUTES.assistant.sessions}?date=${dateIso}`;
 
   const back = (
-    <Button asChild variant="ghost" className="-ml-3 self-start">
+    <Button asChild variant="ghost" className="-ms-3 self-start">
       <Link href={backHref}>
         <ArrowLeft aria-hidden />
         {L.back}

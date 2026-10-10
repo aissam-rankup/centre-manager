@@ -78,7 +78,7 @@ export default async function AdminSubjectsPage() {
                         <span className="truncate font-medium">{subject.name}</span>
                         <span className="text-caption text-muted-foreground">{L.enrolled(subject.activeEnrollments)}</span>
                       </div>
-                      <span className="shrink-0 text-right">
+                      <span className="shrink-0 text-end">
                         <Money amount={subject.monthlyPrice} />
                         <span className="block text-caption text-muted-foreground">{LABELS.billing.perMonth}</span>
                       </span>
@@ -144,7 +144,7 @@ async function LevelPacks({ level }: { level: AdminLevel }) {
                 <span className="font-medium">
                   {pack.name}
                   {pack.active ? null : (
-                    <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-caption font-medium text-muted-foreground">
+                    <span className="ms-2 rounded-full bg-muted px-2 py-0.5 text-caption font-medium text-muted-foreground">
                       {LABELS.packs.inactive}
                     </span>
                   )}
@@ -154,7 +154,7 @@ async function LevelPacks({ level }: { level: AdminLevel }) {
                 </span>
                 <span className="text-caption text-muted-foreground">{LABELS.packs.subscribers(pack.subscribers)}</span>
               </div>
-              <span className="shrink-0 text-right">
+              <span className="shrink-0 text-end">
                 <Money amount={pack.monthlyPrice} />
                 <span className="block text-caption text-muted-foreground">{LABELS.billing.perMonth}</span>
               </span>

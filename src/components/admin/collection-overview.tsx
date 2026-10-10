@@ -97,7 +97,7 @@ export function ReenrollmentOverviewCard({ data, LABELS, locale }: { data: Reenr
                   <span className="flex justify-between gap-3 text-caption">
                     <span className="font-medium">
                       {subject.name}
-                      {subject.kind === "pack" ? <span className="ml-1 text-muted-foreground">({D.pack})</span> : null}
+                      {subject.kind === "pack" ? <span className="ms-1 text-muted-foreground">({D.pack})</span> : null}
                     </span>
                     <span className="numeric">{D.subjectLine(subject.kept, subject.dropped)}</span>
                   </span>

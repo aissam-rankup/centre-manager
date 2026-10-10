@@ -29,7 +29,7 @@ export default async function TeacherStudentAttendancePage({ params, searchParam
 
   return (
     <div className="flex flex-col gap-6">
-      <Button asChild variant="ghost" className="-ml-3 self-start">
+      <Button asChild variant="ghost" className="-ms-3 self-start">
         <Link href={ROUTES.teacher.home}>
           <ArrowLeft aria-hidden />
           {LABELS.common.back}

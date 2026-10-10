@@ -83,8 +83,8 @@ export function ProgressTile({ index, ring, title, description, href, linkLabel,
         className,
       )}
     >
-      <span className="pointer-events-none absolute -top-6 -right-6 size-20 rounded-full bg-white/[0.08]" aria-hidden />
-      <span className="pointer-events-none absolute -bottom-5 left-10 size-[50px] rounded-full bg-white/[0.08]" aria-hidden />
+      <span className="pointer-events-none absolute -top-6 -end-6 size-20 rounded-full bg-white/[0.08]" aria-hidden />
+      <span className="pointer-events-none absolute -bottom-5 start-10 size-[50px] rounded-full bg-white/[0.08]" aria-hidden />
       {ring}
       <div className="relative flex min-w-0 flex-1 flex-col gap-0.5">
         <p className="line-clamp-2 text-body font-semibold">{title}</p>

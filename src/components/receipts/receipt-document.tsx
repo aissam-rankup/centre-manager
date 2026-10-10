@@ -19,8 +19,11 @@ export function ReceiptDocument({ receipt, format, labels }: ReceiptDocumentProp
   const color = receipt.center.color ?? "#6c2bf5";
   const phone = receipt.center.phone ? L.phone(formatPhone(receipt.center.phone)) : null;
 
+  // Reçu remis à la famille : en français, de gauche à droite, quelle que soit la langue de l'interface.
   return (
     <article
+      lang="fr"
+      dir="ltr"
       className={cn(
         "receipt-paper mx-auto bg-white text-[#2b2f45] shadow-card print:shadow-none",
         ticket ? "w-[80mm] px-[4mm] py-[5mm] text-[11px]" : "w-full max-w-[148mm] px-[10mm] py-[9mm] text-[12.5px]",
@@ -144,7 +147,7 @@ function Row({ label, value, strong = false }: { label: string; value: string; s
   return (
     <div className="flex justify-between gap-3">
       <dt className="text-[#6b7088]">{label}</dt>
-      <dd className={cn("text-right tabular-nums", strong && "font-bold")}>{value}</dd>
+      <dd className={cn("text-end tabular-nums", strong && "font-bold")}>{value}</dd>
     </div>
   );
 }

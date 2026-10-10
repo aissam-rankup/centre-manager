@@ -30,7 +30,7 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
             tone="white"
             height={460}
             decorative
-            className="pointer-events-none absolute -right-20 -bottom-24 opacity-10"
+            className="pointer-events-none absolute -end-20 -bottom-24 opacity-10"
           />
         </aside>
         <div className="flex min-h-dvh flex-col">

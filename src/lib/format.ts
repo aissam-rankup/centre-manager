@@ -1,6 +1,6 @@
 import { TZDate } from "@date-fns/tz";
 import { format } from "date-fns";
-import { enGB, fr } from "date-fns/locale";
+import { arMA, enGB, fr } from "date-fns/locale";
 
 import { LABELS } from "@/lib/constants/labels";
 import { intlLocale, type Locale } from "@/lib/i18n/locale";
@@ -41,8 +41,8 @@ export function formatPercent(ratio: number, locale: Locale = "fr"): string {
   return formatter.format(ratio);
 }
 
-/** Noms des jours et des mois dans la langue de l'interface (l'arabe arrive en phase 3). */
-const DATE_LOCALES = { fr, en: enGB, ar: fr } as const;
+/** Noms des jours et des mois dans la langue de l'interface (arabe : mois du Maroc, « يوليوز، غشت »). */
+const DATE_LOCALES = { fr, en: enGB, ar: arMA } as const;
 
 /** Locale date-fns d'une langue (formats personnalisés : `format(date, "MMM", { locale: dateLocale(locale) })`). */
 export function dateLocale(locale: Locale) {
@@ -99,7 +99,7 @@ export function formatLongDate(date: Date | string, locale: Locale = "fr"): stri
 export function formatDayMonth(date: Date | string, locale: Locale = "fr"): string {
   const zoned = inAppTimeZone(date);
   const day = zoned.getDate();
-  return `${day === 1 && locale !== "en" ? "1er" : day} ${format(zoned, "MMMM", { locale: DATE_LOCALES[locale] })}`;
+  return `${day === 1 && locale === "fr" ? "1er" : day} ${format(zoned, "MMMM", { locale: DATE_LOCALES[locale] })}`;
 }
 
 /** « 2026-09-24 » — format des colonnes `date` Postgres, au fuseau de Casablanca. */

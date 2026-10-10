@@ -60,7 +60,7 @@ export function AbsenceSettingsForm({ settings, centerName }: { settings: Absenc
           </span>
         </label>
         <FormField id="modele-absence" label={S.template} error={error ?? undefined}>
-          <Textarea ref={templateRef} rows={5} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
+          <Textarea lang="fr" dir="ltr" ref={templateRef} rows={5} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
         </FormField>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-caption text-muted-foreground">{S.templateHint}</span>
@@ -74,14 +74,14 @@ export function AbsenceSettingsForm({ settings, centerName }: { settings: Absenc
               {token}
             </button>
           ))}
-          <Button type="button" variant="ghost" className="ml-auto" onClick={() => setTemplate(A.template)}>
+          <Button type="button" variant="ghost" className="ms-auto" onClick={() => setTemplate(A.template)}>
             <RotateCcw aria-hidden />
             {S.reset}
           </Button>
         </div>
         <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
           <span className="text-caption font-medium text-muted-foreground">{S.preview}</span>
-          <p className="whitespace-pre-line">{preview}</p>
+          <p lang="fr" dir="ltr" className="whitespace-pre-line">{preview}</p>
         </div>
         <Button type="submit" disabled={pending} className="self-end">
           {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <Save aria-hidden />}

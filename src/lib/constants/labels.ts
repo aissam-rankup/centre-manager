@@ -1,6 +1,8 @@
+import { TEXTS_AR } from "@/lib/constants/labels-ar";
 import { TEXTS_EN } from "@/lib/constants/labels-en";
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale";
 import { DEFAULT_VOCABULARY, translateTree, translator, type VocabularyTerms } from "@/lib/vocabulary";
+import { arabicTranslator } from "@/lib/vocabulary-ar";
 import { englishTranslator } from "@/lib/vocabulary-en";
 
 /** Heure parlée : « 15:00 » → « 15h », « 15:30 » → « 15h30 ». */
@@ -3006,7 +3008,7 @@ export type AppLabels = LabelTree<typeof TEXTS>;
 export const LABELS: Omit<AppLabels, CenterNamespaces> = TEXTS;
 
 /** Libellés de chaque langue : la vérification de type impose la même structure partout. */
-const TEXTS_BY_LOCALE: Record<Locale, AppLabels> = { fr: TEXTS, en: TEXTS_EN, ar: TEXTS };
+const TEXTS_BY_LOCALE: Record<Locale, AppLabels> = { fr: TEXTS, en: TEXTS_EN, ar: TEXTS_AR };
 
 const cache = new Map<string, AppLabels>();
 
@@ -3019,7 +3021,7 @@ export function labelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName
   const key = JSON.stringify([terms, brandName ?? null, locale]);
   let labels = cache.get(key);
   if (!labels) {
-    const vocabulary = locale === "en" ? englishTranslator(terms) : translator(terms);
+    const vocabulary = locale === "en" ? englishTranslator(terms) : locale === "ar" ? arabicTranslator(terms) : translator(terms);
     const platformName = TEXTS.app.name;
     const translate = brandName && brandName !== platformName ? (text: string) => vocabulary(text).replaceAll(platformName, brandName) : vocabulary;
     labels = translateTree(TEXTS_BY_LOCALE[locale], translate);

@@ -62,15 +62,15 @@ export function AbsenceChart({ rates }: { rates: AbsenceRate[] }) {
 
       {showTable ? (
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-start">
             <caption className="sr-only">{L.caption}</caption>
             <thead>
               <tr className="h-11 border-b text-caption text-muted-foreground">
                 <th scope="col" className="px-2 font-medium">{L.subject}</th>
                 <th scope="col" className="px-2 font-medium">{L.level}</th>
-                <th scope="col" className="px-2 text-right font-medium">{L.absences}</th>
-                <th scope="col" className="px-2 text-right font-medium">{L.records}</th>
-                <th scope="col" className="px-2 text-right font-medium">{L.rate}</th>
+                <th scope="col" className="px-2 text-end font-medium">{L.absences}</th>
+                <th scope="col" className="px-2 text-end font-medium">{L.records}</th>
+                <th scope="col" className="px-2 text-end font-medium">{L.rate}</th>
               </tr>
             </thead>
             <tbody>
@@ -78,9 +78,9 @@ export function AbsenceChart({ rates }: { rates: AbsenceRate[] }) {
                 <tr key={rate.subjectId} className="h-[52px] border-b last:border-b-0">
                   <td className="px-2">{rate.subjectName}</td>
                   <td className="px-2 text-muted-foreground">{rate.levelName}</td>
-                  <td className="numeric px-2 text-right font-normal">{rate.absentCount}</td>
-                  <td className="numeric px-2 text-right font-normal">{rate.totalCount}</td>
-                  <td className="numeric px-2 text-right">{formatPercent(rate.rate, locale)}</td>
+                  <td className="numeric px-2 text-end font-normal">{rate.absentCount}</td>
+                  <td className="numeric px-2 text-end font-normal">{rate.totalCount}</td>
+                  <td className="numeric px-2 text-end">{formatPercent(rate.rate, locale)}</td>
                 </tr>
               ))}
             </tbody>

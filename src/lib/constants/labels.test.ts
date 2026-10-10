@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { labelsFor, LABELS, messageTranslator } from "@/lib/constants/labels";
 import { DEFAULT_VOCABULARY, type VocabularyTerms } from "@/lib/vocabulary";
+import { arabicTranslator } from "@/lib/vocabulary-ar";
 import { englishTranslator } from "@/lib/vocabulary-en";
 
 const TRAINING: VocabularyTerms = {
@@ -73,6 +74,51 @@ describe("libellés anglais", () => {
     expect(english.common.cancel).toBe("Cancel");
     expect(english.nav.newStudent).toBe("New trainee");
     expect(english.days).toHaveLength(7);
+  });
+});
+
+describe("arabicTranslator", () => {
+  it("remplace les marqueurs par les formes arabes (indéfinies, définies, pluriel)", () => {
+    const t = arabicTranslator(DEFAULT_VOCABULARY);
+    expect(t("إضافة {learner}")).toBe("إضافة تلميذ");
+    expect(t("{the learners} و{the courses}")).toBe("التلاميذ والمواد");
+    expect(t("ملف {the learner}")).toBe("ملف التلميذ");
+  });
+
+  it("contracte « ل » + « ال » et suit le vocabulaire du type d'établissement", () => {
+    expect(arabicTranslator(DEFAULT_VOCABULARY)("ل{the learner}")).toBe("للتلميذ");
+    const t = arabicTranslator(TRAINING);
+    expect(t("{the learners}")).toBe("المتدربون");
+    expect(t("{instructors}")).toBe("مكوّنون");
+    expect(t("ل{learner}")).toBe("لمتدرب");
+  });
+});
+
+describe("libellés arabes", () => {
+  const french = labelsFor(DEFAULT_VOCABULARY);
+  const arabic = labelsFor(TRAINING, null, "ar");
+
+  it("ont la même structure que les libellés français", () => {
+    const keys = (tree: unknown): string[] => strings(tree).map(([path]) => path).sort();
+    expect(keys(arabic)).toEqual(keys(french));
+  });
+
+  it("ne laissent aucun marqueur de vocabulaire non remplacé", () => {
+    const leftovers = strings(arabic).filter(([, text]) => /\{(the |a |A )?[A-Za-z]+\}/.test(text));
+    expect(leftovers).toEqual([]);
+  });
+
+  it("gardent en français les modèles de messages envoyés aux familles", () => {
+    const frenchTraining = labelsFor(TRAINING);
+    for (const path of ["receipts.whatsappTemplate", "reenrollment.reminders.templates", "absenceAlerts.template", "centerSettings.sample"]) {
+      expect(at(arabic, path)).toEqual(at(frenchTraining, path));
+    }
+  });
+
+  it("sont en arabe (échantillon)", () => {
+    expect(arabic.days).toHaveLength(7);
+    expect(arabic.common.colon).toBe(":");
+    expect(arabic.common.cancel).toMatch(/[؀-ۿ]/);
   });
 });
 

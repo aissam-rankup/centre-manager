@@ -63,7 +63,7 @@ function CategoryRow({ category }: { category: ExpenseCategoryView }) {
 
   return (
     <li className={cn("flex items-center justify-between gap-3 py-2.5", !category.isActive && "opacity-60")}>
-      <button type="button" onClick={() => setEditing(true)} className="flex min-w-0 items-center gap-3 rounded-lg text-left hover:underline">
+      <button type="button" onClick={() => setEditing(true)} className="flex min-w-0 items-center gap-3 rounded-lg text-start hover:underline">
         <ExpenseIcon name={category.icon} />
         <span className="flex min-w-0 flex-col">
           <span className="truncate font-medium">{category.name}</span>

@@ -221,7 +221,7 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                         {absence.history.length > 1 ? (
                           <details className="text-caption">
                             <summary className="cursor-pointer text-muted-foreground">{L.history}</summary>
-                            <ol className="mt-1 flex flex-col gap-0.5 pl-4">
+                            <ol className="mt-1 flex flex-col gap-0.5 ps-4">
                               {absence.history.map((mark, index) => (
                                 <li key={`${mark.at}-${index}`} className="list-decimal text-subtle">
                                   {L.historyItem(

@@ -77,7 +77,7 @@ export function LoginForm({ next }: { next: string | null }) {
             id="password"
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
-            className="pr-12"
+            className="pe-12"
             aria-invalid={errors.password ? true : undefined}
             aria-describedby={errors.password ? "password-error" : undefined}
             {...register("password")}
@@ -86,7 +86,7 @@ export function LoginForm({ next }: { next: string | null }) {
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute top-0 right-0"
+            className="absolute top-0 end-0"
             onClick={() => setShowPassword((value) => !value)}
             aria-label={showPassword ? L.hidePassword : L.showPassword}
             aria-pressed={showPassword}

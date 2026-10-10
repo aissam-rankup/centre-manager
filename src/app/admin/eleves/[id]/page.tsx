@@ -69,7 +69,7 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
 
   return (
     <div className="flex flex-col gap-6">
-      <Button asChild variant="ghost" className="-ml-3 self-start">
+      <Button asChild variant="ghost" className="-ms-3 self-start">
         <Link href={ROUTES.admin.students}>
           <ArrowLeft aria-hidden />
           {L.back}

@@ -152,7 +152,7 @@ export function PackDialog({ trigger, levelId, levelName, subjects, pack }: Pack
           <Button
             type="button"
             variant="ghost"
-            className="-mr-3"
+            className="-me-3"
             onClick={() => form.setValue("subjectIds", subjects.map((subject) => subject.id), { shouldValidate: true })}
           >
             {L.selectAll}

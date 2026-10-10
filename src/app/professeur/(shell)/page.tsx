@@ -156,11 +156,11 @@ async function StudentList({ students }: { students: TeacherStudentRow[] }) {
 
           {/* Desktop : tableau */}
           <div className="hidden max-h-[520px] overflow-auto rounded-xl bg-card shadow-card md:block">
-            <table className="w-full border-collapse text-left text-table">
+            <table className="w-full border-collapse text-start text-table">
               <caption className="sr-only">{S.caption}</caption>
               <thead className="sticky top-0 z-10 bg-card">
                 <tr className="h-12 border-b border-divider">
-                  <th scope="col" className="px-3 pl-4 font-medium text-heading lg:px-4 lg:pl-6">
+                  <th scope="col" className="px-3 ps-4 font-medium text-heading lg:px-4 lg:ps-6">
                     {S.name}
                   </th>
                   <th scope="col" className="px-3 font-medium text-heading lg:px-4">
@@ -169,7 +169,7 @@ async function StudentList({ students }: { students: TeacherStudentRow[] }) {
                   <th scope="col" className="px-3 font-medium text-heading lg:px-4">
                     {S.subject}
                   </th>
-                  <th scope="col" className="px-3 pr-4 font-medium whitespace-nowrap text-heading lg:px-4">
+                  <th scope="col" className="px-3 pe-4 font-medium whitespace-nowrap text-heading lg:px-4">
                     {S.lastStatus}
                   </th>
                 </tr>
@@ -180,7 +180,7 @@ async function StudentList({ students }: { students: TeacherStudentRow[] }) {
                     key={student.key}
                     className="h-[52px] border-b border-divider transition-colors duration-150 last:border-b-0 hover:bg-row-hover"
                   >
-                    <td className="px-3 pl-4 lg:px-4 lg:pl-6">
+                    <td className="px-3 ps-4 lg:px-4 lg:ps-6">
                       <span className="flex items-center gap-3 font-medium text-heading">
                         <StudentAvatar name={student.fullName} photoUrl={student.photoUrl} className="size-7 border" />
                         <Link href={ROUTES.teacher.student(student.studentId)} className="truncate rounded-sm hover:text-primary">
@@ -192,7 +192,7 @@ async function StudentList({ students }: { students: TeacherStudentRow[] }) {
                       {student.levelName}
                     </td>
                     <td className="px-3 lg:px-4">{student.subjectName}</td>
-                    <td className="px-3 pr-4 lg:px-4">
+                    <td className="px-3 pe-4 lg:px-4">
                       <LastStatus status={student.lastStatus} />
                     </td>
                   </tr>

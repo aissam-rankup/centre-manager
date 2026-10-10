@@ -159,9 +159,9 @@ export function PayrollBoard({ payroll, todayIso }: { payroll: PayrollView; toda
     <section aria-label={P.title} className="overflow-hidden rounded-xl bg-card shadow-card">
       <div className="hidden grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_minmax(0,1.4fr)] gap-4 border-b border-divider px-5 py-3 text-caption font-medium text-muted-foreground lg:grid">
         <span>{C.teacher}</span>
-        <span className="text-right">{C.computed}</span>
-        <span className="text-right">{C.adjustment}</span>
-        <span className="text-right">{C.final}</span>
+        <span className="text-end">{C.computed}</span>
+        <span className="text-end">{C.adjustment}</span>
+        <span className="text-end">{C.final}</span>
         <span>{C.payment}</span>
         <span />
       </div>
@@ -246,7 +246,7 @@ function PayrollLineRow({ line, payroll, todayIso }: { line: PayrollLineView; pa
 
 function Amount({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
   return (
-    <div className="flex justify-between gap-3 lg:block lg:text-right">
+    <div className="flex justify-between gap-3 lg:block lg:text-end">
       <span className="text-caption text-muted-foreground lg:hidden">{label}</span>
       <span className={cn("numeric", strong ? "font-semibold text-heading" : "font-normal")}>{value}</span>
     </div>
@@ -270,26 +270,26 @@ function PayrollDetailPanel({ line }: { line: PayrollLineView }) {
               <table className="w-full min-w-[560px] text-table">
                 <caption className="sr-only">{LABELS.payroll.showDetail}</caption>
                 <thead>
-                  <tr className="text-left text-caption text-muted-foreground">
-                    <th className="py-1.5 pr-3 font-medium">{D.subject}</th>
-                    <th className="py-1.5 pr-3 font-medium">{D.level}</th>
-                    <th className="py-1.5 pr-3 text-right font-medium">{D.price}</th>
-                    <th className="py-1.5 pr-3 text-right font-medium">{D.enrolled}</th>
-                    <th className="py-1.5 pr-3 text-right font-medium">{D.rate}</th>
-                    <th className="py-1.5 text-right font-medium">{D.subtotal}</th>
+                  <tr className="text-start text-caption text-muted-foreground">
+                    <th className="py-1.5 pe-3 font-medium">{D.subject}</th>
+                    <th className="py-1.5 pe-3 font-medium">{D.level}</th>
+                    <th className="py-1.5 pe-3 text-end font-medium">{D.price}</th>
+                    <th className="py-1.5 pe-3 text-end font-medium">{D.enrolled}</th>
+                    <th className="py-1.5 pe-3 text-end font-medium">{D.rate}</th>
+                    <th className="py-1.5 text-end font-medium">{D.subtotal}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {detail.subjects.map((subject) => (
                     <tr key={subject.subjectId} className="border-t border-divider">
-                      <td className="py-2 pr-3 font-medium">{subject.subject}</td>
-                      <td className="py-2 pr-3 text-muted-foreground">{subject.level}</td>
-                      <td className="numeric py-2 pr-3 text-right font-normal">{formatMAD(subject.monthlyPrice)}</td>
-                      <td className="numeric py-2 pr-3 text-right font-normal">{subject.enrolled}</td>
-                      <td className="numeric py-2 pr-3 text-right font-normal">
+                      <td className="py-2 pe-3 font-medium">{subject.subject}</td>
+                      <td className="py-2 pe-3 text-muted-foreground">{subject.level}</td>
+                      <td className="numeric py-2 pe-3 text-end font-normal">{formatMAD(subject.monthlyPrice)}</td>
+                      <td className="numeric py-2 pe-3 text-end font-normal">{subject.enrolled}</td>
+                      <td className="numeric py-2 pe-3 text-end font-normal">
                         {subject.ratePercent === null ? <span className="text-warning-ink">{D.noRate}</span> : formatRate(subject.ratePercent, locale)}
                       </td>
-                      <td className="numeric py-2 text-right font-semibold">
+                      <td className="numeric py-2 text-end font-semibold">
                         {formatMAD(subject.subtotal)}
                         {subject.ratePercent !== null ? (
                           <span className="block text-caption font-normal text-muted-foreground">

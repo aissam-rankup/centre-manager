@@ -60,13 +60,13 @@ export function StudentLoginForm() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
-            className="pr-12"
+            className="pe-12"
           />
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute top-0 right-0"
+            className="absolute top-0 end-0"
             onClick={() => setShowPassword((value) => !value)}
             aria-label={showPassword ? LABELS.auth.login.hidePassword : LABELS.auth.login.showPassword}
             aria-pressed={showPassword}

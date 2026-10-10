@@ -9,7 +9,8 @@ import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { saveAttendance } from "@/lib/actions/teacher";
 import { ROUTES } from "@/lib/auth/routes";
-import { useLabels, useMessage } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
+import { dirFor } from "@/lib/i18n/locale";
 import type { CallStudent, TeacherSlot } from "@/lib/data/teacher";
 import { cn } from "@/lib/utils";
 
@@ -70,22 +71,25 @@ export function CallMode({ slot, students }: CallModeProps) {
     [current, index, marks, students, total],
   );
 
-  // Clavier : flèches pour naviguer, P / A pour marquer.
+  // Sens de lecture : en arabe, l'élève suivant est à gauche (flèche et glissement).
+  const forward = dirFor(useLocale()) === "rtl" ? -1 : 1;
+
+  // Clavier : flèches pour naviguer, P / A pour marquer (touches physiques : aussi sur un clavier arabe).
   useEffect(() => {
     if (view !== "cards") return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey) return;
       if (event.target instanceof HTMLElement && event.target.closest("input, textarea")) return;
-      if (event.key === "ArrowRight") goTo(index + 1);
-      else if (event.key === "ArrowLeft") goTo(index - 1);
-      else if (event.key.toLowerCase() === "p") mark("present");
-      else if (event.key.toLowerCase() === "a") mark("absent");
+      if (event.key === "ArrowRight") goTo(index + forward);
+      else if (event.key === "ArrowLeft") goTo(index - forward);
+      else if (event.key.toLowerCase() === "p" || event.code === "KeyP") mark("present");
+      else if (event.key.toLowerCase() === "a" || event.code === "KeyA") mark("absent");
       else return;
       event.preventDefault();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [view, index, goTo, mark]);
+  }, [view, index, goTo, mark, forward]);
 
   // Glissement horizontal sur la carte : élève précédent / suivant.
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
@@ -99,7 +103,7 @@ export function CallMode({ slot, students }: CallModeProps) {
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
     if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return;
-    goTo(dx < 0 ? index + 1 : index - 1);
+    goTo(dx < 0 ? index + forward : index - forward);
   };
 
   const toggle = (studentId: string) => {
@@ -140,7 +144,7 @@ export function CallMode({ slot, students }: CallModeProps) {
       {/* En-tête : séance, progression, sortie */}
       <header className="bg-background px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3 md:px-6">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
-          <Button variant="ghost" size="icon" className="-ml-2" onClick={close} aria-label={L.close}>
+          <Button variant="ghost" size="icon" className="-ms-2" onClick={close} aria-label={L.close}>
             <X aria-hidden />
           </Button>
           <div className="flex min-w-0 flex-1 flex-col">
@@ -244,7 +248,7 @@ export function CallMode({ slot, students }: CallModeProps) {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <p className="hidden text-caption text-muted-foreground sm:block">{L.hint}</p>
-                <Button variant="ghost" className="ml-auto" onClick={() => setView("summary")}>
+                <Button variant="ghost" className="ms-auto" onClick={() => setView("summary")}>
                   <ListChecks aria-hidden />
                   {L.summary.title}
                 </Button>
@@ -275,7 +279,7 @@ export function CallMode({ slot, students }: CallModeProps) {
                         type="button"
                         onClick={() => toggle(student.id)}
                         aria-label={L.summary.toggle(student.fullName, statusLabel)}
-                        className="flex min-h-16 w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/60"
+                        className="flex min-h-16 w-full items-center gap-3 px-4 py-2 text-start transition-colors hover:bg-muted/60"
                       >
                         <StudentAvatar
                           name={student.fullName}

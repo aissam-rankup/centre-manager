@@ -34,7 +34,7 @@ export function StatTile({ value, label, detail, links = [], href, className }: 
         className,
       )}
     >
-      <p className="numeric pr-8 text-stat text-primary">{value}</p>
+      <p className="numeric pe-8 text-stat text-primary">{value}</p>
       {href ? (
         // Le lien couvre toute la carte ; le menu reste cliquable au-dessus.
         <Link href={href} className="text-caption text-muted-foreground after:absolute after:inset-0 after:rounded-xl">
@@ -51,7 +51,7 @@ export function StatTile({ value, label, detail, links = [], href, className }: 
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-3 right-2 z-10 size-8 text-subtle"
+              className="absolute top-3 end-2 z-10 size-8 text-subtle"
               aria-label={LABELS.dashboard.moreActions(label)}
             >
               <MoreVertical className="size-4" aria-hidden />

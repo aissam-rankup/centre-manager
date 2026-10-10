@@ -53,7 +53,7 @@ export function MobileMenu({ locale }: { locale: Locale }) {
         <div className="mt-auto flex flex-col gap-3">
           <Button asChild variant="outline" className="gap-2">
             <a href={ROUTES.login}>
-              <LogIn aria-hidden className="rtl:rotate-180" />
+              <LogIn aria-hidden />
               {t.login}
             </a>
           </Button>

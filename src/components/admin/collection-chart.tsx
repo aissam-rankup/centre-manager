@@ -121,13 +121,13 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
 
       {showTable ? (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[360px] text-left">
+          <table className="w-full min-w-[360px] text-start">
             <caption className="sr-only">{C.caption}</caption>
             <thead>
               <tr className="h-11 border-b text-caption text-muted-foreground">
                 <th scope="col" className="px-2 font-medium">{C.day}</th>
                 {series.map((series) => (
-                  <th key={series.key} scope="col" className="px-2 text-right font-medium">
+                  <th key={series.key} scope="col" className="px-2 text-end font-medium">
                     {C.series[series.key]}
                   </th>
                 ))}
@@ -138,7 +138,7 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
                 <tr key={day.day} className="h-11 border-b last:border-b-0">
                   <td className="px-2">{day.day}</td>
                   {series.map((series) => (
-                    <td key={series.key} className="numeric px-2 text-right font-normal">
+                    <td key={series.key} className="numeric px-2 text-end font-normal">
                       {day[series.key] === null ? "—" : formatMAD(day[series.key] ?? 0)}
                     </td>
                   ))}

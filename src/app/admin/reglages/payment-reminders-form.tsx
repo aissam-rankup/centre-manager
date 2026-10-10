@@ -106,7 +106,7 @@ export function PaymentRemindersForm({ settings, centerName }: { settings: Remin
         </div>
 
         <FormField id={`modele-rappel-${editing}`} label={S.template[editing]} error={errors[`templates.${editing}`]}>
-          <Textarea ref={templateRef} rows={5} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
+          <Textarea lang="fr" dir="ltr" ref={templateRef} rows={5} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
         </FormField>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-caption text-muted-foreground">{S.templateHint}</span>
@@ -120,14 +120,14 @@ export function PaymentRemindersForm({ settings, centerName }: { settings: Remin
               {token}
             </button>
           ))}
-          <Button type="button" variant="ghost" className="ml-auto min-h-11" onClick={() => setTemplate(R.templates[editing])}>
+          <Button type="button" variant="ghost" className="ms-auto min-h-11" onClick={() => setTemplate(R.templates[editing])}>
             <RotateCcw aria-hidden />
             {S.reset}
           </Button>
         </div>
         <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
           <span className="text-caption font-medium text-muted-foreground">{S.preview}</span>
-          <p className="whitespace-pre-line">{preview}</p>
+          <p lang="fr" dir="ltr" className="whitespace-pre-line">{preview}</p>
         </div>
 
         <Button type="submit" disabled={pending} className="self-end">

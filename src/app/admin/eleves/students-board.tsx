@@ -99,14 +99,14 @@ export function StudentsBoard({ students, levels, initialQuery = "", initialStat
           <label htmlFor="admin-recherche" className="sr-only">
             {L.search}
           </label>
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search className="pointer-events-none absolute top-1/2 start-3 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
             id="admin-recherche"
             type="search"
             placeholder={L.searchPlaceholder}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="pl-10"
+            className="ps-10"
             autoComplete="off"
           />
         </div>

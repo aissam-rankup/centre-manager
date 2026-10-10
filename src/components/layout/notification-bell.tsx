@@ -74,7 +74,7 @@ export function NotificationBell({ items, fileBase }: NotificationBellProps) {
         <Button variant="ghost" size="icon" className="relative text-muted-foreground" aria-label={L.open(unread)}>
           <Bell className="size-5" aria-hidden />
           {unread > 0 ? (
-            <span className="numeric absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] leading-none text-white">
+            <span className="numeric absolute top-1 end-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] leading-none text-white">
               {unread > 9 ? "9+" : unread}
             </span>
           ) : null}

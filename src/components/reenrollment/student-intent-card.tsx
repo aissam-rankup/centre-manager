@@ -150,7 +150,7 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className={cn("truncate font-medium", !kept && "text-muted-foreground", !kept && !cancelled && "line-through")}>
                       {line.name}
-                      {line.kind === "pack" ? <span className="ml-2 text-caption font-normal text-muted-foreground">{R.pack}</span> : null}
+                      {line.kind === "pack" ? <span className="ms-2 text-caption font-normal text-muted-foreground">{R.pack}</span> : null}
                     </span>
                     <span className="text-caption text-muted-foreground">
                       {cancelled ? null : kept ? R.due(formatDate(line.dueDate)) : R.lineRemoved}

@@ -329,7 +329,7 @@ function ExpenseRow({
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 md:justify-end">
-        <span className="numeric mr-2 font-semibold">{formatMAD(expense.amount)}</span>
+        <span className="numeric me-2 font-semibold">{formatMAD(expense.amount)}</span>
         {expense.receiptUrl ? (
           <Button asChild variant="outline">
             <a href={expense.receiptUrl} target="_blank" rel="noopener">

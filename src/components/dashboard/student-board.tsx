@@ -92,7 +92,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
       {searchOpen ? (
         <label className="relative flex h-9 items-center">
           <span className="sr-only">{L.search}</span>
-          <Search className="pointer-events-none absolute left-3.5 size-3.5 text-subtle" aria-hidden />
+          <Search className="pointer-events-none absolute start-3.5 size-3.5 text-subtle" aria-hidden />
           <input
             // Ouverte à la demande : le champ prend le focus.
             autoFocus
@@ -100,7 +100,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={L.searchPlaceholder}
-            className="h-full w-full rounded-full border border-border bg-card pr-4 pl-9 text-table outline-none placeholder:text-subtle focus-visible:border-primary"
+            className="h-full w-full rounded-full border border-border bg-card pe-4 ps-9 text-table outline-none placeholder:text-subtle focus-visible:border-primary"
           />
         </label>
       ) : null}
@@ -132,7 +132,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
 
           {/* Desktop : tableau défilant, en-tête collant */}
           <div className="hidden max-h-[520px] overflow-auto rounded-xl bg-card shadow-card md:block">
-            <table className="w-full border-collapse text-left text-table">
+            <table className="w-full border-collapse text-start text-table">
               <caption className="sr-only">{L.caption}</caption>
               <thead className="sticky top-0 z-10 bg-card">
                 <tr className="h-12 border-b border-divider">
@@ -143,7 +143,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
                         key={column.key}
                         scope="col"
                         aria-sort={active ? (sort.direction === 1 ? "ascending" : "descending") : "none"}
-                        className={cn("px-3 font-medium whitespace-nowrap text-heading first:pl-4 lg:px-4 lg:first:pl-6", column.wide && "hidden xl:table-cell")}
+                        className={cn("px-3 font-medium whitespace-nowrap text-heading first:ps-4 lg:px-4 lg:first:ps-6", column.wide && "hidden xl:table-cell")}
                       >
                         <button
                           type="button"
@@ -167,7 +167,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
                   <th scope="col" className="px-3 font-medium whitespace-nowrap text-heading lg:px-4">
                     {L.phone}
                   </th>
-                  <th scope="col" className="w-10 pr-2 lg:pr-4">
+                  <th scope="col" className="w-10 pe-2 lg:pe-4">
                     <span className="sr-only">{L.actions}</span>
                   </th>
                 </tr>
@@ -175,7 +175,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
               <tbody>
                 {rows.map((student) => (
                   <tr key={student.id} className="h-[52px] border-b border-divider transition-colors duration-150 last:border-b-0 hover:bg-row-hover">
-                    <td className="px-3 pl-4 lg:px-4 lg:pl-6">
+                    <td className="px-3 ps-4 lg:px-4 lg:ps-6">
                       <Link href={`${fileBase}/${student.id}`} className="flex items-center gap-3 rounded-sm font-medium text-heading">
                         <StudentAvatar name={student.fullName} photoUrl={student.photoUrl} className="size-7 border" />
                         <span className="truncate">{student.fullName}</span>
@@ -194,7 +194,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
                     <td className="px-3 whitespace-nowrap lg:px-4">
                       <PhoneLink phone={student.guardianPhone} />
                     </td>
-                    <td className="pr-2 text-right lg:pr-4">
+                    <td className="pe-2 text-end lg:pe-4">
                       <RowMenu student={student} fileBase={fileBase} />
                     </td>
                   </tr>

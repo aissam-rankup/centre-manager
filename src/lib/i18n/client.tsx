@@ -1,18 +1,23 @@
 "use client";
 
+import { Direction } from "radix-ui";
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 
 import { type AppLabels, labelsFor, messageTranslator } from "@/lib/constants/labels";
-import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale";
+import { DEFAULT_LOCALE, dirFor, type Locale } from "@/lib/i18n/locale";
 import { DEFAULT_VOCABULARY, type VocabularyTerms } from "@/lib/vocabulary";
 
 const LocaleContext = createContext<Locale>(DEFAULT_LOCALE);
 const LabelsContext = createContext<AppLabels>(labelsFor(DEFAULT_VOCABULARY));
 const MessageContext = createContext<(text: string) => string>((text) => text);
 
-/** Langue de l'interface choisie par l'utilisateur (posée par le layout racine). */
+/** Langue de l'interface choisie par l'utilisateur (posée par le layout racine) ; sens d'écriture des menus et panneaux. */
 export function LocaleProvider({ locale, children }: { locale: Locale; children: ReactNode }) {
-  return <LocaleContext.Provider value={locale}>{children}</LocaleContext.Provider>;
+  return (
+    <LocaleContext.Provider value={locale}>
+      <Direction.Provider dir={dirFor(locale)}>{children}</Direction.Provider>
+    </LocaleContext.Provider>
+  );
 }
 
 /** Langue de l'interface (Client Components). */

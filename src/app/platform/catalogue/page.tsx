@@ -99,14 +99,14 @@ export default async function CataloguePage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title={C.core.title}>
-          <ul className="flex list-disc flex-col gap-1 pl-5">
+          <ul className="flex list-disc flex-col gap-1 ps-5">
             {C.core.items.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
         </SectionCard>
         <SectionCard title={C.rule.title}>
-          <ol className="flex list-decimal flex-col gap-2 pl-5">
+          <ol className="flex list-decimal flex-col gap-2 ps-5">
             {C.rule.items.map((item) => (
               <li key={item}>{item}</li>
             ))}

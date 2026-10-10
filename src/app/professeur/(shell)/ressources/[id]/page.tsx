@@ -25,7 +25,7 @@ export default async function EditResourcePage({ params }: PageProps<"/professeu
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <Button asChild variant="ghost" className="-ml-3 self-start">
+      <Button asChild variant="ghost" className="-ms-3 self-start">
         <Link href={ROUTES.teacher.resources}>
           <ArrowLeft aria-hidden />
           {L.back}

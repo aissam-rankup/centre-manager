@@ -43,7 +43,7 @@ export async function StudentHeader({ student, actions }: { student: StudentFile
   return (
     <Card>
       <CardContent className="flex flex-col gap-6 md:flex-row md:items-start">
-        <div className="flex flex-1 flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
+        <div className="flex flex-1 flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-start">
           <StudentAvatar
             name={student.fullName}
             photoUrl={student.photoUrl}
@@ -59,7 +59,7 @@ export async function StudentHeader({ student, actions }: { student: StudentFile
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-divider pt-4 md:w-80 md:border-t-0 md:border-l md:pt-0 md:pl-6">
+        <div className="flex flex-col gap-4 border-t border-divider pt-4 md:w-80 md:border-t-0 md:border-s md:pt-0 md:ps-6">
           <div className="flex flex-col gap-1">
             <p className="text-caption text-muted-foreground">{L.guardian}</p>
             {student.guardianName || student.guardianPhone ? (
@@ -162,7 +162,7 @@ async function SubscriptionRow({ title, detail, billingDay, nextDueDate, price, 
           {nextDueDate ? L.subjects.nextDue(formatDate(nextDueDate)) : L.subjects.upToDate}
         </span>
       </div>
-      <span className="shrink-0 text-right">
+      <span className="shrink-0 text-end">
         <Money amount={price} />
         <span className="block text-caption text-muted-foreground">{LABELS.billing.perMonth}</span>
       </span>

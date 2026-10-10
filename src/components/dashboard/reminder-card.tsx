@@ -25,11 +25,11 @@ export function ReminderCard({ title, description, href, linkLabel }: ReminderCa
         type="button"
         onClick={() => setOpen(false)}
         aria-label={LABELS.dashboard.reminder.dismiss}
-        className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/15"
+        className="absolute top-2 end-2 flex size-8 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/15"
       >
         <X className="size-3.5" aria-hidden />
       </button>
-      <p className="pr-8 text-body font-semibold">{title}</p>
+      <p className="pe-8 text-body font-semibold">{title}</p>
       <p className="text-[11px] leading-4 text-white/80">{description}</p>
       <Link href={href} className="w-fit rounded-sm text-[11px] leading-4 underline underline-offset-2">
         {linkLabel}

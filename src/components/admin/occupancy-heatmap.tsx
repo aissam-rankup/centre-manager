@@ -27,7 +27,7 @@ export function OccupancyHeatmap({ report }: { report: OccupancyReport }) {
   return (
     <div ref={container} className="relative flex flex-col gap-3" onPointerLeave={() => setHover(null)}>
       <table className="w-full table-fixed border-separate border-spacing-[3px]">
-        <caption className="pb-1 text-left text-caption text-muted-foreground">{O.heatmapCaption}</caption>
+        <caption className="pb-1 text-start text-caption text-muted-foreground">{O.heatmapCaption}</caption>
         <thead>
           <tr>
             <th scope="col" className="w-10">
@@ -45,7 +45,7 @@ export function OccupancyHeatmap({ report }: { report: OccupancyReport }) {
         <tbody>
           {report.hours.map((hour) => (
             <tr key={hour}>
-              <th scope="row" className="numeric pr-1 text-right text-caption font-medium text-muted-foreground">
+              <th scope="row" className="numeric pe-1 text-end text-caption font-medium text-muted-foreground">
                 {O.hourLabel(hour)}
               </th>
               {report.days.map((day) => {

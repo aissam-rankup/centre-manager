@@ -68,7 +68,7 @@ export function Vitrine({ locale }: { locale: Locale }) {
             <LanguageSwitcher locale={locale} label={t.nav.language} />
             <Button asChild variant="ghost" className="hidden gap-2 md:inline-flex">
               <a href={ROUTES.login}>
-                <LogIn aria-hidden className="rtl:rotate-180" />
+                <LogIn aria-hidden />
                 {t.nav.login}
               </a>
             </Button>
@@ -98,7 +98,7 @@ export function Vitrine({ locale }: { locale: Locale }) {
                 <Button asChild variant="outline" className="h-12 gap-2 px-6 text-base">
                   <a href={ROUTES.login}>
                     {t.hero.login}
-                    <ArrowRight aria-hidden className="rtl:rotate-180" />
+                    <ArrowRight aria-hidden />
                   </a>
                 </Button>
               </div>

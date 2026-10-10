@@ -99,7 +99,7 @@ export default async function TokensPage() {
           <CardContent className="flex flex-col gap-3">
             {SPACING.map((value) => (
               <div key={value} className="flex items-center gap-4">
-                <span className="numeric w-10 text-right text-caption text-muted-foreground">{value}</span>
+                <span className="numeric w-10 text-end text-caption text-muted-foreground">{value}</span>
                 <span className="h-3 rounded-sm bg-brand" style={{ width: value * 2 }} />
               </div>
             ))}

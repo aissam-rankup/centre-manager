@@ -13,8 +13,9 @@
  */
 
 @theme inline {
-  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  /* Arabe : Poppins n'a pas de glyphes arabes, la police arabe prend le relais (chargée seulement en arabe). */
+  --font-sans: var(--font-poppins), var(--font-arabic, ui-sans-serif), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-poppins), var(--font-arabic, ui-sans-serif), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Typographie (Poppins 400 / 500 / 600) */
@@ -420,5 +421,17 @@
     animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Arabe (droite à gauche) : les flèches suivent le sens de lecture ; courriels,
+   téléphones et adresses web restent écrits de gauche à droite. */
+@layer base {
+  [dir="rtl"] :is(.lucide-arrow-left, .lucide-arrow-right, .lucide-chevron-left, .lucide-chevron-right, .lucide-move-right, .lucide-log-in, .lucide-log-out) {
+    transform: scaleX(-1);
+  }
+  [dir="rtl"] :is(input[type="email"], input[type="tel"], input[type="url"]) {
+    direction: ltr;
+    text-align: right;
   }
 }

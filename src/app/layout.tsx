@@ -3,13 +3,16 @@ import { Poppins } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { arabicFont } from "@/components/vitrine/fonts";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { brandMetadata, getDocumentBrand } from "@/lib/branding";
 import { getRootUrl } from "@/lib/center-host";
 import { LABELS } from "@/lib/constants/labels";
 import { LabelsProvider, LocaleProvider } from "@/lib/i18n/client";
+import { dirFor } from "@/lib/i18n/locale";
 import { getAppLocale } from "@/lib/i18n/request-locale";
+import { cn } from "@/lib/utils";
 import { DEFAULT_VOCABULARY } from "@/lib/vocabulary";
 
 import "./globals.css";
@@ -82,13 +85,13 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const locale = await getAppLocale();
   return (
-    <html lang={locale} className={poppins.variable} suppressHydrationWarning>
+    <html lang={locale} dir={dirFor(locale)} className={cn(poppins.variable, locale === "ar" && arabicFont.variable)} suppressHydrationWarning>
       <body>
         <LocaleProvider locale={locale}>
           <LabelsProvider terms={DEFAULT_VOCABULARY}>
             <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
               <TooltipProvider>{children}</TooltipProvider>
-              <Toaster position="top-center" closeButton />
+              <Toaster position="top-center" closeButton dir={dirFor(locale)} />
             </ThemeProvider>
           </LabelsProvider>
         </LocaleProvider>

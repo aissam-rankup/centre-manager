@@ -27,7 +27,7 @@ export default async function MyPasswordPage() {
   return (
     <Card className="w-full max-w-md">
       <CardContent className="flex flex-col gap-6">
-        <Button asChild variant="ghost" className="-ml-3 self-start">
+        <Button asChild variant="ghost" className="-ms-3 self-start">
           <Link href="/">
             <ArrowLeft aria-hidden />
             {P.mine.back}

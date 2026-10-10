@@ -101,7 +101,7 @@ export async function AbsencesView({ rows, dateIso, todayIso, basePath, fileBase
                   defaultType="absence"
                   triggerVariant="compact"
                 />
-                <Button asChild variant="ghost" className="ml-auto">
+                <Button asChild variant="ghost" className="ms-auto">
                   <Link href={`${fileBase}/${row.studentId}`}>
                     <UserRound aria-hidden />
                     {L.openFile}

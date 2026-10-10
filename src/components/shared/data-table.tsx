@@ -74,7 +74,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
           variant === "card" ? "rounded-xl bg-card shadow-card" : "-mx-(--card-spacing)",
         )}
       >
-        <table className="w-full border-collapse text-left text-table">
+        <table className="w-full border-collapse text-start text-table">
           <caption className="sr-only">{caption}</caption>
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="h-12 border-b border-divider">
@@ -84,7 +84,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
                   scope="col"
                   className={cn(
                     "px-4 text-table font-medium whitespace-nowrap text-heading",
-                    column.align === "end" && "text-right",
+                    column.align === "end" && "text-end",
                   )}
                 >
                   {column.header}
@@ -98,7 +98,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
                 {columns.map((column) => (
                   <td
                     key={column.id}
-                    className={cn("px-4 py-0", column.align === "end" && "text-right", column.className)}
+                    className={cn("px-4 py-0", column.align === "end" && "text-end", column.className)}
                   >
                     {column.cell(row)}
                   </td>

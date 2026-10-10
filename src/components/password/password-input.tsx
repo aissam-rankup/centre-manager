@@ -13,12 +13,12 @@ export function PasswordInput({ className, ...props }: Omit<ComponentProps<typeo
   const [shown, setShown] = useState(false);
   return (
     <div className="relative">
-      <Input type={shown ? "text" : "password"} className={`pr-12 ${className ?? ""}`} spellCheck={false} {...props} />
+      <Input type={shown ? "text" : "password"} className={`pe-12 ${className ?? ""}`} spellCheck={false} {...props} />
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="absolute top-0 right-0"
+        className="absolute top-0 end-0"
         onClick={() => setShown((value) => !value)}
         aria-label={shown ? L.hidePassword : L.showPassword}
         aria-pressed={shown}

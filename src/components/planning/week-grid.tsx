@@ -68,7 +68,7 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
           {hours.map((minute) => (
             <span
               key={minute}
-              className="numeric absolute right-1 -translate-y-1/2 text-caption text-muted-foreground"
+              className="numeric absolute end-1 -translate-y-1/2 text-caption text-muted-foreground"
               style={{ top: (minute - range.start) * PX_PER_MINUTE }}
             >
               {minutesToTime(minute)}
@@ -115,7 +115,7 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
                     onClick={block.onAction}
                     aria-label={block.ariaLabel}
                     title={block.ariaLabel}
-                    className="absolute inset-x-0.5 flex flex-col items-start gap-1 overflow-hidden rounded-lg border-2 border-dashed border-success/60 bg-success/5 p-1.5 text-left transition-colors hover:bg-success/15"
+                    className="absolute inset-x-0.5 flex flex-col items-start gap-1 overflow-hidden rounded-lg border-2 border-dashed border-success/60 bg-success/5 p-1.5 text-start transition-colors hover:bg-success/15"
                     style={{ top: (block.start - range.start) * PX_PER_MINUTE + 1, height: (block.end - block.start) * PX_PER_MINUTE - 2 }}
                   >
                     <span className="line-clamp-2 text-caption leading-tight font-medium text-success-ink">{block.label}</span>
@@ -148,7 +148,7 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
                       .filter(Boolean)
                       .join("\n")}
                     className={cn(
-                      "absolute flex touch-manipulation flex-col gap-0.5 overflow-hidden rounded-lg px-2 py-1.5 text-left text-white shadow-card transition-opacity select-none",
+                      "absolute flex touch-manipulation flex-col gap-0.5 overflow-hidden rounded-lg px-2 py-1.5 text-start text-white shadow-card transition-opacity select-none",
                       "cursor-grab focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none active:cursor-grabbing",
                       tones.get(slot.subjectId),
                       overloaded && "ring-2 ring-danger ring-offset-1 ring-offset-card",
@@ -164,7 +164,7 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
                     <span className="numeric flex items-center gap-1 text-caption leading-tight font-medium">
                       {pendingIds.has(slot.id) ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden /> : null}
                       {LABELS.teacher.schedule.time(slot.startTime, slot.endTime)}
-                      {overloaded ? <TriangleAlert className="ml-auto size-3.5 shrink-0" aria-label={G.overloadedShort} /> : null}
+                      {overloaded ? <TriangleAlert className="ms-auto size-3.5 shrink-0" aria-label={G.overloadedShort} /> : null}
                     </span>
                     <span className="truncate text-table leading-tight font-semibold">{slot.subjectName}</span>
                     {compact ? null : <span className="line-clamp-2 text-caption leading-tight text-white/85">{details.join(" · ")}</span>}

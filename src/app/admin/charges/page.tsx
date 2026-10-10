@@ -105,7 +105,7 @@ function Breakdown({ data, LABELS, locale }: { data: ExpensesMonth; LABELS: AppL
                     <ExpenseIcon name={category?.icon ?? "receipt"} className="size-7" />
                     <span className="truncate font-medium">{category?.name}</span>
                   </span>
-                  <span className="shrink-0 text-right">
+                  <span className="shrink-0 text-end">
                     <span className="numeric font-semibold">{formatMAD(row.current)}</span>
                     <span className="block text-caption text-muted-foreground">{B.share(formatPercent(share, locale))}</span>
                   </span>

@@ -63,7 +63,7 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
         <label htmlFor="recherche-eleve" className="sr-only">
           {L.label}
         </label>
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Search className="pointer-events-none absolute top-1/2 start-3 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <Input
           id="recherche-eleve"
           type="search"
@@ -74,14 +74,14 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
           placeholder={L.placeholder}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="h-12 pr-12 pl-10 text-base [&::-webkit-search-cancel-button]:hidden"
+          className="h-12 pe-12 ps-10 text-base [&::-webkit-search-cancel-button]:hidden"
         />
         {hasQuery ? (
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute top-1/2 right-0.5 -translate-y-1/2"
+            className="absolute top-1/2 end-0.5 -translate-y-1/2"
             onClick={() => setQuery("")}
             aria-label={L.clear}
           >

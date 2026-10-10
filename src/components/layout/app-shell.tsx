@@ -77,7 +77,7 @@ export function AppShell({
     <div className="min-h-dvh bg-background md:bg-app md:p-4 lg:p-8">
       <a
         href="#contenu"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-3 focus:shadow-raised"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-3 focus:shadow-raised"
       >
         {LABELS.common.skipToContent}
       </a>
@@ -138,12 +138,12 @@ function HeaderSearch({ action }: { action: string }) {
     <form action={action} role="search" className="md:flex md:flex-1 md:justify-center">
       <label className="relative flex h-9 w-full items-center md:w-[300px]">
         <span className="sr-only">{LABELS.nav.searchStudent}</span>
-        <Search className="pointer-events-none absolute left-3.5 size-3.5 text-subtle" aria-hidden />
+        <Search className="pointer-events-none absolute start-3.5 size-3.5 text-subtle" aria-hidden />
         <input
           type="search"
           name="q"
           placeholder={LABELS.nav.searchStudent}
-          className="h-full w-full rounded-full border border-border bg-card pr-4 pl-9 text-table text-foreground outline-none placeholder:text-caption placeholder:text-subtle focus-visible:border-primary"
+          className="h-full w-full rounded-full border border-border bg-card pe-4 ps-9 text-table text-foreground outline-none placeholder:text-caption placeholder:text-subtle focus-visible:border-primary"
         />
       </label>
     </form>

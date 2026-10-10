@@ -111,7 +111,7 @@ export function CenterSettingsForm({ settings, centerName }: { settings: CenterR
 
           <div className="flex flex-col gap-2">
             <FormField id="modele-whatsapp" label={C.template} error={errors.whatsappTemplate}>
-              <Textarea ref={templateRef} rows={6} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
+              <Textarea lang="fr" dir="ltr" ref={templateRef} rows={6} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
             </FormField>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-caption text-muted-foreground">{C.templateHint}</span>
@@ -125,14 +125,14 @@ export function CenterSettingsForm({ settings, centerName }: { settings: CenterR
                   {token}
                 </button>
               ))}
-              <Button type="button" variant="ghost" className="ml-auto" onClick={() => setTemplate(LABELS.receipts.whatsappTemplate)}>
+              <Button type="button" variant="ghost" className="ms-auto" onClick={() => setTemplate(LABELS.receipts.whatsappTemplate)}>
                 <RotateCcw aria-hidden />
                 {C.templateReset}
               </Button>
             </div>
             <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
               <span className="text-caption font-medium text-muted-foreground">{C.preview}</span>
-              <p className="whitespace-pre-line">{preview}</p>
+              <p lang="fr" dir="ltr" className="whitespace-pre-line">{preview}</p>
             </div>
           </div>
         </SectionCard>

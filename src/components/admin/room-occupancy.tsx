@@ -126,7 +126,7 @@ function RoomRow({
         >
           <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(room.rate > 0 ? 2 : 0, room.rate * 100)}%` }} />
         </div>
-        <span className="numeric w-12 shrink-0 text-right text-table font-semibold">{formatPercent(room.rate, locale)}</span>
+        <span className="numeric w-12 shrink-0 text-end text-table font-semibold">{formatPercent(room.rate, locale)}</span>
       </div>
       <p className="flex flex-wrap gap-x-3 gap-y-0.5 text-caption text-muted-foreground">
         <span>{O.used(hours(room.usedMinutes), hours(openMinutes))}</span>
