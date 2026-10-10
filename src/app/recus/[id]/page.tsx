@@ -7,7 +7,7 @@ import { ReceiptPrintControls } from "@/components/receipts/receipt-print-contro
 import { ROUTES } from "@/lib/auth/routes";
 import { requireStaff } from "@/lib/auth/session";
 import { getCenterReceiptSettings, getReceipt } from "@/lib/data/receipts";
-import { getLabels } from "@/lib/i18n/server";
+import { getFamilyLabels, getLabels } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_STYLES = {
@@ -28,7 +28,8 @@ export default async function ReceiptPage({ params, searchParams }: PageProps<"/
   if (!z.uuid().safeParse(id).success) notFound();
 
   const profile = await requireStaff();
-  const [receipt, settings, LABELS] = await Promise.all([getReceipt(id), getCenterReceiptSettings(), getLabels()]);
+  // Reçu remis à la famille : en français, quelle que soit la langue de l'utilisateur.
+  const [receipt, settings, familyLabels] = await Promise.all([getReceipt(id), getCenterReceiptSettings(), getFamilyLabels()]);
   if (!receipt) notFound();
 
   let guardianPhone: string | null = null;
@@ -50,7 +51,7 @@ export default async function ReceiptPage({ params, searchParams }: PageProps<"/
         autoPrint={query.imprimer === "1"}
         backHref={backHref}
       />
-      <ReceiptDocument receipt={receipt} format={settings.receiptFormat} labels={LABELS} />
+      <ReceiptDocument receipt={receipt} format={settings.receiptFormat} labels={familyLabels} />
     </>
   );
 }

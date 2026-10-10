@@ -12,6 +12,7 @@ import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { getTeacherDashboard, type TeacherStudentRow, type TodaySession } from "@/lib/data/teacher";
 import { formatDateWithWeekday, formatPercent, today } from "@/lib/format";
@@ -28,7 +29,7 @@ export default async function TeacherHomePage() {
   const L = LABELS.teacher.home;
   const profile = await requireRole("teacher");
   const { sessions, students, studentCount, subjectCount, presenceRate } = await getTeacherDashboard();
-  const dateLabel = formatDateWithWeekday(today());
+  const dateLabel = formatDateWithWeekday(today(), await getAppLocale());
   const firstName = profile.fullName.split(" ")[0] ?? profile.fullName;
   const doneCount = sessions.filter((session) => isDone(session)).length;
 

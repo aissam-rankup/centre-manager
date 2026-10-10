@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { toShellUser } from "@/components/layout/space-helpers";
 import { requireRole } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { formatLongDate } from "@/lib/format";
 
@@ -19,7 +20,7 @@ export default async function TeacherShellLayout({ children }: { children: React
       logoUrl={brand.logoUrl}
       whiteLabel={brand.whiteLabel}
       spaceLabel={LABELS.spaces.teacher}
-      todayLabel={formatLongDate(new Date())}
+      todayLabel={formatLongDate(new Date(), await getAppLocale())}
     >
       {children}
     </AppShell>

@@ -9,7 +9,7 @@ import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { saveAttendance } from "@/lib/actions/teacher";
 import { ROUTES } from "@/lib/auth/routes";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import type { CallStudent, TeacherSlot } from "@/lib/data/teacher";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,7 @@ type CallModeProps = {
 
 export function CallMode({ slot, students }: CallModeProps) {
   const LABELS = useLabels();
+  const message = useMessage();
   const L = LABELS.teacher.call;
   const router = useRouter();
   const initialMarks = useMemo<Marks>(
@@ -295,7 +296,7 @@ export function CallMode({ slot, students }: CallModeProps) {
             <div className="mx-auto flex max-w-2xl flex-col gap-3">
               {error ? (
                 <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-                  {error}
+                  {message(error)}
                 </p>
               ) : null}
               <div className="grid gap-3 sm:grid-cols-2">

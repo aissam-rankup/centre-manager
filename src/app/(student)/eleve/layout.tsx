@@ -4,6 +4,7 @@ import Link from "@/components/shared/app-link";
 import type { ReactNode } from "react";
 
 import { PoweredBy } from "@/components/brand/powered-by";
+import { AppLanguageSwitcher } from "@/components/layout/app-language-switcher";
 import { BrandStyle } from "@/components/layout/brand-style";
 import { Logo } from "@/components/layout/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -35,6 +36,8 @@ export default async function StudentLayout({ children }: { children: ReactNode 
         <header className="flex h-16 items-center justify-between gap-3 border-b border-divider px-4 md:px-6">
           <Logo name={brand.name} logoUrl={brand.logoUrl} whiteLabel={brand.whiteLabel} />
           <div className="flex items-center gap-2">
+            <AppLanguageSwitcher compact className="sm:hidden" />
+            <AppLanguageSwitcher className="hidden sm:inline-flex" />
             <ThemeToggle />
             <Button asChild variant="ghost" aria-label={LABELS.passwords.mine.menu}>
               <Link href={ROUTES.myPassword}>

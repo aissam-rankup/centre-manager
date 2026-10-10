@@ -22,6 +22,15 @@ export const getLabels = cache(async (): Promise<AppLabels> => {
   return labelsFor(terms, brand.whiteLabel ? brand.name : null, locale);
 });
 
+/**
+ * Libellés des documents remis aux familles (reçu imprimé ou partagé) : en français,
+ * dans le vocabulaire et la marque du centre, quelle que soit la langue de l'utilisateur.
+ */
+export const getFamilyLabels = cache(async (): Promise<AppLabels> => {
+  const [brand, terms] = await Promise.all([getSessionBrand(), getVocabularyTerms()]);
+  return labelsFor(terms, brand.whiteLabel ? brand.name : null);
+});
+
 /** Message rédigé en français (validation, action) → langue de l'utilisateur. */
 export const getMessageTranslator = cache(async (): Promise<(text: string) => string> => {
   const [brand, terms, locale] = await Promise.all([getSessionBrand(), getVocabularyTerms(), getAppLocale()]);
