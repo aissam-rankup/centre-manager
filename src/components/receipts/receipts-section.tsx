@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { formatDateTime, formatMAD } from "@/lib/format";
 import { getLabels } from "@/lib/i18n/server";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { receiptPeriodLabel, type ReceiptView } from "@/lib/receipts";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,7 @@ type ReceiptsSectionProps = {
 
 /** Historique des reçus de l'élève : consulter, réimprimer, renvoyer, annuler. */
 export async function ReceiptsSection({ receipts, guardianPhone, canCancel }: ReceiptsSectionProps) {
-  const LABELS = await getLabels();
+  const [LABELS, locale] = await Promise.all([getLabels(), getAppLocale()]);
   const L = LABELS.receipts;
 
   return (
@@ -52,7 +53,7 @@ export async function ReceiptsSection({ receipts, guardianPhone, canCancel }: Re
                     ) : null}
                   </span>
                   <span className="text-caption text-muted-foreground">
-                    {formatDateTime(receipt.issuedAt)} · {receiptPeriodLabel(receipt.lines)} · {LABELS.paymentMethods[receipt.method]}
+                    {formatDateTime(receipt.issuedAt)} · {receiptPeriodLabel(receipt.lines, locale)} · {LABELS.paymentMethods[receipt.method]}
                     {receipt.issuedByName ? ` · ${receipt.issuedByName}` : ""}
                   </span>
                   {cancellation && receipt.cancelsNumber ? (

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { savePack, saveLevel, saveSubject } from "@/lib/actions/admin";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { formatMAD } from "@/lib/format";
 import { adminSchemas } from "@/lib/validation/admin";
 
@@ -109,6 +109,7 @@ type PackDialogProps = {
 
 export function PackDialog({ trigger, levelId, levelName, subjects, pack }: PackDialogProps) {
   const LABELS = useLabels();
+  const message = useMessage();
   const L = LABELS.admin.subjects;
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
     schema: adminSchemas(LABELS).packSchema,
@@ -184,7 +185,7 @@ export function PackDialog({ trigger, levelId, levelName, subjects, pack }: Pack
             </div>
           )}
         />
-        {errors.subjectIds ? <p className="text-caption text-danger-ink">{errors.subjectIds.message}</p> : null}
+        {errors.subjectIds ? <p className="text-caption text-danger-ink">{message(errors.subjectIds.message ?? "")}</p> : null}
       </fieldset>
 
       <FormField

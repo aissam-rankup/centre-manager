@@ -7,10 +7,8 @@ import { useState } from "react";
 import { BrandingForm } from "@/components/branding/branding-form";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import type { BrandingFormInput } from "@/lib/validation/branding";
-
-const L = LABELS.branding;
 
 /** Console : réglages de marque d'un centre en marque blanche (y compris le domaine). */
 export function BrandingDialog({
@@ -22,6 +20,7 @@ export function BrandingDialog({
   domainVerified: boolean;
   dnsTarget: string | null;
 }) {
+  const L = useLabels().branding;
   const [open, setOpen] = useState(false);
   const router = useRouter();
   return (

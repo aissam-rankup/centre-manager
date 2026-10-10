@@ -1,7 +1,7 @@
 import { GraduationCap } from "lucide-react";
 
 import { Logo as DirasstyLogo } from "@/components/brand/logo";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
 type LogoProps = {
@@ -16,7 +16,8 @@ type LogoProps = {
 };
 
 /** Logo de l'en-tête : celui du centre en marque blanche, sinon dirassty. */
-export function Logo({ name = LABELS.app.name, logoUrl = null, whiteLabel = false, priority = false, className }: LogoProps) {
+export async function Logo({ name: brandName, logoUrl = null, whiteLabel = false, priority = false, className }: LogoProps) {
+  const name = brandName ?? (await getLabels()).app.name;
   if (logoUrl) {
     return (
       <span className={cn("inline-flex items-center gap-3", className)}>

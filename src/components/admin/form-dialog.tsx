@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 type FormDialogProps = {
   open: boolean;
@@ -45,6 +45,7 @@ export function FormDialog({
   children,
 }: FormDialogProps) {
   const LABELS = useLabels();
+  const message = useMessage();
   submitLabel ??= LABELS.admin.common.save;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -58,7 +59,7 @@ export function FormDialog({
           {children}
           {error ? (
             <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-              {error}
+              {message(error)}
             </p>
           ) : null}
           <DialogFooter>

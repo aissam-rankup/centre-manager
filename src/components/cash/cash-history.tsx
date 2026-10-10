@@ -9,6 +9,7 @@ import { ROUTES } from "@/lib/auth/routes";
 import type { AppLabels } from "@/lib/constants/labels";
 import type { CashHistoryRow, CashMonthOverview } from "@/lib/data/cash";
 import { formatDate, formatMAD, formatMonth, formatPercent } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 /** « 2026-10 » → { year, month } ; mois impossible ou année hors 2000-2100 : le mois en cours. */
@@ -50,12 +51,14 @@ export function CashHistory({
   month,
   todayIso,
   LABELS,
+  locale,
 }: {
   rows: CashHistoryRow[];
   overview: CashMonthOverview;
   month: { year: number; month: number };
   todayIso: string;
   LABELS: AppLabels;
+  locale: Locale;
 }) {
   const C = LABELS.cash;
   const A = C.admin;
@@ -67,7 +70,7 @@ export function CashHistory({
         label={A.monthsLabel}
         options={recentMonths(todayIso).map((item) => ({
           value: monthKey(item.year, item.month),
-          label: A.month(formatMonth(`${monthKey(item.year, item.month)}-01`)),
+          label: A.month(formatMonth(`${monthKey(item.year, item.month)}-01`, locale)),
         }))}
         current={monthKey(month.year, month.month)}
         href={(value) => (value ? `${ROUTES.admin.cash}?mois=${value}` : ROUTES.admin.cash)}

@@ -18,6 +18,7 @@ import type { AbsenceToNotify } from "@/lib/absences";
 import { getAuthState } from "@/lib/auth/session";
 import type { AttendanceData } from "@/lib/data/attendance";
 import { formatDate, formatDateTime, formatDateWithWeekday, formatPercent, toISODate, today } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,7 @@ type AttendanceSheetProps = {
  */
 export async function AttendanceSheet({ data, filters, basePath, keep = {}, teacherScope = false }: AttendanceSheetProps) {
   const LABELS = await getLabels();
+  const locale = await getAppLocale();
   const state = await getAuthState();
   const detailed = state.status === "authenticated" && state.profile.modules.includes("absence_tracking");
   const L = LABELS.attendanceSheet;
@@ -199,7 +201,7 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                         )}
                       </span>
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="font-medium text-heading first-letter:uppercase">{formatDateWithWeekday(absence.date)}</span>
+                        <span className="font-medium text-heading first-letter:uppercase">{formatDateWithWeekday(absence.date, locale)}</span>
                         <span className="text-caption text-muted-foreground">
                           {absence.startTime && absence.endTime ? `${absence.startTime} – ${absence.endTime}` : L.noTime} · {absence.subjectName}
                           {absence.teacherName ? ` · ${absence.teacherName}` : ""}

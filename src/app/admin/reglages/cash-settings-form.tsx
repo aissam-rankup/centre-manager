@@ -12,10 +12,11 @@ import { updateCashSettings } from "@/lib/actions/cash";
 import { parseCents } from "@/lib/cash";
 import type { CashSettings } from "@/lib/data/cash";
 import { formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 export function CashSettingsForm({ settings }: { settings: CashSettings }) {
   const LABELS = useLabels();
+  const message = useMessage();
   const S = LABELS.cash.settings;
   const [perAssistant, setPerAssistant] = useState(settings.perAssistant);
   const [threshold, setThreshold] = useState(String(settings.threshold).replace(".", ","));
@@ -33,7 +34,7 @@ export function CashSettingsForm({ settings }: { settings: CashSettings }) {
           const result = await updateCashSettings({ perAssistant, threshold });
           if (!result.ok) {
             setErrors(result.fieldErrors ?? {});
-            toast.error(result.error);
+            toast.error(message(result.error));
             return;
           }
           toast.success(LABELS.centerSettings.saved);

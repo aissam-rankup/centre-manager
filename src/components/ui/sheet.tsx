@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { LABELS } from "@/lib/constants/labels"
+import { useLabels } from "@/lib/i18n/client"
 import { cn } from "@/lib/utils"
 import { Dialog as SheetPrimitive } from "radix-ui"
 
@@ -56,6 +56,7 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
 }) {
+  const LABELS = useLabels()
   return (
     <SheetPortal>
       <SheetOverlay />

@@ -14,7 +14,7 @@ import type { ActionResult } from "@/lib/actions/result";
 import { openStudentAccess, setStudentAccess } from "@/lib/actions/student-access";
 import type { StudentAccess } from "@/lib/data/student-access";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { formatLoginCode } from "@/lib/student-codes";
 
 /**
@@ -37,17 +37,18 @@ export function StudentAccessCard({
 }) {
   const LABELS = useLabels();
   const L = LABELS.studentAccess;
+  const message = useMessage();
   const [shown, setShown] = useState<ShownCredentials | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const withCredentials = (action: () => Promise<ActionResult<ShownCredentials>>, message: string) =>
+  const withCredentials = (action: () => Promise<ActionResult<ShownCredentials>>, successMessage: string) =>
     startTransition(async () => {
       const result = await action();
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(message(result.error));
         return;
       }
-      toast.success(message);
+      toast.success(successMessage);
       setShown(result.data);
     });
 
@@ -127,7 +128,7 @@ export function StudentAccessCard({
                 startTransition(async () => {
                   const result = await setStudentAccess({ studentId, active: true });
                   if (result.ok) toast.success(L.enabled);
-                  else toast.error(result.error);
+                  else toast.error(message(result.error));
                 })
               }
             >

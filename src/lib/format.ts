@@ -41,6 +41,11 @@ export function formatPercent(ratio: number): string {
 /** Noms des jours et des mois dans la langue de l'interface (l'arabe arrive en phase 3). */
 const DATE_LOCALES = { fr, en: enGB, ar: fr } as const;
 
+/** Locale date-fns d'une langue (formats personnalisés : `format(date, "MMM", { locale: dateLocale(locale) })`). */
+export function dateLocale(locale: Locale) {
+  return DATE_LOCALES[locale];
+}
+
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 /**

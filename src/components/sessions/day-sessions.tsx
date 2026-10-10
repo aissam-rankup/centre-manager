@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { DaySession } from "@/lib/data/sessions";
 import { formatDateWithWeekday, formatTime } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
@@ -32,8 +33,9 @@ const STATE_TONE = {
 /** Séances d'un jour : horaire, salle, professeur, avancement de l'appel et qui l'a fait. */
 export async function DaySessions({ sessions, dateIso, todayIso, previous, next, basePath, sessionHref }: DaySessionsProps) {
   const LABELS = await getLabels();
+  const locale = await getAppLocale();
   const L = LABELS.sessions;
-  const dayLabel = formatDateWithWeekday(dateIso);
+  const dayLabel = formatDateWithWeekday(dateIso, locale);
   const dayHref = (date: string) => (date === todayIso ? basePath : `${basePath}?date=${date}`);
 
   return (

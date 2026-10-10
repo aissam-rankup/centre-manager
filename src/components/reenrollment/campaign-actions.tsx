@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { cancelBillingRun, confirmBillingRun } from "@/lib/actions/reenrollment";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 type ConfirmCampaignButtonProps = {
   runId: string;
@@ -45,6 +45,7 @@ type ConfirmCampaignButtonProps = {
 /** Confirmation par l'admin : résumé, élèves à risque non traités, puis émission des factures. */
 export function ConfirmCampaignButton(props: ConfirmCampaignButtonProps) {
   const LABELS = useLabels();
+  const message = useMessage();
   const C = LABELS.reenrollment.review.confirm;
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +81,7 @@ export function ConfirmCampaignButton(props: ConfirmCampaignButtonProps) {
           <p className="text-caption text-muted-foreground">{C.irreversible}</p>
           {error ? (
             <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-              {error}
+              {message(error)}
             </p>
           ) : null}
         </div>
@@ -113,6 +114,7 @@ export function ConfirmCampaignButton(props: ConfirmCampaignButtonProps) {
 /** Mois sans cours (admin) : motif obligatoire, choix définitif. */
 export function CancelCampaignButton({ runId, monthName }: { runId: string; monthName: string }) {
   const LABELS = useLabels();
+  const message = useMessage();
   const C = LABELS.reenrollment.review.cancel;
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -168,7 +170,7 @@ export function CancelCampaignButton({ runId, monthName }: { runId: string; mont
           </label>
           {error ? (
             <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-              {error}
+              {message(error)}
             </p>
           ) : null}
           <DialogFooter>

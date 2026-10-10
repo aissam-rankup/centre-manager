@@ -23,7 +23,7 @@ import {
 } from "@/lib/actions/expenses";
 import { EXPENSE_RECEIPT_TYPES, type ExpenseCategoryView, type ExpenseView } from "@/lib/expenses";
 import { formatDate, formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { PAYMENT_METHODS } from "@/lib/receipts";
 
 import { CategoriesDialog } from "./categories-dialog";
@@ -56,6 +56,7 @@ export function ExpensesBoard({ categories, expenses, defaultDate, total }: Boar
 // ---------------------------------------------------------------------
 function QuickAddForm({ categories: allCategories, defaultDate }: { categories: ExpenseCategoryView[]; defaultDate: string }) {
   const LABELS = useLabels();
+  const message = useMessage();
   const categories = allCategories.filter((category) => category.isActive);
   const Q = LABELS.expenses.quickAdd;
   const formRef = useRef<HTMLFormElement>(null);
@@ -79,7 +80,7 @@ function QuickAddForm({ categories: allCategories, defaultDate }: { categories: 
             const result = await addExpense(data);
             if (!result.ok) {
               setErrors(result.fieldErrors ?? {});
-              toast.error(result.error);
+              toast.error(message(result.error));
               return;
             }
             toast.success(Q.added);
@@ -168,6 +169,7 @@ function DraftsSection({ drafts, categories }: { drafts: ExpenseView[]; categori
 function DraftRow({ draft, category }: { draft: ExpenseView; category: ExpenseCategoryView | undefined }) {
   const LABELS = useLabels();
   const D = LABELS.expenses.drafts;
+  const message = useMessage();
   const [amount, setAmount] = useState(String(draft.amount));
   const [pending, startTransition] = useTransition();
 
@@ -200,7 +202,7 @@ function DraftRow({ draft, category }: { draft: ExpenseView; category: ExpenseCa
             startTransition(async () => {
               const result = await confirmExpense({ id: draft.id, amount: Number(amount.replace(",", ".")) });
               if (result.ok) toast.success(D.confirmed);
-              else toast.error(result.error);
+              else toast.error(message(result.error));
             })
           }
         >
@@ -290,6 +292,7 @@ function ExpenseRow({
 }) {
   const LABELS = useLabels();
   const L = LABELS.expenses.list;
+  const message = useMessage();
   const fileRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
 
@@ -299,7 +302,7 @@ function ExpenseRow({
     data.set("receipt", file);
     startTransition(async () => {
       const result = await attachExpenseReceipt(data);
-      if (!result.ok) toast.error(result.error);
+      if (!result.ok) toast.error(message(result.error));
     });
   };
 
@@ -392,6 +395,7 @@ function EditExpenseDialog({ expense, categories }: { expense: ExpenseView; cate
   const LABELS = useLabels();
   const Q = LABELS.expenses.quickAdd;
   const E = LABELS.expenses.edit;
+  const message = useMessage();
   const initial = () => ({
     categoryId: expense.categoryId,
     label: expense.label,
@@ -427,7 +431,7 @@ function EditExpenseDialog({ expense, categories }: { expense: ExpenseView; cate
         startTransition(async () => {
           const result = await updateExpense({ id: expense.id, ...values });
           if (!result.ok) {
-            setError(result.error);
+            setError(message(result.error));
             setErrors(result.fieldErrors ?? {});
             return;
           }

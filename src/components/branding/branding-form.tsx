@@ -10,10 +10,8 @@ import { FormField } from "@/components/shared/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { saveBranding, uploadBrandingImage, verifyCustomDomain } from "@/lib/actions/branding";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { type BrandingFormInput, brandingFormSchema, type BrandingImageKind } from "@/lib/validation/branding";
-
-const L = LABELS.branding;
 
 type BrandingFormProps = {
   defaults: BrandingFormInput;
@@ -26,6 +24,8 @@ type BrandingFormProps = {
 };
 
 export function BrandingForm({ defaults, superAdmin, domainVerified, dnsTarget, onSaved }: BrandingFormProps) {
+  const L = useLabels().branding;
+  const message = useMessage();
   const [pending, startTransition] = useTransition();
   const [verifying, startVerify] = useTransition();
   const [verified, setVerified] = useState(domainVerified);
@@ -40,7 +40,7 @@ export function BrandingForm({ defaults, superAdmin, domainVerified, dnsTarget, 
     startTransition(async () => {
       const result = await saveBranding(values);
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(message(result.error));
         for (const [field, message] of Object.entries(result.fieldErrors ?? {})) {
           form.setError(field as Path<BrandingFormInput>, { message });
         }
@@ -56,7 +56,7 @@ export function BrandingForm({ defaults, superAdmin, domainVerified, dnsTarget, 
     startVerify(async () => {
       const result = await verifyCustomDomain(defaults.centerId);
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(message(result.error));
         return;
       }
       setVerified(result.data.verified);
@@ -188,6 +188,7 @@ function ColorField({
   hint: string;
   error?: string;
 }) {
+  const L = useLabels().branding;
   const value = useWatch({ control: form.control, name });
   const valid = /^#[0-9a-f]{6}$/i.test(value);
   return (
@@ -221,6 +222,8 @@ function ImageField({
   hint: string;
   centerId: string;
 }) {
+  const L = useLabels().branding;
+  const message = useMessage();
   const value = useWatch({ control: form.control, name });
   const input = useRef<HTMLInputElement>(null);
   const [uploading, startUpload] = useTransition();
@@ -233,7 +236,7 @@ function ImageField({
       data.set("file", file);
       const result = await uploadBrandingImage(data);
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(message(result.error));
         return;
       }
       form.setValue(name, result.data.url, { shouldDirty: true });

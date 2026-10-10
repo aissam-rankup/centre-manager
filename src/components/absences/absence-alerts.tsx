@@ -22,7 +22,8 @@ import { Input } from "@/components/ui/input";
 import type { AbsenceToNotify, NotificationChannel } from "@/lib/absences";
 import { notifyAbsence } from "@/lib/actions/absence-alerts";
 import { formatDate, formatDateTime, formatDateWithWeekday } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
+import type { Locale } from "@/lib/i18n/locale";
 import { formatPhone, isValidPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ type Send = (input: { attendanceId: string; channel: NotificationChannel; phone?
  */
 function useNotify(): { send: Send; pending: boolean } {
   const LABELS = useLabels();
+  const message = useMessage();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -44,7 +46,7 @@ function useNotify(): { send: Send; pending: boolean } {
         const result = await notifyAbsence(input);
         if (!result.ok) {
           target?.close();
-          toast.error(result.error);
+          toast.error(message(result.error));
           resolve(false);
           return;
         }
@@ -61,8 +63,8 @@ function useNotify(): { send: Send; pending: boolean } {
   return { send, pending };
 }
 
-function sessionLabel(item: AbsenceToNotify, LABELS: ReturnType<typeof useLabels>): string {
-  const date = formatDateWithWeekday(item.sessionDate);
+function sessionLabel(item: AbsenceToNotify, LABELS: ReturnType<typeof useLabels>, locale: Locale): string {
+  const date = formatDateWithWeekday(item.sessionDate, locale);
   const time = item.startTime && item.endTime ? `${item.startTime} – ${item.endTime}` : item.startTime;
   return LABELS.absenceAlerts.session(date.charAt(0).toUpperCase() + date.slice(1), time);
 }
@@ -97,6 +99,7 @@ export function AbsenceAlertsBlock({ items, fileBase }: { items: AbsenceToNotify
 function AbsenceRow({ item, fileBase }: { item: AbsenceToNotify; fileBase: string }) {
   const LABELS = useLabels();
   const A = LABELS.absenceAlerts;
+  const locale = useLocale();
   const notified = Boolean(item.notifiedAt);
 
   return (
@@ -114,7 +117,7 @@ function AbsenceRow({ item, fileBase }: { item: AbsenceToNotify; fileBase: strin
             ) : null}
           </span>
           <span className="truncate text-caption text-muted-foreground">
-            {item.subjectName} · {sessionLabel(item, LABELS)}
+            {item.subjectName} · {sessionLabel(item, LABELS, locale)}
             {item.teacherName ? ` · ${item.teacherName}` : ""}
           </span>
           <span className="truncate text-caption text-muted-foreground">
@@ -252,6 +255,7 @@ function PhoneDialog({
 function NotifyAllDialog({ items }: { items: AbsenceToNotify[] }) {
   const LABELS = useLabels();
   const A = LABELS.absenceAlerts;
+  const locale = useLocale();
   const Q = A.sequence;
   const { send, pending } = useNotify();
   const [open, setOpen] = useState(false);
@@ -318,7 +322,7 @@ function NotifyAllDialog({ items }: { items: AbsenceToNotify[] }) {
                   {current.inSeries ? <span className="text-caption font-medium text-danger-ink">{A.series}</span> : null}
                 </span>
                 <span className="text-caption text-muted-foreground">
-                  {current.subjectName} · {sessionLabel(current, LABELS)}
+                  {current.subjectName} · {sessionLabel(current, LABELS, locale)}
                 </span>
                 <span className="text-caption text-muted-foreground">
                   {A.guardian(current.guardianName, current.guardianPhone ? formatPhone(current.guardianPhone) : null)}

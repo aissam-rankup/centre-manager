@@ -1,7 +1,9 @@
+"use client";
+
 import Link from "@/components/shared/app-link";
 import type { ReactNode } from "react";
 
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 type SectionHeadingProps = {
@@ -16,6 +18,7 @@ type SectionHeadingProps = {
 
 /** Titre de section du tableau de bord : 16 px graisse 600, lien « Voir tout » à droite. */
 export function SectionHeading({ id, title, href, actions, className }: SectionHeadingProps) {
+  const LABELS = useLabels();
   return (
     <div className={cn("flex min-h-8 items-center justify-between gap-3", className)}>
       <h2 id={id} className="text-section">

@@ -10,12 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { updateReminderSettings } from "@/lib/actions/reminders";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { REMINDER_TYPES, type ReminderSettings, type ReminderType, renderReminderMessage } from "@/lib/reminders";
 import { cn } from "@/lib/utils";
 
 export function PaymentRemindersForm({ settings, centerName }: { settings: ReminderSettings; centerName: string }) {
   const LABELS = useLabels();
+  const message = useMessage();
   const R = LABELS.reenrollment.reminders;
   const S = R.settings;
   const [enabled, setEnabled] = useState(settings.enabled);
@@ -58,7 +59,7 @@ export function PaymentRemindersForm({ settings, centerName }: { settings: Remin
           const result = await updateReminderSettings({ enabled, daysBefore, templates });
           if (!result.ok) {
             setErrors(result.fieldErrors ?? {});
-            toast.error(result.error);
+            toast.error(message(result.error));
             return;
           }
           toast.success(LABELS.centerSettings.saved);

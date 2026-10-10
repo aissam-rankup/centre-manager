@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { resolveAttendanceConflict } from "@/lib/actions/attendance";
 import type { AttendanceConflict } from "@/lib/data/sessions";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 /**
  * Appels en désaccord (admin) : les deux saisies, la valeur affichée, et le
@@ -17,6 +17,7 @@ import { useLabels } from "@/lib/i18n/client";
  */
 export function AttendanceConflicts({ conflicts, fileBase }: { conflicts: AttendanceConflict[]; fileBase: string }) {
   const LABELS = useLabels();
+  const message = useMessage();
   const L = LABELS.attendanceConflicts;
   const M = LABELS.attendanceMarkers;
   const [pending, startTransition] = useTransition();
@@ -25,7 +26,7 @@ export function AttendanceConflicts({ conflicts, fileBase }: { conflicts: Attend
     startTransition(async () => {
       const result = await resolveAttendanceConflict({ conflictId, status });
       if (result.ok) toast.success(L.resolved);
-      else toast.error(result.error);
+      else toast.error(message(result.error));
     });
 
   return (

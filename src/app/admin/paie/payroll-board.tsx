@@ -14,9 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { markPayrollLinePaid, setPayrollAdjustment, unlockPayroll, validatePayroll } from "@/lib/actions/payroll";
 import { ROUTES } from "@/lib/auth/routes";
 import type { PayrollLineView, PayrollView } from "@/lib/data/payroll";
-import { formatDate, formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
-import { formatRate, monthKey, monthLabel } from "@/lib/payroll";
+import { formatDate, formatMAD, formatMonth } from "@/lib/format";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
+import type { Locale } from "@/lib/i18n/locale";
+import { formatRate, monthKey, type PayrollMonth } from "@/lib/payroll";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/receipts";
 import { cn } from "@/lib/utils";
 
@@ -32,10 +33,16 @@ function signedMAD(amount: number): string {
   return `${amount > 0 ? "+" : "−"} ${formatMAD(Math.abs(amount))}`;
 }
 
+/** Mois affiché (« Octobre 2026 ») dans la langue de l'utilisateur. */
+function payrollMonthLabel(value: PayrollMonth, locale: Locale): string {
+  const label = formatMonth(`${monthKey(value)}-01`, locale);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 export function PayrollActions({ payroll }: { payroll: PayrollView }) {
   const LABELS = useLabels();
   const P = LABELS.payroll;
-  const month = monthLabel(payroll.month);
+  const month = payrollMonthLabel(payroll.month, useLocale());
   const anyPaid = payroll.lines.some((line) => line.paidAt);
   const exportBase = `${ROUTES.admin.payroll}/export?mois=${monthKey(payroll.month)}`;
 
@@ -92,6 +99,7 @@ export function PayrollActions({ payroll }: { payroll: PayrollView }) {
 function UnlockDialog({ periodId }: { periodId: string }) {
   const LABELS = useLabels();
   const U = LABELS.payroll.unlock;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -121,7 +129,7 @@ function UnlockDialog({ periodId }: { periodId: string }) {
         startTransition(async () => {
           const result = await unlockPayroll({ periodId, reason });
           if (!result.ok) {
-            setError(result.error);
+            setError(message(result.error));
             return;
           }
           toast.success(U.done);
@@ -315,6 +323,7 @@ function PayrollDetailPanel({ line }: { line: PayrollLineView }) {
 function AdjustmentDialog({ line }: { line: PayrollLineView }) {
   const LABELS = useLabels();
   const A = LABELS.payroll.adjustment;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<"bonus" | "deduction">(line.adjustment < 0 ? "deduction" : "bonus");
   const [amount, setAmount] = useState(line.adjustment === 0 ? "" : String(Math.abs(line.adjustment)));
@@ -326,7 +335,7 @@ function AdjustmentDialog({ line }: { line: PayrollLineView }) {
     startTransition(async () => {
       const result = await setPayrollAdjustment({ lineId: line.id, amount: value, reason: text });
       if (!result.ok) {
-        setError(result.error);
+        setError(message(result.error));
         return;
       }
       toast.success(A.saved);
@@ -396,6 +405,7 @@ function AdjustmentDialog({ line }: { line: PayrollLineView }) {
 function PayLineDialog({ line, todayIso }: { line: PayrollLineView; todayIso: string }) {
   const LABELS = useLabels();
   const Y = LABELS.payroll.pay;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(todayIso);
   const [method, setMethod] = useState<PaymentMethod>("bank_transfer");
@@ -421,7 +431,7 @@ function PayLineDialog({ line, todayIso }: { line: PayrollLineView; todayIso: st
         startTransition(async () => {
           const result = await markPayrollLinePaid({ lineId: line.id, paidAt: date, method });
           if (!result.ok) {
-            setError(result.error);
+            setError(message(result.error));
             return;
           }
           toast.success(Y.done);

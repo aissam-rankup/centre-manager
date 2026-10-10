@@ -9,12 +9,13 @@ import { FormField } from "@/components/shared/form-field";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cancelReceipt } from "@/lib/actions/receipts";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 /** Annulation d'un reçu (admin) : motif obligatoire, reçu d'annulation lié. */
 export function CancelReceiptButton({ receiptId, receiptNumber }: { receiptId: string; receiptNumber: string }) {
   const LABELS = useLabels();
   const C = LABELS.receipts.cancel;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +38,7 @@ export function CancelReceiptButton({ receiptId, receiptNumber }: { receiptId: s
     startTransition(async () => {
       const result = await cancelReceipt({ receiptId, reason });
       if (!result.ok) {
-        setError(result.error);
+        setError(message(result.error));
         return;
       }
       toast.success(C.done);

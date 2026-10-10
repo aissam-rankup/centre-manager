@@ -9,11 +9,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { setAttendanceNote } from "@/lib/actions/attendance";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 /** Saisie du motif d'une absence (ex. « certificat médical reçu »). */
 export function AttendanceNote({ attendanceId, note, dateLabel }: { attendanceId: string; note: string | null; dateLabel: string }) {
   const LABELS = useLabels();
+  const message = useMessage();
   const L = LABELS.attendanceSheet;
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(note ?? "");
@@ -41,7 +42,7 @@ export function AttendanceNote({ attendanceId, note, dateLabel }: { attendanceId
             startTransition(async () => {
               const result = await setAttendanceNote({ attendanceId, note: value });
               if (!result.ok) {
-                toast.error(result.error);
+                toast.error(message(result.error));
                 return;
               }
               toast.success(L.noteSaved);

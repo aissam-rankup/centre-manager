@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button";
 import { refreshAccess, signOut } from "@/lib/auth/actions";
 import { ROLE_HOME, ROUTES } from "@/lib/auth/routes";
 import { getAuthState } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 
-const L = LABELS.auth.inactive;
-
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).auth.inactive.title };
+}
 
 export default async function InactiveAccountPage() {
+  const LABELS = await getLabels();
+  const L = LABELS.auth.inactive;
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
   // Compte actif (ex. réactivé depuis) : retour à son espace.

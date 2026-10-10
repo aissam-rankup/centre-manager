@@ -16,9 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { ActionResult } from "@/lib/actions/result";
-import { LABELS } from "@/lib/constants/labels";
-
-const P = LABELS.auth.photo;
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 type StaffPhotoDialogProps = {
   /** Déclencheur ; sans lui, le dialogue est piloté par open / onOpenChange. */
@@ -45,6 +43,8 @@ export function StaffPhotoDialog({
   onSave,
   onRemove,
 }: StaffPhotoDialogProps) {
+  const P = useLabels().auth.photo;
+  const message = useMessage();
   const [innerOpen, setInnerOpen] = useState(false);
   const open = controlledOpen ?? innerOpen;
   const [photo, setPhoto] = useState<CapturedPhoto | null>(null);
@@ -59,14 +59,14 @@ export function StaffPhotoDialog({
     onOpenChange?.(value);
   };
 
-  const run = (action: () => Promise<ActionResult>, message: string) => {
+  const run = (action: () => Promise<ActionResult>, success: string) => {
     startTransition(async () => {
       const result = await action();
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(message(result.error));
         return;
       }
-      toast.success(message);
+      toast.success(success);
       setOpen(false);
     });
   };

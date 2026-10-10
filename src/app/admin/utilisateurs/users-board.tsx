@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { createUser, setUserActive, updateUser } from "@/lib/actions/admin";
 import { removeUserPhoto, setUserPhoto } from "@/lib/actions/profile";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import type { AdminUser } from "@/lib/data/admin";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
 import { formatDateTime } from "@/lib/format";
@@ -204,6 +204,7 @@ function ToggleActiveButton({ user }: { user: AdminUser }) {
 function EditUserDialog({ user, levels, trigger }: { user: AdminUser; levels: LevelWithSubjects[]; trigger: ReactElement }) {
   const LABELS = useLabels();
   const L = LABELS.admin.users;
+  const message = useMessage();
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
     schema: adminSchemas(LABELS).userUpdateSchema,
     defaultValues: {
@@ -220,7 +221,7 @@ function EditUserDialog({ user, levels, trigger }: { user: AdminUser; levels: Le
   const roleLocked = user.role === "teacher" || user.isSelf;
 
   return (
-    <FormDialog open={open} onOpenChange={onOpenChange} trigger={trigger} title={L.editUser} description={user.email} pending={pending} error={error} onSubmit={onSubmit}>
+    <FormDialog open={open} onOpenChange={onOpenChange} trigger={trigger} title={L.editUser} description={user.email} pending={pending} error={error ? message(error) : null} onSubmit={onSubmit}>
       <FormField id={`nom-${user.id}`} label={L.name} error={errors.fullName?.message}>
         <Input {...form.register("fullName")} />
       </FormField>
@@ -259,6 +260,7 @@ const EMPTY: UserCreateInput = { fullName: "", role: "assistant", phone: "", ema
 function NewUserDialog({ levels, trigger }: { levels: LevelWithSubjects[]; trigger: ReactElement }) {
   const LABELS = useLabels();
   const L = LABELS.admin.users;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ email: string; password: string } | null>(null);
@@ -282,9 +284,9 @@ function NewUserDialog({ levels, trigger }: { levels: LevelWithSubjects[]; trigg
     startTransition(async () => {
       const result = await createUser(values);
       if (!result.ok) {
-        setError(result.error);
-        for (const [field, message] of Object.entries(result.fieldErrors ?? {})) {
-          if (field in EMPTY) form.setError(field as keyof UserCreateInput, { message });
+        setError(message(result.error));
+        for (const [field, text] of Object.entries(result.fieldErrors ?? {})) {
+          if (field in EMPTY) form.setError(field as keyof UserCreateInput, { message: text });
         }
         return;
       }
@@ -378,7 +380,9 @@ function NewUserDialog({ levels, trigger }: { levels: LevelWithSubjects[]; trigg
             name="subjectIds"
             render={({ field }) => <AssignmentPicker levels={levels} value={field.value} onChange={field.onChange} />}
           />
-          {errors.subjectIds ? <p className="text-caption text-danger-ink">{errors.subjectIds.message}</p> : null}
+          {errors.subjectIds ? (
+            <p className="text-caption text-danger-ink">{errors.subjectIds.message ? message(errors.subjectIds.message) : null}</p>
+          ) : null}
         </fieldset>
       ) : null}
     </FormDialog>

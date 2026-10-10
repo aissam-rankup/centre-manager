@@ -10,16 +10,18 @@ import { refreshAccess, signOut } from "@/lib/auth/actions";
 import { ROUTES } from "@/lib/auth/routes";
 import { getAuthState } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
-import { LABELS } from "@/lib/constants/labels";
 import { getSuspensionContact } from "@/lib/data/access";
+import { getLabels } from "@/lib/i18n/server";
 import { formatPhone, toTelHref } from "@/lib/phone";
 
-const L = LABELS.suspended;
-
-export const metadata: Metadata = { title: L.title, robots: { index: false, follow: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).suspended.title, robots: { index: false, follow: false } };
+}
 
 /** Centre suspendu ou résilié : explication et contact, sans aucune donnée du centre. */
 export default async function SuspendedPage() {
+  const LABELS = await getLabels();
+  const L = LABELS.suspended;
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
   if (state.status === "no-profile") redirect(ROUTES.inactive);

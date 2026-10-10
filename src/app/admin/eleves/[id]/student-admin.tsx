@@ -23,7 +23,7 @@ import {
   updateStudent,
 } from "@/lib/actions/admin";
 import { ROUTES } from "@/lib/auth/routes";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import type { LevelOption } from "@/lib/data/admin";
 import type { LevelWithSubjects, StudentEnrollment, StudentFile, StudentPackSubscription } from "@/lib/data/assistant";
 import { formatMAD } from "@/lib/format";
@@ -187,6 +187,7 @@ function PackRow({ subscription }: { subscription: StudentPackSubscription }) {
   const LABELS = useLabels();
   const L = LABELS.admin.students;
   const E = L.enrollments;
+  const message = useMessage();
   const [pending, startTransition] = useTransition();
   const title = LABELS.packs.label(subscription.packName);
 
@@ -194,7 +195,7 @@ function PackRow({ subscription }: { subscription: StudentPackSubscription }) {
     startTransition(async () => {
       const result = await updatePackSubscription({ id: subscription.id, active });
       if (result.ok) toast.success(E.saved);
-      else toast.error(result.error);
+      else toast.error(message(result.error));
     });
   };
 
@@ -226,6 +227,7 @@ function SubscribePack({ studentId, packs }: { studentId: string; packs: LevelWi
   const LABELS = useLabels();
   const L = LABELS.admin.students;
   const E = L.enrollments;
+  const message = useMessage();
   const [packId, setPackId] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -236,7 +238,7 @@ function SubscribePack({ studentId, packs }: { studentId: string; packs: LevelWi
         toast.success(E.packAdded);
         setPackId("");
       } else {
-        toast.error(result.error);
+        toast.error(message(result.error));
       }
     });
   };
@@ -268,13 +270,14 @@ function EnrollmentRow({ enrollment }: { enrollment: StudentEnrollment }) {
   const LABELS = useLabels();
   const L = LABELS.admin.students;
   const E = L.enrollments;
+  const message = useMessage();
   const [pending, startTransition] = useTransition();
 
   const save = (active: boolean) => {
     startTransition(async () => {
       const result = await updateEnrollment({ id: enrollment.id, active });
       if (result.ok) toast.success(E.saved);
-      else toast.error(result.error);
+      else toast.error(message(result.error));
     });
   };
 
@@ -303,6 +306,7 @@ function AddEnrollment({ studentId, subjects }: { studentId: string; subjects: L
   const LABELS = useLabels();
   const L = LABELS.admin.students;
   const E = L.enrollments;
+  const message = useMessage();
   const [subjectId, setSubjectId] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -313,7 +317,7 @@ function AddEnrollment({ studentId, subjects }: { studentId: string; subjects: L
         toast.success(E.added);
         setSubjectId("");
       } else {
-        toast.error(result.error);
+        toast.error(message(result.error));
       }
     });
   };

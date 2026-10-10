@@ -11,6 +11,7 @@ import { brandMetadata, getSessionBrand } from "@/lib/branding";
 import { LabelsProvider } from "@/lib/i18n/client";
 import { ModulesProvider } from "@/lib/modules-client";
 import { getLabels } from "@/lib/i18n/server";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getNotifications } from "@/lib/data/notifications";
 import { hasReenrollment } from "@/lib/data/reenrollment";
 import { formatLongDate } from "@/lib/format";
@@ -23,6 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const profile = await requireRole("admin");
   const LABELS = await getLabels();
+  const locale = await getAppLocale();
   const brand = await getSessionBrand();
   const [notifications, reenrollment] = await Promise.all([getNotifications(), hasReenrollment()]);
 
@@ -38,7 +40,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           reenrollment={reenrollment}
           brandingEditable={profile.modules.includes("white_label") && !profile.support}
           spaceLabel={LABELS.spaces.admin}
-          todayLabel={formatLongDate(new Date())}
+          todayLabel={formatLongDate(new Date(), locale)}
           searchHref={ROUTES.admin.students}
           notifications={{ items: notifications, fileBase: ROUTES.admin.students }}
           banners={<SpaceBanners profile={profile} />}

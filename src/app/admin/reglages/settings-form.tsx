@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { updateCenterSettings } from "@/lib/actions/receipts";
 import type { CenterReceiptSettings } from "@/lib/data/receipts";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { useModules } from "@/lib/modules-client";
 import { RECEIPT_FORMATS, type ReceiptFormat, renderReceiptMessage } from "@/lib/receipts";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ type Errors = Partial<Record<"address" | "phone" | "receiptFormat" | "whatsappTe
 
 export function CenterSettingsForm({ settings, centerName }: { settings: CenterReceiptSettings; centerName: string }) {
   const LABELS = useLabels();
+  const message = useMessage();
   const receipts = useModules().has("finance");
   const C = LABELS.centerSettings;
   const T = LABELS.receipts.tokens;
@@ -139,7 +140,7 @@ export function CenterSettingsForm({ settings, centerName }: { settings: CenterR
 
       {error ? (
         <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-          {error}
+          {message(error)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="self-end">

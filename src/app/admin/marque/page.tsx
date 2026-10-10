@@ -6,11 +6,11 @@ import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { requireModule, requireRole } from "@/lib/auth/session";
 import { dnsTarget, getBrandingSettings } from "@/lib/branding";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 
-const L = LABELS.branding;
-
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).branding.title };
+}
 
 /** Marque du centre : module marque blanche uniquement (sinon : non modifiable). */
 export default async function BrandingPage() {
@@ -19,6 +19,7 @@ export default async function BrandingPage() {
   if (profile.support) notFound();
   const settings = await getBrandingSettings(profile.centerId);
   if (!settings?.editable) notFound();
+  const L = (await getLabels()).branding;
 
   return (
     <div className="flex flex-col gap-6">

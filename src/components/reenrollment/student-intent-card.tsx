@@ -21,7 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { setReenrollmentIntent } from "@/lib/actions/reenrollment";
 import { formatDate, formatDateTime, formatMAD, formatPercent } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { isLeaving, type ReenrollmentIntent, type ReviewStudent } from "@/lib/reenrollment";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +43,7 @@ type StudentIntentCardProps = {
 /** Un élève dans la revue : lignes du mois, risques, intention (reconduit, abandonne, en pause). */
 export function StudentIntentCard({ runId, student, editable, issued, cancelled, fileHref }: StudentIntentCardProps) {
   const LABELS = useLabels();
+  const message = useMessage();
   const R = LABELS.reenrollment.review;
   const [pending, startTransition] = useTransition();
   const [leaveChoice, setLeaveChoice] = useState<"dropped" | "paused" | null>(null);
@@ -75,7 +76,7 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
       });
       if (!result.ok) {
         if (onDone) setDialogError(result.error);
-        else toast.error(result.error);
+        else toast.error(message(result.error));
         return;
       }
       onDone?.();
@@ -273,7 +274,7 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
             </label>
             {dialogError ? (
               <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-                {dialogError}
+                {message(dialogError)}
               </p>
             ) : null}
             <DialogFooter>

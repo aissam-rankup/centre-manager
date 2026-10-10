@@ -24,7 +24,7 @@ import {
   type StudentDiscount,
 } from "@/lib/discounts";
 import { formatDate } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { type DiscountFormValues, discountSchemas } from "@/lib/validation/discounts";
 
@@ -99,13 +99,14 @@ function DiscountRow({
   const LABELS = useLabels();
   const L = LABELS.discounts;
   const state = discountState(discount, todayIso);
+  const message = useMessage();
   const [pending, startTransition] = useTransition();
 
   const toggle = () => {
     startTransition(async () => {
       const result = await setDiscountActive({ id: discount.id, active: !discount.isActive });
       if (result.ok) toast.success(discount.isActive ? L.form.deactivated : L.form.activated);
-      else toast.error(result.error);
+      else toast.error(message(result.error));
     });
   };
 

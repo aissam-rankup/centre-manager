@@ -21,7 +21,7 @@ import { recordPayment } from "@/lib/actions/receipts";
 import { ROUTES } from "@/lib/auth/routes";
 import type { CashOpening } from "@/lib/cash";
 import { formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { useModules } from "@/lib/modules-client";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/receipts";
 import { cn } from "@/lib/utils";
@@ -91,6 +91,7 @@ export function PaymentDialog({
   const receipts = useModules().has("finance");
   const P = LABELS.payment;
   const D = LABELS.discounts.invoice;
+  const message = useMessage();
   const router = useRouter();
   const dueNow = useMemo(() => invoices.filter((invoice) => invoice.dueNow).map((invoice) => invoice.id), [invoices]);
 
@@ -161,11 +162,11 @@ export function PaymentDialog({
         openingFloat: cashOpening.needed && openingFloat.trim() !== initialFloat ? openingFloat : undefined,
       });
       if (!result.ok) {
-        setError(result.error);
+        setError(message(result.error));
         return;
       }
       toast.success(P.success, { description: P.receiptReady(result.data.receiptNumber, formatMAD(result.data.amountPaid)) });
-      if (result.data.floatNotice) toast.warning(result.data.floatNotice);
+      if (result.data.floatNotice) toast.warning(message(result.data.floatNotice));
       setDone(result.data);
     });
   };

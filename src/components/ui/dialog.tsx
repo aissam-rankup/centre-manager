@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { LABELS } from "@/lib/constants/labels"
+import { useLabels } from "@/lib/i18n/client"
 import { cn } from "@/lib/utils"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
@@ -56,6 +56,7 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const LABELS = useLabels()
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -104,6 +105,7 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean
 }) {
+  const LABELS = useLabels()
   return (
     <div
       data-slot="dialog-footer"

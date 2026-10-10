@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LABELS as FRENCH_LABELS } from "@/lib/constants/labels";
 import { useLabels } from "@/lib/i18n/client";
 import { toWhatsAppHref } from "@/lib/phone";
 import { formatLoginCode } from "@/lib/student-codes";
@@ -30,7 +31,8 @@ export function StudentCredentialsDialog({
   const C = LABELS.studentAccess.credentials;
   if (!credentials) return null;
   const code = formatLoginCode(credentials.code);
-  const message = C.message(studentName, credentials.loginUrl, code, credentials.password);
+  // Message envoyé au responsable : toujours en français.
+  const message = FRENCH_LABELS.studentAccess.credentials.message(studentName, credentials.loginUrl, code, credentials.password);
   const chat = guardianPhone ? toWhatsAppHref(guardianPhone) : null;
   const whatsapp = chat ? `${chat}?text=${encodeURIComponent(message)}` : null;
 

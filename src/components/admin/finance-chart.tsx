@@ -1,7 +1,7 @@
 "use client";
 
 import { Table2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -17,7 +17,8 @@ import {
 import { Button } from "@/components/ui/button";
 import type { FinanceMonth } from "@/lib/data/finance";
 import { formatMAD, formatMonth } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale } from "@/lib/i18n/client";
+import { intlLocale } from "@/lib/i18n/locale";
 
 const SERIES = [
   { key: "collected", color: "var(--fin-collected)" },
@@ -26,13 +27,6 @@ const SERIES = [
   { key: "net", color: "var(--fin-net)" },
 ] as const;
 
-const shortMonth = new Intl.DateTimeFormat("fr-FR", { month: "short" });
-const compact = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 });
-
-function monthTick(value: string): string {
-  return shortMonth.format(new Date(`${value}T12:00:00`)).replace(".", "");
-}
-
 /**
  * Résultat mensuel sur douze mois : quatre séries sur un seul axe (MAD),
  * couleurs validées, légende, infobulle au survol et vue tableau.
@@ -40,6 +34,14 @@ function monthTick(value: string): string {
 export function FinanceChart({ months }: { months: FinanceMonth[] }) {
   const LABELS = useLabels();
   const C = LABELS.financeDashboard.chart;
+  const locale = useLocale();
+  const { monthTick, compact } = useMemo(() => {
+    const shortMonth = new Intl.DateTimeFormat(intlLocale(locale), { month: "short" });
+    return {
+      monthTick: (value: string): string => shortMonth.format(new Date(`${value}T12:00:00`)).replace(".", ""),
+      compact: new Intl.NumberFormat(intlLocale(locale), { notation: "compact", maximumFractionDigits: 1 }),
+    };
+  }, [locale]);
   const [showTable, setShowTable] = useState(false);
   const hasNegative = months.some((month) => month.net < 0);
 
@@ -117,7 +119,7 @@ export function FinanceChart({ months }: { months: FinanceMonth[] }) {
             <tbody>
               {[...months].reverse().map((month) => (
                 <tr key={month.monthStart} className="h-11 border-b last:border-b-0">
-                  <td className="px-2 capitalize">{formatMonth(month.monthStart)}</td>
+                  <td className="px-2 capitalize">{formatMonth(month.monthStart, locale)}</td>
                   {SERIES.map((series) => (
                     <td key={series.key} className="numeric px-2 text-right font-normal">
                       {formatMAD(month[series.key])}
@@ -136,11 +138,12 @@ export function FinanceChart({ months }: { months: FinanceMonth[] }) {
 function FinanceTooltip({ active, payload }: TooltipContentProps) {
   const LABELS = useLabels();
   const C = LABELS.financeDashboard.chart;
+  const locale = useLocale();
   const row = payload?.[0]?.payload as FinanceMonth | undefined;
   if (!active || !row) return null;
   return (
     <div className="flex min-w-48 flex-col gap-1.5 rounded-lg bg-popover px-3 py-2 text-caption text-popover-foreground shadow-raised">
-      <p className="font-semibold capitalize">{formatMonth(row.monthStart)}</p>
+      <p className="font-semibold capitalize">{formatMonth(row.monthStart, locale)}</p>
       {SERIES.map((series) => (
         <p key={series.key} className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-1.5">

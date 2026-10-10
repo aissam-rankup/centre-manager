@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { recordFollowUp } from "@/lib/actions/assistant";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { assistantSchemas, type FollowUpInput } from "@/lib/validation/assistant";
 
 const CHANNELS = ["phone", "whatsapp", "in_person"] as const;
@@ -46,6 +46,7 @@ export function FollowUpDialog({
 }: FollowUpDialogProps) {
   const LABELS = useLabels();
   const L = LABELS.followUp;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -58,7 +59,7 @@ export function FollowUpDialog({
     startTransition(async () => {
       const result = await recordFollowUp(values);
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(message(result.error));
         return;
       }
       toast.success(L.dialog.success);

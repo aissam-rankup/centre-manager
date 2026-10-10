@@ -1,4 +1,5 @@
 import { type AppLabels, labelsFor } from "@/lib/constants/labels";
+import type { Locale } from "@/lib/i18n/locale";
 import { type DiscountSummary, parseDiscountSummary } from "@/lib/discounts";
 import { formatMonth } from "@/lib/format";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -107,12 +108,13 @@ function capitalize(value: string): string {
 }
 
 /** Période couverte : « Octobre 2026 », ou « Septembre 2026 – Octobre 2026 ». */
-export function receiptPeriodLabel(lines: Pick<ReceiptLine, "periodStart">[]): string {
+/** Période couverte ; en français par défaut (reçu remis aux familles). */
+export function receiptPeriodLabel(lines: Pick<ReceiptLine, "periodStart">[], locale: Locale = "fr"): string {
   const months = [...new Set(lines.map((line) => line.periodStart.slice(0, 7)))].sort();
   if (months.length === 0) return "";
-  const first = capitalize(formatMonth(`${months[0]}-01`));
+  const first = capitalize(formatMonth(`${months[0]}-01`, locale));
   if (months.length === 1) return first;
-  return `${first} – ${capitalize(formatMonth(`${months[months.length - 1]}-01`))}`;
+  return `${first} – ${capitalize(formatMonth(`${months[months.length - 1]}-01`, locale))}`;
 }
 
 export type ReceiptMessageValues = {

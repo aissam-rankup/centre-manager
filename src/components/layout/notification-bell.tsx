@@ -6,12 +6,11 @@ import { useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LABELS } from "@/lib/constants/labels";
 import type { NotificationItem, NotificationKind } from "@/lib/data/notifications";
 import { formatDateTime } from "@/lib/format";
+import { useLabels } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
-const L = LABELS.notifications;
 const SEEN_KEY = "centromanager:notifications-vues";
 
 const KIND_ICON: Record<NotificationKind, typeof Bell> = {
@@ -51,6 +50,7 @@ type NotificationBellProps = {
 
 /** Cloche de l'en-tête : relances, notes de fiche et alertes ; compteur des nouveautés. */
 export function NotificationBell({ items, fileBase }: NotificationBellProps) {
+  const L = useLabels().notifications;
   const storedSeen = useSyncExternalStore(subscribe, readSeen, () => "");
   const [seenOverride, setSeenOverride] = useState<string | null>(null);
   const seen = seenOverride ?? storedSeen;

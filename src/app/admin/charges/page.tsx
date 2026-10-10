@@ -11,9 +11,10 @@ import { ROUTES } from "@/lib/auth/routes";
 import { requireModule, requireRole } from "@/lib/auth/session";
 import type { AppLabels } from "@/lib/constants/labels";
 import { type ExpensesMonth, getExpensesMonth } from "@/lib/data/expenses";
-import { formatMAD, formatPercent, toISODate, today } from "@/lib/format";
+import { formatMAD, formatMonth, formatPercent, toISODate, today } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
-import { compareMonths, monthKey, monthLabel, parsePayrollMonth, type PayrollMonth, shiftMonth } from "@/lib/payroll";
+import { compareMonths, monthKey, parsePayrollMonth, type PayrollMonth, shiftMonth } from "@/lib/payroll";
 
 import { ExpensesBoard } from "./expenses-board";
 
@@ -38,6 +39,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/admin/c
   if (!data) return <EmptyState icon={ShieldAlert} title={X.title} description={X.supportUnavailable} />;
 
   const href = (value: PayrollMonth) => `${ROUTES.admin.expenses}?mois=${monthKey(value)}`;
+  const monthName = formatMonth(`${monthKey(month)}-01`, await getAppLocale());
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,7 +51,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/admin/c
             <ChevronLeft aria-hidden />
           </Link>
         </Button>
-        <span className="min-w-40 text-center font-semibold">{monthLabel(month)}</span>
+        <span className="min-w-40 text-center font-semibold">{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</span>
         {isCurrent ? (
           <Button variant="ghost" size="icon" disabled aria-label={X.nextMonth}>
             <ChevronRight aria-hidden />

@@ -12,12 +12,14 @@ import { Input } from "@/components/ui/input";
 import { prepareBillingRun, updateReenrollmentSettings } from "@/lib/actions/reenrollment";
 import { ROUTES } from "@/lib/auth/routes";
 import { formatDate, formatDateTime, formatDayMonth, formatMAD, formatMonth } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { campaignDueDate, isoDate, type ReenrollmentSettings, validDay } from "@/lib/reenrollment";
 import { cn } from "@/lib/utils";
 
 export function ReenrollmentSettingsForm({ settings }: { settings: ReenrollmentSettings }) {
   const LABELS = useLabels();
+  const locale = useLocale();
+  const message = useMessage();
   const S = LABELS.reenrollment.settings;
   const [enabled, setEnabled] = useState(settings.enabled);
   const [generationDay, setGenerationDay] = useState(String(settings.generationDay));
@@ -27,7 +29,7 @@ export function ReenrollmentSettingsForm({ settings }: { settings: ReenrollmentS
   const [preparing, startPreparing] = useTransition();
 
   const { year, month } = settings.nextMonth;
-  const monthName = formatMonth(isoDate(year, month, 1));
+  const monthName = formatMonth(isoDate(year, month, 1), locale);
   const run = settings.nextRun;
   const dueValue = validDay(dueDay, settings.dueDay);
   const generationValue = validDay(generationDay, settings.generationDay);
@@ -43,7 +45,7 @@ export function ReenrollmentSettingsForm({ settings }: { settings: ReenrollmentS
           const result = await updateReenrollmentSettings({ enabled, generationDay, dueDay });
           if (!result.ok) {
             setErrors(result.fieldErrors ?? {});
-            toast.error(result.error);
+            toast.error(message(result.error));
             return;
           }
           toast.success(LABELS.centerSettings.saved);
@@ -76,8 +78,8 @@ export function ReenrollmentSettingsForm({ settings }: { settings: ReenrollmentS
             label={S.dueDay}
             hint={S.dueDayHint(
               monthName,
-              formatDayMonth(campaignDueDate(year, month, 1, dueValue)),
-              formatDayMonth(campaignDueDate(year, month, 15, dueValue)),
+              formatDayMonth(campaignDueDate(year, month, 1, dueValue), locale),
+              formatDayMonth(campaignDueDate(year, month, 15, dueValue), locale),
             )}
             error={errors.dueDay}
           >
@@ -97,7 +99,7 @@ export function ReenrollmentSettingsForm({ settings }: { settings: ReenrollmentS
           <div className="flex flex-col gap-3 rounded-xl bg-warning/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="flex items-start gap-2">
               <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning-ink" aria-hidden />
-              {S.currentDraft(formatMonth(isoDate(draft.year, draft.month, 1)))}
+              {S.currentDraft(formatMonth(isoDate(draft.year, draft.month, 1), locale))}
             </p>
             <Button asChild variant="outline" className="self-start sm:self-auto">
               <Link href={`${ROUTES.admin.reenrollment}?campagne=${draft.id}`}>{S.openCampaign}</Link>
@@ -147,7 +149,7 @@ export function ReenrollmentSettingsForm({ settings }: { settings: ReenrollmentS
                     startPreparing(async () => {
                       const result = await prepareBillingRun();
                       if (result.ok) toast.success(S.prepared);
-                      else toast.error(result.error);
+                      else toast.error(message(result.error));
                     })
                   }
                 >

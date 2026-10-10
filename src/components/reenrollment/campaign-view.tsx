@@ -13,6 +13,7 @@ import { Money } from "@/components/shared/money";
 import { Button } from "@/components/ui/button";
 import type { CampaignPage } from "@/lib/data/reenrollment";
 import { formatDateTime, formatMAD, formatMonth, formatPercent } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { countIntents, isoDate } from "@/lib/reenrollment";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ type CampaignViewProps = {
 /** Revue d'une campagne : état, chiffres clés, élèves à risque, intention de chaque élève, confirmation. */
 export async function CampaignView({ page, todayIso, basePath, fileBase, settingsHref }: CampaignViewProps) {
   const LABELS = await getLabels();
+  const locale = await getAppLocale();
   const R = LABELS.reenrollment.review;
   const { run, runs, students } = page;
 
@@ -57,7 +59,7 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
     );
   }
 
-  const monthName = formatMonth(isoDate(run.year, run.month, 1));
+  const monthName = formatMonth(isoDate(run.year, run.month, 1), locale);
   const counts = countIntents(students);
   const atRisk = students.filter((student) => student.atRisk);
   const draft = run.status === "draft";
@@ -104,7 +106,7 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
           label={R.campaigns}
           options={runs.map((item) => ({
             value: item.id,
-            label: `${R.month(formatMonth(isoDate(item.year, item.month, 1)))} · ${R.status[item.status]}`,
+            label: `${R.month(formatMonth(isoDate(item.year, item.month, 1), locale))} · ${R.status[item.status]}`,
           }))}
           current={run.id}
           href={(value) => (value ? `${basePath}?campagne=${value}` : basePath)}

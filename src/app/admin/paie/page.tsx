@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireModule, requireRole } from "@/lib/auth/session";
 import { getPayroll, getTeacherPaySettings } from "@/lib/data/payroll";
-import { toISODate, today } from "@/lib/format";
+import { formatMonth, toISODate, today } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
-import { compareMonths, monthKey, monthLabel, parsePayrollMonth, type PayrollMonth, shiftMonth } from "@/lib/payroll";
+import { compareMonths, monthKey, parsePayrollMonth, type PayrollMonth, shiftMonth } from "@/lib/payroll";
 
 import { PayrollActions, PayrollBoard } from "./payroll-board";
 import { TeacherPaySettingsSection } from "./teacher-pay-settings";
@@ -38,6 +39,7 @@ export default async function PayrollPage({ searchParams }: PageProps<"/admin/pa
 
   const [payroll, teachers] = await Promise.all([getPayroll(month), getTeacherPaySettings()]);
   const href = (value: PayrollMonth) => `${ROUTES.admin.payroll}?mois=${monthKey(value)}`;
+  const monthName = formatMonth(`${monthKey(month)}-01`, await getAppLocale());
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,7 +51,7 @@ export default async function PayrollPage({ searchParams }: PageProps<"/admin/pa
             <ChevronLeft aria-hidden />
           </Link>
         </Button>
-        <span className="min-w-40 text-center font-semibold">{monthLabel(month)}</span>
+        <span className="min-w-40 text-center font-semibold">{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</span>
         {isCurrent ? (
           <Button variant="ghost" size="icon" disabled aria-label={P.nextMonth}>
             <ChevronRight aria-hidden />

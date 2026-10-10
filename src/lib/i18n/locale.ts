@@ -32,6 +32,11 @@ export function appLocale(locale: Locale): Locale {
   return APP_LOCALES.includes(locale) ? locale : DEFAULT_LOCALE;
 }
 
+/** Locale Intl (nombres, dates) de chaque langue : « 1 200 » en français, « 1,200 » en anglais. */
+export function intlLocale(locale: Locale): string {
+  return locale === "en" ? "en-GB" : locale === "ar" ? "ar-MA" : "fr-FR";
+}
+
 /** Sens d'écriture : l'arabe se lit de droite à gauche. */
 export function dirFor(locale: Locale): "ltr" | "rtl" {
   return locale === "ar" ? "rtl" : "ltr";

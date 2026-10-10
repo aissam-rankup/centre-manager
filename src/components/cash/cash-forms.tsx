@@ -31,13 +31,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { closeCashSession, openCashSession, recordCashMovement } from "@/lib/actions/cash";
 import { ADMIN_MOVEMENT_KINDS, ASSISTANT_MOVEMENT_KINDS, parseCents, varianceCents } from "@/lib/cash";
 import { formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 /** Ouvrir la caisse maintenant avec le fonds de caisse, ou corriger le fonds avant le premier encaissement. */
 export function OpenCashForm({ initialFloat = 0, adjust = false }: { initialFloat?: number; adjust?: boolean }) {
   const LABELS = useLabels();
   const C = LABELS.cash;
+  const message = useMessage();
   const [openingFloat, setOpeningFloat] = useState(String(initialFloat).replace(".", ","));
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -54,7 +55,7 @@ export function OpenCashForm({ initialFloat = 0, adjust = false }: { initialFloa
           if (!result.ok) {
             // Hors saisie (fonds figé entre-temps) : la page s'actualise et ce formulaire peut disparaître.
             if (result.fieldErrors?.openingFloat) setError(result.fieldErrors.openingFloat);
-            else toast.error(result.error);
+            else toast.error(message(result.error));
             return;
           }
           toast.success(adjust ? C.floatSaved : C.opened);
@@ -79,6 +80,7 @@ export function OpenCashForm({ initialFloat = 0, adjust = false }: { initialFloa
 export function CloseCashForm({ sessionId, expectedCash }: { sessionId: string; expectedCash: number }) {
   const LABELS = useLabels();
   const C = LABELS.cash;
+  const message = useMessage();
   const [counted, setCounted] = useState("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
@@ -186,7 +188,7 @@ export function CloseCashForm({ sessionId, expectedCash }: { sessionId: string; 
                 startTransition(async () => {
                   const result = await closeCashSession({ sessionId, counted, reason, notes, expected: expectedCash });
                   if (!result.ok) {
-                    setErrors({ server: result.fieldErrors?.counted ?? result.error });
+                    setErrors({ server: message(result.fieldErrors?.counted ?? result.error) });
                     // Chiffres changés entre-temps : l'attendu et l'écart se mettent à jour.
                     router.refresh();
                     return;
@@ -210,6 +212,7 @@ export function CloseCashForm({ sessionId, expectedCash }: { sessionId: string; 
 export function CashMovementDialog({ finance }: { finance: boolean }) {
   const LABELS = useLabels();
   const C = LABELS.cash;
+  const message = useMessage();
   const kinds = finance ? ADMIN_MOVEMENT_KINDS : ASSISTANT_MOVEMENT_KINDS;
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<(typeof ADMIN_MOVEMENT_KINDS)[number]>("bank_deposit");
@@ -253,7 +256,7 @@ export function CashMovementDialog({ finance }: { finance: boolean }) {
             startTransition(async () => {
               const result = await recordCashMovement({ kind, amount, direction, reason });
               if (!result.ok) {
-                setErrors({ ...(result.fieldErrors ?? {}), server: result.fieldErrors ? "" : result.error });
+                setErrors({ ...(result.fieldErrors ?? {}), server: result.fieldErrors ? "" : message(result.error) });
                 return;
               }
               toast.success(C.movementSaved);

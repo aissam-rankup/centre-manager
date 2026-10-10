@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { saveTeacherPay } from "@/lib/actions/payroll";
 import type { PayHistoryEntry, TeacherPaySettings } from "@/lib/data/payroll";
 import { formatDate, formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { formatRate, PAY_MODES, type PayMode } from "@/lib/payroll";
 import { cn } from "@/lib/utils";
 
@@ -74,6 +74,7 @@ function TeacherPayDialog({ teacher, defaultFrom }: { teacher: TeacherPaySetting
   const LABELS = useLabels();
   const P = LABELS.payroll;
   const S = P.settings;
+  const message = useMessage();
   const initialRates = () =>
     Object.fromEntries(teacher.subjects.map((subject) => [subject.subjectId, subject.currentRate === null ? "" : String(subject.currentRate)]));
 
@@ -116,7 +117,7 @@ function TeacherPayDialog({ teacher, defaultFrom }: { teacher: TeacherPaySetting
     startTransition(async () => {
       const result = await saveTeacherPay({ teacherId: teacher.teacherId, payMode: mode, effectiveFrom: from, monthlyAmount, rates: parsedRates });
       if (!result.ok) {
-        setError(result.error);
+        setError(message(result.error));
         return;
       }
       toast.success(S.saved);

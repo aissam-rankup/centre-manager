@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { markSessionAttendance } from "@/lib/actions/attendance";
 import type { RosterStudent } from "@/lib/data/sessions";
 import { formatDateTime } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 type Status = "present" | "absent";
@@ -31,6 +31,7 @@ export function SessionRosterForm({
   backHref: string;
 }) {
   const LABELS = useLabels();
+  const message = useMessage();
   const L = LABELS.sessions.roster;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -53,7 +54,7 @@ export function SessionRosterForm({
     startTransition(async () => {
       const result = await markSessionAttendance({ slotId, date, entries });
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(message(result.error));
         return;
       }
       toast.success(L.saved(entries.length));

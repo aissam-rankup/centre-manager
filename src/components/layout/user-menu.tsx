@@ -1,10 +1,11 @@
 "use client";
 
-import { Camera, ChevronDown, KeyRound, LogOut, Moon, Sun } from "lucide-react";
+import { Camera, ChevronDown, KeyRound, Languages, LogOut, Moon, Sun } from "lucide-react";
 import Link from "@/components/shared/app-link";
 import { useTheme } from "next-themes";
 import { useState, useSyncExternalStore, useTransition } from "react";
 
+import { AppLanguageSwitcher } from "@/components/layout/app-language-switcher";
 import { StaffPhotoDialog } from "@/components/shared/staff-photo-dialog";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,8 @@ import {
 import { removeMyPhoto, updateMyPhoto } from "@/lib/actions/profile";
 import { signOut } from "@/lib/auth/actions";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
+import { APP_LOCALES } from "@/lib/i18n/locale";
 
 export type ShellUser = {
   fullName: string;
@@ -34,6 +36,7 @@ export type ShellUser = {
 const noop = () => () => {};
 
 export function UserMenu({ user }: { user: ShellUser }) {
+  const LABELS = useLabels();
   const [pending, startTransition] = useTransition();
   const [photoOpen, setPhotoOpen] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
@@ -78,6 +81,14 @@ export function UserMenu({ user }: { user: ShellUser }) {
             {isDark ? <Sun className="size-5" aria-hidden /> : <Moon className="size-5" aria-hidden />}
             {isDark ? LABELS.theme.toggleToLight : LABELS.theme.toggleToDark}
           </DropdownMenuItem>
+          {/* Hors élément de menu : le choix de la langue ne ferme pas le menu. */}
+          {APP_LOCALES.length > 1 ? (
+            <div className="flex min-h-11 items-center gap-3 px-1.5 py-1 text-sm">
+              <Languages className="size-5 shrink-0" aria-hidden />
+              <span className="flex-1">{LABELS.common.language}</span>
+              <AppLanguageSwitcher />
+            </div>
+          ) : null}
           <DropdownMenuItem
             className="min-h-11 gap-3"
             disabled={pending}

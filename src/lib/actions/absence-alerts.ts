@@ -70,7 +70,8 @@ export async function notifyAbsence(input: unknown): Promise<ActionResult<{ href
         date: formatDate(row.session_date),
         day: weekday,
         subject: row.subject_name ?? "",
-        time: row.start_time?.slice(0, 5) ?? A.noTime,
+        // Message aux familles : en français, quelle que soit la langue de l'utilisateur.
+        time: row.start_time?.slice(0, 5) ?? labelsFor().absenceAlerts.noTime,
         teacher: row.teacher_name ?? "",
         center: brand.whiteLabel ? brand.name : profile.centerName,
       },

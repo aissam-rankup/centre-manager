@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { shareReceipt } from "@/lib/actions/receipts";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { isValidPhone } from "@/lib/phone";
 
 type ShareReceiptButtonProps = {
@@ -36,6 +36,7 @@ type ShareReceiptButtonProps = {
 export function ShareReceiptButton({ receiptId, guardianPhone, label, variant = "outline", className }: ShareReceiptButtonProps) {
   const LABELS = useLabels();
   const S = LABELS.receipts.share;
+  const message = useMessage();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [askPhone, setAskPhone] = useState(false);
@@ -53,7 +54,7 @@ export function ShareReceiptButton({ receiptId, guardianPhone, label, variant = 
           setAskPhone(true);
           setPhoneError(result.fieldErrors.phone);
         } else {
-          toast.error(result.error);
+          toast.error(message(result.error));
         }
         return;
       }

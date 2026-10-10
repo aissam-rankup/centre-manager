@@ -1,7 +1,7 @@
 "use client";
 
 import { Table2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -17,7 +17,8 @@ import {
 import { Button } from "@/components/ui/button";
 import type { CollectionDay } from "@/lib/data/collection";
 import { formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale } from "@/lib/i18n/client";
+import { intlLocale } from "@/lib/i18n/locale";
 
 // Ce mois-ci : la couleur de l'encaissé ; le mois précédent : référence neutre, en tirets.
 const SERIES = [
@@ -25,12 +26,12 @@ const SERIES = [
   { key: "previous", color: "var(--muted-foreground)", dash: "5 4" },
 ] as const;
 
-const compact = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 });
-
 /** Encaissé cumulé jour par jour : ce mois-ci contre le mois précédent, avec le prévisionnel en repère. */
 export function CollectionChart({ days, expected }: { days: CollectionDay[]; expected: number }) {
   const LABELS = useLabels();
   const C = LABELS.financeDashboard.collection.chart;
+  const locale = useLocale();
+  const compact = useMemo(() => new Intl.NumberFormat(intlLocale(locale), { notation: "compact", maximumFractionDigits: 1 }), [locale]);
   const [showTable, setShowTable] = useState(false);
   const elapsed = days.filter((day) => day.current !== null);
   const today = elapsed.at(-1)?.day;
