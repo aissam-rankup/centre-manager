@@ -13,8 +13,10 @@ import {
 } from "@/components/students/student-file-sections";
 import { StudentTabs } from "@/components/students/student-tabs";
 import { ReceiptsSection } from "@/components/receipts/receipts-section";
+import { getCenterFamilyLocale, getStudentMessageLocale } from "@/lib/data/family-locale";
 import { getStudentReceipts } from "@/lib/data/receipts";
 import { getStudentAccess } from "@/lib/data/student-access";
+import { FamilyLocaleSelect } from "@/components/students/family-locale-select";
 import { StudentAccessCard } from "@/components/students/student-access-card";
 import { AttendanceSheet } from "@/components/attendance/attendance-sheet";
 import { parseAttendanceFilters } from "@/lib/attendance";
@@ -65,7 +67,12 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
   }
 
   const levelCatalog = catalog.find((level) => level.id === student.levelId);
-  const [receipts, access] = await Promise.all([getStudentReceipts(student.id), getStudentAccess(student.id)]);
+  const [receipts, access, ownLocale, centerLocale] = await Promise.all([
+    getStudentReceipts(student.id),
+    getStudentAccess(student.id),
+    getStudentMessageLocale(student.id),
+    getCenterFamilyLocale(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -77,6 +84,8 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
       </Button>
 
       <StudentHeader student={student} actions={<StudentAdminActions student={student} levels={levels} />} />
+
+      <FamilyLocaleSelect studentId={student.id} value={ownLocale} centerLocale={centerLocale} readOnly={Boolean(profile.support)} />
 
       <EnrollmentsEditor
         studentId={student.id}
@@ -105,6 +114,7 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
           studentName={student.fullName}
           guardianPhone={student.guardianPhone}
           access={access}
+          familyLocale={ownLocale ?? centerLocale}
           readOnly={Boolean(profile.support)}
         />
       ) : null}

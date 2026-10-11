@@ -14,6 +14,7 @@ import type { ActionResult } from "@/lib/actions/result";
 import { openStudentAccess, setStudentAccess } from "@/lib/actions/student-access";
 import type { StudentAccess } from "@/lib/data/student-access";
 import { formatDate, formatDateTime } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
 import { useLabels, useMessage } from "@/lib/i18n/client";
 import { formatLoginCode } from "@/lib/student-codes";
 
@@ -26,12 +27,15 @@ export function StudentAccessCard({
   studentName,
   guardianPhone,
   access,
+  familyLocale,
   readOnly,
 }: {
   studentId: string;
   studentName: string;
   guardianPhone: string | null;
   access: StudentAccess;
+  /** Langue de la famille (message WhatsApp des identifiants). */
+  familyLocale: Locale;
   /** Mode support : consultation seule. */
   readOnly: boolean;
 }) {
@@ -139,7 +143,13 @@ export function StudentAccessCard({
         </div>
       )}
 
-      <StudentCredentialsDialog credentials={shown} studentName={studentName} guardianPhone={guardianPhone} onClose={() => setShown(null)} />
+      <StudentCredentialsDialog
+        credentials={shown}
+        studentName={studentName}
+        guardianPhone={guardianPhone}
+        familyLocale={familyLocale}
+        onClose={() => setShown(null)}
+      />
     </SectionCard>
   );
 }

@@ -1092,6 +1092,7 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           custom_terms: Json
+          family_locale: string
           grace_days: number
           id: string
           is_demo: boolean
@@ -1130,6 +1131,7 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           custom_terms?: Json
+          family_locale?: string
           grace_days?: number
           id?: string
           is_demo?: boolean
@@ -1168,6 +1170,7 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           custom_terms?: Json
+          family_locale?: string
           grace_days?: number
           id?: string
           is_demo?: boolean
@@ -3229,6 +3232,7 @@ export type Database = {
           id: string
           is_demo: boolean
           level_id: string
+          message_locale: string | null
           notes: string | null
           notes_updated_at: string | null
           notes_updated_by: string | null
@@ -3245,6 +3249,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           level_id: string
+          message_locale?: string | null
           notes?: string | null
           notes_updated_at?: string | null
           notes_updated_by?: string | null
@@ -3261,6 +3266,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           level_id?: string
+          message_locale?: string | null
           notes?: string | null
           notes_updated_at?: string | null
           notes_updated_by?: string | null
@@ -4959,6 +4965,10 @@ export type Database = {
       set_student_account_active: {
         Args: { p_active: boolean; p_student_id: string }
         Returns: string
+      }
+      set_student_message_locale: {
+        Args: { p_locale?: string; p_student_id: string }
+        Returns: undefined
       }
       set_teacher_commission: {
         Args: {

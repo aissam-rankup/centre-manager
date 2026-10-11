@@ -110,7 +110,7 @@ export function CenterSettingsForm({ settings, centerName }: { settings: CenterR
           </fieldset>
 
           <div className="flex flex-col gap-2">
-            <FormField id="modele-whatsapp" label={C.template} error={errors.whatsappTemplate}>
+            <FormField id="modele-whatsapp" label={C.template} hint={LABELS.centerSettings.familyLocale.customTemplateNote} error={errors.whatsappTemplate}>
               <Textarea lang="fr" dir="ltr" ref={templateRef} rows={6} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
             </FormField>
             <div className="flex flex-wrap items-center gap-2">

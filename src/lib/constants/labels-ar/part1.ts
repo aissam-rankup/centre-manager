@@ -111,7 +111,7 @@ export const AR_PART1: Pick<
       whatsapp: "إرسال إلى ولي الأمر",
       done: "تم التدوين",
       message: (name: string, url: string, code: string, password: string) =>
-        `Bonjour, voici l'accès de ${name} à son espace : ${url} — code ${code}, mot de passe temporaire ${password}. Un mot de passe personnel sera demandé à la première connexion.`,
+        `السلام عليكم، إليكم معلومات الدخول إلى فضاء ${name}: ${url} — الرمز: ${code}، كلمة المرور المؤقتة: ${password}. ستُطلب كلمة مرور شخصية عند أول تسجيل دخول.`,
     },
   },
   studentLogin: {

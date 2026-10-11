@@ -126,8 +126,11 @@ export type ReceiptMessageValues = {
   number: string;
 };
 
-/** Message WhatsApp : modèle du centre (ou proposé), variables remplacées. */
-export function renderReceiptMessage(template: string | null, values: ReceiptMessageValues, LABELS: AppLabels): string {
-  const message = template?.trim() ? template : LABELS.receipts.whatsappTemplate;
+/**
+ * Message WhatsApp : modèle du centre (rédigé en français : familles francophones),
+ * sinon message proposé dans la langue de la famille ; variables remplacées.
+ */
+export function renderReceiptMessage(template: string | null, values: ReceiptMessageValues, LABELS: AppLabels, locale: Locale = "fr"): string {
+  const message = locale === "fr" && template?.trim() ? template : LABELS.receipts.whatsappTemplate;
   return fillTemplate(message, LABELS.receipts.tokens, labelsFor().receipts.tokens, values);
 }

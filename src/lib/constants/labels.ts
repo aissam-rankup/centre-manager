@@ -2229,6 +2229,16 @@ const TEXTS = {
     },
   },
   centerSettings: {
+    /** Langue des messages et documents remis aux familles (WhatsApp, reçus, fiche d'assiduité). */
+    familyLocale: {
+      title: "Langue des familles",
+      description: "Langue par défaut des messages WhatsApp et des documents remis aux familles. Elle se change famille par famille sur la fiche de l'élève.",
+      label: "Langue des messages",
+      centerDefault: (language: string) => `Langue du centre (${language})`,
+      studentHint: "Messages WhatsApp, reçus et fiche d'assiduité envoyés à cette famille.",
+      saved: "Langue des messages enregistrée",
+      customTemplateNote: "Ce message personnalisé est envoyé aux familles francophones ; les familles en arabe ou en anglais reçoivent le message proposé dans leur langue.",
+    },
     title: "Réglages du centre",
     description: "Coordonnées, reçus de paiement, réinscription automatique et alertes d'absence.",
     contactTitle: "Coordonnées",
@@ -3061,6 +3071,27 @@ export function labelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName
     // Modèles de messages (WhatsApp, reçus) et leurs variables : dans la langue du centre (français).
     if (locale !== DEFAULT_LOCALE) labels = withMessageTemplates(labels, labelsFor(terms, brandName));
     cache.set(key, labels);
+  }
+  return labels;
+}
+
+const familyCache = new Map<string, AppLabels>();
+
+/**
+ * Libellés d'un message ou d'un document remis à une famille, dans la langue de
+ * cette famille : modèles de messages compris (contrairement à labelsFor, qui
+ * garde les modèles en français pour l'interface).
+ */
+export function familyLabelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName?: string | null, locale: Locale = DEFAULT_LOCALE): AppLabels {
+  if (locale === DEFAULT_LOCALE) return labelsFor(terms, brandName);
+  const key = JSON.stringify([terms, brandName ?? null, locale]);
+  let labels = familyCache.get(key);
+  if (!labels) {
+    const vocabulary = locale === "en" ? englishTranslator(terms) : arabicTranslator(terms);
+    const platformName = TEXTS.app.name;
+    const translate = brandName && brandName !== platformName ? (text: string) => vocabulary(text).replaceAll(platformName, brandName) : vocabulary;
+    labels = translateTree(TEXTS_BY_LOCALE[locale], translate);
+    familyCache.set(key, labels);
   }
   return labels;
 }

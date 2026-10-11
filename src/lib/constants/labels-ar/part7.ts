@@ -223,18 +223,18 @@ export const AR_PART7: Pick<AppLabels, "cash" | "absenceAlerts" | "roomOccupancy
       close: "إنهاء",
     },
     tokens: {
-      student: "[élève]",
-      date: "[date]",
-      day: "[jour]",
-      subject: "[matière]",
-      time: "[heure]",
-      teacher: "[professeur]",
-      center: "[centre]",
+      student: "[{the learner}]",
+      date: "[التاريخ]",
+      day: "[اليوم]",
+      subject: "[{the course}]",
+      time: "[الساعة]",
+      teacher: "[{the instructor}]",
+      center: "[المركز]",
     },
     template:
-      "Bonjour, nous vous informons que [élève] était absent(e) au cours de [matière] du [date] à [heure]. Merci de nous contacter si nécessaire.\n[centre]",
+      "السلام عليكم، نُعلمكم بأنه سُجّل غياب [{the learner}] عن {session} [{the course}] يوم [التاريخ] في [الساعة]. نرجو منكم التواصل معنا عند الحاجة.\n[المركز]",
     seriesTemplate:
-      "Bonjour, nous vous informons que [élève] a manqué plusieurs séances consécutives de [matière], la dernière le [date] à [heure]. Merci de nous contacter rapidement.\n[centre]",
+      "السلام عليكم، نُعلمكم بأنه سُجّل غياب [{the learner}] عن عدة {sessions} متتالية في [{the course}]، آخرها يوم [التاريخ] في [الساعة]. نرجو منكم التواصل معنا في أقرب وقت.\n[المركز]",
     noTime: "وقت الحصة",
     settings: {
       title: "تنبيهات الغياب",
@@ -245,7 +245,7 @@ export const AR_PART7: Pick<AppLabels, "cash" | "absenceAlerts" | "roomOccupancy
       templateHint: "متغيرات تُستبدل عند الإرسال:",
       reset: "الرجوع إلى الرسالة المقترحة",
       preview: "معاينة",
-      sample: { student: "Salma Bennani", date: "mardi 14 octobre", day: "mardi", subject: "Mathématiques", time: "17:00", teacher: "M. Alami" },
+      sample: { student: "سلمى بناني", date: "الثلاثاء 14 أكتوبر", day: "الثلاثاء", subject: "الرياضيات", time: "17:00", teacher: "الأستاذ العلمي" },
     },
   },
   roomOccupancy: {
@@ -352,6 +352,15 @@ export const AR_PART7: Pick<AppLabels, "cash" | "absenceAlerts" | "roomOccupancy
     },
   },
   centerSettings: {
+    familyLocale: {
+      title: "لغة الأسر",
+      description: "اللغة الافتراضية لرسائل واتساب والوثائق المسلَّمة للأسر. يمكن تغييرها لكل أسرة من ملف {the learner}.",
+      label: "لغة الرسائل",
+      centerDefault: (language: string) => `لغة المركز (${language})`,
+      studentHint: "رسائل واتساب والوصولات وبطاقة المواظبة المرسلة إلى هذه الأسرة.",
+      saved: "تم حفظ لغة الرسائل",
+      customTemplateNote: "تُرسل هذه الرسالة المخصصة إلى الأسر الناطقة بالفرنسية؛ أما الأسر بالعربية أو الإنجليزية فتتلقى الرسالة المقترحة بلغتها.",
+    },
     title: "إعدادات المركز",
     description: "معلومات الاتصال، وصولات الأداء، إعادة التسجيل التلقائية وتنبيهات الغياب.",
     contactTitle: "معلومات الاتصال",
@@ -378,7 +387,7 @@ export const AR_PART7: Pick<AppLabels, "cash" | "absenceAlerts" | "roomOccupancy
     phoneInvalid: "رقم غير صالح. مثال: 05 22 00 00 00.",
     templateTooLong: "1000 حرف كحد أقصى.",
     templateNeedsLink: "يجب أن تتضمن الرسالة [lien] ليتوصل ولي الأمر بالوصل.",
-    sample: { student: "Salma Bennani", period: "Octobre 2026", amount: "450 MAD", number: "2026-0042", link: "https://…" },
+    sample: { student: "سلمى بناني", period: "أكتوبر 2026", amount: "450 درهم", number: "2026-0042", link: "https://…" },
   },
   followUp: {
     channels: { phone: "الهاتف", whatsapp: "WhatsApp", in_person: "حضوريًا" },

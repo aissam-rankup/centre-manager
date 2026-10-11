@@ -17,8 +17,10 @@ import {
 } from "@/components/students/student-file-sections";
 import { StudentTabs } from "@/components/students/student-tabs";
 import { ReceiptsSection } from "@/components/receipts/receipts-section";
+import { getCenterFamilyLocale, getStudentMessageLocale } from "@/lib/data/family-locale";
 import { getStudentReceipts } from "@/lib/data/receipts";
 import { getStudentAccess } from "@/lib/data/student-access";
+import { FamilyLocaleSelect } from "@/components/students/family-locale-select";
 import { StudentAccessCard } from "@/components/students/student-access-card";
 import { AttendanceSheet } from "@/components/attendance/attendance-sheet";
 import { parseAttendanceFilters } from "@/lib/attendance";
@@ -50,7 +52,12 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
   const [student, profile] = await Promise.all([loadStudent(id), requireRole("assistant")]);
   // Reçus : module Finance.
   const finance = profile.modules.includes("finance");
-  const [receipts, access] = await Promise.all([getStudentReceipts(student.id), getStudentAccess(student.id)]);
+  const [receipts, access, ownLocale, centerLocale] = await Promise.all([
+    getStudentReceipts(student.id),
+    getStudentAccess(student.id),
+    getStudentMessageLocale(student.id),
+    getCenterFamilyLocale(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,6 +69,8 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
       </Button>
 
       <StudentHeader student={student} />
+
+      <FamilyLocaleSelect studentId={student.id} value={ownLocale} centerLocale={centerLocale} readOnly={Boolean(profile.support)} />
 
       <SubjectsSection student={student} />
 
@@ -81,6 +90,7 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
           studentName={student.fullName}
           guardianPhone={student.guardianPhone}
           access={access}
+          familyLocale={ownLocale ?? centerLocale}
           readOnly={Boolean(profile.support)}
         />
       ) : null}

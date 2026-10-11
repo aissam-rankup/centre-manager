@@ -3,9 +3,10 @@ import "server-only";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { Image, Text, View } from "@react-pdf/renderer";
+import { Image, View } from "@react-pdf/renderer";
 
 import { LABELS } from "@/lib/constants/labels";
+import { Text } from "@/lib/pdf/text";
 
 type PdfImage = { data: Buffer; format: "png" };
 
@@ -32,15 +33,18 @@ export function pdfHeaderLogo(logoUrl: string | null, whiteLabel: boolean): stri
   return own ?? (whiteLabel ? null : dirasstyMark());
 }
 
-/** Ligne « Édité avec dirassty », en monochrome ; masquée en marque blanche. Libellé en français par défaut. */
-export function PdfEditedWith({ whiteLabel, label = LABELS.receipts.editedWith }: { whiteLabel: boolean; label?: string }) {
+/**
+ * Ligne « Édité avec dirassty », en monochrome ; masquée en marque blanche. Libellé en français par défaut.
+ * En arabe (`rtl`), le symbole passe à droite du libellé.
+ */
+export function PdfEditedWith({ whiteLabel, label = LABELS.receipts.editedWith, rtl = false }: { whiteLabel: boolean; label?: string; rtl?: boolean }) {
   if (whiteLabel) return null;
   const logo = dirasstyMark();
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+    <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 3 }}>
       {/* eslint-disable-next-line jsx-a11y/alt-text -- composant PDF, pas d'image HTML */}
       {logo ? <Image src={logo} style={{ width: 6, height: 8 }} /> : null}
-      <Text>{label}</Text>
+      <Text rtl={rtl}>{label}</Text>
     </View>
   );
 }

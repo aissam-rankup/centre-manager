@@ -211,15 +211,15 @@ export const EN_PART4: Pick<AppLabels, "welcome" | "suspended" | "pastDueBanner"
     emptyDescription: "Receipts will appear here after the first payment is collected.",
     notFound: "Receipt not found.",
     tokens: {
-      student: "[élève]",
-      period: "[période]",
-      amount: "[montant]",
+      student: "[{learner}]",
+      period: "[period]",
+      amount: "[amount]",
       center: "[centre]",
-      link: "[lien]",
-      number: "[numéro]",
+      link: "[link]",
+      number: "[number]",
     },
     whatsappTemplate:
-      "Bonjour, voici le reçu [numéro] de [élève] pour [période] : [montant] réglés.\nReçu : [lien]\nMerci de votre confiance.\n[centre]",
+      "Hello, please find receipt [number] for [{learner}], [period]: [amount] paid.\nReceipt: [link]\nThank you for your trust.\n[centre]",
     share: {
       title: "Share the receipt on WhatsApp",
       noPhone: "No parent/guardian number is recorded for this {learner}. Enter the number to use.",

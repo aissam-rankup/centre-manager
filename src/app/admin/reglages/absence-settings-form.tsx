@@ -59,7 +59,7 @@ export function AbsenceSettingsForm({ settings, centerName }: { settings: Absenc
             <span className="text-caption text-muted-foreground">{S.enabledHint}</span>
           </span>
         </label>
-        <FormField id="modele-absence" label={S.template} error={error ?? undefined}>
+        <FormField id="modele-absence" label={S.template} hint={LABELS.centerSettings.familyLocale.customTemplateNote} error={error ?? undefined}>
           <Textarea lang="fr" dir="ltr" ref={templateRef} rows={5} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
         </FormField>
         <div className="flex flex-wrap items-center gap-2">

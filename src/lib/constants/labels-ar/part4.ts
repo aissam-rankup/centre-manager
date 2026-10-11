@@ -218,15 +218,15 @@ export const AR_PART4: Pick<AppLabels, "welcome" | "suspended" | "pastDueBanner"
     emptyDescription: "ستظهر الوصولات هنا بعد أول عملية تحصيل.",
     notFound: "الوصل غير موجود.",
     tokens: {
-      student: "[élève]",
-      period: "[période]",
-      amount: "[montant]",
-      center: "[centre]",
-      link: "[lien]",
-      number: "[numéro]",
+      student: "[{the learner}]",
+      period: "[الفترة]",
+      amount: "[المبلغ]",
+      center: "[المركز]",
+      link: "[الرابط]",
+      number: "[الرقم]",
     },
     whatsappTemplate:
-      "Bonjour, voici le reçu [numéro] de [élève] pour [période] : [montant] réglés.\nReçu : [lien]\nMerci de votre confiance.\n[centre]",
+      "السلام عليكم، تجدون أدناه الوصل رقم [الرقم] الخاص بأداء [المبلغ] عن [الفترة] لفائدة [{the learner}].\nالوصل: [الرابط]\nشكرًا على ثقتكم.\n[المركز]",
     share: {
       title: "مشاركة الوصل عبر WhatsApp",
       noPhone: "لا يوجد رقم ولي أمر مسجّل في ملف {the learner}. أدخل الرقم المراد استعماله.",

@@ -105,7 +105,7 @@ export function PaymentRemindersForm({ settings, centerName }: { settings: Remin
           ))}
         </div>
 
-        <FormField id={`modele-rappel-${editing}`} label={S.template[editing]} error={errors[`templates.${editing}`]}>
+        <FormField id={`modele-rappel-${editing}`} label={S.template[editing]} hint={LABELS.centerSettings.familyLocale.customTemplateNote} error={errors[`templates.${editing}`]}>
           <Textarea lang="fr" dir="ltr" ref={templateRef} rows={5} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
         </FormField>
         <div className="flex flex-wrap items-center gap-2">

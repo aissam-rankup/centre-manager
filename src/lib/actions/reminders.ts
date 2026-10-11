@@ -1,7 +1,6 @@
 "use server";
 
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -11,8 +10,9 @@ import { ROUTES } from "@/lib/auth/routes";
 import { requireRole, requireStaff } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
 import { labelsFor } from "@/lib/constants/labels";
+import { getFamilyContext } from "@/lib/data/family-locale";
 import { getReminderQueue, getReminderSettings } from "@/lib/data/reminders";
-import { formatDayMonth, formatMAD } from "@/lib/format";
+import { dateLocale, formatDayMonth, formatMAD } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { isValidPhone, toWhatsAppHref } from "@/lib/phone";
 import { REMINDER_TYPES, renderReminderMessage } from "@/lib/reminders";
@@ -58,23 +58,24 @@ export async function sendPaymentReminder(input: unknown): Promise<ActionResult<
     const whatsapp = phone && isValidPhone(phone) ? toWhatsAppHref(phone) : null;
     if (!whatsapp) return failure(R.noPhone, { phone: LABELS.receipts.share.phoneInvalid });
 
-    const [settings, brand] = await Promise.all([getReminderSettings(), getSessionBrand()]);
-    const custom = settings.templates[item.type];
+    // Message dans la langue de la famille (fiche de l'élève, sinon réglages du centre).
+    const [settings, brand, family] = await Promise.all([getReminderSettings(), getSessionBrand(), getFamilyContext(item.studentId)]);
+    const custom = family.locale === "fr" ? settings.templates[item.type] : null;
     template = custom ? "custom" : "default";
     message = renderReminderMessage(
       custom,
       item.type,
       {
         student: item.fullName,
-        month: format(new Date(item.year, item.month - 1, 1), "MMMM", { locale: fr }),
+        month: format(new Date(item.year, item.month - 1, 1), "MMMM", { locale: dateLocale(family.locale) }),
         subjects: item.subjectNames.join(", "),
-        amount: formatMAD(item.amountDue),
-        date: formatDayMonth(item.dueDate),
-        // Message aux familles : en français, quelle que soit la langue de l'utilisateur.
-        days: labelsFor().reenrollment.reminders.days(item.daysOverdue ?? 0),
+        amount: formatMAD(item.amountDue, family.locale),
+        date: formatDayMonth(item.dueDate, family.locale),
+        days: family.labels.reenrollment.reminders.days(item.daysOverdue ?? 0),
         center: brand.whiteLabel ? brand.name : profile.centerName,
       },
-      LABELS,
+      family.labels,
+      family.locale,
     );
     href = `${whatsapp}?text=${encodeURIComponent(message)}`;
   }

@@ -213,21 +213,21 @@ export const EN_PART6: Pick<AppLabels, "reenrollment"> = {
       days: (count: number) => (count === 1 ? "1 day" : `${count} days`),
       studentTitle: "Reminders to send",
       tokens: {
-        student: "[élève]",
-        month: "[mois]",
-        subjects: "[matières]",
-        amount: "[montant]",
+        student: "[{learner}]",
+        month: "[month]",
+        subjects: "[{courses}]",
+        amount: "[amount]",
         date: "[date]",
-        days: "[jours]",
+        days: "[days]",
         center: "[centre]",
       },
       templates: {
         upcoming:
-          "Bonjour, les frais de [mois] pour [élève] s'élèvent à [montant] ([matières]), à régler au plus tard le [date]. Merci de votre confiance.\n[centre]",
+          "Hello, the [month] fees for [{learner}] come to [amount] ([{courses}]), payable by [date] at the latest. Thank you for your trust.\n[centre]",
         due_today:
-          "Bonjour, nous vous rappelons que les frais de [mois] pour [élève], soit [montant] ([matières]), sont à régler aujourd'hui, [date]. Merci.\n[centre]",
+          "Hello, this is a reminder that the [month] fees for [{learner}], [amount] ([{courses}]), are due today, [date]. Thank you.\n[centre]",
         overdue:
-          "Bonjour, les frais de [mois] pour [élève], soit [montant] ([matières]), étaient à régler le [date] : [jours] de retard. Merci de passer au centre dès que possible.\n[centre]",
+          "Hello, the [month] fees for [{learner}], [amount] ([{courses}]), were due on [date] and are now [days] overdue. Please call in at the centre as soon as possible.\n[centre]",
       },
       history: (wave: string) => `Payment reminder · ${wave}`,
       historyDetail: (amount: string, subjects: string) => `${amount} · ${subjects}`,
@@ -250,14 +250,13 @@ export const EN_PART6: Pick<AppLabels, "reenrollment"> = {
         templateHint: "Variables replaced when sending:",
         reset: "Restore the suggested message",
         preview: "Preview",
-        // Valeurs d'exemple injectées dans les modèles (en français) pour l'aperçu : gardées en français.
         sample: {
           student: "Salma Bennani",
-          month: "novembre",
-          subjects: "Mathématiques, Anglais",
+          month: "November",
+          subjects: "Mathematics, English",
           amount: "550 MAD",
-          date: "5 novembre",
-          days: "3 jours",
+          date: "5 November",
+          days: "3 days",
         },
       },
     },

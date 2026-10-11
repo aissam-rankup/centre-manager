@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { requireRole } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
 import { getAbsenceAlertsSettings } from "@/lib/data/absence-alerts";
+import { getCenterFamilyLocale } from "@/lib/data/family-locale";
 import { getEditableCenterSettings } from "@/lib/data/receipts";
 import { getReenrollmentSettings } from "@/lib/data/reenrollment";
 import { getReminderSettings } from "@/lib/data/reminders";
@@ -13,6 +14,7 @@ import type { ModuleKey } from "@/lib/modules";
 
 import { AbsenceSettingsForm } from "./absence-settings-form";
 import { CashSettingsForm } from "./cash-settings-form";
+import { FamilyLocaleForm } from "./family-locale-form";
 import { PaymentRemindersForm } from "./payment-reminders-form";
 import { ReenrollmentSettingsForm } from "./reenrollment-settings-form";
 import { CenterSettingsForm } from "./settings-form";
@@ -27,13 +29,14 @@ export default async function CenterSettingsPage() {
   const profile = await requireRole("admin");
   const has = (key: ModuleKey) => profile.modules.includes(key);
   // Réglages d'un module : affichés (et lus) seulement si le centre l'a.
-  const [settings, brand, absenceSettings, reenrollment, reminders, cash] = await Promise.all([
+  const [settings, brand, absenceSettings, reenrollment, reminders, cash, familyLocale] = await Promise.all([
     getEditableCenterSettings(),
     getSessionBrand(),
     has("absence_tracking") ? getAbsenceAlertsSettings() : null,
     has("reenrollment") ? getReenrollmentSettings() : null,
     has("reenrollment") ? getReminderSettings() : null,
     has("finance") ? getCashSettings() : null,
+    getCenterFamilyLocale(),
   ]);
   const centerName = brand.whiteLabel ? brand.name : profile.centerName;
 
@@ -41,6 +44,7 @@ export default async function CenterSettingsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title={LABELS.centerSettings.title} description={LABELS.centerSettings.description} />
       <CenterSettingsForm settings={settings} centerName={centerName} />
+      <FamilyLocaleForm locale={familyLocale} />
       {reenrollment ? <ReenrollmentSettingsForm settings={reenrollment} /> : null}
       {reminders ? <PaymentRemindersForm settings={reminders} centerName={centerName} /> : null}
       {cash ? <CashSettingsForm settings={cash} /> : null}

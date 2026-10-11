@@ -1,4 +1,5 @@
 import { type AppLabels, labelsFor } from "@/lib/constants/labels";
+import type { Locale } from "@/lib/i18n/locale";
 import type { Database } from "@/lib/supabase/database.types";
 import { fillTemplate } from "@/lib/templates";
 
@@ -37,14 +38,19 @@ export type AbsenceMessageValues = {
   center: string;
 };
 
-/** Message au responsable : modèle du centre (ou proposé) ; série : message dédié. */
+/**
+ * Message au responsable : modèle du centre (rédigé en français : familles francophones),
+ * sinon message proposé dans la langue de la famille ; série : message dédié.
+ */
 export function renderAbsenceMessage(
   template: string | null,
   values: AbsenceMessageValues,
   LABELS: AppLabels,
   series = false,
+  locale: Locale = "fr",
 ): string {
   const A = LABELS.absenceAlerts;
-  const message = series ? A.seriesTemplate : template?.trim() ? template : A.template;
+  const custom = locale === "fr" && template?.trim() ? template : null;
+  const message = series ? A.seriesTemplate : (custom ?? A.template);
   return fillTemplate(message, A.tokens, labelsFor().absenceAlerts.tokens, values);
 }

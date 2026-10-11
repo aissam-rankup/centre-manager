@@ -228,18 +228,18 @@ export const EN_PART7: Pick<AppLabels, "cash" | "absenceAlerts" | "roomOccupancy
       close: "Finish",
     },
     tokens: {
-      student: "[élève]",
+      student: "[{learner}]",
       date: "[date]",
-      day: "[jour]",
-      subject: "[matière]",
-      time: "[heure]",
-      teacher: "[professeur]",
+      day: "[day]",
+      subject: "[{course}]",
+      time: "[time]",
+      teacher: "[{instructor}]",
       center: "[centre]",
     },
     template:
-      "Bonjour, nous vous informons que [élève] était absent(e) au cours de [matière] du [date] à [heure]. Merci de nous contacter si nécessaire.\n[centre]",
+      "Hello, we would like to inform you that [{learner}] was absent from the [{course}] {session} on [date] at [time]. Please contact us if needed.\n[centre]",
     seriesTemplate:
-      "Bonjour, nous vous informons que [élève] a manqué plusieurs séances consécutives de [matière], la dernière le [date] à [heure]. Merci de nous contacter rapidement.\n[centre]",
+      "Hello, we would like to inform you that [{learner}] has missed several consecutive [{course}] {sessions}, the most recent on [date] at [time]. Please contact us at your earliest convenience.\n[centre]",
     noTime: "class time",
     settings: {
       title: "Absence alerts",
@@ -356,6 +356,15 @@ export const EN_PART7: Pick<AppLabels, "cash" | "absenceAlerts" | "roomOccupancy
     },
   },
   centerSettings: {
+    familyLocale: {
+      title: "Family language",
+      description: "Default language of WhatsApp messages and documents given to families. It can be changed for each family on the {learner}'s profile.",
+      label: "Message language",
+      centerDefault: (language: string) => `Centre language (${language})`,
+      studentHint: "WhatsApp messages, receipts and attendance report sent to this family.",
+      saved: "Message language saved",
+      customTemplateNote: "This custom message is sent to French-speaking families; families in Arabic or English receive the suggested message in their language.",
+    },
     title: "Centre settings",
     description: "Contact details, payment receipts, automatic re-enrolment and absence alerts.",
     contactTitle: "Contact details",

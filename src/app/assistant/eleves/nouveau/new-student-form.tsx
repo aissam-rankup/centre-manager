@@ -17,11 +17,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { createStudent } from "@/lib/actions/assistant";
 import { ROUTES } from "@/lib/auth/routes";
+import { setStudentMessageLocale } from "@/lib/actions/family-locale";
 import { useLabels, useMessage } from "@/lib/i18n/client";
+import { isLocale, type Locale, LOCALE_NAMES, LOCALES } from "@/lib/i18n/locale";
 import { useModules } from "@/lib/modules-client";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
 import { formatDate } from "@/lib/format";
@@ -33,11 +36,16 @@ type NewStudentFormProps = {
   levels: LevelWithSubjects[];
   /** Date du jour à Casablanca (AAAA-MM-JJ), fournie par le serveur. */
   todayIso: string;
+  /** Langue des familles du centre (réglages) : proposée par défaut. */
+  centerLocale: Locale;
 };
 
-export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
+export function NewStudentForm({ levels, todayIso, centerLocale }: NewStudentFormProps) {
   const LABELS = useLabels();
   const message = useMessage();
+  const F = LABELS.centerSettings.familyLocale;
+  // Langue propre de la famille ; null : langue du centre.
+  const [familyLocale, setFamilyLocale] = useState<Locale | null>(null);
   const L = LABELS.assistant.newStudent;
   const STEP_COUNT = L.steps.length;
   const router = useRouter();
@@ -131,6 +139,11 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
         setServerError(message(result.error));
         return;
       }
+      // Langue propre de la famille : enregistrée après la création (vide : langue du centre).
+      if (familyLocale) {
+        const saved = await setStudentMessageLocale({ studentId: result.data.studentId, locale: familyLocale });
+        if (!saved.ok) toast.error(message(saved.error));
+      }
       toast.success(L.success, { description: L.successDescription });
       if (result.data.accessFailed) toast.error(LABELS.studentAccess.failed);
       const fileHref = `${ROUTES.assistant.students}/${result.data.studentId}`;
@@ -189,6 +202,16 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
                   placeholder={L.fields.guardianPhonePlaceholder}
                   {...register("guardianPhone")}
                 />
+              </FormField>
+              <FormField id="familyLocale" label={F.label} hint={F.studentHint}>
+                <NativeSelect value={familyLocale ?? ""} onChange={(event) => setFamilyLocale(isLocale(event.target.value) ? event.target.value : null)}>
+                  <option value="">{F.centerDefault(LOCALE_NAMES[centerLocale])}</option>
+                  {LOCALES.map((option) => (
+                    <option key={option} value={option} lang={option}>
+                      {LOCALE_NAMES[option]}
+                    </option>
+                  ))}
+                </NativeSelect>
               </FormField>
               <FormField id="notes" label={L.fields.notes} error={errors.notes?.message}>
                 <Textarea rows={3} placeholder={L.fields.notesPlaceholder} {...register("notes")} />
@@ -455,6 +478,7 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
         credentials={created?.credentials ?? null}
         studentName={fullName}
         guardianPhone={guardianPhone || null}
+        familyLocale={familyLocale ?? centerLocale}
         onClose={() => {
           if (created) router.push(created.href);
           setCreated(null);

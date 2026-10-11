@@ -10,6 +10,7 @@ import { requireRole, requireStaff } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
 import { labelsFor } from "@/lib/constants/labels";
 import { getAbsenceAlertsSettings } from "@/lib/data/absence-alerts";
+import { getFamilyContext } from "@/lib/data/family-locale";
 import { formatDate, formatDateWithWeekday } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { isValidPhone, toWhatsAppHref } from "@/lib/phone";
@@ -59,24 +60,26 @@ export async function notifyAbsence(input: unknown): Promise<ActionResult<{ href
     const whatsapp = phone && isValidPhone(phone) ? toWhatsAppHref(phone) : null;
     if (!whatsapp) return failure(A.noPhone, { phone: LABELS.receipts.share.phoneInvalid });
 
-    const [settings, brand] = await Promise.all([getAbsenceAlertsSettings(), getSessionBrand()]);
+    // Message dans la langue de la famille (fiche de l'élève, sinon réglages du centre).
+    const [settings, brand, family] = await Promise.all([getAbsenceAlertsSettings(), getSessionBrand(), getFamilyContext(row.student_id)]);
     const series = row.in_series ?? false;
-    template = series ? "series" : settings.template ? "custom" : "default";
-    const weekday = formatDateWithWeekday(row.session_date).split(" ")[0] ?? "";
+    const custom = family.locale === "fr" ? settings.template : null;
+    template = series ? "series" : custom ? "custom" : "default";
+    const weekday = formatDateWithWeekday(row.session_date, family.locale).split(" ")[0] ?? "";
     message = renderAbsenceMessage(
-      settings.template,
+      custom,
       {
         student: row.full_name ?? "",
         date: formatDate(row.session_date),
         day: weekday,
         subject: row.subject_name ?? "",
-        // Message aux familles : en français, quelle que soit la langue de l'utilisateur.
-        time: row.start_time?.slice(0, 5) ?? labelsFor().absenceAlerts.noTime,
+        time: row.start_time?.slice(0, 5) ?? family.labels.absenceAlerts.noTime,
         teacher: row.teacher_name ?? "",
         center: brand.whiteLabel ? brand.name : profile.centerName,
       },
-      LABELS,
+      family.labels,
       series,
+      family.locale,
     );
     href = `${whatsapp}?text=${encodeURIComponent(message)}`;
   }

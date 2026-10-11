@@ -5,7 +5,8 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LABELS as FRENCH_LABELS } from "@/lib/constants/labels";
+import { familyLabelsFor } from "@/lib/constants/labels";
+import type { Locale } from "@/lib/i18n/locale";
 import { useLabels } from "@/lib/i18n/client";
 import { toWhatsAppHref } from "@/lib/phone";
 import { formatLoginCode } from "@/lib/student-codes";
@@ -20,19 +21,27 @@ export function StudentCredentialsDialog({
   credentials,
   studentName,
   guardianPhone,
+  familyLocale = "fr",
   onClose,
 }: {
   credentials: ShownCredentials | null;
   studentName: string;
   guardianPhone: string | null;
+  /** Langue de la famille : celle du message WhatsApp. */
+  familyLocale?: Locale;
   onClose: () => void;
 }) {
   const LABELS = useLabels();
   const C = LABELS.studentAccess.credentials;
   if (!credentials) return null;
   const code = formatLoginCode(credentials.code);
-  // Message envoyé au responsable : toujours en français.
-  const message = FRENCH_LABELS.studentAccess.credentials.message(studentName, credentials.loginUrl, code, credentials.password);
+  // Message envoyé au responsable : dans la langue de la famille.
+  const message = familyLabelsFor(undefined, null, familyLocale).studentAccess.credentials.message(
+    studentName,
+    credentials.loginUrl,
+    code,
+    credentials.password,
+  );
   const chat = guardianPhone ? toWhatsAppHref(guardianPhone) : null;
   const whatsapp = chat ? `${chat}?text=${encodeURIComponent(message)}` : null;
 

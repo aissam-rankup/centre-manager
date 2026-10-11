@@ -9,6 +9,7 @@ import { ROUTES } from "@/lib/auth/routes";
 import { requireRole, requireStaff } from "@/lib/auth/session";
 import { parseCents, toCents } from "@/lib/cash";
 import { labelsFor } from "@/lib/constants/labels";
+import { getFamilyContext } from "@/lib/data/family-locale";
 import { getCenterReceiptSettings, getReceipt } from "@/lib/data/receipts";
 import { formatMAD } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
@@ -109,8 +110,10 @@ export async function shareReceipt(input: unknown): Promise<ActionResult<{ href:
   const whatsapp = phone && isValidPhone(phone) ? toWhatsAppHref(phone) : null;
   if (!whatsapp) return failure(S.phoneInvalid, { phone: S.phoneInvalid });
 
+  // Reçu et message dans la langue de la famille (fiche de l'élève, sinon réglages du centre).
+  const family = await getFamilyContext(receipt.studentId);
   // PDF déposé par le serveur (clé service_role, jamais exposée au client).
-  const buffer = await renderToBuffer(ReceiptPdf({ receipt, labels: LABELS }));
+  const buffer = await renderToBuffer(ReceiptPdf({ receipt, labels: family.labels, locale: family.locale }));
   const path = `${profile.centerId}/${receipt.id}.pdf`;
   const storage = createAdminClient().storage.from(RECEIPTS_BUCKET);
   const { error: uploadError } = await storage.upload(path, new Uint8Array(buffer), {
@@ -134,13 +137,14 @@ export async function shareReceipt(input: unknown): Promise<ActionResult<{ href:
     settings.whatsappTemplate,
     {
       student: receipt.studentName,
-      period: receiptPeriodLabel(receipt.lines),
-      amount: formatMAD(receipt.amountPaid),
+      period: receiptPeriodLabel(receipt.lines, family.locale),
+      amount: formatMAD(receipt.amountPaid, family.locale),
       center: receipt.center.name,
       link: signed.signedUrl,
       number: receipt.number,
     },
-    LABELS,
+    family.labels,
+    family.locale,
   );
 
   revalidateStudents();
