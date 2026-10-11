@@ -11,6 +11,8 @@ import { requireRole, requireStaff } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
 import { labelsFor } from "@/lib/constants/labels";
 import { getFamilyContext } from "@/lib/data/family-locale";
+import { getTranslatedTemplate, prepareTranslatedTemplates } from "@/lib/data/message-templates";
+import { isTranslatedLocale, TRANSLATED_LOCALES } from "@/lib/message-templates";
 import { getReminderQueue, getReminderSettings } from "@/lib/data/reminders";
 import { dateLocale, formatDayMonth, formatMAD } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
@@ -60,7 +62,10 @@ export async function sendPaymentReminder(input: unknown): Promise<ActionResult<
 
     // Message dans la langue de la famille (fiche de l'élève, sinon réglages du centre).
     const [settings, brand, family] = await Promise.all([getReminderSettings(), getSessionBrand(), getFamilyContext(item.studentId)]);
-    const custom = family.locale === "fr" ? settings.templates[item.type] : null;
+    // Modèle du centre dans la langue de la famille (le français a ses colonnes).
+    const custom = isTranslatedLocale(family.locale)
+      ? await getTranslatedTemplate(family.locale, `reminder_${item.type}`)
+      : settings.templates[item.type];
     template = custom ? "custom" : "default";
     message = renderReminderMessage(
       custom,
@@ -112,6 +117,8 @@ export async function updateReminderSettings(input: unknown): Promise<ActionResu
       enabled: z.boolean(),
       daysBefore: z.coerce.number(R.settings.daysInvalid).int(R.settings.daysInvalid).min(0, R.settings.daysInvalid).max(28, R.settings.daysInvalid),
       templates: z.object({ upcoming: template, due_today: template, overdue: template }),
+      // Modèles en arabe et en anglais par vague (vides : message proposé dans la langue de la famille).
+      translations: z.partialRecord(z.enum(TRANSLATED_LOCALES), z.partialRecord(z.enum(REMINDER_TYPES), z.string())).optional(),
     })
     .safeParse(input);
   if (!parsed.success) {
@@ -129,10 +136,20 @@ export async function updateReminderSettings(input: unknown): Promise<ActionResu
       return [type, value && value !== R.templates[type] ? toCanonicalTokens(value, R.tokens, canonical) : null];
     }),
   ) as Record<(typeof REMINDER_TYPES)[number], string | null>;
+  const prepared = await prepareTranslatedTemplates(
+    TRANSLATED_LOCALES.flatMap((locale) =>
+      REMINDER_TYPES.flatMap((type) => {
+        const value = parsed.data.translations?.[locale]?.[type];
+        return value === undefined ? [] : [{ locale, kind: `reminder_${type}` as const, value }];
+      }),
+    ),
+  );
+  if (!prepared.ok) return failure(prepared.error);
   const { error } = await supabase
     .from("centers")
     .update({
       payment_reminders_enabled: parsed.data.enabled,
+      message_templates: prepared.templates,
       reminder_days_before: parsed.data.daysBefore,
       reminder_template_upcoming: stored.upcoming,
       reminder_template_due_today: stored.due_today,

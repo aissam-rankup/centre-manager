@@ -33,10 +33,10 @@ describe("messages aux familles", () => {
     );
   });
 
-  it("n'utilisent le modèle personnalisé (en français) que pour les familles francophones", () => {
+  it("utilisent le modèle du centre de la langue de la famille, variables de cette langue", () => {
     expect(renderAbsenceMessage(CUSTOM, absence, labelsFor(), false, "fr")).toBe("Message du centre : Salma — Centre Atlas");
-    const english = renderAbsenceMessage(CUSTOM, absence, familyLabelsFor(DEFAULT_VOCABULARY, null, "en"), false, "en");
-    expect(english).not.toContain("Message du centre");
-    expect(english).toContain("Salma");
+    const english = familyLabelsFor(DEFAULT_VOCABULARY, null, "en");
+    const custom = `Dear family, ${english.absenceAlerts.tokens.student} missed ${english.absenceAlerts.tokens.subject}. ${english.absenceAlerts.tokens.center}`;
+    expect(renderAbsenceMessage(custom, absence, english, false, "en")).toBe("Dear family, Salma missed Maths. Centre Atlas");
   });
 });

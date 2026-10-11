@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
 import { getAbsenceAlertsSettings } from "@/lib/data/absence-alerts";
 import { getCenterFamilyLocale } from "@/lib/data/family-locale";
+import { getTemplateLanguagePacks } from "@/lib/data/message-templates";
 import { getEditableCenterSettings } from "@/lib/data/receipts";
 import { getReenrollmentSettings } from "@/lib/data/reenrollment";
 import { getReminderSettings } from "@/lib/data/reminders";
@@ -39,16 +40,28 @@ export default async function CenterSettingsPage() {
     getCenterFamilyLocale(),
   ]);
   const centerName = brand.whiteLabel ? brand.name : profile.centerName;
+  // Éditeurs de modèles : variables, messages proposés et modèles du centre dans chaque langue.
+  const [receiptPacks, absencePacks, reminderPacks] = await Promise.all([
+    getTemplateLanguagePacks("receipt", ["receipt"], { receipt: settings.whatsappTemplate }),
+    absenceSettings ? getTemplateLanguagePacks("absence", ["absence"], { absence: absenceSettings.template }) : [],
+    reminders
+      ? getTemplateLanguagePacks("reminder", ["reminder_upcoming", "reminder_due_today", "reminder_overdue"], {
+          reminder_upcoming: reminders.templates.upcoming,
+          reminder_due_today: reminders.templates.due_today,
+          reminder_overdue: reminders.templates.overdue,
+        })
+      : [],
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={LABELS.centerSettings.title} description={LABELS.centerSettings.description} />
-      <CenterSettingsForm settings={settings} centerName={centerName} />
+      <CenterSettingsForm settings={settings} centerName={centerName} packs={receiptPacks} />
       <FamilyLocaleForm locale={familyLocale} />
       {reenrollment ? <ReenrollmentSettingsForm settings={reenrollment} /> : null}
-      {reminders ? <PaymentRemindersForm settings={reminders} centerName={centerName} /> : null}
+      {reminders ? <PaymentRemindersForm settings={reminders} centerName={centerName} packs={reminderPacks} /> : null}
       {cash ? <CashSettingsForm settings={cash} /> : null}
-      {absenceSettings ? <AbsenceSettingsForm settings={absenceSettings} centerName={centerName} /> : null}
+      {absenceSettings ? <AbsenceSettingsForm settings={absenceSettings} centerName={centerName} packs={absencePacks} /> : null}
     </div>
   );
 }

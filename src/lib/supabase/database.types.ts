@@ -1096,6 +1096,7 @@ export type Database = {
           grace_days: number
           id: string
           is_demo: boolean
+          message_templates: Json
           name: string
           notes: string | null
           owner_contact_email: string | null
@@ -1135,6 +1136,7 @@ export type Database = {
           grace_days?: number
           id?: string
           is_demo?: boolean
+          message_templates?: Json
           name: string
           notes?: string | null
           owner_contact_email?: string | null
@@ -1174,6 +1176,7 @@ export type Database = {
           grace_days?: number
           id?: string
           is_demo?: boolean
+          message_templates?: Json
           name?: string
           notes?: string | null
           owner_contact_email?: string | null

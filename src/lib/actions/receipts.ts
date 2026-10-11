@@ -10,6 +10,8 @@ import { requireRole, requireStaff } from "@/lib/auth/session";
 import { parseCents, toCents } from "@/lib/cash";
 import { labelsFor } from "@/lib/constants/labels";
 import { getFamilyContext } from "@/lib/data/family-locale";
+import { getTranslatedTemplate, prepareTranslatedTemplates } from "@/lib/data/message-templates";
+import { isTranslatedLocale, TRANSLATED_LOCALES } from "@/lib/message-templates";
 import { getCenterReceiptSettings, getReceipt } from "@/lib/data/receipts";
 import { formatMAD } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
@@ -133,8 +135,10 @@ export async function shareReceipt(input: unknown): Promise<ActionResult<{ href:
   if (traceError) return failure(await describeCenterError(traceError));
 
   const settings = await getCenterReceiptSettings();
+  // Modèle du centre dans la langue de la famille (le français a sa colonne).
+  const custom = isTranslatedLocale(family.locale) ? await getTranslatedTemplate(family.locale, "receipt") : settings.whatsappTemplate;
   const message = renderReceiptMessage(
-    settings.whatsappTemplate,
+    custom,
     {
       student: receipt.studentName,
       period: receiptPeriodLabel(receipt.lines, family.locale),
@@ -191,6 +195,8 @@ export async function updateCenterSettings(input: unknown): Promise<ActionResult
       .trim()
       .refine((value) => toCanonicalTokens(value, LABELS.receipts.tokens, canonical).length <= TEMPLATE_MAX_LENGTH, C.templateTooLong)
       .refine((value) => value === "" || value.includes(LABELS.receipts.tokens.link), C.templateNeedsLink),
+    // Modèles en arabe et en anglais (vides : message proposé dans la langue de la famille).
+    translations: z.partialRecord(z.enum(TRANSLATED_LOCALES), z.string()).optional(),
   });
   const parsed = schema.safeParse(input);
   if (!parsed.success) {
@@ -202,6 +208,13 @@ export async function updateCenterSettings(input: unknown): Promise<ActionResult
   const supabase = await createClient();
 
   const template = parsed.data.whatsappTemplate;
+  const prepared = await prepareTranslatedTemplates(
+    TRANSLATED_LOCALES.flatMap((locale) => {
+      const value = parsed.data.translations?.[locale];
+      return value === undefined ? [] : [{ locale, kind: "receipt" as const, value }];
+    }),
+  );
+  if (!prepared.ok) return failure(prepared.error, { [`translations.${prepared.locale}`]: prepared.error });
   const { error } = await supabase
     .from("centers")
     .update({
@@ -214,6 +227,7 @@ export async function updateCenterSettings(input: unknown): Promise<ActionResult
         template && template !== LABELS.receipts.whatsappTemplate
           ? toCanonicalTokens(template, LABELS.receipts.tokens, canonical)
           : null,
+      message_templates: prepared.templates,
     })
     .eq("id", profile.centerId);
   if (error) return failure(await describeCenterError(error));

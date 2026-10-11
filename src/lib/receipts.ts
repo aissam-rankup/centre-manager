@@ -1,5 +1,6 @@
-import { type AppLabels, labelsFor } from "@/lib/constants/labels";
+import type { AppLabels } from "@/lib/constants/labels";
 import type { Locale } from "@/lib/i18n/locale";
+import { canonicalTokens } from "@/lib/message-templates";
 import { type DiscountSummary, parseDiscountSummary } from "@/lib/discounts";
 import { formatMonth } from "@/lib/format";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -127,10 +128,10 @@ export type ReceiptMessageValues = {
 };
 
 /**
- * Message WhatsApp : modèle du centre (rédigé en français : familles francophones),
- * sinon message proposé dans la langue de la famille ; variables remplacées.
+ * Message WhatsApp : modèle du centre dans la langue de la famille, sinon message
+ * proposé dans cette langue ; variables remplacées.
  */
 export function renderReceiptMessage(template: string | null, values: ReceiptMessageValues, LABELS: AppLabels, locale: Locale = "fr"): string {
-  const message = locale === "fr" && template?.trim() ? template : LABELS.receipts.whatsappTemplate;
-  return fillTemplate(message, LABELS.receipts.tokens, labelsFor().receipts.tokens, values);
+  const message = template?.trim() ? template : LABELS.receipts.whatsappTemplate;
+  return fillTemplate(message, LABELS.receipts.tokens, canonicalTokens("receipt", locale), values);
 }

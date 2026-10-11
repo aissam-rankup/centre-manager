@@ -1,6 +1,7 @@
 import type { NotificationChannel } from "@/lib/absences";
-import { type AppLabels, labelsFor } from "@/lib/constants/labels";
+import type { AppLabels } from "@/lib/constants/labels";
 import type { Locale } from "@/lib/i18n/locale";
+import { canonicalTokens } from "@/lib/message-templates";
 import { formatDateTime } from "@/lib/format";
 import type { Database } from "@/lib/supabase/database.types";
 import { fillTemplate } from "@/lib/templates";
@@ -54,8 +55,8 @@ export type ReminderMessageValues = {
 };
 
 /**
- * Message au tuteur : modèle du centre pour la vague (rédigé en français : familles
- * francophones), sinon message proposé dans la langue de la famille.
+ * Message au tuteur : modèle du centre pour la vague dans la langue de la famille
+ * (forme enregistrée ou affichée), sinon message proposé dans cette langue.
  */
 export function renderReminderMessage(
   template: string | null,
@@ -65,8 +66,8 @@ export function renderReminderMessage(
   locale: Locale = "fr",
 ): string {
   const R = LABELS.reenrollment.reminders;
-  const custom = locale === "fr" && template?.trim() ? template : null;
-  return fillTemplate(custom ?? R.templates[type], R.tokens, labelsFor().reenrollment.reminders.tokens, values);
+  const custom = template?.trim() ? template : null;
+  return fillTemplate(custom ?? R.templates[type], R.tokens, canonicalTokens("reminder", locale), values);
 }
 
 /** État d'un rappel : dernier envoi de la vague, sinon relance notée depuis le suivi, sinon « pas encore envoyé ». */

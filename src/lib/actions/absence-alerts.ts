@@ -11,6 +11,8 @@ import { getSessionBrand } from "@/lib/branding";
 import { labelsFor } from "@/lib/constants/labels";
 import { getAbsenceAlertsSettings } from "@/lib/data/absence-alerts";
 import { getFamilyContext } from "@/lib/data/family-locale";
+import { getTranslatedTemplate, prepareTranslatedTemplates } from "@/lib/data/message-templates";
+import { isTranslatedLocale, TRANSLATED_LOCALES } from "@/lib/message-templates";
 import { formatDate, formatDateWithWeekday } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { isValidPhone, toWhatsAppHref } from "@/lib/phone";
@@ -63,7 +65,8 @@ export async function notifyAbsence(input: unknown): Promise<ActionResult<{ href
     // Message dans la langue de la famille (fiche de l'élève, sinon réglages du centre).
     const [settings, brand, family] = await Promise.all([getAbsenceAlertsSettings(), getSessionBrand(), getFamilyContext(row.student_id)]);
     const series = row.in_series ?? false;
-    const custom = family.locale === "fr" ? settings.template : null;
+    // Modèle du centre dans la langue de la famille (le français a sa colonne).
+    const custom = isTranslatedLocale(family.locale) ? await getTranslatedTemplate(family.locale, "absence") : settings.template;
     template = series ? "series" : custom ? "custom" : "default";
     const weekday = formatDateWithWeekday(row.session_date, family.locale).split(" ")[0] ?? "";
     message = renderAbsenceMessage(
@@ -117,16 +120,26 @@ export async function updateAbsenceAlertsSettings(input: unknown): Promise<Actio
         .string()
         .trim()
         .refine((value) => toCanonicalTokens(value, A.tokens, canonical).length <= TEMPLATE_MAX_LENGTH, LABELS.centerSettings.templateTooLong),
+      // Modèles en arabe et en anglais (vides : message proposé dans la langue de la famille).
+      translations: z.partialRecord(z.enum(TRANSLATED_LOCALES), z.string()).optional(),
     })
     .safeParse(input);
   if (!parsed.success) return failure(parsed.error.issues[0]?.message ?? LABELS.actions.errors.invalid);
   const profile = await requireRole("admin");
   const supabase = await createClient();
   const template = parsed.data.template;
+  const prepared = await prepareTranslatedTemplates(
+    TRANSLATED_LOCALES.flatMap((locale) => {
+      const value = parsed.data.translations?.[locale];
+      return value === undefined ? [] : [{ locale, kind: "absence" as const, value }];
+    }),
+  );
+  if (!prepared.ok) return failure(prepared.error);
   const { error } = await supabase
     .from("centers")
     .update({
       absence_notification_enabled: parsed.data.enabled,
+      message_templates: prepared.templates,
       // Variables sous leur forme d'origine : le modèle survit à un changement de vocabulaire.
       absence_notification_template:
         template && template !== A.template ? toCanonicalTokens(template, A.tokens, canonical) : null,
