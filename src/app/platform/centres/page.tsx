@@ -303,7 +303,6 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
           {summary.map((item) => (
             <li key={item.key}>
               <Link href={item.href} className="card-interactive flex h-full flex-col gap-1 rounded-xl bg-card px-5 py-4 shadow-card">
-                {/* Taille et couleur séparées : cn() ne garderait qu'une des deux classes « text-* ». */}
                 <span className={`numeric text-stat ${item.alert ? "text-danger-ink" : "text-heading"}`}>{item.value}</span>
                 <span className="text-caption text-muted-foreground">{item.label}</span>
               </Link>
