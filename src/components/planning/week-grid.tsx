@@ -130,6 +130,9 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
                 const overloaded = isOverloaded(slot, rooms);
                 const capacity = rooms.get(slot.roomId)?.capacity ?? null;
                 const compact = (end - start) * PX_PER_MINUTE < 64;
+                // Cours côte à côte (même créneau) : carte étroite, une ligne par information.
+                // Cours trop chargé : détails sur une ligne, pour laisser la place à l'alerte.
+                const narrow = columns > 1;
                 const details = [
                   hidden === "level" ? null : slot.levelName,
                   hidden === "teacher" ? null : slot.teacherName,
@@ -161,15 +164,21 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
                       width: `calc(${100 / columns}% - 4px)`,
                     }}
                   >
-                    <span className="numeric flex items-center gap-1 text-caption leading-tight font-medium">
-                      {pendingIds.has(slot.id) ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden /> : null}
-                      {LABELS.teacher.schedule.time(slot.startTime, slot.endTime)}
+                    {/* Lignes à hauteur fixe (shrink-0) : ce qui dépasse est coupé en bas, jamais superposé. */}
+                    <span className="numeric flex shrink-0 items-center gap-1 text-caption leading-tight font-medium">
+                      {pendingIds.has(slot.id) ? <LoaderCircle className="size-3.5 shrink-0 animate-spin" aria-hidden /> : null}
+                      <span className="truncate whitespace-nowrap">{LABELS.teacher.schedule.time(slot.startTime, slot.endTime)}</span>
                       {overloaded ? <TriangleAlert className="ms-auto size-3.5 shrink-0" aria-label={G.overloadedShort} /> : null}
                     </span>
-                    <span className="truncate text-table leading-tight font-semibold">{slot.subjectName}</span>
-                    {compact ? null : <span className="line-clamp-2 text-caption leading-tight text-white/85">{details.join(" · ")}</span>}
-                    {overloaded && !compact && capacity !== null ? (
-                      <span className="numeric truncate text-caption leading-tight font-semibold">{G.overloaded(slot.enrolled, capacity)}</span>
+                    <span className="shrink-0 truncate text-table leading-tight font-semibold">{slot.subjectName}</span>
+                    {compact ? null : (
+                      <span className={cn("shrink-0 text-caption leading-tight text-white/85", narrow || overloaded ? "line-clamp-1" : "line-clamp-2")}>
+                        {details.join(" · ")}
+                      </span>
+                    )}
+                    {/* Carte étroite : l'icône d'alerte suffit, la phrase reste dans l'infobulle. */}
+                    {overloaded && !compact && !narrow && capacity !== null ? (
+                      <span className="numeric shrink-0 truncate text-caption leading-tight font-semibold">{G.overloaded(slot.enrolled, capacity)}</span>
                     ) : null}
                   </button>
                 );

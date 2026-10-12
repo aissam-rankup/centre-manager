@@ -1,24 +1,18 @@
 import "server-only";
 
+import { format } from "date-fns";
+
 import { buildCenterExportArchive, exportFileName, type ExportData } from "@/lib/exports/center-export";
 import { LABELS } from "@/lib/constants/labels";
+import { inAppTimeZone } from "@/lib/format";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /** Bucket privé des exports (aucune policy : clé service_role uniquement). */
 export const EXPORT_BUCKET = "center-exports";
 
+/** « 2026-10-12 14:30 », heure du Maroc. */
 function casablancaNow(): string {
-  const parts = new Intl.DateTimeFormat("fr-CA", {
-    timeZone: "Africa/Casablanca",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
-  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
-  return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
+  return format(inAppTimeZone(new Date()), "yyyy-MM-dd HH:mm");
 }
 
 /**

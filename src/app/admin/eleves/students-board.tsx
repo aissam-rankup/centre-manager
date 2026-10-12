@@ -94,7 +94,8 @@ export function StudentsBoard({ students, levels, initialQuery = "", initialStat
     <div className="flex flex-col gap-6">
       <PageHeader title={L.title} description={L.description} />
 
-      <div className="grid gap-3 md:grid-cols-[1fr_220px_180px]">
+      {/* Filtre de statut : « Tous les statuts de paiement » en entier. */}
+      <div className="grid gap-3 md:grid-cols-[1fr_220px_260px]">
         <div role="search" className="relative">
           <label htmlFor="admin-recherche" className="sr-only">
             {L.search}

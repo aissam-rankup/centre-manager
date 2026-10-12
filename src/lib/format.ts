@@ -8,6 +8,21 @@ import { intlLocale, type Locale } from "@/lib/i18n/locale";
 /** Fuseau horaire de référence de l'application. */
 export const TIME_ZONE = "Africa/Casablanca";
 
+/**
+ * Le Maroc est passé à l'heure GMT toute l'année le 20/09/2026 à 01:00 UTC
+ * (tzdata 2026c). Les environnements dont la base de fuseaux est plus
+ * ancienne (Node 24 : 2025c) appliquent encore UTC+1 : le serveur affichait
+ * une heure d'avance sur le navigateur. La règle est donc appliquée ici :
+ * GMT depuis la bascule, règles d'Africa/Casablanca avant (historique).
+ * Même règle en base : private.local_time.
+ */
+export const MOROCCO_GMT_SINCE = Date.UTC(2026, 8, 20, 1, 0);
+
+/** Fuseau à utiliser pour un instant donné (millisecondes UTC). */
+export function appTimeZoneAt(instant: number): string {
+  return instant >= MOROCCO_GMT_SINCE ? "+00:00" : TIME_ZONE;
+}
+
 /** Formateurs de montant d'une langue : sans centimes, avec centimes (toujours deux décimales, « 1 732,50 »). */
 type AmountFormatters = { whole: Intl.NumberFormat; cents: Intl.NumberFormat };
 
@@ -75,15 +90,19 @@ const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 export function inAppTimeZone(date: Date | string): TZDate {
   if (typeof date === "string") {
     const match = DATE_ONLY.exec(date);
-    if (match) return new TZDate(Number(match[1]), Number(match[2]) - 1, Number(match[3]), TIME_ZONE);
-    return new TZDate(new Date(date), TIME_ZONE);
+    if (match) {
+      const [year, month, day] = [Number(match[1]), Number(match[2]) - 1, Number(match[3])];
+      return new TZDate(year, month, day, appTimeZoneAt(Date.UTC(year, month, day)));
+    }
+    const instant = new Date(date);
+    return new TZDate(instant, appTimeZoneAt(instant.getTime()));
   }
-  return new TZDate(date, TIME_ZONE);
+  return new TZDate(date, appTimeZoneAt(date.getTime()));
 }
 
 /** Date du jour à Casablanca. */
 export function today(): TZDate {
-  return TZDate.tz(TIME_ZONE);
+  return TZDate.tz(appTimeZoneAt(Date.now()));
 }
 
 /** « 24/09/2026 » */

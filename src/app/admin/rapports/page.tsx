@@ -54,7 +54,7 @@ function subjectColumns(LABELS: AppLabels): readonly DataTableColumn<SubjectRepo
         </span>
       ),
     },
-    { id: "level", header: L.level, mobile: "hidden", cell: (row) => row.levelName },
+    { id: "level", header: L.level, mobile: "hidden", cell: (row) => <span className="whitespace-nowrap">{row.levelName}</span> },
     { id: "enrollments", header: L.enrollments, align: "end", cell: (row) => <span className="numeric">{row.enrollments}</span> },
     { id: "price", header: L.price, align: "end", cell: (row) => <Money amount={row.monthlyPrice} /> },
     {
@@ -146,7 +146,8 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
         <EmptyState icon={BarChart3} title={L.emptyTitle} description={L.emptyDescription} />
       ) : (
         <>
-          <div className="grid gap-6 xl:grid-cols-2">
+          {/* Niveaux puis matières, chacun sur toute la largeur : le tableau des matières a cinq colonnes. */}
+          <div className="grid gap-6">
             <SectionCard id="niveaux" title={L.byLevel} aside={<ExportButton type="niveaux" period={period} />}>
               <DataTable columns={levelColumns(LABELS)} rows={reports.byLevel} getRowId={(row) => row.levelId} caption={L.byLevel} variant="plain" />
             </SectionCard>
@@ -156,7 +157,14 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
               description={L.bySubjectHint}
               aside={<ExportButton type="matieres" period={period} />}
             >
-              <DataTable columns={subjectColumns(LABELS)} rows={reports.bySubject} getRowId={(row) => row.subjectId} caption={L.bySubject} variant="plain" />
+              <DataTable
+                columns={subjectColumns(LABELS)}
+                rows={reports.bySubject}
+                getRowId={(row) => row.subjectId}
+                caption={L.bySubject}
+                variant="plain"
+                density="compact"
+              />
             </SectionCard>
           </div>
 

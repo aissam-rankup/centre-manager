@@ -70,8 +70,13 @@ export function AppShell({
   const items = navigationFor(LABELS, { brandingEditable, reenrollment, modules })[space];
   const home = items[0]?.href ?? "/";
   const pathname = usePathname();
-  const activeHref = findActiveHref(items, pathname);
-  const sectionTitle = items.find((item) => item.href === activeHref)?.label ?? "";
+  // Titre : toutes les pages de l'espace, y compris celles masquées du menu
+  // (ex. Réinscriptions quand la réinscription automatique est coupée) ;
+  // sinon l'accueil, préfixe de toutes les adresses, donnait son titre.
+  const allItems = navigationFor(LABELS, { brandingEditable: true, reenrollment: true, modules })[space];
+  const pageHref = findActiveHref(allItems, pathname);
+  const activeHref = items.some((item) => item.href === pageHref) ? pageHref : null;
+  const sectionTitle = allItems.find((item) => item.href === pageHref)?.label ?? "";
 
   return (
     <div className="min-h-dvh bg-background md:bg-app md:p-4 lg:p-8">

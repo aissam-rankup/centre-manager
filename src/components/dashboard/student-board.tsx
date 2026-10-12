@@ -143,7 +143,7 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
                         key={column.key}
                         scope="col"
                         aria-sort={active ? (sort.direction === 1 ? "ascending" : "descending") : "none"}
-                        className={cn("px-3 font-medium whitespace-nowrap text-heading first:ps-4 lg:px-4 lg:first:ps-6", column.wide && "hidden xl:table-cell")}
+                        className={cn("px-3 font-medium whitespace-nowrap text-heading first:ps-4 lg:px-4 lg:first:ps-6", column.wide && "hidden 2xl:table-cell")}
                       >
                         <button
                           type="button"
@@ -181,10 +181,11 @@ export function StudentBoard({ students, fileBase, seeAllHref }: StudentBoardPro
                         <span className="truncate">{student.fullName}</span>
                       </Link>
                     </td>
-                    <td className="max-w-[150px] truncate px-3 lg:px-4 xl:max-w-none" title={student.levelName}>
+                    <td className="max-w-[150px] truncate px-3 lg:px-4 2xl:max-w-[220px]" title={student.levelName}>
                       {student.levelName}
                     </td>
-                    <td className="hidden max-w-[200px] truncate px-4 xl:table-cell">{student.subjects}</td>
+                    {/* Matières : grands écrans seulement (le tableau partage la page avec la colonne de droite). */}
+                    <td className="hidden max-w-[200px] truncate px-4 2xl:table-cell">{student.subjects}</td>
                     <td className="px-3 lg:px-4">
                       <span className="flex flex-col gap-1 py-1.5">
                         <StatusBadge status={student.status} />
