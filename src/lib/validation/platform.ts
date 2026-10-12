@@ -191,6 +191,31 @@ export type SuspendCenterInput = z.infer<typeof suspendCenterSchema>;
 export const reactivateCenterSchema = z.object({ centerId, note: optionalText(300) });
 export type ReactivateCenterInput = z.infer<typeof reactivateCenterSchema>;
 
+/** Motifs d'export des données d'un centre. */
+export const EXPORT_REASONS = ["client_request", "contract_end", "backup", "other"] as const;
+
+/** Export : tout l'historique ou une plage de dates, motif obligatoire (précision pour « autre »). */
+export const centerExportSchema = z
+  .object({
+    centerId,
+    scope: z.enum(["all", "range"]),
+    from: z.string(),
+    to: z.string(),
+    reasonKind: z.enum(EXPORT_REASONS, V.reasonRequired),
+    note: optionalText(300),
+  })
+  .superRefine((values, ctx) => {
+    if (values.reasonKind === "other" && !values.note) {
+      ctx.addIssue({ code: "custom", message: V.reasonRequired, path: ["note"] });
+    }
+    if (values.scope === "range") {
+      if (!isoDate.safeParse(values.from).success) ctx.addIssue({ code: "custom", message: V.dateInvalid, path: ["from"] });
+      if (!isoDate.safeParse(values.to).success) ctx.addIssue({ code: "custom", message: V.dateInvalid, path: ["to"] });
+      else if (values.from > values.to) ctx.addIssue({ code: "custom", message: V.dateInvalid, path: ["to"] });
+    }
+  });
+export type CenterExportInput = z.infer<typeof centerExportSchema>;
+
 export const platformSettingsSchema = z.object({
   name: optionalText(120),
   phone: optionalPhone,

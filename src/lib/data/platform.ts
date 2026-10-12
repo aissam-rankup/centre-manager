@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { requireSuperAdmin } from "@/lib/auth/session";
+import { cleanupExpiredExports } from "@/lib/exports/generate";
 import { getLabels } from "@/lib/i18n/server";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
@@ -319,4 +320,18 @@ export async function getAuditLog(filters: AuditFilters): Promise<AuditLog> {
     total: Number(events.data[0]?.total_count ?? 0),
     actions: actions.data.map((row) => row.action),
   };
+}
+
+// ---------------------------------------------------------------------
+// Exports des données d'un centre
+// ---------------------------------------------------------------------
+export type CenterExport = Fn<"platform_center_exports">[number];
+
+/** Exports d'un centre (liens expirés nettoyés au passage : fichiers supprimés). */
+export async function getCenterExports(centerId: string): Promise<CenterExport[]> {
+  const supabase = await platformClient();
+  await cleanupExpiredExports().catch(() => undefined);
+  const { data, error } = await supabase.rpc("platform_center_exports", { p_center_id: centerId });
+  if (error) throw error;
+  return data;
 }

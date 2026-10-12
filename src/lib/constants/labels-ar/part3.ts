@@ -226,6 +226,7 @@ export const AR_PART3: Pick<AppLabels, "platform"> = {
       "support.ended": "تم إغلاق ولوج الدعم",
       "center.access_suspended": "تم إيقاف الولوج",
       "center.access_reactivated": "تمت إعادة تفعيل الولوج",
+      "center.data_exported": "تم تصدير البيانات",
     },
     eventFallback: "إجراء",
     modules: {

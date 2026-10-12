@@ -207,6 +207,9 @@ insert into public.cash_sessions (id, center_id, session_date, opening_float)
 values ('9b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', private.today() - 1, 100);
 insert into public.cash_movements (center_id, cash_session_id, kind, amount, reason)
 values ('cb000000-0000-4000-8000-000000000001', '9b000000-0000-4000-8000-000000000001', 'bank_deposit', -50, 'Dépôt B');
+-- Export des données de B (console de la plateforme).
+insert into public.center_exports (center_id, requested_role, reason_kind)
+values ('cb000000-0000-4000-8000-000000000001', 'super_admin', 'backup');
 -- Fichiers de B (photos d'élève et d'équipe, reçu, justificatif).
 insert into storage.objects (bucket_id, name) values
   ('student-photos', 'cb000000-0000-4000-8000-000000000001/4b000000-0000-4000-8000-000000000001.jpg'),

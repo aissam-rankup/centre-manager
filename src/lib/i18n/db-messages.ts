@@ -604,4 +604,8 @@ export const DB_MESSAGES: readonly DbMessage[] = [
   { fr: "Ce centre est déjà suspendu.", en: "This centre is already suspended.", ar: "هذا المركز موقوف مسبقًا." },
   { fr: "Le nom saisi ne correspond pas au nom du centre.", en: "The name typed does not match the centre's name.", ar: "الاسم المكتوب لا يطابق اسم المركز." },
   { fr: "Ce centre n'est pas suspendu.", en: "This centre is not suspended.", ar: "هذا المركز غير موقوف." },
+  { fr: "Choisissez le motif de l'export.", en: "Choose the reason for the export.", ar: "اختر سبب التصدير." },
+  { fr: "Précisez le motif de l'export.", en: "Give details about the export.", ar: "وضِّح سبب التصدير." },
+  { fr: "Un export de ce centre est déjà en préparation.", en: "An export of this centre is already being prepared.", ar: "يوجد تصدير لهذا المركز قيد التحضير." },
+  { fr: "Export introuvable ou déjà traité.", en: "Export not found or already processed.", ar: "التصدير غير موجود أو تمت معالجته مسبقًا." },
 ];

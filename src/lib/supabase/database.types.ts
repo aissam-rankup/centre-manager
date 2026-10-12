@@ -975,6 +975,68 @@ export type Database = {
           },
         ]
       }
+      center_exports: {
+        Row: {
+          center_id: string
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          expires_at: string
+          file_size: number | null
+          id: string
+          period_from: string | null
+          period_to: string | null
+          reason_kind: string
+          reason_note: string | null
+          requested_by: string | null
+          requested_role: string
+          status: string
+          storage_path: string | null
+        }
+        Insert: {
+          center_id: string
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          expires_at?: string
+          file_size?: number | null
+          id?: string
+          period_from?: string | null
+          period_to?: string | null
+          reason_kind: string
+          reason_note?: string | null
+          requested_by?: string | null
+          requested_role: string
+          status?: string
+          storage_path?: string | null
+        }
+        Update: {
+          center_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          expires_at?: string
+          file_size?: number | null
+          id?: string
+          period_from?: string | null
+          period_to?: string | null
+          reason_kind?: string
+          reason_note?: string | null
+          requested_by?: string | null
+          requested_role?: string
+          status?: string
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_exports_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       center_modules: {
         Row: {
           center_id: string
@@ -4276,6 +4338,15 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_center_export: {
+        Args: {
+          p_error?: string
+          p_export_id: string
+          p_file_size?: number
+          p_storage_path?: string
+        }
+        Returns: undefined
+      }
       complete_my_password_change: { Args: never; Returns: undefined }
       complete_password_reset: {
         Args: { p_actor: string; p_target_user: string }
@@ -4299,6 +4370,18 @@ export type Database = {
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       delete_expense: { Args: { p_expense_id: string }; Returns: undefined }
+      expired_center_exports: {
+        Args: never
+        Returns: {
+          export_id: string
+          storage_path: string
+        }[]
+      }
+      export_center_data: { Args: { p_export_id: string }; Returns: Json }
+      mark_center_exports_expired: {
+        Args: { p_export_ids: string[] }
+        Returns: undefined
+      }
       mark_invoice_paid: {
         Args: { p_invoice_id: string }
         Returns: {
@@ -4671,6 +4754,30 @@ export type Database = {
           payload: Json
         }[]
       }
+      platform_center_export_file: {
+        Args: { p_export_id: string }
+        Returns: {
+          center_slug: string
+          expires_at: string
+          storage_path: string
+        }[]
+      }
+      platform_center_exports: {
+        Args: { p_center_id: string }
+        Returns: {
+          completed_at: string
+          created_at: string
+          expires_at: string
+          export_id: string
+          file_size: number
+          period_from: string
+          period_to: string
+          reason_kind: string
+          reason_note: string
+          requested_by_name: string
+          status: string
+        }[]
+      }
       platform_center_modules: {
         Args: { p_center_id: string }
         Returns: {
@@ -4887,6 +4994,16 @@ export type Database = {
           p_note?: string
           p_paid_at: string
           p_reference?: string
+        }
+        Returns: string
+      }
+      platform_request_center_export: {
+        Args: {
+          p_center_id: string
+          p_from?: string
+          p_reason_kind: string
+          p_reason_note?: string
+          p_to?: string
         }
         Returns: string
       }

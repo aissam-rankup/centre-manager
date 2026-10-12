@@ -224,6 +224,7 @@ export const EN_PART3: Pick<AppLabels, "platform"> = {
       "support.ended": "Support access closed",
       "center.access_suspended": "Access suspended",
       "center.access_reactivated": "Access reactivated",
+      "center.data_exported": "Data exported",
     },
     eventFallback: "Action",
     modules: {

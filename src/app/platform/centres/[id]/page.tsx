@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import { CenterActions, type CenterActionsData, ResendInvitationButton } from "@/components/platform/center-actions";
 import { CenterAddressLinks, ChangeSlugDialog } from "@/components/platform/center-address";
+import { CenterExportList, ExportDialog } from "@/components/platform/center-exports";
 import { ResetPasswordDialog } from "@/components/password/reset-password-dialog";
 import { BrandingDialog } from "@/components/branding/branding-dialog";
 import { CenterModules } from "@/components/platform/center-modules";
@@ -20,6 +21,7 @@ import { ROUTES } from "@/lib/auth/routes";
 import type { AppLabels } from "@/lib/constants/labels";
 import {
   type CenterPaymentTotal,
+  getCenterExports,
   getCenterTypes,
   getPlanOptions,
   getPlatformCenterAdmins,
@@ -156,7 +158,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
   const L = P.center;
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const [file, types, brandingSettings, plans, addressPattern, slugHistory, admins] = await Promise.all([
+  const [file, types, brandingSettings, plans, addressPattern, slugHistory, admins, exports] = await Promise.all([
     getPlatformCenterFile(id),
     getCenterTypes(),
     getBrandingSettings(id),
@@ -164,6 +166,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
     centerAddressPattern(),
     centerSlugHistory(id),
     getPlatformCenterAdmins(id),
+    getCenterExports(id),
   ]);
   if (!file) notFound();
   const { center, users, events, payments, modules, overview, totals } = file;
@@ -383,6 +386,13 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
           )}
         </SectionCard>
       </div>
+
+      <SectionCard
+        title={C.exports.listTitle}
+        aside={<ExportDialog centerId={center.center_id} todayIso={actionsData.todayIso} />}
+      >
+        <CenterExportList exports={exports} />
+      </SectionCard>
 
       <SectionCard title={L.payments}>
         {payments.length === 0 ? (
