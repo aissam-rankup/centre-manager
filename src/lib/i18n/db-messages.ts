@@ -608,4 +608,12 @@ export const DB_MESSAGES: readonly DbMessage[] = [
   { fr: "Précisez le motif de l'export.", en: "Give details about the export.", ar: "وضِّح سبب التصدير." },
   { fr: "Un export de ce centre est déjà en préparation.", en: "An export of this centre is already being prepared.", ar: "يوجد تصدير لهذا المركز قيد التحضير." },
   { fr: "Export introuvable ou déjà traité.", en: "Export not found or already processed.", ar: "التصدير غير موجود أو تمت معالجته مسبقًا." },
+  { fr: "Indiquez le motif de la suppression.", en: "Give the reason for the deletion.", ar: "اذكر سبب الحذف." },
+  { fr: "Les données de ce centre ont déjà été supprimées.", en: "This centre's data has already been deleted.", ar: "بيانات هذا المركز محذوفة مسبقًا." },
+  { fr: "Suppression impossible : suspendez ou résiliez d'abord le centre.", en: "Deletion impossible: suspend or cancel the centre first.", ar: "الحذف غير ممكن: أوقف المركز أو ألغِ اشتراكه أولًا." },
+  { fr: "Une suppression est déjà prévue pour ce centre.", en: "A deletion is already scheduled for this centre.", ar: "يوجد حذف مبرمج مسبقًا لهذا المركز." },
+  { fr: "Aucune suppression n'est prévue pour ce centre.", en: "No deletion is scheduled for this centre.", ar: "لا يوجد أي حذف مبرمج لهذا المركز." },
+  { fr: "Les données de ce centre ont été supprimées : il ne peut plus être réactivé.", en: "This centre's data has been deleted: it can no longer be reactivated.", ar: "حُذفت بيانات هذا المركز: لم يعد بالإمكان إعادة تفعيله." },
+  { fr: "Suppression prévue : annulez-la avant de réactiver le centre.", en: "Deletion scheduled: cancel it before reactivating the centre.", ar: "الحذف مبرمج: ألغِه قبل إعادة تفعيل المركز." },
+  { fr: "Suppression non due pour ce centre.", en: "Deletion not yet due for this centre.", ar: "لم يحن بعد موعد حذف هذا المركز." },
 ];

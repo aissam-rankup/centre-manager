@@ -227,6 +227,9 @@ export const AR_PART3: Pick<AppLabels, "platform"> = {
       "center.access_suspended": "تم إيقاف الولوج",
       "center.access_reactivated": "تمت إعادة تفعيل الولوج",
       "center.data_exported": "تم تصدير البيانات",
+      "center.deletion_requested": "طُلب الحذف النهائي",
+      "center.deletion_cancelled": "أُلغي الحذف النهائي",
+      "center.purged": "حُذفت بيانات المركز",
     },
     eventFallback: "إجراء",
     modules: {

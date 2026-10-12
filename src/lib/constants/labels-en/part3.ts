@@ -225,6 +225,9 @@ export const EN_PART3: Pick<AppLabels, "platform"> = {
       "center.access_suspended": "Access suspended",
       "center.access_reactivated": "Access reactivated",
       "center.data_exported": "Data exported",
+      "center.deletion_requested": "Permanent deletion requested",
+      "center.deletion_cancelled": "Permanent deletion cancelled",
+      "center.purged": "Centre data deleted",
     },
     eventFallback: "Action",
     modules: {

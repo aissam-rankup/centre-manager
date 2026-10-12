@@ -39,7 +39,15 @@ function isStudentPath(pathname: string): boolean {
 const PUBLIC_PATHS: readonly string[] = [ROUTES.login, ROUTES.student.login];
 /** Chemins ouverts avec ou sans session, sans redirection (accueil des invités). */
 // Le manifest passe par le proxy (centre de l'adresse) mais doit rester lisible sans session.
-const OPEN_PATHS: readonly string[] = [ROUTES.welcome, ROUTES.suspended, ROUTES.sessionClosed, ROUTES.refreshSession, "/manifest.webmanifest"];
+// La route de purge vérifie elle-même son secret (aucune session).
+const OPEN_PATHS: readonly string[] = [
+  ROUTES.welcome,
+  ROUTES.suspended,
+  ROUTES.sessionClosed,
+  ROUTES.refreshSession,
+  ROUTES.platformPurgeApi,
+  "/manifest.webmanifest",
+];
 
 function isPlatformPath(pathname: string): boolean {
   return pathname === ROUTES.platform.home || pathname.startsWith(`${ROUTES.platform.home}/`);

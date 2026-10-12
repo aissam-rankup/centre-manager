@@ -882,6 +882,9 @@ const TEXTS = {
       "center.access_suspended": "Accès suspendu",
       "center.access_reactivated": "Accès réactivé",
       "center.data_exported": "Données exportées",
+      "center.deletion_requested": "Suppression définitive demandée",
+      "center.deletion_cancelled": "Suppression définitive annulée",
+      "center.purged": "Données du centre supprimées",
     },
     eventFallback: "Action",
     modules: {
@@ -1272,6 +1275,39 @@ const TEXTS = {
       linkUnavailable: "Ce lien a expiré : préparez un nouvel export.",
       size: (megabytes: string) => `${megabytes} Mo`,
       deletionAdvice: "Avant toute suppression définitive, téléchargez un export complet des données.",
+    },
+    deletion: {
+      title: "Suppression définitive",
+      activeHint: "Suppression impossible tant que le centre est en service : suspendez-le ou résiliez-le d'abord.",
+      idleHint:
+        "Les données du centre peuvent être supprimées définitivement après un délai de 30 jours, pendant lequel la demande reste annulable.",
+      request: "Demander la suppression définitive",
+      requestDescription:
+        "Dans 30 jours, toutes les données du centre (élèves, paiements, présences, équipe, fichiers…) et tous ses comptes seront supprimés, sans retour possible. Seuls la facturation de l'abonnement et le journal de la plateforme sont conservés. Pendant ces 30 jours, la demande reste annulable.",
+      exportFirst: "Téléchargez d'abord un export complet des données : après la suppression, rien ne pourra être récupéré.",
+      exportReady: "Un export est prêt au téléchargement dans la section « Exports ».",
+      noExport: "Aucun export prêt pour ce centre : préparez-en un avant de continuer.",
+      reason: "Motif de la suppression",
+      reasonPlaceholder: "Ex. fin de contrat, demande écrite du directeur du 2 octobre",
+      reasonRequired: "Indiquez le motif.",
+      submit: "Programmer la suppression",
+      requested: (date: string) => `Suppression programmée le ${date}.`,
+      banner: (date: string, days: number) =>
+        `Suppression définitive prévue le ${date} (dans ${days} jour${days > 1 ? "s" : ""}). Le centre reste récupérable jusque-là.`,
+      bannerDue: "Le délai de 30 jours est écoulé : la suppression aura lieu lors de la prochaine tâche quotidienne.",
+      requestedBy: (name: string, date: string) => `Demandée par ${name} le ${date}`,
+      cancel: "Annuler la suppression",
+      cancelTitle: "Annuler la suppression définitive",
+      cancelDescription: "Le centre reste suspendu ou résilié ; il pourra de nouveau être réactivé.",
+      cancelled: "Suppression annulée",
+      purgeNow: "Supprimer définitivement maintenant",
+      purgeTitle: "Supprimer définitivement les données",
+      purgeDescription:
+        "Le délai de 30 jours est écoulé. Les fichiers puis les données et les comptes du centre vont être supprimés immédiatement. Cette action est irréversible.",
+      purged: "Données du centre supprimées.",
+      purgeFailed: "La suppression n'a pas pu aboutir. Réessayez ; rien n'a été supprimé côté données.",
+      purgedBanner: (date: string) =>
+        `Données supprimées le ${date}. Seuls la facturation de l'abonnement et le journal de la plateforme sont conservés.`,
     },
     journal: {
       title: "Journal",

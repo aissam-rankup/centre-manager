@@ -1154,6 +1154,10 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           custom_terms: Json
+          deletion_reason: string | null
+          deletion_requested_at: string | null
+          deletion_requested_by: string | null
+          deletion_scheduled_for: string | null
           family_locale: string
           grace_days: number
           id: string
@@ -1169,6 +1173,7 @@ export type Database = {
           phone: string | null
           plan_key: string
           price: number | null
+          purged_at: string | null
           receipt_format: Database["public"]["Enums"]["receipt_format"]
           receipt_whatsapp_template: string | null
           reminder_days_before: number
@@ -1197,6 +1202,10 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           custom_terms?: Json
+          deletion_reason?: string | null
+          deletion_requested_at?: string | null
+          deletion_requested_by?: string | null
+          deletion_scheduled_for?: string | null
           family_locale?: string
           grace_days?: number
           id?: string
@@ -1212,6 +1221,7 @@ export type Database = {
           phone?: string | null
           plan_key?: string
           price?: number | null
+          purged_at?: string | null
           receipt_format?: Database["public"]["Enums"]["receipt_format"]
           receipt_whatsapp_template?: string | null
           reminder_days_before?: number
@@ -1240,6 +1250,10 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           custom_terms?: Json
+          deletion_reason?: string | null
+          deletion_requested_at?: string | null
+          deletion_requested_by?: string | null
+          deletion_scheduled_for?: string | null
           family_locale?: string
           grace_days?: number
           id?: string
@@ -1255,6 +1269,7 @@ export type Database = {
           phone?: string | null
           plan_key?: string
           price?: number | null
+          purged_at?: string | null
           receipt_format?: Database["public"]["Enums"]["receipt_format"]
           receipt_whatsapp_template?: string | null
           reminder_days_before?: number
@@ -4328,6 +4343,14 @@ export type Database = {
           white_label: boolean
         }[]
       }
+      centers_due_for_purge: {
+        Args: never
+        Returns: {
+          center_id: string
+          name: string
+          scheduled_for: string
+        }[]
+      }
       close_cash_session: {
         Args: {
           p_counted: number
@@ -4700,6 +4723,10 @@ export type Database = {
           month: string
         }[]
       }
+      platform_cancel_center_deletion: {
+        Args: { p_center_id: string; p_reason?: string }
+        Returns: undefined
+      }
       platform_center: {
         Args: { p_center_id: string }
         Returns: {
@@ -4742,6 +4769,17 @@ export type Database = {
           last_sign_in_at: string
           phone: string
           user_id: string
+        }[]
+      }
+      platform_center_deletion: {
+        Args: { p_center_id: string }
+        Returns: {
+          due: boolean
+          purged_at: string
+          reason: string
+          requested_at: string
+          requested_by_name: string
+          scheduled_for: string
         }[]
       }
       platform_center_events: {
@@ -4997,6 +5035,10 @@ export type Database = {
         }
         Returns: string
       }
+      platform_request_center_deletion: {
+        Args: { p_center_id: string; p_confirm_name: string; p_reason: string }
+        Returns: string
+      }
       platform_request_center_export: {
         Args: {
           p_center_id: string
@@ -5171,6 +5213,7 @@ export type Database = {
         Returns: undefined
       }
       prepare_billing_run: { Args: never; Returns: string }
+      purge_center: { Args: { p_center_id: string }; Returns: Json }
       record_cash_correction: {
         Args: { p_amount: number; p_reason: string; p_session_id: string }
         Returns: string

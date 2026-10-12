@@ -30,6 +30,8 @@ export const ROUTES = {
     settings: "/platform/reglages",
     journal: "/platform/journal",
   },
+  /** Route appelée par la tâche quotidienne (pg_cron → pg_net), protégée par un secret. */
+  platformPurgeApi: "/api/platform/purge",
   assistant: {
     home: "/assistant",
     students: "/assistant/eleves",

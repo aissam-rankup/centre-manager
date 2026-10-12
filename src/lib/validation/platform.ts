@@ -216,6 +216,20 @@ export const centerExportSchema = z
   });
 export type CenterExportInput = z.infer<typeof centerExportSchema>;
 
+/** Suppression définitive : motif, nom du centre retapé. */
+export const requestDeletionSchema = z.object({
+  centerId,
+  reason: z.string().trim().min(1, V.reasonRequired).max(300, V.tooLong),
+  confirmName: z.string().trim().min(1, V.nameRequired).max(120, V.tooLong),
+});
+export type RequestDeletionInput = z.infer<typeof requestDeletionSchema>;
+
+export const cancelDeletionSchema = z.object({ centerId, note: optionalText(300) });
+export type CancelDeletionInput = z.infer<typeof cancelDeletionSchema>;
+
+export const purgeNowSchema = z.object({ centerId, confirmName: z.string().trim().min(1, V.nameRequired).max(120, V.tooLong) });
+export type PurgeNowInput = z.infer<typeof purgeNowSchema>;
+
 export const platformSettingsSchema = z.object({
   name: optionalText(120),
   phone: optionalPhone,

@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import { CenterActions, type CenterActionsData, ResendInvitationButton } from "@/components/platform/center-actions";
 import { CenterAddressLinks, ChangeSlugDialog } from "@/components/platform/center-address";
+import { CenterDeletionPanel } from "@/components/platform/center-deletion";
 import { CenterExportList, ExportDialog } from "@/components/platform/center-exports";
 import { ResetPasswordDialog } from "@/components/password/reset-password-dialog";
 import { BrandingDialog } from "@/components/branding/branding-dialog";
@@ -169,7 +170,8 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
     getCenterExports(id),
   ]);
   if (!file) notFound();
-  const { center, users, events, payments, modules, overview, totals } = file;
+  const { center, users, events, payments, modules, overview, totals, deletion } = file;
+  const purged = Boolean(deletion?.purged_at);
   const C = LABELS.platformConsole;
   const totalsOf = (granularity: string) => totals.filter((row) => row.granularity === granularity);
   const address = await centerUrl(center.slug, "");
@@ -214,7 +216,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
         <p className="text-muted-foreground">
           {center.center_type_label} · {center.plan_name}
         </p>
-        <CenterActions data={actionsData} types={types} />
+        {purged ? null : <CenterActions data={actionsData} types={types} />}
         {center.status === "suspended" && overview?.suspension_kind ? (
           <div role="status" className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/5 px-4 py-3">
             <Lock className="mt-0.5 size-5 shrink-0 text-danger-ink" aria-hidden />
@@ -389,9 +391,20 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
 
       <SectionCard
         title={C.exports.listTitle}
-        aside={<ExportDialog centerId={center.center_id} todayIso={actionsData.todayIso} />}
+        aside={purged ? null : <ExportDialog centerId={center.center_id} todayIso={actionsData.todayIso} />}
       >
         <CenterExportList exports={exports} />
+      </SectionCard>
+
+      <SectionCard title={C.deletion.title}>
+        <CenterDeletionPanel
+          centerId={center.center_id}
+          name={center.name}
+          status={center.status}
+          deletion={deletion}
+          hasReadyExport={exports.some((item) => item.status === "ready")}
+          todayIso={actionsData.todayIso}
+        />
       </SectionCard>
 
       <SectionCard title={L.payments}>
