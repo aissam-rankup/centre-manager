@@ -42,14 +42,14 @@ npm run db:start
 
 Le premier démarrage télécharge les images Docker (quelques minutes). La commande applique les migrations de `supabase/migrations`, puis le seed de démonstration `supabase/seed.sql`.
 
-Supabase utilise les ports **5532x** pour cohabiter avec d'autres projets locaux :
+Supabase utilise les ports **4732x** pour cohabiter avec d'autres projets locaux :
 
 | Service | URL |
 | --- | --- |
-| API | http://127.0.0.1:55321 |
-| Base Postgres | postgresql://postgres:postgres@127.0.0.1:55322/postgres |
-| Studio | http://127.0.0.1:55323 |
-| Emails de test (Mailpit) | http://127.0.0.1:55324 |
+| API | http://127.0.0.1:47321 |
+| Base Postgres | postgresql://postgres:postgres@127.0.0.1:47322/postgres |
+| Studio | http://127.0.0.1:47323 |
+| Emails de test (Mailpit) | http://127.0.0.1:47324 |
 
 > **Windows** : Hyper-V réserve dynamiquement des plages de ports (`netsh interface ipv4 show excludedportrange protocol=tcp`). Si `supabase start` échoue avec « bind: An attempt was made to access a socket in a way forbidden », changez les ports dans `supabase/config.toml` (et `NEXT_PUBLIC_SUPABASE_URL`) vers une plage libre.
 
@@ -327,7 +327,7 @@ npx supabase migration new nom_de_la_migration
 
 ```
 supabase/
-  config.toml             configuration locale (ports 5532x, inscriptions publiques fermées)
+  config.toml             configuration locale (ports 4732x, inscriptions publiques fermées)
   migrations/             migrations SQL versionnées
   seed.sql                données de démonstration
   tests/database/         tests pgTAP (policies RLS, hook JWT)

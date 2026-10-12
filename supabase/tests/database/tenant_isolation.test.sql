@@ -24,7 +24,9 @@ select no_plan();
 create schema isolation_test;
 create table isolation_test.global_tables (tbl text primary key);
 -- Catalogue commun (modules, packs) : aucune donnée de centre.
-insert into isolation_test.global_tables values ('center_types'), ('platform_settings'), ('modules'), ('plans'), ('plan_modules');
+insert into isolation_test.global_tables values ('center_types'), ('platform_settings'), ('modules'), ('plans'), ('plan_modules'),
+  -- Relevés du revenu mensuel récurrent de la plateforme.
+  ('platform_mrr_snapshots');
 
 -- ---------------------------------------------------------------------
 -- Contrôles structurels

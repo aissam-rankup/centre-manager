@@ -149,12 +149,16 @@ export const dueDateSchema = z.object({
 });
 export type DueDateInput = z.infer<typeof dueDateSchema>;
 
+/** Modes proposés à la saisie (« carte » reste lisible dans l'historique). */
+export const SUBSCRIPTION_PAYMENT_METHODS = ["cash", "bank_transfer", "cheque", "other"] as const;
+
 export const subscriptionPaymentSchema = z.object({
   centerId,
   amount: amount.refine((v) => Number(v.replace(",", ".")) > 0, V.amountInvalid),
   paidAt: isoDate,
-  method: z.enum(["bank_transfer", "cash", "card"]),
+  method: z.enum(SUBSCRIPTION_PAYMENT_METHODS),
   reference: optionalText(80),
+  note: optionalText(500),
 });
 export type SubscriptionPaymentInput = z.infer<typeof subscriptionPaymentSchema>;
 

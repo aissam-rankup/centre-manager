@@ -28,6 +28,7 @@ export const ROUTES = {
     catalogue: "/platform/catalogue",
     billing: "/platform/facturation",
     settings: "/platform/reglages",
+    journal: "/platform/journal",
   },
   assistant: {
     home: "/assistant",

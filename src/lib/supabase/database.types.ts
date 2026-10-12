@@ -2468,6 +2468,7 @@ export type Database = {
           actor_id: string | null
           center_id: string | null
           id: number
+          ip_address: unknown
           is_demo: boolean
           occurred_at: string
           payload: Json
@@ -2477,6 +2478,7 @@ export type Database = {
           actor_id?: string | null
           center_id?: string | null
           id?: never
+          ip_address?: unknown
           is_demo?: boolean
           occurred_at?: string
           payload?: Json
@@ -2486,6 +2488,7 @@ export type Database = {
           actor_id?: string | null
           center_id?: string | null
           id?: never
+          ip_address?: unknown
           is_demo?: boolean
           occurred_at?: string
           payload?: Json
@@ -2499,6 +2502,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_mrr_snapshots: {
+        Row: {
+          day: string
+          mrr: number
+          paying_centers: number
+          recorded_at: string
+        }
+        Insert: {
+          day: string
+          mrr: number
+          paying_centers: number
+          recorded_at?: string
+        }
+        Update: {
+          day?: string
+          mrr?: number
+          paying_centers?: number
+          recorded_at?: string
+        }
+        Relationships: []
       }
       platform_notifications: {
         Row: {
@@ -3360,9 +3384,11 @@ export type Database = {
           id: string
           is_demo: boolean
           method: Database["public"]["Enums"]["subscription_payment_method"]
+          note: string | null
           paid_at: string
           period_covered_end: string | null
           period_covered_start: string | null
+          plan_key: string
           recorded_by: string | null
           reference: string | null
         }
@@ -3373,9 +3399,11 @@ export type Database = {
           id?: string
           is_demo?: boolean
           method: Database["public"]["Enums"]["subscription_payment_method"]
+          note?: string | null
           paid_at?: string
           period_covered_end?: string | null
           period_covered_start?: string | null
+          plan_key: string
           recorded_by?: string | null
           reference?: string | null
         }
@@ -3386,9 +3414,11 @@ export type Database = {
           id?: string
           is_demo?: boolean
           method?: Database["public"]["Enums"]["subscription_payment_method"]
+          note?: string | null
           paid_at?: string
           period_covered_end?: string | null
           period_covered_start?: string | null
+          plan_key?: string
           recorded_by?: string | null
           reference?: string | null
         }
@@ -3399,6 +3429,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "centers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_payments_plan_key_fkey"
+            columns: ["plan_key"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["key"]
           },
           {
             foreignKeyName: "subscription_payments_recorded_by_fkey"
@@ -4532,6 +4569,36 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      platform_audit_actions: {
+        Args: never
+        Returns: {
+          action: string
+          events: number
+        }[]
+      }
+      platform_audit_log: {
+        Args: {
+          p_action?: string
+          p_center_id?: string
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_origin?: string
+          p_to?: string
+        }
+        Returns: {
+          action: string
+          actor_is_platform: boolean
+          actor_name: string
+          center_id: string
+          center_name: string
+          event_id: number
+          ip_address: string
+          occurred_at: string
+          payload: Json
+          total_count: number
+        }[]
+      }
       platform_billing_months: {
         Args: never
         Returns: {
@@ -4649,6 +4716,27 @@ export type Database = {
           students_count: number
         }[]
       }
+      platform_centers_billing: {
+        Args: never
+        Returns: {
+          active_students: number
+          amount_due: number
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
+          center_id: string
+          created_at: string
+          current_period_end: string
+          days_overdue: number
+          last_payment_amount: number
+          last_payment_at: string
+          name: string
+          periods_due: number
+          plan_key: string
+          plan_name: string
+          price: number
+          slug: string
+          status: Database["public"]["Enums"]["center_status"]
+        }[]
+      }
       platform_change_center_slug: {
         Args: { p_center_id: string; p_slug: string }
         Returns: undefined
@@ -4732,10 +4820,12 @@ export type Database = {
           center_id: string
           center_name: string
           method: Database["public"]["Enums"]["subscription_payment_method"]
+          note: string
           paid_at: string
           payment_id: string
           period_covered_end: string
           period_covered_start: string
+          plan_key: string
           recorded_by_name: string
           reference: string
         }[]
@@ -4756,10 +4846,57 @@ export type Database = {
           p_amount: number
           p_center_id: string
           p_method: Database["public"]["Enums"]["subscription_payment_method"]
+          p_note?: string
           p_paid_at: string
           p_reference?: string
         }
         Returns: string
+      }
+      platform_revenue_by_plan: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          centers_count: number
+          paying_centers_count: number
+          payments_count: number
+          plan_key: string
+          plan_name: string
+          revenue: number
+        }[]
+      }
+      platform_revenue_kpis: {
+        Args: never
+        Returns: {
+          change_amount: number
+          change_ratio: number
+          current_value: number
+          kind: string
+          period_end: string
+          period_start: string
+          previous_end: string
+          previous_start: string
+          previous_value: number
+        }[]
+      }
+      platform_revenue_summary: {
+        Args: {
+          p_anchor?: string
+          p_end?: string
+          p_kind: string
+          p_start?: string
+        }
+        Returns: {
+          change_amount: number
+          change_ratio: number
+          payments_count: number
+          period_end: string
+          period_start: string
+          previous_end: string
+          previous_payments_count: number
+          previous_revenue: number
+          previous_start: string
+          revenue: number
+          to_date: boolean
+        }[]
       }
       platform_set_center_module: {
         Args: {
@@ -5186,7 +5323,12 @@ export type Database = {
       reenrollment_intent: "pending" | "confirmed" | "dropped" | "paused"
       resource_type: "exercise" | "exam" | "summary" | "other"
       schedule_conflict_type: "room" | "teacher" | "level"
-      subscription_payment_method: "bank_transfer" | "cash" | "card"
+      subscription_payment_method:
+        | "bank_transfer"
+        | "cash"
+        | "card"
+        | "cheque"
+        | "other"
       user_role: "admin" | "assistant" | "teacher" | "super_admin"
     }
     CompositeTypes: {
@@ -5358,7 +5500,13 @@ export const Constants = {
       reenrollment_intent: ["pending", "confirmed", "dropped", "paused"],
       resource_type: ["exercise", "exam", "summary", "other"],
       schedule_conflict_type: ["room", "teacher", "level"],
-      subscription_payment_method: ["bank_transfer", "cash", "card"],
+      subscription_payment_method: [
+        "bank_transfer",
+        "cash",
+        "card",
+        "cheque",
+        "other",
+      ],
       user_role: ["admin", "assistant", "teacher", "super_admin"],
     },
   },

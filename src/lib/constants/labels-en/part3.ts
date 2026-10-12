@@ -64,6 +64,8 @@ export const EN_PART3: Pick<AppLabels, "platform"> = {
       bank_transfer: "Bank transfer",
       cash: "Cash",
       card: "Card",
+      cheque: "Cheque",
+      other: "Other",
     },
     noDueDate: "No due date",
     notSet: "Not set",

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { type ActionResult, describeDatabaseError, failure, success } from "@/lib/actions/result";
 import { ROUTES } from "@/lib/auth/routes";
+import { clientIpHeaders } from "@/lib/auth/client-ip";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { RESERVED_SLUGS } from "@/lib/center-host";
 import { centerUrl, centerUrlById } from "@/lib/center-url";
@@ -41,10 +42,13 @@ function fieldErrorsOf(error: { issues: { path: PropertyKey[]; message: string }
   return out;
 }
 
-/** Garde de chaque action : super-admin relu en base (404 sinon), puis client de session. */
+/**
+ * Garde de chaque action : super-admin relu en base (404 sinon), puis client de
+ * session portant l'adresse IP de la personne (journal de la plateforme).
+ */
 async function platform() {
   await requireSuperAdmin();
-  return createClient();
+  return createClient({ headers: await clientIpHeaders() });
 }
 
 function revalidatePlatform(centerId?: string) {
@@ -271,6 +275,7 @@ export async function recordSubscriptionPayment(input: unknown): Promise<ActionR
     p_paid_at: v.paidAt,
     p_method: v.method,
     p_reference: v.reference,
+    p_note: v.note,
   });
   if (error) return failure(describeDatabaseError(error));
   revalidatePlatform(v.centerId);

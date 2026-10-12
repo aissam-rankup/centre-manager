@@ -89,6 +89,7 @@ export const AR_PART2: Pick<AppLabels, "absencesPage" | "dashboard" | "roles" | 
     platformCatalogue: "الكتالوج",
     platformBilling: "الفوترة",
     platformSettings: "الإعدادات",
+    platformJournal: "السجل",
     branding: "الهوية البصرية",
     settings: "الإعدادات",
     payroll: "الأجور",

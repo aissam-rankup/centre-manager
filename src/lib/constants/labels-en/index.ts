@@ -9,6 +9,7 @@ import { EN_PART6 } from "./part6";
 import { EN_PART7 } from "./part7";
 import { EN_PART8 } from "./part8";
 import { EN_PART9 } from "./part9";
+import { EN_PART10 } from "./part10";
 
 /** Libellés anglais : même structure que les libellés français (vérifiée à la compilation). */
 export const TEXTS_EN: AppLabels = {
@@ -21,4 +22,5 @@ export const TEXTS_EN: AppLabels = {
   ...EN_PART7,
   ...EN_PART8,
   ...EN_PART9,
+  ...EN_PART10,
 };

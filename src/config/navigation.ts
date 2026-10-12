@@ -24,6 +24,7 @@ import {
   Users,
   UserCog,
   Wallet,
+  ScrollText,
 } from "lucide-react";
 
 import type { NavItem } from "@/components/layout/nav-types";
@@ -91,6 +92,7 @@ export function navigationFor(
       { href: ROUTES.platform.centers, label: LABELS.nav.platformCenters, icon: Building2 },
       { href: ROUTES.platform.catalogue, label: LABELS.nav.platformCatalogue, icon: Layers },
       { href: ROUTES.platform.billing, label: LABELS.nav.platformBilling, icon: Wallet },
+      { href: ROUTES.platform.journal, label: LABELS.nav.platformJournal, icon: ScrollText },
       { href: ROUTES.platform.settings, label: LABELS.nav.platformSettings, icon: Settings },
     ],
     styleguide: [

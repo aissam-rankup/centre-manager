@@ -59,6 +59,7 @@ import {
   type CustomTermsInput,
   type DueDateInput,
   dueDateSchema,
+  SUBSCRIPTION_PAYMENT_METHODS,
   type SubscriptionPaymentInput,
   subscriptionPaymentSchema,
 } from "@/lib/validation/platform";
@@ -98,6 +99,8 @@ type ActionDialogProps = {
   submitLabel?: string;
   onSubmit: () => void;
   children: ReactNode;
+  /** Nom accessible du bouton d'ouverture (ligne d'un tableau). */
+  triggerLabel?: string;
 };
 
 function ActionDialog({
@@ -112,13 +115,14 @@ function ActionDialog({
   submitLabel,
   onSubmit,
   children,
+  triggerLabel,
 }: ActionDialogProps) {
   const LABELS = useLabels();
   const A = LABELS.platform.actions;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant={variant}>
+        <Button variant={variant} aria-label={triggerLabel}>
           <Icon aria-hidden />
           {trigger}
         </Button>
@@ -174,9 +178,17 @@ function useAction<T>(action: (input: T) => Promise<ActionResult>, successMessag
 // ---------------------------------------------------------------------
 // Paiement
 // ---------------------------------------------------------------------
-function PaymentDialog({ data }: { data: CenterActionsData }) {
-  const P = useLabels().platform;
+type PaymentDialogData = Pick<CenterActionsData, "centerId" | "price" | "billingInterval" | "todayIso">;
+
+/**
+ * Paiement reçu : montant, date, mode, référence, note. Met à jour l'échéance
+ * et l'historique, journalisé. Fiche du centre ou ligne de la liste (compact).
+ */
+export function RecordPaymentDialog({ data, compact, centerName }: { data: PaymentDialogData; compact?: boolean; centerName?: string }) {
+  const LABELS = useLabels();
+  const P = LABELS.platform;
   const A = P.actions;
+  const C = LABELS.platformConsole;
   const { open, setOpen, pending, run } = useAction(recordSubscriptionPayment, A.paymentSaved);
   const defaults: SubscriptionPaymentInput = {
     centerId: data.centerId,
@@ -184,16 +196,18 @@ function PaymentDialog({ data }: { data: CenterActionsData }) {
     paidAt: data.todayIso,
     method: "bank_transfer",
     reference: "",
+    note: "",
   };
   const form = useForm<SubscriptionPaymentInput>({ resolver: zodResolver(subscriptionPaymentSchema), defaultValues: defaults });
   const errors = form.formState.errors;
 
   return (
     <ActionDialog
-      trigger={A.recordPayment}
+      trigger={compact ? C.centers.record : A.recordPayment}
+      triggerLabel={compact && centerName ? C.centers.recordFor(centerName) : undefined}
       icon={Wallet}
-      variant="default"
-      title={A.paymentTitle}
+      variant={compact ? "outline" : "default"}
+      title={centerName ? C.centers.recordFor(centerName) : A.paymentTitle}
       description={A.paymentDescription(data.billingInterval === "year" ? A.periodYear : A.periodMonth)}
       open={open}
       onOpenChange={(next) => {
@@ -217,8 +231,8 @@ function PaymentDialog({ data }: { data: CenterActionsData }) {
           control={form.control}
           name="method"
           render={({ field }) => (
-            <RadioGroup value={field.value} onValueChange={field.onChange} className="sm:grid-cols-3">
-              {(["bank_transfer", "cash", "card"] as const).map((method) => (
+            <RadioGroup value={field.value} onValueChange={field.onChange} className="grid-cols-2 sm:grid-cols-4">
+              {SUBSCRIPTION_PAYMENT_METHODS.map((method) => (
                 <ChoiceItem key={method}>
                   <RadioGroupItem value={method} />
                   {P.paymentMethod[method]}
@@ -230,6 +244,9 @@ function PaymentDialog({ data }: { data: CenterActionsData }) {
       </fieldset>
       <FormField id="payment-reference" label={A.paymentReference} hint={A.paymentReferenceHint} error={errors.reference?.message}>
         <Input autoComplete="off" {...form.register("reference")} />
+      </FormField>
+      <FormField id="payment-note" label={C.payment.note} hint={C.payment.noteHint} error={errors.note?.message}>
+        <Textarea rows={2} maxLength={500} {...form.register("note")} />
       </FormField>
     </ActionDialog>
   );
@@ -531,7 +548,7 @@ export function CenterActions({ data, types }: { data: CenterActionsData; types:
   return (
     <div className="flex flex-wrap gap-2">
       <SupportDialog centerId={data.centerId} />
-      <PaymentDialog data={data} />
+      <RecordPaymentDialog data={data} />
       <DueDateDialog data={data} />
       <PricingDialog data={data} />
       <DetailsDialog data={data} types={types} />

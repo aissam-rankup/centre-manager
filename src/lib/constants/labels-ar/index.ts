@@ -9,6 +9,7 @@ import { AR_PART6 } from "./part6";
 import { AR_PART7 } from "./part7";
 import { AR_PART8 } from "./part8";
 import { AR_PART9 } from "./part9";
+import { AR_PART10 } from "./part10";
 
 /** Libellés arabes (arabe standard) : même structure que les libellés français (vérifiée à la compilation). */
 export const TEXTS_AR: AppLabels = {
@@ -21,4 +22,5 @@ export const TEXTS_AR: AppLabels = {
   ...AR_PART7,
   ...AR_PART8,
   ...AR_PART9,
+  ...AR_PART10,
 };

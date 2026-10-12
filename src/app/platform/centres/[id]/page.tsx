@@ -11,6 +11,7 @@ import { BrandingDialog } from "@/components/branding/branding-dialog";
 import { CenterModules } from "@/components/platform/center-modules";
 import { CenterStatusBadge } from "@/components/platform/center-status-badge";
 import { DaysRemaining } from "@/components/platform/days-remaining";
+import { eventDetail, eventLabel, eventReason } from "@/components/platform/event-text";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
 import { Money } from "@/components/shared/money";
 import { SectionCard } from "@/components/shared/section-card";
@@ -23,12 +24,12 @@ import {
   getPlatformCenterAdmins,
   getPlatformCenterFile,
   type PlatformCenterUser,
-  type PlatformEvent,
   type PlatformPayment,
 } from "@/lib/data/platform";
 import { formatDate, formatDateTime, toISODate, today } from "@/lib/format";
 import { dnsTarget, getBrandingSettings } from "@/lib/branding";
 import { centerAddressPattern, centerSlugHistory, centerUrl } from "@/lib/center-url";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { formatPhone, toTelHref } from "@/lib/phone";
 import { customTermsSchema, EMPTY_TERMS } from "@/lib/validation/platform";
@@ -39,11 +40,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getLabels()).platform.centers.title };
 }
 
-function paymentColumns(P: AppLabels["platform"]): readonly DataTableColumn<PlatformPayment>[] {
+function paymentColumns(LABELS: AppLabels): readonly DataTableColumn<PlatformPayment>[] {
+  const P = LABELS.platform;
   const L = P.center;
   return [
     { id: "paid", header: L.paidAt, mobile: "title", cell: (row) => <span className="numeric font-medium">{formatDate(row.paid_at)}</span> },
-    { id: "amount", header: L.amount, align: "end", mobile: "aside", cell: (row) => <Money amount={row.amount} className="font-semibold" /> },
+    { id: "amount", header: L.amount, align: "end", mobile: "aside", cell: (row) => <Money amount={row.amount} cents className="font-semibold" /> },
     {
       id: "period",
       header: L.periodCovered,
@@ -57,6 +59,12 @@ function paymentColumns(P: AppLabels["platform"]): readonly DataTableColumn<Plat
     },
     { id: "method", header: L.method, cell: (row) => P.paymentMethod[row.method] },
     { id: "reference", header: L.reference, cell: (row) => row.reference ?? "—" },
+    {
+      id: "note",
+      header: LABELS.platformConsole.payment.note,
+      mobile: "wide",
+      cell: (row) => (row.note ? <span className="whitespace-pre-line">{row.note}</span> : "—"),
+    },
     { id: "by", header: L.recordedBy, cell: (row) => row.recorded_by_name ?? L.automatic },
   ];
 }
@@ -105,50 +113,8 @@ function Field({ label, children, className }: { label: string; children: ReactN
   );
 }
 
-function eventLabel(action: string, P: AppLabels["platform"]): string {
-  const labels: Record<string, string> = P.events;
-  return labels[action] ?? P.eventFallback;
-}
-
-function eventDetail(event: PlatformEvent, moduleNames: Record<string, string>, LABELS: AppLabels): string | null {
-  const P = LABELS.platform;
-  const payload = event.payload;
-  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return null;
-  const from = typeof payload.from === "string" ? payload.from : null;
-  const to = typeof payload.to === "string" ? payload.to : null;
-  const statusLabels: Record<string, string> = P.centerStatus;
-  const planLabels: Record<string, string> = P.plan;
-  const moduleName = typeof payload.module === "string" ? payload.module : null;
-  const sourceLabels: Record<string, string> = P.modules.source;
-  const source = typeof payload.source === "string" ? payload.source : null;
-  switch (event.action) {
-    case "center.status_changed":
-      return from && to ? `${statusLabels[from] ?? from} → ${statusLabels[to] ?? to}` : null;
-    case "subscription.plan_changed":
-    case "center.plan_changed":
-      return from && to ? `${planLabels[from] ?? from} → ${planLabels[to] ?? to}` : null;
-    case "center.module_enabled":
-    case "center.module_disabled":
-      return moduleName ? `${moduleNames[moduleName] ?? moduleName}${source ? ` · ${sourceLabels[source] ?? source}` : ""}` : null;
-    case "center.period_changed":
-      return to ? `${from ? `${formatDate(from)} → ` : ""}${formatDate(to)}` : null;
-    case "subscription.payment_recorded":
-      return typeof payload.amount === "number" ? `${payload.amount} ${LABELS.currency.code}` : null;
-    case "center.admin_invited":
-      return typeof payload.email === "string" ? payload.email : null;
-    default:
-      return null;
-  }
-}
-
-function eventReason(event: PlatformEvent): string | null {
-  const payload = event.payload;
-  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return null;
-  return typeof payload.reason === "string" ? payload.reason : null;
-}
-
 export default async function PlatformCenterPage({ params }: PageProps<"/platform/centres/[id]">) {
-  const LABELS = await getLabels();
+  const [LABELS, locale] = await Promise.all([getLabels(), getAppLocale()]);
   const P = LABELS.platform;
   const L = P.center;
   const { id } = await params;
@@ -299,7 +265,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
         {payments.length === 0 ? (
           <p className="text-muted-foreground">{L.paymentsEmpty}</p>
         ) : (
-          <DataTable columns={paymentColumns(P)} rows={payments} getRowId={(row) => row.payment_id} caption={L.payments} variant="plain" />
+          <DataTable columns={paymentColumns(LABELS)} rows={payments} getRowId={(row) => row.payment_id} caption={L.payments} variant="plain" />
         )}
       </SectionCard>
 
@@ -362,7 +328,7 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
           ) : (
             <ol className="flex max-h-[420px] flex-col divide-y divide-divider overflow-y-auto">
               {events.map((event) => {
-                const detail = eventDetail(event, moduleNames, LABELS);
+                const detail = eventDetail(event, LABELS, locale, moduleNames);
                 const reason = eventReason(event);
                 return (
                   <li key={event.event_id} className="flex flex-col gap-0.5 py-3">

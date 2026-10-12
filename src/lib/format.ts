@@ -36,11 +36,12 @@ const percentFormatters = new Map<Locale, Intl.NumberFormat>();
  * « 1 200 MAD », « 1 732,50 MAD » (français et anglais) ; « 1.200 درهم », « 1.732,50 درهم » (arabe, chiffres occidentaux).
  * Les messages et documents destinés aux familles gardent la langue par défaut.
  */
-export function formatMAD(amount: number, locale: Locale = "fr"): string {
+export function formatMAD(amount: number, locale: Locale = "fr", options: { cents?: boolean } = {}): string {
   const rounded = Math.round(amount * 100) / 100;
   const arabic = locale === "ar";
   const { whole, cents } = amountFormattersFor(arabic ? intlLocale("ar") : "fr-FR");
-  const formatter = Number.isInteger(rounded) ? whole : cents;
+  // `cents` : toujours deux décimales (« 12 500,00 MAD », console de la plateforme).
+  const formatter = Number.isInteger(rounded) && !options.cents ? whole : cents;
   // Espace insécable classique pour les milliers, pour un rendu « 1 200 MAD » homogène.
   const digits = formatter.format(rounded).replace(/ /g, " ");
   return `${digits} ${arabic ? ARABIC_CURRENCY : LABELS.currency.code}`;

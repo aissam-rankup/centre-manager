@@ -208,3 +208,103 @@ export async function getPlanOptions(): Promise<PlanOption[]> {
     monthlyPrice: Number(plan.monthly_price),
   }));
 }
+
+// ---------------------------------------------------------------------
+// Revenus, état de paiement, journal (calculs faits par la base)
+// ---------------------------------------------------------------------
+export type RevenueKpi = Fn<"platform_revenue_kpis">[number];
+export type RevenueSummary = Fn<"platform_revenue_summary">[number];
+export type RevenueByPlan = Fn<"platform_revenue_by_plan">[number];
+export type CenterBillingRow = Fn<"platform_centers_billing">[number] & { center_type: string; center_type_label: string };
+export type AuditEvent = Fn<"platform_audit_log">[number];
+
+/** Période demandée au tableau de bord (voir lib/platform-period). */
+export type RevenueSelection =
+  | { kind: "month" | "quarter" | "year"; anchor: string }
+  | { kind: "custom"; start: string; end: string };
+
+export type PlatformRevenue = {
+  kpis: RevenueKpi[];
+  selected: RevenueSummary;
+  byPlan: RevenueByPlan[];
+  months: BillingMonth[];
+};
+
+export async function getPlatformRevenue(selection: RevenueSelection): Promise<PlatformRevenue> {
+  const supabase = await platformClient();
+  const summary = await supabase
+    .rpc(
+      "platform_revenue_summary",
+      selection.kind === "custom"
+        ? { p_kind: "custom", p_start: selection.start, p_end: selection.end }
+        : { p_kind: selection.kind, p_anchor: selection.anchor },
+    )
+    .single();
+  if (summary.error) throw summary.error;
+  const [kpis, byPlan, months] = await Promise.all([
+    supabase.rpc("platform_revenue_kpis"),
+    supabase.rpc("platform_revenue_by_plan", { p_start: summary.data.period_start, p_end: summary.data.period_end }),
+    supabase.rpc("platform_billing_months"),
+  ]);
+  if (kpis.error) throw kpis.error;
+  if (byPlan.error) throw byPlan.error;
+  if (months.error) throw months.error;
+  return { kpis: kpis.data, selected: summary.data, byPlan: byPlan.data, months: months.data };
+}
+
+/** Centres et état de paiement (montant dû, retard, dernier paiement, élèves actifs). */
+export async function getCentersBilling(): Promise<CenterBillingRow[]> {
+  const supabase = await platformClient();
+  const [billing, centers, names] = await Promise.all([
+    supabase.rpc("platform_centers_billing"),
+    supabase.rpc("platform_centers"),
+    catalogueNames(),
+  ]);
+  if (billing.error) throw billing.error;
+  if (centers.error) throw centers.error;
+  const types = new Map(centers.data.map((row) => [row.center_id, row]));
+  return billing.data.map((row) => {
+    const center = types.get(row.center_id);
+    return {
+      ...row,
+      center_type: center?.center_type ?? "",
+      center_type_label: center ? names.centerType(center.center_type, center.center_type_label) : "",
+    };
+  });
+}
+
+export type AuditFilters = {
+  centerId: string | null;
+  action: string | null;
+  origin: "platform" | "center" | "automatic" | null;
+  from: string | null;
+  to: string | null;
+  page: number;
+};
+
+export const AUDIT_PAGE_SIZE = 50;
+
+export type AuditLog = { events: AuditEvent[]; total: number; actions: string[] };
+
+export async function getAuditLog(filters: AuditFilters): Promise<AuditLog> {
+  const supabase = await platformClient();
+  const [events, actions] = await Promise.all([
+    supabase.rpc("platform_audit_log", {
+      p_center_id: filters.centerId ?? undefined,
+      p_action: filters.action ?? undefined,
+      p_origin: filters.origin ?? undefined,
+      p_from: filters.from ?? undefined,
+      p_to: filters.to ?? undefined,
+      p_limit: AUDIT_PAGE_SIZE,
+      p_offset: (filters.page - 1) * AUDIT_PAGE_SIZE,
+    }),
+    supabase.rpc("platform_audit_actions"),
+  ]);
+  if (events.error) throw events.error;
+  if (actions.error) throw actions.error;
+  return {
+    events: events.data,
+    total: Number(events.data[0]?.total_count ?? 0),
+    actions: actions.data.map((row) => row.action),
+  };
+}

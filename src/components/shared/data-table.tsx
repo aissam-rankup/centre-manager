@@ -1,5 +1,7 @@
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { ReactNode } from "react";
 
+import Link from "@/components/shared/app-link";
 import { cn } from "@/lib/utils";
 
 export type DataTableColumn<Row> = {
@@ -14,6 +16,8 @@ export type DataTableColumn<Row> = {
    */
   mobile?: "title" | "meta" | "wide" | "aside" | "hidden";
   className?: string;
+  /** Tri par lien (tableau rendu côté serveur) : adresse du tri et sens actuel (null : colonne non triée). */
+  sort?: { href: string; direction: "asc" | "desc" | null; label: string };
 };
 
 type DataTableProps<Row> = {
@@ -82,12 +86,33 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
                 <th
                   key={column.id}
                   scope="col"
+                  aria-sort={column.sort?.direction ? (column.sort.direction === "asc" ? "ascending" : "descending") : undefined}
                   className={cn(
                     "px-4 text-table font-medium whitespace-nowrap text-heading",
                     column.align === "end" && "text-end",
                   )}
                 >
-                  {column.header}
+                  {column.sort ? (
+                    <Link
+                      href={column.sort.href}
+                      aria-label={column.sort.label}
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-sm hover:text-primary",
+                        column.align === "end" && "flex-row-reverse",
+                      )}
+                    >
+                      {column.header}
+                      {column.sort.direction === "asc" ? (
+                        <ArrowUp className="size-3.5" aria-hidden />
+                      ) : column.sort.direction === "desc" ? (
+                        <ArrowDown className="size-3.5" aria-hidden />
+                      ) : (
+                        <ArrowUpDown className="size-3.5 text-subtle" aria-hidden />
+                      )}
+                    </Link>
+                  ) : (
+                    column.header
+                  )}
                 </th>
               ))}
             </tr>

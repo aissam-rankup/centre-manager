@@ -87,6 +87,7 @@ export const EN_PART2: Pick<AppLabels, "absencesPage" | "dashboard" | "roles" | 
     platformCatalogue: "Catalogue",
     platformBilling: "Billing",
     platformSettings: "Settings",
+    platformJournal: "Audit log",
     branding: "Branding",
     settings: "Settings",
     payroll: "Payroll",

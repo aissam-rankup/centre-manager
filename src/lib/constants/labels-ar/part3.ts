@@ -70,6 +70,8 @@ export const AR_PART3: Pick<AppLabels, "platform"> = {
       bank_transfer: "تحويل بنكي",
       cash: "نقدًا",
       card: "بطاقة",
+      cheque: "شيك",
+      other: "أخرى",
     },
     noDueDate: "بدون تاريخ استحقاق",
     notSet: "غير محدد",
