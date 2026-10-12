@@ -138,14 +138,12 @@ function TotalsList({
       <h3 className="text-caption font-semibold text-heading">{title}</h3>
       <ul className="flex max-h-72 flex-col divide-y divide-divider overflow-y-auto">
         {rows.map((row) => (
-          <li key={`${row.granularity}-${row.period_start}`} className="flex items-baseline justify-between gap-3 py-2">
-            <span className="flex flex-col">
-              <span className="capitalize">{label(row)}</span>
-              <span className="text-caption text-muted-foreground">{T.payments(row.payments_count)}</span>
-            </span>
+          <li key={`${row.granularity}-${row.period_start}`} className="flex flex-col py-2">
+            <span className="capitalize">{label(row)}</span>
             <span className="numeric font-semibold whitespace-nowrap text-heading">
               {formatMAD(Number(row.total), locale, { cents: true })}
             </span>
+            <span className="text-caption text-muted-foreground">{T.payments(row.payments_count)}</span>
           </li>
         ))}
       </ul>

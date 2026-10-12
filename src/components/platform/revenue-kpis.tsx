@@ -27,7 +27,7 @@ export function RevenueTrend({
   const locale = useLocale();
   const trend = trendOf(change);
   if (trend === null || change === null) {
-    return <p className={cn("text-caption text-muted-foreground", className)}>{T.noHistory}</p>;
+    return <p className={`text-caption text-muted-foreground ${className ?? ""}`}>{T.noHistory}</p>;
   }
   const Icon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
   const sign = trend === "up" ? "+" : trend === "down" ? "−" : "";

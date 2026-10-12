@@ -108,6 +108,8 @@ type ActionDialogProps = {
   children: ReactNode;
   /** Nom accessible du bouton d'ouverture (ligne d'un tableau). */
   triggerLabel?: string;
+  /** Bouton d'ouverture réduit à son icône (nom accessible et infobulle : triggerLabel). */
+  triggerIconOnly?: boolean;
   /** Validation impossible tant qu'une condition manque (ex. nom retapé). */
   submitDisabled?: boolean;
 };
@@ -125,6 +127,7 @@ function ActionDialog({
   onSubmit,
   children,
   triggerLabel,
+  triggerIconOnly = false,
   submitDisabled = false,
 }: ActionDialogProps) {
   const LABELS = useLabels();
@@ -132,9 +135,9 @@ function ActionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant={variant} aria-label={triggerLabel}>
+        <Button variant={variant} size={triggerIconOnly ? "icon" : "default"} aria-label={triggerLabel} title={triggerIconOnly ? triggerLabel : undefined}>
           <Icon aria-hidden />
-          {trigger}
+          {triggerIconOnly ? null : trigger}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
@@ -194,7 +197,18 @@ type PaymentDialogData = Pick<CenterActionsData, "centerId" | "price" | "billing
  * Paiement reçu : montant, date, mode, référence, note. Met à jour l'échéance
  * et l'historique, journalisé. Fiche du centre ou ligne de la liste (compact).
  */
-export function RecordPaymentDialog({ data, compact, centerName }: { data: PaymentDialogData; compact?: boolean; centerName?: string }) {
+export function RecordPaymentDialog({
+  data,
+  compact,
+  iconOnly,
+  centerName,
+}: {
+  data: PaymentDialogData;
+  compact?: boolean;
+  /** Bouton réduit à l'icône (tableau des centres). */
+  iconOnly?: boolean;
+  centerName?: string;
+}) {
   const LABELS = useLabels();
   const P = LABELS.platform;
   const A = P.actions;
@@ -215,6 +229,7 @@ export function RecordPaymentDialog({ data, compact, centerName }: { data: Payme
     <ActionDialog
       trigger={compact ? C.centers.record : A.recordPayment}
       triggerLabel={compact && centerName ? C.centers.recordFor(centerName) : undefined}
+      triggerIconOnly={iconOnly}
       icon={Wallet}
       variant={compact ? "outline" : "default"}
       title={centerName ? C.centers.recordFor(centerName) : A.paymentTitle}

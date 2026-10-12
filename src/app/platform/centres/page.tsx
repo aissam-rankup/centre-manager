@@ -31,11 +31,9 @@ const STATUSES: readonly CenterStatus[] = ["trial", "active", "past_due", "suspe
 /** Colonnes triables (paramètre « tri ») et valeur comparée. */
 const SORTS = {
   name: (row: CenterBillingRow) => row.name.toLocaleLowerCase("fr"),
-  address: (row: CenterBillingRow) => row.slug,
   plan: (row: CenterBillingRow) => row.plan_name,
   status: (row: CenterBillingRow) => STATUSES.indexOf(row.status),
   lastPayment: (row: CenterBillingRow) => row.last_payment_at ?? "",
-  lastAmount: (row: CenterBillingRow) => Number(row.last_payment_amount ?? -1),
   nextDue: (row: CenterBillingRow) => row.current_period_end ?? "9999-12-31",
   amountDue: (row: CenterBillingRow) => Number(row.amount_due),
   daysLate: (row: CenterBillingRow) => row.days_overdue,
@@ -89,25 +87,22 @@ function columns(
   };
   return [
     {
+      // Nom et adresse ({slug}.dirassty.com) dans la même cellule : le tableau tient sur un écran.
       id: "name",
       header: L.name,
       mobile: "title",
       sort: sort("name", L.name),
       cell: (row) => (
-        <Link
-          href={`${ROUTES.platform.centers}/${row.center_id}`}
-          className="block truncate rounded-sm font-semibold text-heading hover:text-primary"
-        >
-          {row.name}
-        </Link>
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <Link
+            href={`${ROUTES.platform.centers}/${row.center_id}`}
+            className="truncate rounded-sm font-semibold text-heading hover:text-primary"
+          >
+            {row.name}
+          </Link>
+          <CenterAddressLinks url={addressFor(addressPattern, row.slug)} compact />
+        </span>
       ),
-    },
-    {
-      id: "address",
-      header: L.address,
-      mobile: "wide",
-      sort: sort("address", L.address),
-      cell: (row) => <CenterAddressLinks url={addressFor(addressPattern, row.slug)} compact />,
     },
     { id: "plan", header: L.plan, sort: sort("plan", L.plan), cell: (row) => (P.plan as Record<string, string>)[row.plan_key] ?? row.plan_name },
     {
@@ -129,14 +124,16 @@ function columns(
       header: C.lastPayment,
       sort: sort("lastPayment", C.lastPayment),
       cell: (row) =>
-        row.last_payment_at ? <span className="numeric">{formatDate(row.last_payment_at)}</span> : <span className="text-muted-foreground">{C.noPayment}</span>,
-    },
-    {
-      id: "lastAmount",
-      header: C.lastAmount,
-      align: "end",
-      sort: sort("lastAmount", C.lastAmount),
-      cell: (row) => (row.last_payment_amount === null ? "—" : <Money amount={Number(row.last_payment_amount)} cents />),
+        row.last_payment_at ? (
+          <span className="flex flex-col whitespace-nowrap">
+            <span className="numeric">{formatDate(row.last_payment_at)}</span>
+            {row.last_payment_amount === null ? null : (
+              <Money amount={Number(row.last_payment_amount)} cents className="text-caption text-muted-foreground" />
+            )}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">{C.noPayment}</span>
+        ),
     },
     {
       id: "nextDue",
@@ -188,10 +185,12 @@ function columns(
       id: "record",
       header: P.actions.title,
       mobile: "wide",
+      align: "end",
       cell: (row) =>
         row.status === "cancelled" ? null : (
           <RecordPaymentDialog
             compact
+            iconOnly
             centerName={row.name}
             data={{ centerId: row.center_id, price: row.price === null ? null : Number(row.price), billingInterval: row.billing_interval, todayIso }}
           />
@@ -304,14 +303,15 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
           {summary.map((item) => (
             <li key={item.key}>
               <Link href={item.href} className="card-interactive flex h-full flex-col gap-1 rounded-xl bg-card px-5 py-4 shadow-card">
-                <span className={cn("numeric text-stat", item.alert ? "text-danger-ink" : "text-heading")}>{item.value}</span>
+                {/* Taille et couleur séparées : cn() ne garderait qu'une des deux classes « text-* ». */}
+                <span className={`numeric text-stat ${item.alert ? "text-danger-ink" : "text-heading"}`}>{item.value}</span>
                 <span className="text-caption text-muted-foreground">{item.label}</span>
               </Link>
             </li>
           ))}
           <li className="col-span-2 md:col-span-1">
             <div className="flex h-full flex-col gap-1 rounded-xl bg-card px-5 py-4 shadow-card">
-              <span className={cn("numeric text-stat", totalDue > 0 ? "text-danger-ink" : "text-heading")}>
+              <span className={`numeric text-stat ${totalDue > 0 ? "text-danger-ink" : "text-heading"}`}>
                 {formatMAD(totalDue, locale, { cents: true })}
               </span>
               <span className="text-caption text-muted-foreground">{C.totalDue}</span>
@@ -337,6 +337,7 @@ export default async function PlatformCentersPage({ searchParams }: PageProps<"/
           rows={rows}
           getRowId={(row) => row.center_id}
           caption={L.caption}
+          density="compact"
         />
       )}
     </div>

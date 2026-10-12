@@ -27,6 +27,8 @@ type DataTableProps<Row> = {
   caption: string;
   /** « plain » : sans cadre ni ombre, pour un tableau placé dans une carte. */
   variant?: "card" | "plain";
+  /** « compact » : marges de cellule réduites (tableaux à nombreuses colonnes). */
+  density?: "default" | "compact";
   className?: string;
 };
 
@@ -34,7 +36,16 @@ type DataTableProps<Row> = {
  * Tableau : lignes de 52 px et en-tête collant sur desktop,
  * transformé automatiquement en liste de cartes sous 768 px.
  */
-export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "card", className }: DataTableProps<Row>) {
+export function DataTable<Row>({
+  columns,
+  rows,
+  getRowId,
+  caption,
+  variant = "card",
+  density = "default",
+  className,
+}: DataTableProps<Row>) {
+  const cellPadding = density === "compact" ? "px-2.5" : "px-4";
   const titleColumns = columns.filter((c) => c.mobile === "title");
   const asideColumns = columns.filter((c) => c.mobile === "aside");
   const metaColumns = columns.filter((c) => ["meta", "wide"].includes(c.mobile ?? "meta"));
@@ -88,7 +99,8 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
                   scope="col"
                   aria-sort={column.sort?.direction ? (column.sort.direction === "asc" ? "ascending" : "descending") : undefined}
                   className={cn(
-                    "px-4 text-table font-medium whitespace-nowrap text-heading",
+                    cellPadding,
+                    "text-table font-medium whitespace-nowrap text-heading",
                     column.align === "end" && "text-end",
                   )}
                 >
@@ -123,7 +135,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
                 {columns.map((column) => (
                   <td
                     key={column.id}
-                    className={cn("px-4 py-0", column.align === "end" && "text-end", column.className)}
+                    className={cn(cellPadding, density === "compact" ? "py-2" : "py-0", column.align === "end" && "text-end", column.className)}
                   >
                     {column.cell(row)}
                   </td>

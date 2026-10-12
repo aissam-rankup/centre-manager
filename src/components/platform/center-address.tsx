@@ -43,20 +43,29 @@ export function CenterAddressLinks({ url, compact = false }: { url: string; comp
   };
 
   return (
-    <div className={cn("flex min-w-0 flex-wrap items-center gap-2", compact && "gap-1")}>
-      <span className="flex min-w-0 items-center gap-1.5 font-medium break-all">
+    <div className={cn("flex min-w-0 items-center", compact ? "gap-1" : "flex-wrap gap-2")}>
+      <span className={cn("flex min-w-0 items-center gap-1.5 font-medium", compact ? "text-caption whitespace-nowrap" : "break-all")}>
         <Globe className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         {withoutProtocol(url)}
       </span>
+      {/* Liste : boutons en icônes (nom accessible et infobulle), pour garder le tableau lisible. */}
       <span className="flex gap-1">
-        <Button type="button" variant="outline" onClick={() => void copy()}>
+        <Button
+          type="button"
+          variant="outline"
+          size={compact ? "icon" : "default"}
+          className={compact ? "size-8" : undefined}
+          aria-label={compact ? L.copy : undefined}
+          title={compact ? L.copy : undefined}
+          onClick={() => void copy()}
+        >
           {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
-          {L.copy}
+          {compact ? null : L.copy}
         </Button>
-        <Button asChild variant="outline">
-          <a href={url} target="_blank" rel="noopener noreferrer">
+        <Button asChild variant="outline" size={compact ? "icon" : "default"} className={compact ? "size-8" : undefined}>
+          <a href={url} target="_blank" rel="noopener noreferrer" aria-label={compact ? L.open : undefined} title={compact ? L.open : undefined}>
             <ExternalLink aria-hidden />
-            {L.open}
+            {compact ? null : L.open}
           </a>
         </Button>
       </span>
