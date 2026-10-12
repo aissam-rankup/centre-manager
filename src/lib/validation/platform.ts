@@ -169,6 +169,28 @@ export const centerStatusSchema = z.object({
 });
 export type CenterStatusInput = z.infer<typeof centerStatusSchema>;
 
+/** Motifs de suspension (« impayé » : aussi la suspension automatique). */
+export const SUSPENSION_KINDS = ["unpaid", "client_request", "contract_end", "other"] as const;
+export type SuspensionKind = (typeof SUSPENSION_KINDS)[number];
+
+/** Suspension manuelle : motif, précision (obligatoire pour « autre »), nom du centre retapé. */
+export const suspendCenterSchema = z
+  .object({
+    centerId,
+    kind: z.enum(SUSPENSION_KINDS, V.reasonRequired),
+    note: optionalText(300),
+    confirmName: z.string().trim().min(1, V.nameRequired).max(120, V.tooLong),
+  })
+  .superRefine((values, ctx) => {
+    if (values.kind === "other" && !values.note) {
+      ctx.addIssue({ code: "custom", message: V.reasonRequired, path: ["note"] });
+    }
+  });
+export type SuspendCenterInput = z.infer<typeof suspendCenterSchema>;
+
+export const reactivateCenterSchema = z.object({ centerId, note: optionalText(300) });
+export type ReactivateCenterInput = z.infer<typeof reactivateCenterSchema>;
+
 export const platformSettingsSchema = z.object({
   name: optionalText(120),
   phone: optionalPhone,

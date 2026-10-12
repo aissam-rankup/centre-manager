@@ -127,12 +127,18 @@ export async function getCenterTypes(): Promise<CenterTypeOption[]> {
   }));
 }
 
+export type CenterOverview = Fn<"platform_center_overview">[number];
+export type CenterPaymentTotal = Fn<"platform_center_payment_totals">[number];
+
 export type PlatformCenterFile = {
   center: PlatformCenter;
   users: PlatformCenterUser[];
   events: PlatformEvent[];
   payments: PlatformPayment[];
   modules: CenterModule[];
+  /** Compteurs (aucun détail financier interne du centre) et suspension en cours. */
+  overview: CenterOverview | null;
+  totals: CenterPaymentTotal[];
 };
 
 export type PlatformCenterAdmin = Fn<"platform_center_admins">[number];
@@ -148,13 +154,17 @@ export async function getPlatformCenterAdmins(centerId: string): Promise<Platfor
 
 export async function getPlatformCenterFile(centerId: string): Promise<PlatformCenterFile | null> {
   const supabase = await platformClient();
-  const [center, users, events, payments, modules] = await Promise.all([
+  const [center, users, events, payments, modules, overview, totals] = await Promise.all([
     supabase.rpc("platform_center", { p_center_id: centerId }).maybeSingle(),
     supabase.rpc("platform_center_users", { p_center_id: centerId }),
     supabase.rpc("platform_center_events", { p_center_id: centerId }),
     supabase.rpc("platform_payments", { p_center_id: centerId }),
     supabase.rpc("platform_center_modules", { p_center_id: centerId }),
+    supabase.rpc("platform_center_overview", { p_center_id: centerId }).maybeSingle(),
+    supabase.rpc("platform_center_payment_totals", { p_center_id: centerId }),
   ]);
+  if (overview.error) throw overview.error;
+  if (totals.error) throw totals.error;
   if (center.error) throw center.error;
   if (users.error) throw users.error;
   if (events.error) throw events.error;
@@ -172,6 +182,8 @@ export async function getPlatformCenterFile(centerId: string): Promise<PlatformC
     events: events.data,
     payments: payments.data,
     modules: modules.data.map((row) => names.module(row.module_key, row)),
+    overview: overview.data,
+    totals: totals.data,
   };
 }
 

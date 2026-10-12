@@ -879,6 +879,8 @@ const TEXTS = {
       "center.password_link_sent": "Lien de mot de passe envoyé",
       "support.started": "Accès support ouvert",
       "support.ended": "Accès support fermé",
+      "center.access_suspended": "Accès suspendu",
+      "center.access_reactivated": "Accès réactivé",
     },
     eventFallback: "Action",
     modules: {
@@ -1194,6 +1196,52 @@ const TEXTS = {
       note: "Note",
       noteHint: "Visible uniquement dans la console (facultatif).",
     },
+    access: {
+      suspend: "Suspendre l'accès",
+      reactivate: "Réactiver l'accès",
+      suspendTitle: "Suspendre l'accès du centre",
+      suspendDescription:
+        "Aucune donnée n'est supprimée. Tous les comptes du centre (administrateurs, assistants, professeurs, élèves) sont déconnectés immédiatement et voient une page de suspension à l'adresse du centre.",
+      kindLegend: "Motif",
+      kinds: { unpaid: "Impayé", client_request: "Demande du client", contract_end: "Fin de contrat", other: "Autre" } as Record<string, string>,
+      note: "Précision",
+      noteOptional: "Précision (facultatif)",
+      notePlaceholder: "Ex. contrat non renouvelé au 30 septembre",
+      noteRequired: "Précisez le motif.",
+      kindRequired: "Choisissez un motif.",
+      confirmName: (name: string) => `Pour confirmer, retapez le nom du centre : ${name}`,
+      confirmMismatch: "Le nom saisi ne correspond pas au nom du centre.",
+      suspended: (n: number) =>
+        n === 0 ? "Accès suspendu. Aucun compte n'était connecté." : `Accès suspendu. ${n} compte${n > 1 ? "s" : ""} déconnecté${n > 1 ? "s" : ""}.`,
+      reactivateTitle: "Réactiver l'accès du centre",
+      reactivateDescription:
+        "Les comptes du centre retrouvent l'accès immédiatement (chacun se reconnecte). Si l'échéance est dépassée, prolongez-la ou enregistrez un paiement : sinon le contrôle quotidien suspendra de nouveau le centre pour impayé.",
+      reactivated: "Accès réactivé",
+      banner: (kind: string, date: string) => `Accès suspendu depuis le ${date} · motif : ${kind}`,
+      bannerManual: "Un paiement ne lève pas cette suspension : utilisez « Réactiver l'accès ».",
+      bannerUnpaid: "Un paiement enregistré remet le centre en service.",
+    },
+    sheet: {
+      activity: "Activité du centre",
+      activityNote: "Compteurs uniquement : les encaissements des élèves, les salaires et la caisse du centre ne sont pas visibles dans la console.",
+      students: "Élèves",
+      activeStudents: (n: number) => `dont ${n} actif${n > 1 ? "s" : ""}`,
+      teachers: "Professeurs",
+      assistants: "Assistants",
+      admins: "Administrateurs",
+      studentAccounts: "Accès élèves",
+      lastAdminSignIn: "Dernière connexion d'un administrateur",
+      never: "Jamais",
+      totals: "Totaux des paiements d'abonnement",
+      totalsEmpty: "Aucun paiement enregistré.",
+      byMonth: "Par mois",
+      byQuarter: "Par trimestre",
+      byYear: "Par année",
+      quarter: (quarter: number, year: number) => `T${quarter} ${year}`,
+      payments: (n: number) => `${n} paiement${n > 1 ? "s" : ""}`,
+      phone: "Téléphone",
+      noPhone: "Aucun téléphone",
+    },
     journal: {
       title: "Journal",
       description: "Actions de la console et changements automatiques. Le journal est en lecture seule : rien ne peut y être modifié ni supprimé.",
@@ -1250,7 +1298,9 @@ const TEXTS = {
   suspended: {
     title: "Accès suspendu",
     description: (center: string) =>
-      `L'accès${center ? ` à ${center}` : ""} est suspendu : l'abonnement n'est pas réglé. Vos données sont conservées et l'accès sera rétabli dès la régularisation.`,
+      `L'accès${center ? ` à ${center}` : " à ce centre"} est temporairement suspendu. Vos données sont conservées et l'accès sera rétabli dès la régularisation.`,
+    /** Adresse d'un centre suspendu : tout visiteur, avec ou sans session. */
+    hostDescription: "L'accès à ce centre est temporairement suspendu. Contactez l'administrateur de votre centre.",
     cancelledTitle: "Abonnement résilié",
     cancelledDescription: (center: string) =>
       `L'abonnement${center ? ` de ${center}` : ""} a été résilié. Les données restent disponibles à l'export pendant 90 jours sur demande.`,

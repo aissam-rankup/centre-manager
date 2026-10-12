@@ -100,18 +100,26 @@ describe("adresses absolues", () => {
 describe("centre résolu", () => {
   beforeEach(() => clearCenterCache());
 
-  const row = { center_id: "c1", name: "Excellence", slug: "excellence", white_label: false, branding: null, moved: false };
+  const row = { center_id: "c1", name: "Excellence", slug: "excellence", white_label: false, branding: null, moved: false, blocked: false };
 
   it("trouve, puis garde en cache", async () => {
     const fetcher = vi.fn<CenterFetcher>(async () => row);
     const first = await lookupCenter({ kind: "slug", slug: "excellence" }, fetcher, 1000);
     const second = await lookupCenter({ kind: "slug", slug: "excellence" }, fetcher, 2000);
-    expect(first).toEqual({ status: "found", center: { id: "c1", slug: "excellence", name: "Excellence", whiteLabel: false, branding: null } });
+    expect(first).toEqual({ status: "found", center: { id: "c1", slug: "excellence", name: "Excellence", whiteLabel: false, branding: null, blocked: false } });
     expect(second).toEqual(first);
     expect(fetcher).toHaveBeenCalledTimes(1);
     // Cache expiré : nouvelle lecture.
-    await lookupCenter({ kind: "slug", slug: "excellence" }, fetcher, 1000 + 61_000);
+    await lookupCenter({ kind: "slug", slug: "excellence" }, fetcher, 1000 + 21_000);
     expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("centre suspendu : signalé", async () => {
+    const fetcher: CenterFetcher = async () => ({ ...row, blocked: true });
+    const lookup = await lookupCenter({ kind: "slug", slug: "excellence" }, fetcher);
+    expect(lookup.status === "found" && lookup.center.blocked).toBe(true);
+    const suspended = { id: "c1", slug: "excellence", name: "Excellence", whiteLabel: false, branding: null, blocked: true };
+    expect(decodeCenter(encodeCenter(suspended))?.blocked).toBe(true);
   });
 
   it("ancienne adresse : nouvelle adresse à rediriger", async () => {
@@ -136,7 +144,7 @@ describe("centre résolu", () => {
   });
 
   it("en-tête interne : aller-retour, valeur forgée refusée", () => {
-    const center = { id: "c1", slug: "excellence", name: "Centre Élan — Rabat", whiteLabel: true, branding: { brand_name: "Élan" } };
+    const center = { id: "c1", slug: "excellence", name: "Centre Élan — Rabat", whiteLabel: true, branding: { brand_name: "Élan" }, blocked: false };
     expect(decodeCenter(encodeCenter(center))).toEqual(center);
     expect(decodeCenter("n'importe quoi")).toBeNull();
     expect(decodeCenter(encodeURIComponent(JSON.stringify({ id: 1 })))).toBeNull();

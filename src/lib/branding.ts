@@ -43,7 +43,7 @@ export function brandFrom(branding: BrandingData | null, centerName: string): Br
   };
 }
 
-export type CurrentCenter = { centerId: string; slug: string; name: string; brand: Brand };
+export type CurrentCenter = { centerId: string; slug: string; name: string; brand: Brand; blocked: boolean };
 
 /**
  * Centre désigné par l'adresse (sous-domaine ou domaine personnalisé vérifié),
@@ -58,6 +58,7 @@ export const getCurrentCenter = cache(async (): Promise<CurrentCenter | null> =>
     slug: center.slug,
     name: center.name,
     brand: brandFrom(parseBranding(center.branding), center.name),
+    blocked: center.blocked,
   };
 });
 

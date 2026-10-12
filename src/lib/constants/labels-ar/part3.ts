@@ -224,6 +224,8 @@ export const AR_PART3: Pick<AppLabels, "platform"> = {
       "center.password_link_sent": "تم إرسال رابط كلمة المرور",
       "support.started": "تم فتح ولوج الدعم",
       "support.ended": "تم إغلاق ولوج الدعم",
+      "center.access_suspended": "تم إيقاف الولوج",
+      "center.access_reactivated": "تمت إعادة تفعيل الولوج",
     },
     eventFallback: "إجراء",
     modules: {

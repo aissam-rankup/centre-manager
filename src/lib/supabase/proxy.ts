@@ -80,6 +80,15 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // Adresse d'un centre (sous-domaine ou domaine personnalisé) : jamais la console.
   const clientHost = target.kind === "slug" || target.kind === "domain";
 
+  // Centre suspendu : toute page de son adresse affiche l'écran de suspension,
+  // avec ou sans session (les sessions ont été supprimées, la RLS coupe les données).
+  if (center?.blocked && pathname !== ROUTES.suspended && pathname !== "/manifest.webmanifest") {
+    const url = request.nextUrl.clone();
+    url.pathname = ROUTES.suspended;
+    url.search = "";
+    return NextResponse.rewrite(url, { request: { headers: request.headers } });
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(

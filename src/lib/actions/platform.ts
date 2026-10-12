@@ -23,9 +23,11 @@ import {
   parseAmount,
   planSchema,
   platformSettingsSchema,
+  reactivateCenterSchema,
   resendInvitationSchema,
   slugSchema,
   subscriptionPaymentSchema,
+  suspendCenterSchema,
   termsToSave,
 } from "@/lib/validation/platform";
 
@@ -292,6 +294,38 @@ export async function updateCenterStatus(input: unknown): Promise<ActionResult> 
     p_status: v.status,
     p_reason: v.reason,
   });
+  if (error) return failure(describeDatabaseError(error));
+  revalidatePlatform(v.centerId);
+  return success();
+}
+
+/**
+ * Suspension manuelle : motif, nom du centre retapé. La base vérifie tout,
+ * déconnecte tous les comptes du centre (équipe et élèves) et journalise.
+ */
+export async function suspendCenter(input: unknown): Promise<ActionResult<{ signedOut: number }>> {
+  const parsed = suspendCenterSchema.safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
+  const supabase = await platform();
+  const v = parsed.data;
+  const { data, error } = await supabase.rpc("platform_suspend_center", {
+    p_center_id: v.centerId,
+    p_kind: v.kind,
+    p_note: v.note,
+    p_confirm_name: v.confirmName,
+  });
+  if (error) return failure(describeDatabaseError(error));
+  revalidatePlatform(v.centerId);
+  return success({ signedOut: data ?? 0 });
+}
+
+/** Réactivation immédiate d'un centre suspendu (quel que soit le motif). */
+export async function reactivateCenter(input: unknown): Promise<ActionResult> {
+  const parsed = reactivateCenterSchema.safeParse(input);
+  if (!parsed.success) return failure(LABELS.actions.errors.invalid, fieldErrorsOf(parsed.error));
+  const supabase = await platform();
+  const v = parsed.data;
+  const { error } = await supabase.rpc("platform_reactivate_center", { p_center_id: v.centerId, p_note: v.note });
   if (error) return failure(describeDatabaseError(error));
   revalidatePlatform(v.centerId);
   return success();

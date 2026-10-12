@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { refreshAccess, signOut } from "@/lib/auth/actions";
 import { ROUTES } from "@/lib/auth/routes";
 import { getAuthState } from "@/lib/auth/session";
-import { getSessionBrand } from "@/lib/branding";
+import { getCurrentCenter, getSessionBrand, PLATFORM_BRAND } from "@/lib/branding";
 import { getSuspensionContact } from "@/lib/data/access";
 import { getLabels } from "@/lib/i18n/server";
 import { formatPhone, toTelHref } from "@/lib/phone";
@@ -22,6 +22,24 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SuspendedPage() {
   const LABELS = await getLabels();
   const L = LABELS.suspended;
+
+  // Adresse d'un centre suspendu : page sobre aux couleurs de dirassty, pour
+  // tout visiteur (les sessions du centre ont été supprimées).
+  const host = await getCurrentCenter();
+  if (host?.blocked) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-background">
+        <BrandStyle brand={PLATFORM_BRAND} />
+        <header className="flex h-16 items-center px-4 md:px-6">
+          <Logo name={PLATFORM_BRAND.name} logoUrl={PLATFORM_BRAND.logoUrl} whiteLabel={false} />
+        </header>
+        <main className="flex flex-1 items-center justify-center px-4 pb-16">
+          <EmptyState icon={Lock} title={L.title} description={L.hostDescription} className="w-full max-w-lg" />
+        </main>
+      </div>
+    );
+  }
+
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
   if (state.status === "no-profile") redirect(ROUTES.inactive);

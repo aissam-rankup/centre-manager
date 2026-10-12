@@ -170,6 +170,8 @@ export type ResolvedCenter = {
   name: string;
   whiteLabel: boolean;
   branding: unknown;
+  /** Centre suspendu : tout visiteur voit l'écran de suspension. */
+  blocked: boolean;
 };
 
 export type CenterLookup =
@@ -188,15 +190,23 @@ export function decodeCenter(value: string | null): ResolvedCenter | null {
   try {
     const parsed: unknown = JSON.parse(decodeURIComponent(value));
     if (typeof parsed !== "object" || parsed === null) return null;
-    const { id, slug, name, whiteLabel, branding } = parsed as Record<string, unknown>;
+    const { id, slug, name, whiteLabel, branding, blocked } = parsed as Record<string, unknown>;
     if (typeof id !== "string" || typeof slug !== "string" || typeof name !== "string" || typeof whiteLabel !== "boolean") return null;
-    return { id, slug, name, whiteLabel, branding: branding ?? null };
+    return { id, slug, name, whiteLabel, branding: branding ?? null, blocked: blocked === true };
   } catch {
     return null;
   }
 }
 
-type CenterRow = { center_id: string; name: string; slug: string; white_label: boolean; branding: unknown; moved: boolean };
+type CenterRow = {
+  center_id: string;
+  name: string;
+  slug: string;
+  white_label: boolean;
+  branding: unknown;
+  moved: boolean;
+  blocked?: boolean | null;
+};
 
 export type CenterFetcher = (target: { slug?: string; domain?: string }) => Promise<CenterRow | null>;
 
@@ -215,7 +225,9 @@ export function restCenterFetcher(supabaseUrl: string, anonKey: string): CenterF
   };
 }
 
-const CACHE_TTL_MS = 60_000;
+// Court : une suspension ou une réactivation se voit sur l'adresse en moins de 20 s
+// (les données, elles, sont coupées ou rendues immédiatement par la RLS).
+const CACHE_TTL_MS = 20_000;
 const CACHE_MAX = 500;
 const cache = new Map<string, { at: number; value: CenterLookup }>();
 
@@ -223,7 +235,7 @@ export function clearCenterCache(): void {
   cache.clear();
 }
 
-/** Centre d'un slug ou d'un domaine, gardé 60 s en mémoire. */
+/** Centre d'un slug ou d'un domaine, gardé 20 s en mémoire. */
 export async function lookupCenter(
   target: { kind: "slug"; slug: string } | { kind: "domain"; domain: string },
   fetcher: CenterFetcher,
@@ -248,7 +260,14 @@ export async function lookupCenter(
     else
       value = {
         status: "found",
-        center: { id: row.center_id, slug: row.slug, name: row.name, whiteLabel: row.white_label, branding: row.branding },
+        center: {
+          id: row.center_id,
+          slug: row.slug,
+          name: row.name,
+          whiteLabel: row.white_label,
+          branding: row.branding,
+          blocked: row.blocked === true,
+        },
       };
   }
   if (cache.size >= CACHE_MAX) cache.clear();

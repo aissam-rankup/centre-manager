@@ -22,7 +22,8 @@ export const EN_PART4: Pick<AppLabels, "welcome" | "suspended" | "pastDueBanner"
   suspended: {
     title: "Access suspended",
     description: (center: string) =>
-      `Access${center ? ` to ${center}` : ""} is suspended: the subscription has not been paid. Your data is kept and access will be restored as soon as payment is settled.`,
+      `Access${center ? ` to ${center}` : " to this centre"} is temporarily suspended. Your data is kept and access will be restored once the situation is settled.`,
+    hostDescription: "Access to this centre is temporarily suspended. Please contact your centre's administrator.",
     cancelledTitle: "Subscription cancelled",
     cancelledDescription: (center: string) =>
       `The subscription${center ? ` for ${center}` : ""} has been cancelled. Your data remains available for export for 90 days on request.`,

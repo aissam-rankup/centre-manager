@@ -1116,6 +1116,9 @@ export type Database = {
           risk_attendance_threshold: number
           slug: string
           status: Database["public"]["Enums"]["center_status"]
+          suspended_at: string | null
+          suspension_kind: string | null
+          suspension_note: string | null
         }
         Insert: {
           absence_notification_enabled?: boolean
@@ -1156,6 +1159,9 @@ export type Database = {
           risk_attendance_threshold?: number
           slug: string
           status?: Database["public"]["Enums"]["center_status"]
+          suspended_at?: string | null
+          suspension_kind?: string | null
+          suspension_note?: string | null
         }
         Update: {
           absence_notification_enabled?: boolean
@@ -1196,6 +1202,9 @@ export type Database = {
           risk_attendance_threshold?: number
           slug?: string
           status?: Database["public"]["Enums"]["center_status"]
+          suspended_at?: string | null
+          suspension_kind?: string | null
+          suspension_note?: string | null
         }
         Relationships: [
           {
@@ -4248,6 +4257,7 @@ export type Database = {
       center_for_host: {
         Args: { p_domain?: string; p_slug?: string }
         Returns: {
+          blocked: boolean
           branding: Json
           center_id: string
           moved: boolean
@@ -4676,6 +4686,30 @@ export type Database = {
           updated_at: string
         }[]
       }
+      platform_center_overview: {
+        Args: { p_center_id: string }
+        Returns: {
+          active_students: number
+          admins_count: number
+          assistants_count: number
+          last_admin_sign_in_at: string
+          student_accounts_count: number
+          students_count: number
+          suspended_at: string
+          suspension_kind: string
+          suspension_note: string
+          teachers_count: number
+        }[]
+      }
+      platform_center_payment_totals: {
+        Args: { p_center_id: string }
+        Returns: {
+          granularity: string
+          payments_count: number
+          period_start: string
+          total: number
+        }[]
+      }
       platform_center_slug_history: {
         Args: { p_center_id: string }
         Returns: {
@@ -4841,6 +4875,10 @@ export type Database = {
           name: string
         }[]
       }
+      platform_reactivate_center: {
+        Args: { p_center_id: string; p_note?: string }
+        Returns: undefined
+      }
       platform_record_payment: {
         Args: {
           p_amount: number
@@ -4949,6 +4987,15 @@ export type Database = {
       platform_start_support: {
         Args: { p_center_id: string; p_reason: string }
         Returns: string
+      }
+      platform_suspend_center: {
+        Args: {
+          p_center_id: string
+          p_confirm_name: string
+          p_kind: string
+          p_note: string
+        }
+        Returns: number
       }
       platform_upcoming_due: {
         Args: never

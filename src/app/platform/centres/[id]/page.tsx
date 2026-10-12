@@ -1,4 +1,4 @@
-import { ArrowLeft, KeyRound, Mail, Phone } from "lucide-react";
+import { ArrowLeft, KeyRound, Lock, Mail, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "@/components/shared/app-link";
 import { notFound } from "next/navigation";
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import type { AppLabels } from "@/lib/constants/labels";
 import {
+  type CenterPaymentTotal,
   getCenterTypes,
   getPlanOptions,
   getPlatformCenterAdmins,
@@ -26,7 +27,8 @@ import {
   type PlatformCenterUser,
   type PlatformPayment,
 } from "@/lib/data/platform";
-import { formatDate, formatDateTime, toISODate, today } from "@/lib/format";
+import { formatDate, formatDateTime, formatMAD, formatMonth, toISODate, today } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
 import { dnsTarget, getBrandingSettings } from "@/lib/branding";
 import { centerAddressPattern, centerSlugHistory, centerUrl } from "@/lib/center-url";
 import { getAppLocale } from "@/lib/i18n/request-locale";
@@ -113,6 +115,41 @@ function Field({ label, children, className }: { label: string; children: ReactN
   );
 }
 
+/** Totaux d'une granularité (mois, trimestre, année), du plus récent au plus ancien. */
+function TotalsList({
+  title,
+  rows,
+  label,
+  LABELS,
+  locale,
+}: {
+  title: string;
+  rows: CenterPaymentTotal[];
+  label: (row: CenterPaymentTotal) => string;
+  LABELS: AppLabels;
+  locale: Locale;
+}) {
+  const T = LABELS.platformConsole.sheet;
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      <h3 className="text-caption font-semibold text-heading">{title}</h3>
+      <ul className="flex max-h-72 flex-col divide-y divide-divider overflow-y-auto">
+        {rows.map((row) => (
+          <li key={`${row.granularity}-${row.period_start}`} className="flex items-baseline justify-between gap-3 py-2">
+            <span className="flex flex-col">
+              <span className="capitalize">{label(row)}</span>
+              <span className="text-caption text-muted-foreground">{T.payments(row.payments_count)}</span>
+            </span>
+            <span className="numeric font-semibold whitespace-nowrap text-heading">
+              {formatMAD(Number(row.total), locale, { cents: true })}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default async function PlatformCenterPage({ params }: PageProps<"/platform/centres/[id]">) {
   const [LABELS, locale] = await Promise.all([getLabels(), getAppLocale()]);
   const P = LABELS.platform;
@@ -129,7 +166,9 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
     getPlatformCenterAdmins(id),
   ]);
   if (!file) notFound();
-  const { center, users, events, payments, modules } = file;
+  const { center, users, events, payments, modules, overview, totals } = file;
+  const C = LABELS.platformConsole;
+  const totalsOf = (granularity: string) => totals.filter((row) => row.granularity === granularity);
   const address = await centerUrl(center.slug, "");
   const moduleNames = Object.fromEntries(modules.map((module) => [module.module_key, module.name]));
   const whiteLabel = modules.some((module) => module.module_key === "white_label" && module.is_enabled);
@@ -173,6 +212,23 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
           {center.center_type_label} · {center.plan_name}
         </p>
         <CenterActions data={actionsData} types={types} />
+        {center.status === "suspended" && overview?.suspension_kind ? (
+          <div role="status" className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/5 px-4 py-3">
+            <Lock className="mt-0.5 size-5 shrink-0 text-danger-ink" aria-hidden />
+            <div className="flex flex-col gap-0.5">
+              <p className="font-medium text-heading">
+                {C.access.banner(
+                  C.access.kinds[overview.suspension_kind] ?? overview.suspension_kind,
+                  overview.suspended_at ? formatDate(overview.suspended_at) : "—",
+                )}
+              </p>
+              {overview.suspension_note ? <p className="text-caption text-foreground">{P.reason(overview.suspension_note)}</p> : null}
+              <p className="text-caption text-muted-foreground">
+                {overview.suspension_kind === "unpaid" ? C.access.bannerUnpaid : C.access.bannerManual}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -260,6 +316,73 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
       <SectionCard title={P.modules.title} description={P.modules.description}>
         <CenterModules centerId={center.center_id} modules={modules} />
       </SectionCard>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title={C.sheet.activity} description={C.sheet.activityNote}>
+          {overview ? (
+            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <Field label={C.sheet.students}>
+                <span className="flex flex-col">
+                  <span className="numeric">{overview.students_count}</span>
+                  <span className="text-caption font-normal text-muted-foreground">{C.sheet.activeStudents(overview.active_students)}</span>
+                </span>
+              </Field>
+              <Field label={C.sheet.teachers}>
+                <span className="numeric">{overview.teachers_count}</span>
+              </Field>
+              <Field label={C.sheet.assistants}>
+                <span className="numeric">{overview.assistants_count}</span>
+              </Field>
+              <Field label={C.sheet.admins}>
+                <span className="numeric">{overview.admins_count}</span>
+              </Field>
+              <Field label={C.sheet.studentAccounts}>
+                <span className="numeric">{overview.student_accounts_count}</span>
+              </Field>
+              <Field label={C.sheet.lastAdminSignIn}>
+                {overview.last_admin_sign_in_at ? (
+                  <span className="numeric">{formatDateTime(overview.last_admin_sign_in_at)}</span>
+                ) : (
+                  C.sheet.never
+                )}
+              </Field>
+            </dl>
+          ) : null}
+        </SectionCard>
+
+        <SectionCard title={C.sheet.totals}>
+          {totals.length === 0 ? (
+            <p className="text-muted-foreground">{C.sheet.totalsEmpty}</p>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-3">
+              <TotalsList
+                title={C.sheet.byMonth}
+                rows={totalsOf("month").slice(0, 12)}
+                label={(row) => formatMonth(row.period_start, locale)}
+                LABELS={LABELS}
+                locale={locale}
+              />
+              <TotalsList
+                title={C.sheet.byQuarter}
+                rows={totalsOf("quarter").slice(0, 8)}
+                label={(row) => {
+                  const [year, month] = row.period_start.split("-").map(Number);
+                  return C.sheet.quarter(Math.floor((month - 1) / 3) + 1, year);
+                }}
+                LABELS={LABELS}
+                locale={locale}
+              />
+              <TotalsList
+                title={C.sheet.byYear}
+                rows={totalsOf("year")}
+                label={(row) => row.period_start.slice(0, 4)}
+                LABELS={LABELS}
+                locale={locale}
+              />
+            </div>
+          )}
+        </SectionCard>
+      </div>
 
       <SectionCard title={L.payments}>
         {payments.length === 0 ? (
@@ -358,6 +481,17 @@ export default async function PlatformCenterPage({ params }: PageProps<"/platfor
                 <div className="flex min-w-0 flex-col">
                   <span className="font-medium text-heading">{admin.full_name}</span>
                   <span className="text-caption break-all text-muted-foreground">{admin.email}</span>
+                  <span className="text-caption text-muted-foreground">
+                    {C.sheet.phone}
+                    {LABELS.common.colon}{" "}
+                    {admin.phone ? (
+                      <a href={toTelHref(admin.phone) ?? undefined} className="numeric text-primary hover:underline">
+                        {formatPhone(admin.phone)}
+                      </a>
+                    ) : (
+                      C.sheet.noPhone
+                    )}
+                  </span>
                   <span className="text-caption text-muted-foreground">
                     {LABELS.passwords.admins.lastSignIn}{LABELS.common.colon}{" "}
                     {admin.last_sign_in_at ? formatDateTime(admin.last_sign_in_at) : LABELS.passwords.admins.never}

@@ -28,7 +28,8 @@ export const AR_PART4: Pick<AppLabels, "welcome" | "suspended" | "pastDueBanner"
   suspended: {
     title: "تم إيقاف الولوج",
     description: (center: string) =>
-      `تم إيقاف الولوج${center ? ` إلى ${center}` : ""}: لم يتم أداء الاشتراك. بياناتك محفوظة وسيُعاد فتح الولوج فور تسوية الوضعية.`,
+      `تم إيقاف الولوج${center ? ` إلى ${center}` : " إلى هذا المركز"} مؤقتًا. بياناتك محفوظة وسيُعاد فتح الولوج فور تسوية الوضعية.`,
+    hostDescription: "تم إيقاف الولوج إلى هذا المركز مؤقتًا. يُرجى التواصل مع إدارة مركزك.",
     cancelledTitle: "تم إلغاء الاشتراك",
     cancelledDescription: (center: string) =>
       `تم إلغاء الاشتراك${center ? ` الخاص بـ ${center}` : ""}. تظل البيانات متاحة للتصدير لمدة 90 يومًا عند الطلب.`,

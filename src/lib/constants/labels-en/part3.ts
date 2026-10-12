@@ -222,6 +222,8 @@ export const EN_PART3: Pick<AppLabels, "platform"> = {
       "center.password_link_sent": "Password link sent",
       "support.started": "Support access opened",
       "support.ended": "Support access closed",
+      "center.access_suspended": "Access suspended",
+      "center.access_reactivated": "Access reactivated",
     },
     eventFallback: "Action",
     modules: {

@@ -47,6 +47,11 @@ export function eventDetail(event: EventLike, LABELS: AppLabels, locale: Locale,
     }
     case "center.admin_invited":
       return typeof payload.email === "string" ? payload.email : null;
+    case "center.access_suspended":
+    case "center.access_reactivated": {
+      const kind = typeof payload.kind === "string" ? payload.kind : typeof payload.previous_kind === "string" ? payload.previous_kind : null;
+      return kind ? (LABELS.platformConsole.access.kinds[kind] ?? kind) : null;
+    }
     case "center.admin_password_reset":
       return typeof payload.full_name === "string" ? payload.full_name : null;
     default:

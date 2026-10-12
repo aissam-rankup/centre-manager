@@ -39,8 +39,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import type { ActionResult } from "@/lib/actions/result";
 import {
+  reactivateCenter,
   recordSubscriptionPayment,
   resendInvitation,
+  suspendCenter,
   updateCenterDetails,
   updateCenterDueDate,
   updateCenterPricing,
@@ -59,6 +61,11 @@ import {
   type CustomTermsInput,
   type DueDateInput,
   dueDateSchema,
+  type ReactivateCenterInput,
+  reactivateCenterSchema,
+  SUSPENSION_KINDS,
+  type SuspendCenterInput,
+  suspendCenterSchema,
   SUBSCRIPTION_PAYMENT_METHODS,
   type SubscriptionPaymentInput,
   subscriptionPaymentSchema,
@@ -101,6 +108,8 @@ type ActionDialogProps = {
   children: ReactNode;
   /** Nom accessible du bouton d'ouverture (ligne d'un tableau). */
   triggerLabel?: string;
+  /** Validation impossible tant qu'une condition manque (ex. nom retapé). */
+  submitDisabled?: boolean;
 };
 
 function ActionDialog({
@@ -116,6 +125,7 @@ function ActionDialog({
   onSubmit,
   children,
   triggerLabel,
+  submitDisabled = false,
 }: ActionDialogProps) {
   const LABELS = useLabels();
   const A = LABELS.platform.actions;
@@ -145,7 +155,7 @@ function ActionDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
               {LABELS.common.cancel}
             </Button>
-            <Button type="submit" variant={variant === "destructive" ? "destructive" : "default"} disabled={pending}>
+            <Button type="submit" variant={variant === "destructive" ? "destructive" : "default"} disabled={pending || submitDisabled}>
               {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
               {pending ? A.saving : (submitLabel ?? A.save)}
             </Button>
@@ -475,6 +485,119 @@ function StatusDialog({ centerId, status }: { centerId: string; status: ManualSt
 }
 
 // ---------------------------------------------------------------------
+// Suspendre / réactiver l'accès
+// ---------------------------------------------------------------------
+/** Nom retapé : même comparaison que la base (casse et espaces ignorés). */
+export function sameCenterName(typed: string, name: string): boolean {
+  return typed.trim().toLocaleLowerCase("fr") === name.trim().toLocaleLowerCase("fr");
+}
+
+function SuspendDialog({ centerId, name }: { centerId: string; name: string }) {
+  const LABELS = useLabels();
+  const S = LABELS.platformConsole.access;
+  const message = useMessage();
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const defaults: SuspendCenterInput = { centerId, kind: "unpaid", note: "", confirmName: "" };
+  const form = useForm<SuspendCenterInput>({ resolver: zodResolver(suspendCenterSchema), defaultValues: defaults });
+  const errors = form.formState.errors;
+  const kind = useWatch({ control: form.control, name: "kind" });
+  const typed = useWatch({ control: form.control, name: "confirmName" });
+  const matches = sameCenterName(typed ?? "", name);
+
+  return (
+    <ActionDialog
+      trigger={S.suspend}
+      icon={PauseCircle}
+      variant="destructive"
+      title={S.suspendTitle}
+      description={S.suspendDescription}
+      submitLabel={S.suspend}
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) form.reset(defaults);
+      }}
+      pending={pending}
+      submitDisabled={!matches}
+      onSubmit={() =>
+        void form.handleSubmit((values) =>
+          startTransition(async () => {
+            const result = await suspendCenter(values);
+            if (!result.ok) {
+              toast.error(message(result.error));
+              return;
+            }
+            toast.success(S.suspended(result.data?.signedOut ?? 0));
+            setOpen(false);
+          }),
+        )()
+      }
+    >
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-body font-medium">{S.kindLegend}</legend>
+        <Controller
+          control={form.control}
+          name="kind"
+          render={({ field }) => (
+            <RadioGroup value={field.value} onValueChange={field.onChange} className="sm:grid-cols-2">
+              {SUSPENSION_KINDS.map((value) => (
+                <ChoiceItem key={value}>
+                  <RadioGroupItem value={value} />
+                  {S.kinds[value]}
+                </ChoiceItem>
+              ))}
+            </RadioGroup>
+          )}
+        />
+        {errors.kind ? <p className="text-caption text-danger-ink">{S.kindRequired}</p> : null}
+      </fieldset>
+      <FormField id="suspend-note" label={kind === "other" ? S.note : S.noteOptional} error={errors.note ? S.noteRequired : undefined}>
+        <Textarea rows={2} maxLength={300} placeholder={S.notePlaceholder} {...form.register("note")} />
+      </FormField>
+      <FormField
+        id="suspend-confirm"
+        label={S.confirmName(name)}
+        error={typed && !matches ? S.confirmMismatch : errors.confirmName?.message}
+      >
+        <Input autoComplete="off" spellCheck={false} {...form.register("confirmName")} />
+      </FormField>
+    </ActionDialog>
+  );
+}
+
+function ReactivateDialog({ centerId }: { centerId: string }) {
+  const LABELS = useLabels();
+  const S = LABELS.platformConsole.access;
+  const A = LABELS.platform.actions;
+  const { open, setOpen, pending, run } = useAction(reactivateCenter, S.reactivated);
+  const defaults: ReactivateCenterInput = { centerId, note: "" };
+  const form = useForm<ReactivateCenterInput>({ resolver: zodResolver(reactivateCenterSchema), defaultValues: defaults });
+
+  return (
+    <ActionDialog
+      trigger={S.reactivate}
+      icon={CircleCheck}
+      variant="default"
+      title={S.reactivateTitle}
+      description={S.reactivateDescription}
+      submitLabel={S.reactivate}
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) form.reset(defaults);
+      }}
+      pending={pending}
+      onSubmit={() => void form.handleSubmit((values) => run(values))()}
+    >
+      <FormField id="reactivate-note" label={A.reasonOptional} error={form.formState.errors.note?.message}>
+        <Textarea rows={2} maxLength={300} {...form.register("note")} />
+      </FormField>
+    </ActionDialog>
+  );
+}
+
+// ---------------------------------------------------------------------
 // Accès support (lecture seule)
 // ---------------------------------------------------------------------
 function SupportDialog({ centerId }: { centerId: string }) {
@@ -553,9 +676,9 @@ export function CenterActions({ data, types }: { data: CenterActionsData; types:
       <PricingDialog data={data} />
       <DetailsDialog data={data} types={types} />
       {data.status === "suspended" ? (
-        <StatusDialog centerId={data.centerId} status="active" />
+        <ReactivateDialog centerId={data.centerId} />
       ) : (
-        <StatusDialog centerId={data.centerId} status="suspended" />
+        <SuspendDialog centerId={data.centerId} name={data.name} />
       )}
       <StatusDialog centerId={data.centerId} status="cancelled" />
     </div>
