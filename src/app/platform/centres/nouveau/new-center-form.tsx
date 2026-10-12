@@ -436,17 +436,18 @@ function Stepper({ current }: { current: number }) {
         const active = index === current;
         return (
           <li key={label} className="flex flex-1 items-center gap-2" aria-current={active ? "step" : undefined}>
+            {/* Taille hors de cn() : sinon fusionnée avec la couleur (deux classes « text-* »). */}
             <span
-              className={cn(
-                "numeric flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-caption",
+              className={`text-caption ${cn(
+                "numeric flex size-8 shrink-0 items-center justify-center rounded-full border-2",
                 done && "border-primary-soft bg-primary-soft text-primary",
                 active && "border-primary bg-primary text-primary-foreground",
                 !done && !active && "border-border bg-card text-muted-foreground",
-              )}
+              )}`}
             >
               {done ? <Check className="size-4" aria-hidden /> : index + 1}
             </span>
-            <span className={cn("hidden text-caption lg:inline", active ? "font-semibold" : "text-muted-foreground")}>
+            <span className={`hidden text-caption lg:inline ${active ? "font-semibold" : "text-muted-foreground"}`}>
               {label}
             </span>
             {index < STEP_COUNT - 1 ? (
