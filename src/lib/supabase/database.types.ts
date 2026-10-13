@@ -3571,6 +3571,8 @@ export type Database = {
       }
       subjects: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           center_id: string
           created_at: string
           id: string
@@ -3580,6 +3582,8 @@ export type Database = {
           name: string
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           center_id: string
           created_at?: string
           id?: string
@@ -3589,6 +3593,8 @@ export type Database = {
           name: string
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           center_id?: string
           created_at?: string
           id?: string
@@ -3598,6 +3604,13 @@ export type Database = {
           name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subjects_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subjects_center_id_fkey"
             columns: ["center_id"]
@@ -4222,18 +4235,21 @@ export type Database = {
       }
       subject_catalog: {
         Row: {
+          archived_at: string | null
           center_id: string | null
           id: string | null
           level_id: string | null
           name: string | null
         }
         Insert: {
+          archived_at?: string | null
           center_id?: string | null
           id?: string | null
           level_id?: string | null
           name?: string | null
         }
         Update: {
+          archived_at?: string | null
           center_id?: string | null
           id?: string | null
           level_id?: string | null
@@ -4345,6 +4361,7 @@ export type Database = {
           subscribers: number
         }[]
       }
+      archive_subject: { Args: { p_subject_id: string }; Returns: number }
       assistant_dashboard_stats: {
         Args: never
         Returns: {
@@ -4582,6 +4599,7 @@ export type Database = {
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       delete_expense: { Args: { p_expense_id: string }; Returns: undefined }
+      delete_subject: { Args: { p_subject_id: string }; Returns: undefined }
       expired_center_exports: {
         Args: never
         Returns: {
@@ -5674,6 +5692,8 @@ export type Database = {
           teacher_name: string
         }[]
       }
+      subject_dependencies: { Args: { p_subject_id: string }; Returns: Json }
+      unarchive_subject: { Args: { p_subject_id: string }; Returns: undefined }
       update_center_branding: {
         Args: {
           p_accent_color: string

@@ -36,13 +36,18 @@ export async function getTeachingOptions(): Promise<TeachingOption[]> {
   const { profile, supabase } = await teacherClient();
   const { data, error } = await supabase.from("teacher_assignments").select("subject_id, level_id").eq("teacher_id", profile.id);
   if (error) throw error;
-  const [names, levels] = await Promise.all([
+  const [names, levels, archived] = await Promise.all([
     subjectNamesOf(supabase, data.map((row) => row.subject_id)),
     supabase.from("levels").select("id, name"),
+    supabase.from("subject_catalog").select("id").not("archived_at", "is", null),
   ]);
   if (levels.error) throw levels.error;
+  if (archived.error) throw archived.error;
+  // Matière archivée : plus de nouvelle ressource.
+  const archivedIds = new Set(archived.data.map((row) => row.id));
   const levelNames = new Map(levels.data.map((level) => [level.id, level.name] as const));
   return data
+    .filter((row) => !archivedIds.has(row.subject_id))
     .map((row) => ({
       subjectId: row.subject_id,
       levelId: row.level_id,

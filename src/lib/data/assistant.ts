@@ -567,7 +567,7 @@ export async function getLevelsWithSubjects(): Promise<LevelWithSubjects[]> {
 
   const { data, error } = await supabase
     .from("levels")
-    .select("id, name, sort_order, subjects(id, name, monthly_price), packs(id, name, monthly_price, active, pack_subjects(subject_id))")
+    .select("id, name, sort_order, subjects(id, name, monthly_price, archived_at), packs(id, name, monthly_price, active, pack_subjects(subject_id))")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   if (error) throw error;
@@ -575,7 +575,9 @@ export async function getLevelsWithSubjects(): Promise<LevelWithSubjects[]> {
   return data.map((level) => ({
     id: level.id,
     name: level.name,
-    subjects: [...level.subjects]
+    // Matières archivées : hors des listes de choix (inscription, affectation, pack).
+    subjects: level.subjects
+      .filter((subject) => subject.archived_at === null)
       .sort((a, b) => a.name.localeCompare(b.name, "fr"))
       .map((subject) => ({ id: subject.id, name: subject.name, monthlyPrice: Number(subject.monthly_price) })),
     packs: level.packs

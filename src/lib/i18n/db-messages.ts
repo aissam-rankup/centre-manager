@@ -641,4 +641,35 @@ export const DB_MESSAGES: readonly DbMessage[] = [
   },
   { fr: "Indiquez la date et le mode du versement.", en: "Enter the payment date and method.", ar: "أدخل تاريخ الدفع وطريقته." },
   { fr: "Note : 300 caractères au plus.", en: "Note: 300 characters max.", ar: "الملاحظة: 300 حرف على الأكثر." },
+  // Matières archivées.
+  {
+    fr: "Archivez ou réactivez la matière depuis l'écran des matières.",
+    en: "Archive or reactivate the {course} from the {courses} screen.",
+    ar: "أرشف {the course} أو أعد تفعيلها من شاشة {the courses}.",
+  },
+  {
+    fr: "Matière archivée : réactivez-la avant de l'utiliser.",
+    en: "Archived {course}: reactivate it before using it.",
+    ar: "{the course} مؤرشفة: أعد تفعيلها قبل استعمالها.",
+  },
+  {
+    fr: "Ce pack contient une matière archivée : retirez-la ou réactivez-la avant de proposer le pack.",
+    en: "This pack contains an archived {course}: remove or reactivate it before offering the pack.",
+    ar: "تحتوي هذه الباقة على {course} مؤرشفة: أزلها أو أعد تفعيلها قبل عرض الباقة.",
+  },
+  {
+    fr: "Matière liée à un historique : archivez-la plutôt que de la supprimer.",
+    en: "{Course} linked to history: archive it rather than deleting it.",
+    ar: "{the course} مرتبطة بسجل: أرشفها بدل حذفها.",
+  },
+  {
+    fr: "Archivage impossible : % inscription(s) en cours dans cette matière. Arrêtez-les d'abord.",
+    en: "Cannot archive: % current enrolment(s) in this {course}. Stop them first.",
+    ar: "الأرشفة غير ممكنة: % تسجيل(ات) جارية في {the course}. أوقفها أولًا.",
+  },
+  {
+    fr: "Archivage impossible : la matière fait partie d'un pack proposé (%). Retirez-la du pack ou désactivez le pack.",
+    en: "Cannot archive: the {course} is part of an offered pack (%). Remove it from the pack or deactivate the pack.",
+    ar: "الأرشفة غير ممكنة: {the course} جزء من باقة معروضة (%). أزلها من الباقة أو عطّل الباقة.",
+  },
 ];

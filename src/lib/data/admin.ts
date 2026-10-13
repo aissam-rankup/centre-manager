@@ -124,7 +124,14 @@ export async function getAdminDashboard(levelId: string | null): Promise<AdminDa
 // ---------------------------------------------------------------------
 // Niveaux et matières
 // ---------------------------------------------------------------------
-export type AdminSubject = { id: string; name: string; monthlyPrice: number; activeEnrollments: number };
+export type AdminSubject = {
+  id: string;
+  name: string;
+  monthlyPrice: number;
+  activeEnrollments: number;
+  /** Archivée : hors des listes de choix, conservée dans l'historique. */
+  archivedAt: string | null;
+};
 export type AdminPack = {
   id: string;
   name: string;
@@ -144,12 +151,15 @@ export type AdminLevel = {
 
 export async function getLevelsWithStats(): Promise<AdminLevel[]> {
   const { supabase } = await adminClient();
-  const [reportResult, packsResult, packSubjectsResult] = await Promise.all([
+  const [reportResult, packsResult, packSubjectsResult, archivedResult] = await Promise.all([
     supabase.rpc("admin_enrollment_report"),
     supabase.rpc("admin_pack_report"),
     supabase.from("pack_subjects").select("pack_id, subject_id"),
+    supabase.from("subjects").select("id, archived_at").not("archived_at", "is", null),
   ]);
   if (reportResult.error) throw reportResult.error;
+  if (archivedResult.error) throw archivedResult.error;
+  const archivedAt = new Map(archivedResult.data.map((row) => [row.id, row.archived_at] as const));
   if (packsResult.error) throw packsResult.error;
   if (packSubjectsResult.error) throw packSubjectsResult.error;
   const data = reportResult.data;
@@ -184,6 +194,7 @@ export async function getLevelsWithStats(): Promise<AdminLevel[]> {
         name: row.subject_name,
         monthlyPrice: Number(row.monthly_price ?? 0),
         activeEnrollments: row.active_enrollments ?? 0,
+        archivedAt: archivedAt.get(row.subject_id) ?? null,
       });
     }
     levels.set(row.level_id, level);
@@ -235,7 +246,7 @@ export async function getPlanningData(): Promise<PlanningData> {
       .select("id, subject_id, level_id, teacher_id, day_of_week, start_time, end_time, room, room_id")
       .order("day_of_week")
       .order("start_time"),
-    supabase.from("subjects").select("id, name, level_id, levels(name, sort_order)"),
+    supabase.from("subjects").select("id, name, level_id, archived_at, levels(name, sort_order)"),
     supabase.from("profiles").select("id, full_name, active, photo_url").eq("role", "teacher").order("full_name"),
     supabase.from("teacher_assignments").select("teacher_id, subject_id"),
     supabase.from("rooms").select("id, name, capacity, is_active"),
@@ -256,7 +267,9 @@ export async function getPlanningData(): Promise<PlanningData> {
   }
 
   const activeTeachers = new Set((teachersResult.data ?? []).filter((t) => t.active).map((t) => t.id));
-  const subjects: PlanningSubject[] = [...(subjectsResult.data ?? [])]
+  // Matières archivées : plus planifiables (leurs créneaux ont été retirés à l'archivage).
+  const subjects: PlanningSubject[] = (subjectsResult.data ?? [])
+    .filter((s) => s.archived_at === null)
     .sort(
       (a, b) => (a.levels?.sort_order ?? 0) - (b.levels?.sort_order ?? 0) || a.name.localeCompare(b.name, "fr"),
     )

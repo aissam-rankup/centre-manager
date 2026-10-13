@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 
 import { ConfirmAction } from "@/components/shared/confirm-action";
-import { deleteLevel, deletePack, deleteSlot, deleteSubject } from "@/lib/actions/admin";
+import { deleteLevel, deletePack, deleteSlot } from "@/lib/actions/admin";
 import { useLabels } from "@/lib/i18n/client";
 
 
@@ -23,22 +23,6 @@ export function DeleteLevelButton({ levelId, name, children }: { levelId: string
       confirmLabel={C.delete}
       successMessage={C.deleted}
       action={() => deleteLevel(levelId)}
-    />
-  );
-}
-
-export function DeleteSubjectButton({ subjectId, name, children }: { subjectId: string; name: string; children: ReactElement }) {
-  const LABELS = useLabels();
-  const C = LABELS.admin.common;
-  const L = LABELS.admin.subjects;
-  return (
-    <ConfirmAction
-      trigger={children}
-      title={L.deleteSubject(name)}
-      description={`${L.deleteSubjectHint} ${C.irreversible}`}
-      confirmLabel={C.delete}
-      successMessage={C.deleted}
-      action={() => deleteSubject(subjectId)}
     />
   );
 }

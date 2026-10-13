@@ -1,13 +1,17 @@
-import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
+import { Archive, Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 
-import { DeleteLevelButton, DeletePackButton, DeleteSubjectButton } from "@/components/admin/delete-buttons";
+import { DeleteLevelButton, DeletePackButton } from "@/components/admin/delete-buttons";
 import { LevelDialog, PackDialog, SubjectDialog } from "@/components/admin/level-subject-dialogs";
+import { SubjectRemovalButton, UnarchiveSubjectButton } from "@/components/admin/subject-removal";
+import Link from "@/components/shared/app-link";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Money } from "@/components/shared/money";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/lib/auth/routes";
+import { formatDate } from "@/lib/format";
 import { getLabels } from "@/lib/i18n/server";
 import { type AdminLevel, getLevelsWithStats } from "@/lib/data/admin";
 
@@ -18,11 +22,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: L.title };
 }
 
-export default async function AdminSubjectsPage() {
+/** Niveaux, matières et packs ; matières archivées masquées sauf filtre « archivees=1 ». */
+export default async function AdminSubjectsPage({ searchParams }: PageProps<"/admin/niveaux-matieres">) {
   const LABELS = await getLabels();
   const L = LABELS.admin.subjects;
   const C = LABELS.admin.common;
   const levels = await getLevelsWithStats();
+  const showArchived = (await searchParams).archivees === "1";
+  const archivedCount = levels.reduce((sum, level) => sum + level.subjects.filter((subject) => subject.archivedAt).length, 0);
   const nextSortOrder = Math.max(0, ...levels.map((level) => level.sortOrder)) + 1;
 
   const newLevelButton = (
@@ -39,6 +46,15 @@ export default async function AdminSubjectsPage() {
         description={L.description}
         actions={<LevelDialog trigger={newLevelButton} nextSortOrder={nextSortOrder} />}
       />
+
+      {archivedCount > 0 ? (
+        <Button asChild variant="outline" className="self-start">
+          <Link href={showArchived ? ROUTES.admin.subjects : `${ROUTES.admin.subjects}?archivees=1`}>
+            <Archive aria-hidden />
+            {showArchived ? L.hideArchived : L.showArchived(archivedCount)}
+          </Link>
+        </Button>
+      ) : null}
 
       {levels.length === 0 ? (
         <EmptyState icon={Layers} title={L.emptyTitle} description={L.emptyDescription} />
@@ -68,39 +84,53 @@ export default async function AdminSubjectsPage() {
                 </div>
               }
             >
-              {level.subjects.length === 0 ? (
+              {level.subjects.filter((subject) => showArchived || !subject.archivedAt).length === 0 ? (
                 <p className="rounded-lg border border-dashed px-4 py-3 text-muted-foreground">{L.noSubjects}</p>
               ) : (
                 <ul className="flex flex-col divide-y">
-                  {level.subjects.map((subject) => (
-                    <li key={subject.id} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate font-medium">{subject.name}</span>
-                        <span className="text-caption text-muted-foreground">{L.enrolled(subject.activeEnrollments)}</span>
-                      </div>
-                      <span className="shrink-0 text-end">
-                        <Money amount={subject.monthlyPrice} />
-                        <span className="block text-caption text-muted-foreground">{LABELS.billing.perMonth}</span>
-                      </span>
-                      <div className="flex shrink-0">
-                        <SubjectDialog
-                          levelId={level.id}
-                          levelName={level.name}
-                          subject={subject}
-                          trigger={
-                            <Button variant="ghost" size="icon" aria-label={`${L.editSubject} — ${subject.name}`}>
-                              <Pencil aria-hidden />
-                            </Button>
-                          }
-                        />
-                        <DeleteSubjectButton subjectId={subject.id} name={subject.name}>
-                          <Button variant="ghost" size="icon" aria-label={`${C.delete} — ${subject.name}`}>
-                            <Trash2 aria-hidden />
-                          </Button>
-                        </DeleteSubjectButton>
-                      </div>
-                    </li>
-                  ))}
+                  {level.subjects
+                    .filter((subject) => showArchived || !subject.archivedAt)
+                    .map((subject) => (
+                      <li key={subject.id} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className={subject.archivedAt ? "truncate font-medium text-muted-foreground" : "truncate font-medium"}>
+                            {subject.name}
+                          </span>
+                          {subject.archivedAt ? (
+                            <span className="text-caption font-medium text-warning-ink">{L.archivedOn(formatDate(subject.archivedAt))}</span>
+                          ) : (
+                            <span className="text-caption text-muted-foreground">{L.enrolled(subject.activeEnrollments)}</span>
+                          )}
+                        </div>
+                        <span className="shrink-0 text-end">
+                          <Money amount={subject.monthlyPrice} />
+                          <span className="block text-caption text-muted-foreground">{LABELS.billing.perMonth}</span>
+                        </span>
+                        <div className="flex shrink-0 items-center">
+                          {subject.archivedAt ? (
+                            <UnarchiveSubjectButton subjectId={subject.id} name={subject.name} />
+                          ) : (
+                            <>
+                              <SubjectDialog
+                                levelId={level.id}
+                                levelName={level.name}
+                                subject={subject}
+                                trigger={
+                                  <Button variant="ghost" size="icon" aria-label={`${L.editSubject} — ${subject.name}`}>
+                                    <Pencil aria-hidden />
+                                  </Button>
+                                }
+                              />
+                              <SubjectRemovalButton subjectId={subject.id} name={subject.name}>
+                                <Button variant="ghost" size="icon" aria-label={`${L.removal.trigger} — ${subject.name}`}>
+                                  <Trash2 aria-hidden />
+                                </Button>
+                              </SubjectRemovalButton>
+                            </>
+                          )}
+                        </div>
+                      </li>
+                    ))}
                 </ul>
               )}
               <SubjectDialog
@@ -127,6 +157,8 @@ async function LevelPacks({ level }: { level: AdminLevel }) {
   const L = LABELS.admin.subjects;
   const C = LABELS.admin.common;
   const subjectName = new Map(level.subjects.map((subject) => [subject.id, subject.name]));
+  // Matières archivées : plus proposées dans un pack.
+  const offered = level.subjects.filter((subject) => !subject.archivedAt);
 
   return (
     <div className="flex flex-col gap-3 border-t pt-4">
@@ -162,7 +194,7 @@ async function LevelPacks({ level }: { level: AdminLevel }) {
                 <PackDialog
                   levelId={level.id}
                   levelName={level.name}
-                  subjects={level.subjects}
+                  subjects={offered}
                   pack={pack}
                   trigger={
                     <Button variant="ghost" size="icon" aria-label={`${L.editPack} — ${pack.name}`}>
@@ -180,13 +212,13 @@ async function LevelPacks({ level }: { level: AdminLevel }) {
           ))}
         </ul>
       )}
-      {level.subjects.length === 0 ? (
+      {offered.length === 0 ? (
         <p className="text-caption text-muted-foreground">{L.needSubjects}</p>
       ) : (
         <PackDialog
           levelId={level.id}
           levelName={level.name}
-          subjects={level.subjects}
+          subjects={offered}
           trigger={
             <Button variant="outline" className="self-start">
               <Plus aria-hidden />
