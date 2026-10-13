@@ -194,7 +194,9 @@ function PayrollLineRow({ line, payroll, todayIso }: { line: PayrollLineView; pa
       <div className="grid gap-3 px-5 py-4 lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_minmax(0,1.4fr)] lg:items-center lg:gap-4">
         <div className="flex min-w-0 flex-col">
           <span className="font-medium">{line.teacherName}</span>
-          <span className={cn("text-caption", line.payMode ? "text-muted-foreground" : "font-medium text-warning-ink")}>{mode}</span>
+          <span className={cn("text-caption", line.payMode ? "text-muted-foreground" : "font-medium text-warning-ink")}>
+            {line.memberRole === "teacher" ? mode : `${LABELS.roles[line.memberRole]} · ${mode}`}
+          </span>
         </div>
         <Amount label={C.computed} value={formatMAD(line.computed, locale)} />
         <div className="flex justify-between gap-3 lg:flex-col lg:items-end lg:gap-0">

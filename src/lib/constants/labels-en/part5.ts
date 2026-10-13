@@ -3,7 +3,7 @@ import type { AppLabels } from "@/lib/constants/labels";
 /** Libellés anglais : payroll, expenses, rooms. */
 export const EN_PART5: Pick<AppLabels, "payroll" | "expenses" | "rooms"> = {
   payroll: {
-    title: "{Instructor} payroll",
+    title: "Team payroll",
     description: "Amounts calculated automatically each month: fixed salary, or commission on the full price paid by enrolled {learners}.",
     month: "Month",
     previousMonth: "Previous month",
@@ -18,7 +18,7 @@ export const EN_PART5: Pick<AppLabels, "payroll" | "expenses" | "rooms"> = {
     validatedBy: (name: string, date: string) => `Validated by ${name} on ${date}`,
     validatedOn: (date: string) => `Validated on ${date}`,
     columns: {
-      teacher: "{Instructor}",
+      teacher: "Team member",
       mode: "Pay type",
       computed: "Calculated",
       adjustment: "Adjustment",
@@ -27,7 +27,7 @@ export const EN_PART5: Pick<AppLabels, "payroll" | "expenses" | "rooms"> = {
     },
     modes: { fixed_salary: "Fixed salary", commission: "Commission", none: "Not set up" },
     total: "Monthly payroll total",
-    teachersCount: (count: number) => (count === 1 ? "1 {instructor}" : `${count} {instructors}`),
+    teachersCount: (count: number) => (count === 1 ? "1 member" : `${count} members`),
     emptyTitle: "No {instructors}",
     emptyDescription: "Create {instructor} accounts and assign them {courses} to calculate payroll.",
     showDetail: "Show calculation details",
@@ -118,13 +118,24 @@ export const EN_PART5: Pick<AppLabels, "payroll" | "expenses" | "rooms"> = {
       historyFrom: (date: string) => `since ${date}`,
       historyRange: (from: string, to: string) => `from ${from} to ${to}`,
     },
+    staff: {
+      title: "Team salaries",
+      description: "Salaried assistants and administrators: fixed monthly salary from a given date. Without a salary, the member does not appear in the payroll.",
+      notOnPayroll: "Not on payroll",
+      setSalary: "Set salary",
+      dialogTitle: (name: string) => `Salary — ${name}`,
+      remove: "Remove from payroll",
+      removeHint: "The member no longer appears in upcoming payrolls. Validated payrolls and history are kept.",
+      removed: "Member removed from payroll",
+      fromUsers: "Pay",
+    },
     pdf: {
       payslipTitle: "Payslip",
       summaryTitle: "Payroll summary",
       period: "Period",
-      teacher: "{Instructor}",
+      teacher: "Payee",
       generatedAt: (date: string) => `Issued on ${date}`,
-      signature: "{Instructor}'s signature",
+      signature: "Payee's signature",
     },
   },
   expenses: {

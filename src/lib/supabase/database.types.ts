@@ -2365,6 +2365,7 @@ export type Database = {
           final_amount: number | null
           id: string
           is_demo: boolean
+          member_role: Database["public"]["Enums"]["user_role"]
           paid_at: string | null
           paid_by: string | null
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
@@ -2383,6 +2384,7 @@ export type Database = {
           final_amount?: number | null
           id?: string
           is_demo?: boolean
+          member_role: Database["public"]["Enums"]["user_role"]
           paid_at?: string | null
           paid_by?: string | null
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
@@ -2401,6 +2403,7 @@ export type Database = {
           final_amount?: number | null
           id?: string
           is_demo?: boolean
+          member_role?: Database["public"]["Enums"]["user_role"]
           paid_at?: string | null
           paid_by?: string | null
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
@@ -4579,6 +4582,7 @@ export type Database = {
           final_amount: number | null
           id: string
           is_demo: boolean
+          member_role: Database["public"]["Enums"]["user_role"]
           paid_at: string | null
           paid_by: string | null
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
@@ -4627,6 +4631,7 @@ export type Database = {
           final_amount: number | null
           id: string
           is_demo: boolean
+          member_role: Database["public"]["Enums"]["user_role"]
           paid_at: string | null
           paid_by: string | null
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
@@ -5306,6 +5311,14 @@ export type Database = {
           p_reason?: string
           p_run_id: string
           p_student_id: string
+        }
+        Returns: undefined
+      }
+      set_staff_salary: {
+        Args: {
+          p_effective_from?: string
+          p_member_id: string
+          p_monthly_amount?: number
         }
         Returns: undefined
       }

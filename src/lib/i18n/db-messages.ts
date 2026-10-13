@@ -311,6 +311,11 @@ export const DB_MESSAGES: readonly DbMessage[] = [
     ar: "يُشترط أن يكون الحساب حساب {instructor} في المركز.",
   },
   {
+    fr: "Le compte doit être un membre de l'équipe du centre.",
+    en: "The account must be a team member at the centre.",
+    ar: "يُشترط أن يكون الحساب لعضو في فريق المركز.",
+  },
+  {
     fr: "Le cycle de paiement doit être le 1er ou le 15.",
     en: "The payment cycle must start on the 1st or the 15th.",
     ar: "يجب أن تبدأ دورة الأداء يوم 1 أو يوم 15 من الشهر.",
@@ -391,6 +396,7 @@ export const DB_MESSAGES: readonly DbMessage[] = [
     en: "Reminders can only be sent once the campaign is confirmed.",
     ar: "لا تُرسَل التذكيرات إلا بعد تأكيد الحملة.",
   },
+  { fr: "Membre de l'équipe introuvable.", en: "Team member not found.", ar: "عضو الفريق غير موجود." },
   { fr: "Message trop long.", en: "Message too long.", ar: "الرسالة طويلة جدًا." },
   { fr: "Mode support : lecture seule.", en: "Support mode: read only.", ar: "وضع الدعم: قراءة فقط." },
   { fr: "Module inconnu.", en: "Unknown module.", ar: "وحدة غير معروفة." },

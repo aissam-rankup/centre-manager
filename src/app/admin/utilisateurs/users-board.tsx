@@ -1,13 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Camera, CircleCheckBig, Copy, KeyRound, Pencil, Power, PowerOff, UserPlus, Users } from "lucide-react";
+import { Camera, CircleCheckBig, Copy, KeyRound, Pencil, Power, PowerOff, UserPlus, Users, Wallet } from "lucide-react";
 import { type ReactElement, useState, useTransition } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { AssignmentPicker } from "@/components/admin/assignment-picker";
 import { ResetPasswordDialog } from "@/components/password/reset-password-dialog";
+import Link from "@/components/shared/app-link";
 import { FormDialog } from "@/components/admin/form-dialog";
 import { useActionForm } from "@/components/admin/use-action-form";
 import { ConfirmAction } from "@/components/shared/confirm-action";
@@ -23,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { createUser, setUserActive, updateUser } from "@/lib/actions/admin";
 import { removeUserPhoto, setUserPhoto } from "@/lib/actions/profile";
+import { ROUTES } from "@/lib/auth/routes";
 import { useLabels, useMessage } from "@/lib/i18n/client";
 import type { AdminUser } from "@/lib/data/admin";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
@@ -33,9 +35,9 @@ import { adminSchemas, type UserCreateInput } from "@/lib/validation/admin";
 
 const ROLES = ["admin", "assistant", "teacher"] as const;
 
-type UsersBoardProps = { users: AdminUser[]; levels: LevelWithSubjects[] };
+type UsersBoardProps = { users: AdminUser[]; levels: LevelWithSubjects[]; payrollEnabled: boolean };
 
-export function UsersBoard({ users, levels }: UsersBoardProps) {
+export function UsersBoard({ users, levels, payrollEnabled }: UsersBoardProps) {
   const LABELS = useLabels();
   const L = LABELS.admin.users;
   const columns: DataTableColumn<AdminUser>[] = [
@@ -113,6 +115,14 @@ export function UsersBoard({ users, levels }: UsersBoardProps) {
                 </Button>
               }
             />
+          ) : null}
+          {/* Rémunération : professeurs (mode, taux) ; assistants et admins (salaire fixe). */}
+          {payrollEnabled && user.active ? (
+            <Button asChild variant="ghost" size="icon" aria-label={`${LABELS.payroll.staff.fromUsers} — ${user.fullName}`}>
+              <Link href={`${ROUTES.admin.payroll}#${user.role === "teacher" ? "remuneration" : "salaires"}`}>
+                <Wallet aria-hidden />
+              </Link>
+            </Button>
           ) : null}
           {user.isSelf ? null : <ToggleActiveButton user={user} />}
         </div>

@@ -3,7 +3,7 @@ import type { AppLabels } from "@/lib/constants/labels";
 /** Libellés arabes : payroll, expenses, rooms. */
 export const AR_PART5: Pick<AppLabels, "payroll" | "expenses" | "rooms"> = {
   payroll: {
-    title: "أجور {the instructors}",
+    title: "أجور الفريق",
     description: "مبالغ تُحسب تلقائيًا كل شهر: أجر ثابت، أو عمولة على التعريفة الكاملة ل{the learners} المسجلين.",
     month: "الشهر",
     previousMonth: "الشهر السابق",
@@ -18,7 +18,7 @@ export const AR_PART5: Pick<AppLabels, "payroll" | "expenses" | "rooms"> = {
     validatedBy: (name: string, date: string) => `صادق عليها ${name} بتاريخ ${date}`,
     validatedOn: (date: string) => `تمت المصادقة بتاريخ ${date}`,
     columns: {
-      teacher: "{the instructor}",
+      teacher: "عضو الفريق",
       mode: "نوع الأجر",
       computed: "المبلغ المحسوب",
       adjustment: "التسوية",
@@ -27,7 +27,7 @@ export const AR_PART5: Pick<AppLabels, "payroll" | "expenses" | "rooms"> = {
     },
     modes: { fixed_salary: "أجر ثابت", commission: "عمولة", none: "غير محدد" },
     total: "كتلة الأجور الشهرية",
-    teachersCount: (count: number) => `{the instructors}: ${count}`,
+    teachersCount: (count: number) => `الأعضاء: ${count}`,
     emptyTitle: "لا يوجد {instructors}",
     emptyDescription: "أنشئ حسابات {the instructors} وأسند إليهم {courses} لحساب الأجور.",
     showDetail: "عرض تفاصيل الحساب",
@@ -118,13 +118,24 @@ export const AR_PART5: Pick<AppLabels, "payroll" | "expenses" | "rooms"> = {
       historyFrom: (date: string) => `ابتداءً من ${date}`,
       historyRange: (from: string, to: string) => `من ${from} إلى ${to}`,
     },
+    staff: {
+      title: "أجور الفريق الإداري",
+      description: "المساعدون والمسيرون المأجورون: أجر شهري ثابت ابتداءً من تاريخ محدد. بدون أجر، لا يظهر العضو في الأجور.",
+      notOnPayroll: "خارج الأجور",
+      setSalary: "تحديد الأجر",
+      dialogTitle: (name: string) => `الأجر — ${name}`,
+      remove: "إزالة من الأجور",
+      removeHint: "لن يظهر العضو في الأجور القادمة. تُحفظ الأجور المصادق عليها والسجل.",
+      removed: "تمت إزالة العضو من الأجور",
+      fromUsers: "الأجر",
+    },
     pdf: {
       payslipTitle: "ورقة الأجر",
       summaryTitle: "ملخص الأجور",
       period: "الفترة",
-      teacher: "{the instructor}",
+      teacher: "المستفيد",
       generatedAt: (date: string) => `حُرّر بتاريخ ${date}`,
-      signature: "توقيع {the instructor}",
+      signature: "توقيع المستفيد",
     },
   },
   expenses: {

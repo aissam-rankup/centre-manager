@@ -122,6 +122,7 @@ export function PayslipPdf({
           <View>
             <Text rtl={rtl} style={styles.fieldLabel}>{P.pdf.teacher}</Text>
             <Text rtl={rtl} style={styles.fieldValue}>{line.teacherName}</Text>
+            <Text rtl={rtl} style={styles.muted}>{labels.roles[line.memberRole]}</Text>
           </View>
           <View>
             <Text rtl={rtl} style={styles.fieldLabel}>{P.pdf.period}</Text>
