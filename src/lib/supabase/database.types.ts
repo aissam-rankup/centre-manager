@@ -3109,6 +3109,155 @@ export type Database = {
           },
         ]
       }
+      salary_payments: {
+        Row: {
+          amount: number
+          cancel_reason: string | null
+          cancels_payment_id: string | null
+          center_id: string
+          center_snapshot: Json
+          id: string
+          issued_at: string
+          issued_by: string | null
+          issued_by_name: string | null
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          member_id: string | null
+          member_name: string
+          member_phone: string | null
+          member_role: Database["public"]["Enums"]["user_role"]
+          note: string | null
+          paid_on: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payroll_line_id: string | null
+          pdf_url: string | null
+          period_month: number
+          period_year: number
+          printed_at: string | null
+          receipt_number: string | null
+          receipt_seq: number
+          receipt_year: number
+          whatsapp_sent_at: string | null
+        }
+        Insert: {
+          amount: number
+          cancel_reason?: string | null
+          cancels_payment_id?: string | null
+          center_id: string
+          center_snapshot: Json
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          issued_by_name?: string | null
+          kind?: Database["public"]["Enums"]["receipt_kind"]
+          member_id?: string | null
+          member_name: string
+          member_phone?: string | null
+          member_role: Database["public"]["Enums"]["user_role"]
+          note?: string | null
+          paid_on: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payroll_line_id?: string | null
+          pdf_url?: string | null
+          period_month: number
+          period_year: number
+          printed_at?: string | null
+          receipt_number?: string | null
+          receipt_seq: number
+          receipt_year: number
+          whatsapp_sent_at?: string | null
+        }
+        Update: {
+          amount?: number
+          cancel_reason?: string | null
+          cancels_payment_id?: string | null
+          center_id?: string
+          center_snapshot?: Json
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          issued_by_name?: string | null
+          kind?: Database["public"]["Enums"]["receipt_kind"]
+          member_id?: string | null
+          member_name?: string
+          member_phone?: string | null
+          member_role?: Database["public"]["Enums"]["user_role"]
+          note?: string | null
+          paid_on?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payroll_line_id?: string | null
+          pdf_url?: string | null
+          period_month?: number
+          period_year?: number
+          printed_at?: string | null
+          receipt_number?: string | null
+          receipt_seq?: number
+          receipt_year?: number
+          whatsapp_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_payments_cancels_payment_id_fkey"
+            columns: ["cancels_payment_id"]
+            isOneToOne: true
+            referencedRelation: "salary_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_payments_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_payments_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_payments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_payments_payroll_line_id_center_id_fkey"
+            columns: ["payroll_line_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_lines"
+            referencedColumns: ["id", "center_id"]
+          },
+        ]
+      }
+      salary_receipt_counters: {
+        Row: {
+          center_id: string
+          last_number: number
+          year: number
+        }
+        Insert: {
+          center_id: string
+          last_number: number
+          year: number
+        }
+        Update: {
+          center_id?: string
+          last_number?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_receipt_counters_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedule_conflicts_log: {
         Row: {
           attempted_slot: Json
@@ -4290,6 +4439,43 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cancel_salary_payment: {
+        Args: { p_payment_id: string; p_reason: string }
+        Returns: {
+          amount: number
+          cancel_reason: string | null
+          cancels_payment_id: string | null
+          center_id: string
+          center_snapshot: Json
+          id: string
+          issued_at: string
+          issued_by: string | null
+          issued_by_name: string | null
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          member_id: string | null
+          member_name: string
+          member_phone: string | null
+          member_role: Database["public"]["Enums"]["user_role"]
+          note: string | null
+          paid_on: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payroll_line_id: string | null
+          pdf_url: string | null
+          period_month: number
+          period_year: number
+          printed_at: string | null
+          receipt_number: string | null
+          receipt_seq: number
+          receipt_year: number
+          whatsapp_sent_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "salary_payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       cash_month_overview: { Args: { p_month?: string }; Returns: Json }
       cash_session_history: {
         Args: { p_from: string; p_to: string }
@@ -4449,6 +4635,10 @@ export type Database = {
         Args: { p_resource_id: string }
         Returns: undefined
       }
+      mark_salary_receipt_printed: {
+        Args: { p_payment_id: string }
+        Returns: undefined
+      }
       mark_session_attendance: {
         Args: { p_entries: Json; p_session_date: string; p_slot_id: string }
         Returns: number
@@ -4571,30 +4761,40 @@ export type Database = {
         Args: {
           p_line_id: string
           p_method: Database["public"]["Enums"]["payment_method"]
+          p_note?: string
           p_paid_at: string
         }
         Returns: {
-          adjustment_amount: number
-          adjustment_reason: string | null
+          amount: number
+          cancel_reason: string | null
+          cancels_payment_id: string | null
           center_id: string
-          computed_amount: number
-          detail: Json
-          final_amount: number | null
+          center_snapshot: Json
           id: string
-          is_demo: boolean
+          issued_at: string
+          issued_by: string | null
+          issued_by_name: string | null
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          member_id: string | null
+          member_name: string
+          member_phone: string | null
           member_role: Database["public"]["Enums"]["user_role"]
-          paid_at: string | null
-          paid_by: string | null
-          pay_mode: Database["public"]["Enums"]["pay_mode"] | null
-          payment_method: Database["public"]["Enums"]["payment_method"] | null
-          payroll_period_id: string
-          teacher_id: string
-          teacher_name: string
-          updated_at: string
+          note: string | null
+          paid_on: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payroll_line_id: string | null
+          pdf_url: string | null
+          period_month: number
+          period_year: number
+          printed_at: string | null
+          receipt_number: string | null
+          receipt_seq: number
+          receipt_year: number
+          whatsapp_sent_at: string | null
         }
         SetofOptions: {
           from: "*"
-          to: "payroll_lines"
+          to: "salary_payments"
           isOneToOne: true
           isSetofReturn: false
         }

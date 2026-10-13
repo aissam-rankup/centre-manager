@@ -102,7 +102,7 @@ select ok(
   'aucun mot de passe, jeton ni code de connexion');
 select is(
   (select count(*)::integer from json_object_keys(public.export_center_data((select id from t_export)))),
-  16, 'seize onglets');
+  17, 'dix-sept onglets');
 
 select lives_ok(
   $$ select public.complete_center_export((select id from t_export), 'ec/x/export.zip', 2048) $$,

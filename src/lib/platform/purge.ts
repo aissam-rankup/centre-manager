@@ -11,6 +11,7 @@ export const CENTER_BUCKETS = [
   "staff-photos",
   "center-branding",
   "receipts",
+  "salary-receipts",
   "expense-receipts",
   "learning-resources",
   "center-exports",

@@ -179,6 +179,10 @@ insert into public.payroll_periods (id, center_id, year, month) values
 insert into public.payroll_lines (id, payroll_period_id, center_id, teacher_id, teacher_name, pay_mode, computed_amount) values
   ('6b000000-0000-4000-8000-000000000001', '5b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001',
    'b0000000-0000-4000-8000-00000000000c', 'Prof B', 'commission', 90);
+-- Versement de B et son reçu de paie (compteur de la série de paie compris).
+update public.payroll_lines set paid_at = date '2026-02-01', payment_method = 'cash'
+where id = '6b000000-0000-4000-8000-000000000001';
+select private.issue_salary_receipt('6b000000-0000-4000-8000-000000000001', 'Paie B');
 insert into public.expenses (id, center_id, category_id, label, amount, receipt_url)
 select '7b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', ec.id, 'Loyer B', 4000,
        'cb000000-0000-4000-8000-000000000001/loyer.pdf'
@@ -215,6 +219,7 @@ insert into storage.objects (bucket_id, name) values
   ('student-photos', 'cb000000-0000-4000-8000-000000000001/4b000000-0000-4000-8000-000000000001.jpg'),
   ('staff-photos', 'cb000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-00000000000a/1.jpg'),
   ('receipts', 'cb000000-0000-4000-8000-000000000001/recu.pdf'),
+  ('salary-receipts', 'cb000000-0000-4000-8000-000000000001/recu-paie.pdf'),
   ('expense-receipts', 'cb000000-0000-4000-8000-000000000001/loyer.pdf');
 
 -- Lignes de B : tout ce qui n'était pas dans la photographie.
@@ -281,7 +286,7 @@ from unnest(array['students', 'enrollments', 'invoices', 'attendance', 'alerts',
                   'discounts', 'receipts', 'center_events', 'teacher_salaries', 'teacher_commissions', 'payroll_periods',
                   'payroll_lines', 'expense_categories', 'expenses', 'rooms', 'schedule_conflicts_log',
                   'absence_notifications', 'billing_runs', 'billing_run_lines', 'reenrollment_intents',
-                  'payment_reminders', 'cash_sessions', 'cash_movements']) as tbl;
+                  'payment_reminders', 'cash_sessions', 'cash_movements', 'salary_payments']) as tbl;
 reset role;
 
 -- ---------------------------------------------------------------------

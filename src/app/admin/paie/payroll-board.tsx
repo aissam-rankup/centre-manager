@@ -1,10 +1,12 @@
 "use client";
 
-import { Banknote, ChevronDown, FileText, Info, Lock, LockOpen, SlidersHorizontal } from "lucide-react";
+import { Banknote, ChevronDown, FileText, Info, Lock, LockOpen, ReceiptText, SlidersHorizontal } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { FormDialog } from "@/components/admin/form-dialog";
+import Link from "@/components/shared/app-link";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import { FormField } from "@/components/shared/form-field";
 import { Button } from "@/components/ui/button";
@@ -79,6 +81,12 @@ export function PayrollActions({ payroll }: { payroll: PayrollView }) {
           />
         ) : null}
         {payroll.status === "validated" && !anyPaid ? <UnlockDialog periodId={payroll.periodId} /> : null}
+        <Button asChild variant="outline">
+          <Link href={ROUTES.admin.salaryReceipts}>
+            <ReceiptText aria-hidden />
+            {P.exports.receipts}
+          </Link>
+        </Button>
         <Button asChild variant="outline">
           <a href={`${exportBase}&format=pdf`} target="_blank" rel="noopener">
             <FileText aria-hidden />
@@ -226,6 +234,14 @@ function PayrollLineRow({ line, payroll, todayIso }: { line: PayrollLineView; pa
         <div className="flex flex-wrap gap-2 lg:justify-end">
           {payroll.status === "draft" ? <AdjustmentDialog line={line} /> : null}
           {payroll.status !== "draft" && !line.paidAt ? <PayLineDialog line={line} todayIso={todayIso} /> : null}
+          {line.receiptId ? (
+            <Button asChild variant="ghost" aria-label={`${P.exports.receipt} — ${line.teacherName}`}>
+              <Link href={ROUTES.salaryReceipt(line.receiptId)}>
+                <ReceiptText aria-hidden />
+                <span className="lg:sr-only">{P.exports.receipt}</span>
+              </Link>
+            </Button>
+          ) : null}
           <Button asChild variant="ghost" aria-label={`${P.exports.payslip} — ${line.teacherName}`}>
             <a href={`${ROUTES.admin.payroll}/fiche/${line.id}`} target="_blank" rel="noopener">
               <FileText aria-hidden />
@@ -415,8 +431,10 @@ function PayLineDialog({ line, todayIso }: { line: PayrollLineView; todayIso: st
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(todayIso);
   const [method, setMethod] = useState<PaymentMethod>("bank_transfer");
+  const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   return (
     <FormDialog
@@ -425,22 +443,25 @@ function PayLineDialog({ line, todayIso }: { line: PayrollLineView; todayIso: st
         setOpen(value);
         if (value) {
           setDate(todayIso);
+          setNote("");
           setError(null);
         }
       }}
       title={Y.title(line.teacherName)}
+      description={Y.receiptHint}
       pending={pending}
       error={error}
       submitLabel={Y.confirm}
       onSubmit={(event) => {
         event.preventDefault();
         startTransition(async () => {
-          const result = await markPayrollLinePaid({ lineId: line.id, paidAt: date, method });
+          const result = await markPayrollLinePaid({ lineId: line.id, paidAt: date, method, note });
           if (!result.ok) {
             setError(message(result.error));
             return;
           }
-          toast.success(Y.done);
+          const receiptHref = ROUTES.salaryReceipt(result.data.receiptId);
+          toast.success(Y.done, { action: { label: LABELS.salaryReceipts.view, onClick: () => router.push(receiptHref) } });
           setOpen(false);
         });
       }}
@@ -469,6 +490,9 @@ function PayLineDialog({ line, todayIso }: { line: PayrollLineView; todayIso: st
           </NativeSelect>
         </FormField>
       </div>
+      <FormField id={`versement-note-${line.id}`} label={Y.note}>
+        <Textarea rows={2} maxLength={300} value={note} placeholder={Y.notePlaceholder} onChange={(event) => setNote(event.target.value)} />
+      </FormField>
     </FormDialog>
   );
 }

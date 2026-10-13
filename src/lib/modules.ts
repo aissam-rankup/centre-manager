@@ -41,6 +41,7 @@ const MODULE_ROUTES: readonly { prefix: string; module: ModuleKey }[] = [
   { prefix: ROUTES.admin.cash, module: "finance" },
   { prefix: ROUTES.assistant.cash, module: "finance" },
   { prefix: "/recus", module: "finance" },
+  { prefix: "/recus-paie", module: "finance" },
   { prefix: ROUTES.admin.reenrollment, module: "reenrollment" },
   { prefix: ROUTES.assistant.reenrollment, module: "reenrollment" },
   { prefix: "/fiches/assiduite", module: "absence_tracking" },

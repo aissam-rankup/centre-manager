@@ -3,6 +3,7 @@ import "server-only";
 import { requireRole } from "@/lib/auth/session";
 import { toISODate, today } from "@/lib/format";
 import { type PayMode, type PayrollDetail, type PayrollMonth, type PayrollStatus, parsePayrollDetail } from "@/lib/payroll";
+import { getLineReceiptIds } from "@/lib/data/salary-receipts";
 import type { PaymentMethod } from "@/lib/receipts";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
@@ -22,6 +23,8 @@ export type PayrollLineView = {
   final: number;
   paidAt: string | null;
   paymentMethod: PaymentMethod | null;
+  /** Reçu de paie en vigueur (versement non annulé). */
+  receiptId: string | null;
   detail: PayrollDetail;
 };
 
@@ -60,6 +63,7 @@ export async function getPayroll(month: PayrollMonth): Promise<PayrollView | nul
   ]);
   if (linesError) throw linesError;
   if (validatorError) throw validatorError;
+  const receipts = await getLineReceiptIds(lines.filter((line) => line.paid_at).map((line) => line.id));
 
   return {
     periodId: period.id,
@@ -80,6 +84,7 @@ export async function getPayroll(month: PayrollMonth): Promise<PayrollView | nul
       final: Number(line.final_amount ?? 0),
       paidAt: line.paid_at,
       paymentMethod: line.payment_method,
+      receiptId: receipts.get(line.id) ?? null,
       detail: parsePayrollDetail(line.pay_mode, line.detail),
     })),
   };

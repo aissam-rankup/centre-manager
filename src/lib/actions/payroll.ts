@@ -19,7 +19,7 @@ async function admin() {
 }
 
 function revalidatePayroll() {
-  revalidatePath(ROUTES.admin.payroll);
+  revalidatePath(ROUTES.admin.payroll, "layout");
   revalidatePath(ROUTES.admin.home);
 }
 
@@ -67,21 +67,28 @@ export async function unlockPayroll(input: unknown): Promise<ActionResult> {
   return success();
 }
 
-export async function markPayrollLinePaid(input: unknown): Promise<ActionResult> {
+/** Versement d'une ligne validée : enregistré avec son reçu de paie (numéroté, immuable). */
+export async function markPayrollLinePaid(input: unknown): Promise<ActionResult<{ receiptId: string }>> {
   const LABELS = await getLabels();
   const parsed = z
-    .object({ lineId: z.uuid(), paidAt: z.string().regex(ISO_DATE), method: z.enum(PAYMENT_METHODS) })
+    .object({
+      lineId: z.uuid(),
+      paidAt: z.string().regex(ISO_DATE),
+      method: z.enum(PAYMENT_METHODS),
+      note: z.string().trim().max(300).optional(),
+    })
     .safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid);
   const supabase = await admin();
-  const { error } = await supabase.rpc("payroll_mark_paid", {
+  const { data, error } = await supabase.rpc("payroll_mark_paid", {
     p_line_id: parsed.data.lineId,
     p_paid_at: parsed.data.paidAt,
     p_method: parsed.data.method,
+    p_note: parsed.data.note || undefined,
   });
   if (error) return failure(await describeCenterError(error));
   revalidatePayroll();
-  return success();
+  return success({ receiptId: data.id });
 }
 
 /** Rémunération d'un professeur à partir d'une date (mode, salaire ou taux par matière). */

@@ -66,6 +66,8 @@ export const ROUTES = {
     branding: "/admin/marque",
     settings: "/admin/reglages",
     payroll: "/admin/paie",
+    /** Historique des reçus de paie (filtres membre et période). */
+    salaryReceipts: "/admin/paie/recus",
     expenses: "/admin/charges",
     rooms: "/admin/salles",
     reenrollment: "/admin/reinscriptions",
@@ -73,6 +75,8 @@ export const ROUTES = {
   },
   /** Reçu imprimable (accueil et administration). */
   receipt: (id: string) => `/recus/${id}`,
+  /** Reçu de paie imprimable (administration). */
+  salaryReceipt: (id: string) => `/recus-paie/${id}`,
   /** Fichier d'une ressource pédagogique (URL signée, après contrôle d'accès). */
   resourceFile: (id: string) => `/ressources/${id}/fichier`,
   /** Espace élève (rôle student_user) et sa connexion par code. */

@@ -622,4 +622,23 @@ export const DB_MESSAGES: readonly DbMessage[] = [
   { fr: "Les données de ce centre ont été supprimées : il ne peut plus être réactivé.", en: "This centre's data has been deleted: it can no longer be reactivated.", ar: "حُذفت بيانات هذا المركز: لم يعد بالإمكان إعادة تفعيله." },
   { fr: "Suppression prévue : annulez-la avant de réactiver le centre.", en: "Deletion scheduled: cancel it before reactivating the centre.", ar: "الحذف مبرمج: ألغِه قبل إعادة تفعيل المركز." },
   { fr: "Suppression non due pour ce centre.", en: "Deletion not yet due for this centre.", ar: "لم يحن بعد موعد حذف هذا المركز." },
+  // Reçus de paie.
+  {
+    fr: "Un reçu de paie ne se supprime pas : émettez un reçu d'annulation.",
+    en: "A pay receipt cannot be deleted: issue a cancellation receipt.",
+    ar: "لا يُحذف وصل الأجر: أصدر وصل إلغاء.",
+  },
+  {
+    fr: "Un reçu de paie ne se modifie pas : émettez un reçu d'annulation.",
+    en: "A pay receipt cannot be edited: issue a cancellation receipt.",
+    ar: "لا يُعدَّل وصل الأجر: أصدر وصل إلغاء.",
+  },
+  { fr: "Ce versement est déjà enregistré.", en: "This payment has already been recorded.", ar: "تم تسجيل هذه الدفعة من قبل." },
+  {
+    fr: "Montant final négatif : aucun versement possible.",
+    en: "Negative final amount: no payment possible.",
+    ar: "المبلغ النهائي سالب: لا يمكن أي دفع.",
+  },
+  { fr: "Indiquez la date et le mode du versement.", en: "Enter the payment date and method.", ar: "أدخل تاريخ الدفع وطريقته." },
+  { fr: "Note : 300 caractères au plus.", en: "Note: 300 characters max.", ar: "الملاحظة: 300 حرف على الأكثر." },
 ];
