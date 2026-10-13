@@ -135,6 +135,11 @@ export const AR_PART9: Pick<AppLabels, "teacher" | "assistant" | "table" | "erro
       emptyDescription: "تحقق من كتابة الاسم، أو سجّل {learner} جديدًا.",
       noStudentsTitle: "لا يوجد {learners} مسجلون",
       noStudentsDescription: "سيظهر هنا {the learners} المسجلون.",
+      showSuspended: "عرض الموقوفين",
+      hideSuspended: "العودة إلى النشطين",
+      suspendedTitle: "الموقوفون",
+      noSuspendedTitle: "لا يوجد موقوفون",
+      noSuspendedDescription: "سيظهر هنا {the learners} الموقوفون من ملفاتهم.",
       newStudent: "{learner} جديد",
     },
     student: {
@@ -143,6 +148,28 @@ export const AR_PART9: Pick<AppLabels, "teacher" | "assistant" | "table" | "erro
       noGuardian: "لم يُدخَل أي ولي أمر",
       notes: "ملاحظات",
       enrolledOn: (date: string) => `تاريخ التسجيل: ${date}`,
+      suspension: {
+        badge: "موقوف",
+        title: "{learner} موقوف",
+        since: (date: string, name: string | null) => (name ? `منذ ${date}، بواسطة ${name}` : `منذ ${date}`),
+        reason: "السبب",
+        effects:
+          "لم يعد يظهر في المناداة ولا الغيابات ولا التذكيرات ولا إعادة التسجيل، ولم تعد تصدر له فواتير. يُحتفظ بملفه وسجله؛ وتبقى مستحقاته غير المؤداة واجبة.",
+        suspend: "إيقاف {the learner}",
+        suspendTitle: (name: string) => `إيقاف ${name}؟`,
+        suspendDescription:
+          "يوضع {the learner} جانبًا: لا مناداة ولا تنبيه غياب ولا تذكير ولا إعادة تسجيل ولا فاتورة، ويُقطع ولوجه إلى فضاء {the learner}. لا يُحذف أي شيء؛ ويمكنك إعادة تفعيله في أي وقت.",
+        reasonLabel: "سبب الإيقاف",
+        reasonPlaceholder: "مثال: لم يؤدِّ منذ شتنبر",
+        reasonRequired: "أدخل سبب الإيقاف.",
+        confirm: "إيقاف",
+        done: "تم إيقاف {the learner}",
+        reactivate: "إعادة التفعيل",
+        reactivateTitle: (name: string) => `إعادة تفعيل ${name}؟`,
+        reactivateDescription:
+          "يعود {the learner} نشطًا في كل مكان: المناداة، الغيابات، التذكيرات، إعادة التسجيل. وتصدر فاتورة الشهر الجاري لتسجيلاته.",
+        reactivated: "أُعيد تفعيل {the learner}",
+      },
       tabsLabel: "سجل {the learner}",
       tabs: { payments: "الأداءات", receipts: "الوصولات", absences: "الغيابات", followUps: "المتابعات" },
       sections: {

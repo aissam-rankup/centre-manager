@@ -309,6 +309,8 @@ export const EN_PART8: Pick<AppLabels, "admin" | "days" | "daysShort"> = {
       allLevels: "All {groups}",
       filterStatus: "Payment",
       allStatuses: "All payment statuses",
+      suspendedFilter: "Suspended",
+      suspendedOn: (date: string) => `Suspended on ${date}`,
       name: "{Learner}",
       level: "{Group}",
       guardian: "Guardian",

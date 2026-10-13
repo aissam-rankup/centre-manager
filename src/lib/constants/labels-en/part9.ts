@@ -140,6 +140,11 @@ export const EN_PART9: Pick<AppLabels, "teacher" | "assistant" | "table" | "erro
       emptyDescription: "Check the spelling of the name, or enrol a new {learner}.",
       noStudentsTitle: "No {learners} enrolled",
       noStudentsDescription: "Enrolled {learners} will appear here.",
+      showSuspended: "Show suspended {learners}",
+      hideSuspended: "Back to active {learners}",
+      suspendedTitle: "Suspended {learners}",
+      noSuspendedTitle: "No suspended {learners}",
+      noSuspendedDescription: "{Learners} suspended from their profile will appear here.",
       newStudent: "New {learner}",
     },
     student: {
@@ -148,6 +153,28 @@ export const EN_PART9: Pick<AppLabels, "teacher" | "assistant" | "table" | "erro
       noGuardian: "No parent/guardian provided",
       notes: "Notes",
       enrolledOn: (date: string) => `Enrolled on ${date}`,
+      suspension: {
+        badge: "Suspended",
+        title: "Suspended {learner}",
+        since: (date: string, name: string | null) => (name ? `Since ${date}, by ${name}` : `Since ${date}`),
+        reason: "Reason",
+        effects:
+          "They no longer appear in roll calls, absences, reminders or re-enrolments, and are no longer invoiced. Their profile and history are kept; unpaid invoices remain due.",
+        suspend: "Suspend the {learner}",
+        suspendTitle: (name: string) => `Suspend ${name}?`,
+        suspendDescription:
+          "The {learner} is set aside: no more roll call, absence alert, reminder, re-enrolment or invoice, and their {learner} space access is cut. Nothing is deleted; you can reactivate them at any time.",
+        reasonLabel: "Reason for suspension",
+        reasonPlaceholder: "E.g. has not paid since September",
+        reasonRequired: "Enter the reason for the suspension.",
+        confirm: "Suspend",
+        done: "{Learner} suspended",
+        reactivate: "Reactivate",
+        reactivateTitle: (name: string) => `Reactivate ${name}?`,
+        reactivateDescription:
+          "The {learner} becomes active everywhere again: roll calls, absences, reminders, re-enrolments. This month's invoice is issued for their enrolments.",
+        reactivated: "{Learner} reactivated",
+      },
       tabsLabel: "{Learner} history",
       tabs: { payments: "Payments", receipts: "Receipts", absences: "Absences", followUps: "Follow-ups" },
       sections: {

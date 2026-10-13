@@ -250,7 +250,7 @@ export async function getPlanningData(): Promise<PlanningData> {
     supabase.from("profiles").select("id, full_name, active, photo_url").eq("role", "teacher").order("full_name"),
     supabase.from("teacher_assignments").select("teacher_id, subject_id"),
     supabase.from("rooms").select("id, name, capacity, is_active"),
-    supabase.from("enrollments").select("subject_id").eq("active", true),
+    supabase.from("enrollments").select("subject_id, students!inner(suspended_at)").eq("active", true).is("students.suspended_at", null),
   ]);
   for (const result of [slotsResult, subjectsResult, teachersResult, assignmentsResult, roomsResult, enrollmentsResult]) {
     if (result.error) throw result.error;
@@ -378,13 +378,16 @@ export type AdminStudentRow = {
   isOverdue: boolean;
   /** Remises en cours (badge). */
   discounts: DiscountSummary[];
+  /** Suspendu : date et motif (liste « Suspendus »). */
+  suspendedAt: string | null;
+  suspensionReason: string | null;
 };
 
 export async function getAdminStudents(): Promise<AdminStudentRow[]> {
   const { supabase } = await adminClient();
   const { data, error } = await supabase
     .from("student_directory")
-    .select("id, full_name, level_id, level_name, photo_url, guardian_name, guardian_phone, unpaid_amount, is_overdue, discounts")
+    .select("id, full_name, level_id, level_name, photo_url, guardian_name, guardian_phone, unpaid_amount, is_overdue, discounts, suspended_at, suspension_reason")
     .order("full_name");
   if (error) throw error;
 
@@ -403,6 +406,8 @@ export async function getAdminStudents(): Promise<AdminStudentRow[]> {
             unpaidAmount: Number(row.unpaid_amount ?? 0),
             isOverdue: row.is_overdue ?? false,
             discounts: parseDiscountList(row.discounts),
+            suspendedAt: row.suspended_at,
+            suspensionReason: row.suspension_reason,
           },
         ]
       : [],

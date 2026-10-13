@@ -15,7 +15,8 @@ export default async function AdminStudentsPage({ searchParams }: PageProps<"/ad
   const [students, levels] = await Promise.all([getAdminStudents(), getLevelOptions()]);
   // « q » : recherche lancée depuis l'en-tête de l'application.
   const initialQuery = typeof q === "string" ? q : "";
-  const initialStatus = statut === "retard" ? "overdue" : statut === "a-jour" ? "upToDate" : "";
+  const initialStatus =
+    statut === "retard" ? "overdue" : statut === "a-jour" ? "upToDate" : statut === "suspendus" ? "suspended" : "";
   return (
     <StudentsBoard
       key={`${initialQuery}-${initialStatus}`}

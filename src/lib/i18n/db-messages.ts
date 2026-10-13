@@ -672,4 +672,18 @@ export const DB_MESSAGES: readonly DbMessage[] = [
     en: "Cannot archive: the {course} is part of an offered pack (%). Remove it from the pack or deactivate the pack.",
     ar: "الأرشفة غير ممكنة: {the course} جزء من باقة معروضة (%). أزلها من الباقة أو عطّل الباقة.",
   },
+  // Élèves suspendus.
+  {
+    fr: "Suspendez ou réactivez l'élève depuis son profil.",
+    en: "Suspend or reactivate the {learner} from their profile.",
+    ar: "أوقف {the learner} أو أعد تفعيله من ملفه.",
+  },
+  {
+    fr: "Élève suspendu : réactivez-le avant de l'inscrire.",
+    en: "Suspended {learner}: reactivate them before enrolling them.",
+    ar: "{the learner} موقوف: أعد تفعيله قبل تسجيله.",
+  },
+  { fr: "Cet élève est déjà suspendu.", en: "This {learner} is already suspended.", ar: "هذا {learner} موقوف من قبل." },
+  { fr: "Indiquez le motif de la suspension.", en: "Enter the reason for the suspension.", ar: "أدخل سبب الإيقاف." },
+  { fr: "Motif : 200 caractères au plus.", en: "Reason: 200 characters max.", ar: "السبب: 200 حرف على الأكثر." },
 ];

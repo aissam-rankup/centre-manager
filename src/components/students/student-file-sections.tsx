@@ -53,7 +53,12 @@ export async function StudentHeader({ student, actions }: { student: StudentFile
           <div className="flex min-w-0 flex-col items-center gap-2 sm:items-start">
             <h1 className="text-title text-heading">{student.fullName}</h1>
             <p className="text-muted-foreground">{student.levelName}</p>
-            <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />
+            <span className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+              <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />
+              {student.suspension ? (
+                <span className="rounded-full bg-warning/15 px-2.5 py-0.5 text-caption font-semibold text-warning-ink">{L.suspension.badge}</span>
+              ) : null}
+            </span>
             <DiscountBadges discounts={activeDiscounts} max={3} className="justify-center sm:justify-start" />
             <p className="text-caption text-muted-foreground">{L.enrolledOn(formatDate(student.createdAt))}</p>
           </div>

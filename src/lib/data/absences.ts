@@ -31,10 +31,12 @@ export async function getAbsencesOn(dateIso: string): Promise<AbsenceRow[]> {
   const { data, error } = await supabase
     .from("attendance")
     .select(
-      "id, student_id, subject_id, marked_by_role, marked_at, subjects(name), teacher:profiles!attendance_teacher_id_fkey(full_name), marker:profiles!attendance_marked_by_fkey(full_name), students(full_name, photo_url, guardian_name, guardian_phone, levels(name))",
+      "id, student_id, subject_id, marked_by_role, marked_at, subjects(name), teacher:profiles!attendance_teacher_id_fkey(full_name), marker:profiles!attendance_marked_by_fkey(full_name), students!inner(full_name, photo_url, guardian_name, guardian_phone, suspended_at, levels(name))",
     )
     .eq("session_date", dateIso)
-    .eq("status", "absent");
+    .eq("status", "absent")
+    // Élève suspendu : hors des absences.
+    .is("students.suspended_at", null);
   if (error) throw error;
 
   const studentIds = [...new Set(data.map((row) => row.student_id))];

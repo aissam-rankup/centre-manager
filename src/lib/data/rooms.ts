@@ -15,7 +15,7 @@ export async function getRooms(): Promise<RoomView[]> {
     supabase
       .from("schedule_slots")
       .select("id, room_id, day_of_week, start_time, end_time, subject_id, subjects(name), levels(name), profiles(full_name)"),
-    supabase.from("enrollments").select("subject_id").eq("active", true),
+    supabase.from("enrollments").select("subject_id, students!inner(suspended_at)").eq("active", true).is("students.suspended_at", null),
   ]);
   if (rooms.error) throw rooms.error;
   if (slots.error) throw slots.error;

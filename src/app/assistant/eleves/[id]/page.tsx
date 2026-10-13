@@ -22,6 +22,7 @@ import { getStudentReceipts } from "@/lib/data/receipts";
 import { getStudentAccess } from "@/lib/data/student-access";
 import { FamilyLocaleSelect } from "@/components/students/family-locale-select";
 import { StudentAccessCard } from "@/components/students/student-access-card";
+import { StudentSuspension } from "@/components/students/student-suspension";
 import { AttendanceSheet } from "@/components/attendance/attendance-sheet";
 import { parseAttendanceFilters } from "@/lib/attendance";
 import { getAttendanceData } from "@/lib/data/attendance";
@@ -69,6 +70,8 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
       </Button>
 
       <StudentHeader student={student} />
+
+      <StudentSuspension studentId={student.id} studentName={student.fullName} suspension={student.suspension} readOnly={Boolean(profile.support)} />
 
       <FamilyLocaleSelect studentId={student.id} value={ownLocale} centerLocale={centerLocale} readOnly={Boolean(profile.support)} />
 

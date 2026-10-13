@@ -17,6 +17,7 @@ import { ROUTES } from "@/lib/auth/routes";
 import type { AppLabels } from "@/lib/constants/labels";
 import { useLabels } from "@/lib/i18n/client";
 import type { AdminStudentRow, LevelOption } from "@/lib/data/admin";
+import { formatDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
 
 /** Minuscules, sans accents : même logique que la recherche en base. */
@@ -37,6 +38,12 @@ function columns(LABELS: AppLabels): readonly DataTableColumn<AdminStudentRow>[]
           <span className="flex min-w-0 flex-col">
             <span className="truncate font-medium underline-offset-4 hover:underline">{student.fullName}</span>
             <span className="truncate text-caption text-muted-foreground md:hidden">{student.levelName}</span>
+            {student.suspendedAt ? (
+              <span className="text-caption text-muted-foreground">
+                {L.suspendedOn(formatDate(student.suspendedAt))}
+                {student.suspensionReason ? ` · ${student.suspensionReason}` : ""}
+              </span>
+            ) : null}
             <DiscountBadges discounts={student.discounts} className="mt-1" />
           </span>
         </Link>
@@ -58,12 +65,22 @@ function columns(LABELS: AppLabels): readonly DataTableColumn<AdminStudentRow>[]
       id: "status",
       header: L.status,
       mobile: "aside",
-      cell: (student) => <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />,
+      cell: (student) =>
+        student.suspendedAt ? (
+          <span className="rounded-full bg-warning/15 px-2.5 py-0.5 text-caption font-semibold text-warning-ink">
+            {LABELS.assistant.student.suspension.badge}
+          </span>
+        ) : (
+          <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />
+        ),
     },
   ];
 }
 
-type StatusFilter = "" | "overdue" | "upToDate";
+/** « suspended » : uniquement les élèves suspendus ; sinon, élèves actifs (non suspendus). */
+export type StatusFilter = "" | "overdue" | "upToDate" | "suspended";
+
+const STATUS_FILTERS: readonly StatusFilter[] = ["", "overdue", "upToDate", "suspended"];
 
 type StudentsBoardProps = {
   students: AdminStudentRow[];
@@ -86,7 +103,9 @@ export function StudentsBoard({ students, levels, initialQuery = "", initialStat
       (student) =>
         (!needle || normalize(student.fullName).includes(needle)) &&
         (!levelId || student.levelId === levelId) &&
-        (!status || (status === "overdue") === student.isOverdue),
+        (status === "suspended"
+          ? student.suspendedAt !== null
+          : student.suspendedAt === null && (!status || (status === "overdue") === student.isOverdue)),
     );
   }, [students, deferredQuery, levelId, status]);
 
@@ -128,11 +147,12 @@ export function StudentsBoard({ students, levels, initialQuery = "", initialStat
         <NativeSelect
           id="admin-statut"
           value={status}
-          onChange={(event) => setStatus(event.target.value as "" | "overdue" | "upToDate")}
+          onChange={(event) => setStatus(STATUS_FILTERS.find((value) => value === event.target.value) ?? "")}
         >
           <option value="">{L.allStatuses}</option>
           <option value="upToDate">{LABELS.status.upToDate}</option>
           <option value="overdue">{LABELS.status.overdue}</option>
+          <option value="suspended">{L.suspendedFilter}</option>
         </NativeSelect>
       </div>
 

@@ -27,6 +27,7 @@ import { requireRole } from "@/lib/auth/session";
 import { getLabels } from "@/lib/i18n/server";
 import { getLevelOptions } from "@/lib/data/admin";
 import { getLevelsWithSubjects, getStudentFile } from "@/lib/data/assistant";
+import { StudentSuspension } from "@/components/students/student-suspension";
 import { toISODate, today } from "@/lib/format";
 
 import { EnrollmentsEditor, StudentAdminActions } from "./student-admin";
@@ -84,6 +85,8 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
       </Button>
 
       <StudentHeader student={student} actions={<StudentAdminActions student={student} levels={levels} />} />
+
+      <StudentSuspension studentId={student.id} studentName={student.fullName} suspension={student.suspension} readOnly={Boolean(profile.support)} />
 
       <FamilyLocaleSelect studentId={student.id} value={ownLocale} centerLocale={centerLocale} readOnly={Boolean(profile.support)} />
 

@@ -297,6 +297,8 @@ export const AR_PART8: Pick<AppLabels, "admin" | "days" | "daysShort"> = {
       allLevels: "جميع {the groups}",
       filterStatus: "الأداء",
       allStatuses: "جميع حالات الأداء",
+      suspendedFilter: "الموقوفون",
+      suspendedOn: (date: string) => `موقوف منذ ${date}`,
       name: "{the learner}",
       level: "{the group}",
       guardian: "ولي الأمر",

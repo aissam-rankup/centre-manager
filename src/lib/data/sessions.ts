@@ -115,10 +115,12 @@ export async function getSessionRoster(slotId: string, dateIso: string): Promise
   const [enrollmentsResult, attendanceResult] = await Promise.all([
     supabase
       .from("enrollments")
-      .select("student_id, students(full_name, photo_url)")
+      .select("student_id, students!inner(full_name, photo_url, suspended_at)")
       .eq("subject_id", session.subjectId)
       .eq("active", true)
-      .lte("start_date", dateIso),
+      .lte("start_date", dateIso)
+      // Élève suspendu : hors de l'appel.
+      .is("students.suspended_at", null),
     supabase
       .from("attendance")
       .select("student_id, status, marked_by_role, marked_at, marker:profiles!attendance_marked_by_fkey(full_name)")

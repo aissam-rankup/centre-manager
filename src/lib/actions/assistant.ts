@@ -37,13 +37,13 @@ function revalidateAssistant() {
 // ---------------------------------------------------------------------
 // Recherche instantanée
 // ---------------------------------------------------------------------
-export async function searchStudents(query: string): Promise<ActionResult<StudentListItem[]>> {
+export async function searchStudents(query: string, suspended = false): Promise<ActionResult<StudentListItem[]>> {
   const LABELS = await getLabels();
   const E = LABELS.actions.errors;
   const parsed = z.string().max(100).safeParse(query);
   if (!parsed.success) return failure(E.invalid);
   try {
-    return success(await searchStudentDirectory(parsed.data));
+    return success(await searchStudentDirectory(parsed.data, suspended === true));
   } catch {
     return failure(E.unexpected);
   }

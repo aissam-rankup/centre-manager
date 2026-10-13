@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, LoaderCircle, Search, SearchX, Users, X } from "lucide-react";
+import { ChevronRight, LoaderCircle, PauseCircle, Search, SearchX, Users, X } from "lucide-react";
 import Link from "@/components/shared/app-link";
 import { useEffect, useRef, useState, useTransition } from "react";
 
@@ -16,6 +16,7 @@ import { searchStudents } from "@/lib/actions/assistant";
 import { ROUTES } from "@/lib/auth/routes";
 import { useLabels, useMessage } from "@/lib/i18n/client";
 import type { StudentListItem } from "@/lib/data/assistant";
+import { formatDate } from "@/lib/format";
 
 const DEBOUNCE_MS = 200;
 
@@ -26,6 +27,8 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
   const message = useMessage();
   const L = LABELS.assistant.search;
   const [query, setQuery] = useState(initialQuery);
+  // Élèves suspendus : liste à part, consultable.
+  const [suspended, setSuspended] = useState(false);
   const [results, setResults] = useState(initialResults);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -42,7 +45,7 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
     const id = ++requestId.current;
     const timer = window.setTimeout(() => {
       startTransition(async () => {
-        const result = await searchStudents(query);
+        const result = await searchStudents(query, suspended);
         if (id !== requestId.current) return;
         if (result.ok) {
           setResults(result.data);
@@ -53,7 +56,7 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
       });
     }, DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [query, attempt]);
+  }, [query, attempt, suspended]);
 
   const hasQuery = query.trim().length > 0;
 
@@ -90,6 +93,17 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
         ) : null}
       </div>
 
+      <Button
+        type="button"
+        variant={suspended ? "default" : "outline"}
+        className="self-start"
+        aria-pressed={suspended}
+        onClick={() => setSuspended((value) => !value)}
+      >
+        <PauseCircle aria-hidden />
+        {suspended ? L.hideSuspended : L.showSuspended}
+      </Button>
+
       <p className="flex h-5 items-center gap-2 text-caption text-muted-foreground" aria-live="polite">
         {pending ? (
           <>
@@ -108,6 +122,8 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
       ) : results.length === 0 ? (
         hasQuery ? (
           <EmptyState icon={SearchX} title={L.emptyTitle} description={L.emptyDescription} />
+        ) : suspended ? (
+          <EmptyState icon={PauseCircle} title={L.noSuspendedTitle} description={L.noSuspendedDescription} />
         ) : (
           <EmptyState icon={Users} title={L.noStudentsTitle} description={L.noStudentsDescription} />
         )
@@ -127,9 +143,21 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate font-medium">{student.fullName}</span>
                   <span className="truncate text-caption text-muted-foreground">{student.levelName}</span>
+                  {student.suspendedAt ? (
+                    <span className="truncate text-caption text-muted-foreground">
+                      {LABELS.admin.students.suspendedOn(formatDate(student.suspendedAt))}
+                      {student.suspensionReason ? ` · ${student.suspensionReason}` : ""}
+                    </span>
+                  ) : null}
                   <DiscountBadges discounts={student.discounts} className="mt-1" />
                 </span>
-                <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />
+                {student.suspendedAt ? (
+                  <span className="rounded-full bg-warning/15 px-2.5 py-0.5 text-caption font-semibold text-warning-ink">
+                    {LABELS.assistant.student.suspension.badge}
+                  </span>
+                ) : (
+                  <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />
+                )}
                 <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
               </Link>
             </li>

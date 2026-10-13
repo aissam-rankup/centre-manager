@@ -3503,6 +3503,9 @@ export type Database = {
           notes_updated_by: string | null
           photo_url: string | null
           search_name: string | null
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
         }
         Insert: {
           center_id: string
@@ -3520,6 +3523,9 @@ export type Database = {
           notes_updated_by?: string | null
           photo_url?: string | null
           search_name?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
         }
         Update: {
           center_id?: string
@@ -3537,6 +3543,9 @@ export type Database = {
           notes_updated_by?: string | null
           photo_url?: string | null
           search_name?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
         }
         Relationships: [
           {
@@ -3563,6 +3572,13 @@ export type Database = {
           {
             foreignKeyName: "students_notes_updated_by_fkey"
             columns: ["notes_updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_suspended_by_fkey"
+            columns: ["suspended_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -4214,6 +4230,8 @@ export type Database = {
           overdue_count: number | null
           photo_url: string | null
           search_name: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
           unpaid_amount: number | null
         }
         Relationships: [
@@ -5437,6 +5455,7 @@ export type Database = {
       }
       prepare_billing_run: { Args: never; Returns: string }
       purge_center: { Args: { p_center_id: string }; Returns: Json }
+      reactivate_student: { Args: { p_student_id: string }; Returns: number }
       record_cash_correction: {
         Args: { p_amount: number; p_reason: string; p_session_id: string }
         Returns: string
@@ -5693,6 +5712,10 @@ export type Database = {
         }[]
       }
       subject_dependencies: { Args: { p_subject_id: string }; Returns: Json }
+      suspend_student: {
+        Args: { p_reason: string; p_student_id: string }
+        Returns: undefined
+      }
       unarchive_subject: { Args: { p_subject_id: string }; Returns: undefined }
       update_center_branding: {
         Args: {
