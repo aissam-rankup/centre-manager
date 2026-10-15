@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { RESERVED_SLUGS, SLUG_PATTERN } from "@/lib/center-host";
 import { LABELS } from "@/lib/constants/labels";
 import { MODULE_KEYS } from "@/lib/modules";
 import { isValidPhone } from "@/lib/phone";
@@ -11,7 +12,6 @@ export const CUSTOM_CENTER_TYPE = "personnalise";
 export const VOCABULARY_KEYS = ["learner", "group", "course", "instructor", "session"] as const;
 export type VocabularyKey = (typeof VOCABULARY_KEYS)[number];
 
-const RESERVED_SLUGS = ["www", "app", "api", "admin", "platform", "plateforme", "mail", "static", "assets"];
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, V.dateInvalid);
 const optionalText = (max: number) => z.string().trim().max(max, V.tooLong);
@@ -33,7 +33,7 @@ export const slugSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, V.slugInvalid)
+  .regex(SLUG_PATTERN, V.slugInvalid)
   .min(2, V.slugInvalid)
   .max(63, V.slugInvalid)
   .refine((value) => !RESERVED_SLUGS.includes(value), V.slugReserved);
@@ -81,7 +81,6 @@ function refineVocabulary(values: { centerType: string; customTerms: CustomTerms
 
 const identityFields = {
   name: z.string().trim().min(1, V.nameRequired).max(120, V.tooLong),
-  slug: slugSchema,
   ownerName: optionalText(120),
   ownerPhone: optionalPhone,
   ownerEmail: optionalEmail,
@@ -101,6 +100,7 @@ const pricingFields = {
 export const newCenterSchema = z
   .object({
     ...identityFields,
+    slug: slugSchema,
     ...vocabularyFields,
     ...pricingFields,
     status: z.enum(["trial", "active"]),
@@ -135,6 +135,10 @@ export const centerDetailsSchema = z
   .superRefine((values, ctx) => refineVocabulary(values, ctx));
 export type CenterDetailsInput = z.infer<typeof centerDetailsSchema>;
 
+/** Changement d'adresse (super-admin, confirmation explicite). */
+export const centerSlugSchema = z.object({ centerId, slug: slugSchema });
+export type CenterSlugInput = z.infer<typeof centerSlugSchema>;
+
 export const centerPricingSchema = z.object({ centerId, ...pricingFields });
 export type CenterPricingInput = z.infer<typeof centerPricingSchema>;
 
@@ -145,12 +149,16 @@ export const dueDateSchema = z.object({
 });
 export type DueDateInput = z.infer<typeof dueDateSchema>;
 
+/** Modes proposés à la saisie (« carte » reste lisible dans l'historique). */
+export const SUBSCRIPTION_PAYMENT_METHODS = ["cash", "bank_transfer", "cheque", "other"] as const;
+
 export const subscriptionPaymentSchema = z.object({
   centerId,
   amount: amount.refine((v) => Number(v.replace(",", ".")) > 0, V.amountInvalid),
   paidAt: isoDate,
-  method: z.enum(["bank_transfer", "cash", "card"]),
+  method: z.enum(SUBSCRIPTION_PAYMENT_METHODS),
   reference: optionalText(80),
+  note: optionalText(500),
 });
 export type SubscriptionPaymentInput = z.infer<typeof subscriptionPaymentSchema>;
 
@@ -160,6 +168,67 @@ export const centerStatusSchema = z.object({
   reason: z.string().trim().min(1, V.reasonRequired).max(300, V.tooLong),
 });
 export type CenterStatusInput = z.infer<typeof centerStatusSchema>;
+
+/** Motifs de suspension (« impayé » : aussi la suspension automatique). */
+export const SUSPENSION_KINDS = ["unpaid", "client_request", "contract_end", "other"] as const;
+export type SuspensionKind = (typeof SUSPENSION_KINDS)[number];
+
+/** Suspension manuelle : motif, précision (obligatoire pour « autre »), nom du centre retapé. */
+export const suspendCenterSchema = z
+  .object({
+    centerId,
+    kind: z.enum(SUSPENSION_KINDS, V.reasonRequired),
+    note: optionalText(300),
+    confirmName: z.string().trim().min(1, V.nameRequired).max(120, V.tooLong),
+  })
+  .superRefine((values, ctx) => {
+    if (values.kind === "other" && !values.note) {
+      ctx.addIssue({ code: "custom", message: V.reasonRequired, path: ["note"] });
+    }
+  });
+export type SuspendCenterInput = z.infer<typeof suspendCenterSchema>;
+
+export const reactivateCenterSchema = z.object({ centerId, note: optionalText(300) });
+export type ReactivateCenterInput = z.infer<typeof reactivateCenterSchema>;
+
+/** Motifs d'export des données d'un centre. */
+export const EXPORT_REASONS = ["client_request", "contract_end", "backup", "other"] as const;
+
+/** Export : tout l'historique ou une plage de dates, motif obligatoire (précision pour « autre »). */
+export const centerExportSchema = z
+  .object({
+    centerId,
+    scope: z.enum(["all", "range"]),
+    from: z.string(),
+    to: z.string(),
+    reasonKind: z.enum(EXPORT_REASONS, V.reasonRequired),
+    note: optionalText(300),
+  })
+  .superRefine((values, ctx) => {
+    if (values.reasonKind === "other" && !values.note) {
+      ctx.addIssue({ code: "custom", message: V.reasonRequired, path: ["note"] });
+    }
+    if (values.scope === "range") {
+      if (!isoDate.safeParse(values.from).success) ctx.addIssue({ code: "custom", message: V.dateInvalid, path: ["from"] });
+      if (!isoDate.safeParse(values.to).success) ctx.addIssue({ code: "custom", message: V.dateInvalid, path: ["to"] });
+      else if (values.from > values.to) ctx.addIssue({ code: "custom", message: V.dateInvalid, path: ["to"] });
+    }
+  });
+export type CenterExportInput = z.infer<typeof centerExportSchema>;
+
+/** Suppression définitive : motif, nom du centre retapé. */
+export const requestDeletionSchema = z.object({
+  centerId,
+  reason: z.string().trim().min(1, V.reasonRequired).max(300, V.tooLong),
+  confirmName: z.string().trim().min(1, V.nameRequired).max(120, V.tooLong),
+});
+export type RequestDeletionInput = z.infer<typeof requestDeletionSchema>;
+
+export const cancelDeletionSchema = z.object({ centerId, note: optionalText(300) });
+export type CancelDeletionInput = z.infer<typeof cancelDeletionSchema>;
+
+export const purgeNowSchema = z.object({ centerId, confirmName: z.string().trim().min(1, V.nameRequired).max(120, V.tooLong) });
+export type PurgeNowInput = z.infer<typeof purgeNowSchema>;
 
 export const platformSettingsSchema = z.object({
   name: optionalText(120),

@@ -20,13 +20,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { recordCashCorrection, validateCashSession } from "@/lib/actions/cash";
 import { formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 /** Validation d'une session clôturée : verrouillage définitif. */
 export function ValidateCashSessionButton({ sessionId }: { sessionId: string }) {
   const LABELS = useLabels();
   const V = LABELS.cash.admin.validate;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +77,7 @@ export function ValidateCashSessionButton({ sessionId }: { sessionId: string }) 
                 setError(null);
                 const result = await validateCashSession({ sessionId, notes });
                 if (!result.ok) {
-                  setError(result.error);
+                  setError(message(result.error));
                   return;
                 }
                 toast.success(V.done);
@@ -96,7 +97,9 @@ export function ValidateCashSessionButton({ sessionId }: { sessionId: string }) 
 /** Correction après clôture : opération du jour, liée à la session, motivée ; les corrections déjà faites sont rappelées. */
 export function CorrectCashSessionButton({ sessionId, corrected = 0 }: { sessionId: string; corrected?: number }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const K = LABELS.cash.admin.correct;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [direction, setDirection] = useState<"in" | "out">("in");
   const [amount, setAmount] = useState("");
@@ -128,7 +131,7 @@ export function CorrectCashSessionButton({ sessionId, corrected = 0 }: { session
           <DialogTitle className="text-section">{K.title}</DialogTitle>
           <DialogDescription>{K.description}</DialogDescription>
         </DialogHeader>
-        {corrected !== 0 ? <p className="rounded-lg bg-warning/10 px-4 py-3 font-medium">{K.already(formatMAD(corrected))}</p> : null}
+        {corrected !== 0 ? <p className="rounded-lg bg-warning/10 px-4 py-3 font-medium">{K.already(formatMAD(corrected, locale))}</p> : null}
         <form
           noValidate
           className="flex flex-col gap-4"
@@ -138,7 +141,7 @@ export function CorrectCashSessionButton({ sessionId, corrected = 0 }: { session
             startTransition(async () => {
               const result = await recordCashCorrection({ sessionId, amount, direction, reason });
               if (!result.ok) {
-                setErrors({ ...(result.fieldErrors ?? {}), server: result.fieldErrors ? "" : result.error });
+                setErrors({ ...(result.fieldErrors ?? {}), server: result.fieldErrors ? "" : message(result.error) });
                 return;
               }
               toast.success(K.done);

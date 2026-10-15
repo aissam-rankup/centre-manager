@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 
 import { formatPercent } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale } from "@/lib/i18n/client";
 import { type OccupancyCell, type OccupancyReport, occupancyStep } from "@/lib/room-occupancy";
 import { cn } from "@/lib/utils";
 
@@ -16,17 +16,18 @@ function stepStyle(step: number) {
 /** Carte de chaleur jour × heure : part des salles occupées ; détail au survol, tableau lisible par les lecteurs d'écran. */
 export function OccupancyHeatmap({ report }: { report: OccupancyReport }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const O = LABELS.roomOccupancy;
   const container = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ cell: OccupancyCell; x: number; y: number } | null>(null);
   const cells = new Map(report.cells.map((cell) => [`${cell.day}-${cell.hour}`, cell] as const));
   const describe = (cell: OccupancyCell) =>
-    O.cell(LABELS.days[cell.day] ?? "", cell.hour, formatPercent(cell.rate), cell.rooms, report.roomCount);
+    O.cell(LABELS.days[cell.day] ?? "", cell.hour, formatPercent(cell.rate, locale), cell.rooms, report.roomCount);
 
   return (
     <div ref={container} className="relative flex flex-col gap-3" onPointerLeave={() => setHover(null)}>
       <table className="w-full table-fixed border-separate border-spacing-[3px]">
-        <caption className="pb-1 text-left text-caption text-muted-foreground">{O.heatmapCaption}</caption>
+        <caption className="pb-1 text-start text-caption text-muted-foreground">{O.heatmapCaption}</caption>
         <thead>
           <tr>
             <th scope="col" className="w-10">
@@ -44,7 +45,7 @@ export function OccupancyHeatmap({ report }: { report: OccupancyReport }) {
         <tbody>
           {report.hours.map((hour) => (
             <tr key={hour}>
-              <th scope="row" className="numeric pr-1 text-right text-caption font-medium text-muted-foreground">
+              <th scope="row" className="numeric pe-1 text-end text-caption font-medium text-muted-foreground">
                 {O.hourLabel(hour)}
               </th>
               {report.days.map((day) => {

@@ -2,17 +2,18 @@ import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
-import { LABELS } from "@/lib/constants/labels";
 import { getPlatformSettings } from "@/lib/data/platform";
 import { formatDateTime } from "@/lib/format";
+import { getLabels } from "@/lib/i18n/server";
 
 import { SettingsForm } from "./settings-form";
 
-const L = LABELS.platform.settings;
-
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).platform.settings.title };
+}
 
 export default async function PlatformSettingsPage() {
+  const L = (await getLabels()).platform.settings;
   const settings = await getPlatformSettings();
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">

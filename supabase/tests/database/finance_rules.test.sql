@@ -176,12 +176,12 @@ select is(
 select is(
   (select receipt_number from private.issue_receipt(
      array(select id from public.invoices where student_id = 'f7000000-0000-4000-8000-000000000006'),
-     '2026-12-31 23:45:00+01', 'a7000000-0000-4000-8000-000000000001')),
+     '2026-12-31 23:45:00+00', 'a7000000-0000-4000-8000-000000000001')),
   '2026-0002', 'numérotation : suite sans trou');
 select is(
   (select receipt_number from private.issue_receipt(
      array(select id from public.invoices where student_id = 'f7000000-0000-4000-8000-000000000007'),
-     '2027-01-01 00:10:00+01', 'a7000000-0000-4000-8000-000000000001')),
+     '2027-01-01 00:10:00+00', 'a7000000-0000-4000-8000-000000000001')),
   '2027-0001', 'numérotation : remise à 1 au changement d''année (heure de Casablanca)');
 select is(
   (select receipt_number from private.issue_receipt(

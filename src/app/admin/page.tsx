@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { z } from "zod";
 
 import { AbsenceChart } from "@/components/admin/absence-chart";
+import { AttendanceConflictsBanner } from "@/components/attendance/attendance-conflicts-banner";
 import { CollectionOverviewSection, LateDraftBanner, ReenrollmentOverviewCard } from "@/components/admin/collection-overview";
 import { StaleCashBanner } from "@/components/cash/stale-cash-banner";
 import { DiscountsOverview, FinanceOverview } from "@/components/admin/finance-overview";
@@ -17,11 +18,13 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/lib/auth/routes";
 import { getLabels } from "@/lib/i18n/server";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getAdminDashboard } from "@/lib/data/admin";
 import { getStaleCashSessions } from "@/lib/data/cash";
 import { getCollectionOverview, getLateDraft, getReenrollmentOverview } from "@/lib/data/collection";
 import { getFinancialDashboard } from "@/lib/data/finance";
 import { getRoomOccupancy } from "@/lib/data/rooms";
+import { getOpenAttendanceConflicts } from "@/lib/data/sessions";
 import { formatMAD, formatMonth, formatPercent } from "@/lib/format";
 
 
@@ -35,6 +38,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
   const LABELS = await getLabels();
   const L = LABELS.admin.dashboard;
   const D = LABELS.dashboard;
+  const locale = await getAppLocale();
   const params = await searchParams;
   const raw = typeof params.niveau === "string" ? params.niveau : null;
   const requestedLevel = raw && z.uuid().safeParse(raw).success ? raw : null;
@@ -43,13 +47,14 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
   const levelId = filtered.levels.some((level) => level.id === requestedLevel) ? requestedLevel : null;
   const data = requestedLevel && !levelId ? await getAdminDashboard(null) : filtered;
   // Finances : tout le centre, jamais en mode support.
-  const [finance, occupancy, collection, reenrollment, lateDraft, staleCash] = await Promise.all([
+  const [finance, occupancy, collection, reenrollment, lateDraft, staleCash, conflicts] = await Promise.all([
     getFinancialDashboard(),
     getRoomOccupancy(),
     getCollectionOverview(),
     getReenrollmentOverview(),
     getLateDraft(),
     getStaleCashSessions(),
+    getOpenAttendanceConflicts(),
   ]);
 
   const gap = Math.max(0, data.expected - data.collected);
@@ -59,10 +64,11 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
       {/* Colonne principale */}
       <div className="flex min-w-0 flex-col gap-6">
-        <PageHeader title={L.title} description={L.description(formatMonth(`${data.monthStart}`))} />
+        <PageHeader title={L.title} description={L.description(formatMonth(`${data.monthStart}`, locale))} />
 
-        {lateDraft ? <LateDraftBanner draft={lateDraft} LABELS={LABELS} /> : null}
+        {lateDraft ? <LateDraftBanner draft={lateDraft} LABELS={LABELS} locale={locale} /> : null}
         {staleCash.length > 0 ? <StaleCashBanner sessions={staleCash} LABELS={LABELS} /> : null}
+        {conflicts.length > 0 ? <AttendanceConflictsBanner count={conflicts.length} LABELS={LABELS} /> : null}
 
         <FilterChips
           label={L.filterLabel}
@@ -81,25 +87,25 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
               links={[{ href: ROUTES.admin.students, label: D.detail }]}
             />
             <StatTile
-              value={formatMAD(data.collected)}
+              value={formatMAD(data.collected, locale)}
               label={L.stats.collectedMonth}
               detail={L.stats.collectedHint(data.paidCount, data.invoiceCount)}
               links={[{ href: ROUTES.admin.reports, label: D.detail }]}
             />
             <StatTile
-              value={formatMAD(gap)}
+              value={formatMAD(gap, locale)}
               label={L.stats.shortfall}
-              detail={L.stats.shortfallDetail(formatPercent(gapRatio), formatMAD(data.expected))}
+              detail={L.stats.shortfallDetail(formatPercent(gapRatio, locale), formatMAD(data.expected, locale))}
               links={[{ href: `${ROUTES.admin.students}?statut=retard`, label: D.detail }]}
             />
           </StatTiles>
         </section>
 
-        {collection ? <CollectionOverviewSection data={collection} LABELS={LABELS} /> : null}
+        {collection ? <CollectionOverviewSection data={collection} LABELS={LABELS} locale={locale} /> : null}
 
-        {finance ? <FinanceOverview data={finance} LABELS={LABELS} /> : null}
+        {finance ? <FinanceOverview data={finance} LABELS={LABELS} locale={locale} /> : null}
 
-        <RoomOccupancyOverview data={occupancy} LABELS={LABELS} />
+        <RoomOccupancyOverview data={occupancy} LABELS={LABELS} locale={locale} />
 
         <StudentBoard students={data.students} fileBase={ROUTES.admin.students} seeAllHref={ROUTES.admin.students} />
 
@@ -118,9 +124,9 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
 
       {/* Colonne droite : sous le contenu jusqu'à 1024 px, en grille de 2 sur tablette */}
       <aside className="flex flex-col gap-6" aria-label={D.reminder.title}>
-        {reenrollment ? <ReenrollmentOverviewCard data={reenrollment} LABELS={LABELS} /> : null}
+        {reenrollment ? <ReenrollmentOverviewCard data={reenrollment} LABELS={LABELS} locale={locale} /> : null}
 
-        {finance ? <DiscountsOverview data={finance} LABELS={LABELS} /> : null}
+        {finance ? <DiscountsOverview data={finance} LABELS={LABELS} locale={locale} /> : null}
 
         <section aria-labelledby="rappel" className="flex flex-col gap-3">
           <SectionHeading id="rappel" title={D.reminder.title} href={`${ROUTES.admin.students}?statut=retard`} />
@@ -142,7 +148,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
                 <ProgressTile
                   key={subject.subjectId}
                   index={index}
-                  ring={<ProgressRing value={subject.rate} caption={D.presence.ring} />}
+                  ring={<ProgressRing value={subject.rate} caption={D.presence.ring} locale={locale} />}
                   title={subject.subjectName}
                   description={D.presence.detail(subject.levelName, subject.students)}
                   href={`${ROUTES.admin.reports}#absences`}

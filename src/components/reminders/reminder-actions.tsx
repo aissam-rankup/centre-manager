@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import type { NotificationChannel } from "@/lib/absences";
 import { sendPaymentReminder } from "@/lib/actions/reminders";
 import { formatDate } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { formatPhone, isValidPhone } from "@/lib/phone";
 import type { ReminderItem } from "@/lib/reminders";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,7 @@ type Send = (item: ReminderItem, channel: NotificationChannel, phone?: string) =
  */
 function useSendReminder(): { send: Send; pending: boolean } {
   const LABELS = useLabels();
+  const message = useMessage();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -51,7 +52,7 @@ function useSendReminder(): { send: Send; pending: boolean } {
         });
         if (!result.ok) {
           target?.close();
-          toast.error(result.error);
+          toast.error(message(result.error));
           router.refresh();
           resolve(false);
           return;

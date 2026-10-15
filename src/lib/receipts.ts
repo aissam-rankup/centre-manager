@@ -1,4 +1,6 @@
-import { type AppLabels, labelsFor } from "@/lib/constants/labels";
+import type { AppLabels } from "@/lib/constants/labels";
+import type { Locale } from "@/lib/i18n/locale";
+import { canonicalTokens } from "@/lib/message-templates";
 import { type DiscountSummary, parseDiscountSummary } from "@/lib/discounts";
 import { formatMonth } from "@/lib/format";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -33,6 +35,8 @@ export type ReceiptCenter = {
   phone: string | null;
   logoUrl: string | null;
   color: string | null;
+  /** Centre en marque blanche à l'émission : aucune mention dirassty sur le reçu. */
+  whiteLabel: boolean;
 };
 
 export type ReceiptView = {
@@ -88,7 +92,7 @@ export function parseReceiptLines(value: Json): ReceiptLine[] {
 
 /** Coordonnées figées : nom de marque (marque blanche) sinon nom du centre. */
 export function parseReceiptCenter(value: Json): ReceiptCenter {
-  if (!isRecord(value)) return { name: "", address: null, phone: null, logoUrl: null, color: null };
+  if (!isRecord(value)) return { name: "", address: null, phone: null, logoUrl: null, color: null, whiteLabel: false };
   const branding = isRecord(value.branding) ? value.branding : null;
   return {
     name: text(branding?.brand_name) ?? text(value.name) ?? "",
@@ -96,6 +100,7 @@ export function parseReceiptCenter(value: Json): ReceiptCenter {
     phone: text(value.phone) ?? text(branding?.support_phone),
     logoUrl: text(branding?.logo_url),
     color: text(branding?.primary_color),
+    whiteLabel: branding !== null,
   };
 }
 
@@ -104,12 +109,13 @@ function capitalize(value: string): string {
 }
 
 /** Période couverte : « Octobre 2026 », ou « Septembre 2026 – Octobre 2026 ». */
-export function receiptPeriodLabel(lines: Pick<ReceiptLine, "periodStart">[]): string {
+/** Période couverte ; en français par défaut (reçu remis aux familles). */
+export function receiptPeriodLabel(lines: Pick<ReceiptLine, "periodStart">[], locale: Locale = "fr"): string {
   const months = [...new Set(lines.map((line) => line.periodStart.slice(0, 7)))].sort();
   if (months.length === 0) return "";
-  const first = capitalize(formatMonth(`${months[0]}-01`));
+  const first = capitalize(formatMonth(`${months[0]}-01`, locale));
   if (months.length === 1) return first;
-  return `${first} – ${capitalize(formatMonth(`${months[months.length - 1]}-01`))}`;
+  return `${first} – ${capitalize(formatMonth(`${months[months.length - 1]}-01`, locale))}`;
 }
 
 export type ReceiptMessageValues = {
@@ -121,8 +127,11 @@ export type ReceiptMessageValues = {
   number: string;
 };
 
-/** Message WhatsApp : modèle du centre (ou proposé), variables remplacées. */
-export function renderReceiptMessage(template: string | null, values: ReceiptMessageValues, LABELS: AppLabels): string {
+/**
+ * Message WhatsApp : modèle du centre dans la langue de la famille, sinon message
+ * proposé dans cette langue ; variables remplacées.
+ */
+export function renderReceiptMessage(template: string | null, values: ReceiptMessageValues, LABELS: AppLabels, locale: Locale = "fr"): string {
   const message = template?.trim() ? template : LABELS.receipts.whatsappTemplate;
-  return fillTemplate(message, LABELS.receipts.tokens, labelsFor().receipts.tokens, values);
+  return fillTemplate(message, LABELS.receipts.tokens, canonicalTokens("receipt", locale), values);
 }

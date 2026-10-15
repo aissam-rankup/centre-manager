@@ -1,7 +1,8 @@
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import type { ReactNode } from "react";
 
 import { formatPercent } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
 
 /** Couleurs des cartes, dans l'ordre ; elles tournent au-delà de 4. */
@@ -21,16 +22,18 @@ type ProgressRingProps = {
   /** Valeur entre 0 et 1. */
   value: number;
   caption: string;
+  /** Langue de l'interface (format du pourcentage). */
+  locale: Locale;
   size?: number;
 };
 
 /** Anneau de progression : piste blanche à 30 %, arc blanc, pourcentage au centre. */
-export function ProgressRing({ value, caption, size = 56 }: ProgressRingProps) {
+export function ProgressRing({ value, caption, locale, size = 56 }: ProgressRingProps) {
   const stroke = 4;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.min(1, Math.max(0, value));
-  const label = formatPercent(clamped);
+  const label = formatPercent(clamped, locale);
 
   return (
     <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
@@ -80,8 +83,8 @@ export function ProgressTile({ index, ring, title, description, href, linkLabel,
         className,
       )}
     >
-      <span className="pointer-events-none absolute -top-6 -right-6 size-20 rounded-full bg-white/[0.08]" aria-hidden />
-      <span className="pointer-events-none absolute -bottom-5 left-10 size-[50px] rounded-full bg-white/[0.08]" aria-hidden />
+      <span className="pointer-events-none absolute -top-6 -end-6 size-20 rounded-full bg-white/[0.08]" aria-hidden />
+      <span className="pointer-events-none absolute -bottom-5 start-10 size-[50px] rounded-full bg-white/[0.08]" aria-hidden />
       {ring}
       <div className="relative flex min-w-0 flex-1 flex-col gap-0.5">
         <p className="line-clamp-2 text-body font-semibold">{title}</p>

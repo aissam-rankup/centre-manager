@@ -49,6 +49,8 @@ export async function loadDashboardStudents(
   let directoryQuery = supabase
     .from("student_directory")
     .select("id, full_name, level_id, level_name, photo_url, guardian_phone, is_overdue, discounts")
+    // Élèves suspendus : mis de côté (liste « Suspendus » des élèves).
+    .is("suspended_at", null)
     .order("full_name");
   if (levelId) directoryQuery = directoryQuery.eq("level_id", levelId);
 
@@ -119,9 +121,14 @@ export async function loadSubjectPresence(supabase: Client, days = 30): Promise<
   since.setDate(since.getDate() - days);
 
   const [attendanceResult, subjectsResult, enrollmentsResult] = await Promise.all([
-    supabase.from("attendance").select("subject_id, status").gte("session_date", toISODate(since)),
+    // Statistiques de présence : hors élèves suspendus.
+    supabase
+      .from("attendance")
+      .select("subject_id, status, students!inner(suspended_at)")
+      .gte("session_date", toISODate(since))
+      .is("students.suspended_at", null),
     supabase.from("subjects").select("id, name, levels(name)"),
-    supabase.from("enrollments").select("subject_id").eq("active", true),
+    supabase.from("enrollments").select("subject_id, students!inner(suspended_at)").eq("active", true).is("students.suspended_at", null),
   ]);
   if (attendanceResult.error) throw attendanceResult.error;
   if (subjectsResult.error) throw subjectsResult.error;

@@ -1,6 +1,6 @@
 import { CalendarDays, CalendarOff, ClipboardCheck, PencilLine, Users } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { ProgressRing, ProgressTile } from "@/components/dashboard/progress-tile";
 import { SectionHeading } from "@/components/dashboard/section-heading";
@@ -12,6 +12,7 @@ import { StudentAvatar } from "@/components/shared/student-avatar";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { getTeacherDashboard, type TeacherStudentRow, type TodaySession } from "@/lib/data/teacher";
 import { formatDateWithWeekday, formatPercent, today } from "@/lib/format";
@@ -28,7 +29,8 @@ export default async function TeacherHomePage() {
   const L = LABELS.teacher.home;
   const profile = await requireRole("teacher");
   const { sessions, students, studentCount, subjectCount, presenceRate } = await getTeacherDashboard();
-  const dateLabel = formatDateWithWeekday(today());
+  const locale = await getAppLocale();
+  const dateLabel = formatDateWithWeekday(today(), locale);
   const firstName = profile.fullName.split(" ")[0] ?? profile.fullName;
   const doneCount = sessions.filter((session) => isDone(session)).length;
 
@@ -53,7 +55,7 @@ export default async function TeacherHomePage() {
             />
             <StatTile value={studentCount} label={L.stats.followedStudents} detail={L.stats.followedStudentsDetail(subjectCount)} />
             <StatTile
-              value={presenceRate === null ? LABELS.common.none : formatPercent(presenceRate)}
+              value={presenceRate === null ? LABELS.common.none : formatPercent(presenceRate, locale)}
               label={L.stats.presenceRate}
               detail={L.stats.presenceRateDetail}
             />
@@ -101,13 +103,14 @@ function isDone(session: TodaySession): boolean {
 async function SessionTile({ session, index }: { session: TodaySession; index: number }) {
   const LABELS = await getLabels();
   const L = LABELS.teacher.home;
+  const locale = await getAppLocale();
   const done = isDone(session);
   const progress = session.studentCount > 0 ? session.markedCount / session.studentCount : 0;
 
   return (
     <ProgressTile
       index={index}
-      ring={<ProgressRing value={progress} caption={done ? L.attendanceDone : L.attendanceTodo} />}
+      ring={<ProgressRing value={progress} caption={done ? L.attendanceDone : L.attendanceTodo} locale={locale} />}
       title={`${session.subjectName} · ${session.levelName}`}
       description={`${L.sessionDetail(LABELS.teacher.schedule.time(session.startTime, session.endTime), session.room)} · ${L.studentsCount(session.studentCount)}`}
     >
@@ -153,11 +156,11 @@ async function StudentList({ students }: { students: TeacherStudentRow[] }) {
 
           {/* Desktop : tableau */}
           <div className="hidden max-h-[520px] overflow-auto rounded-xl bg-card shadow-card md:block">
-            <table className="w-full border-collapse text-left text-table">
+            <table className="w-full border-collapse text-start text-table">
               <caption className="sr-only">{S.caption}</caption>
               <thead className="sticky top-0 z-10 bg-card">
                 <tr className="h-12 border-b border-divider">
-                  <th scope="col" className="px-3 pl-4 font-medium text-heading lg:px-4 lg:pl-6">
+                  <th scope="col" className="px-3 ps-4 font-medium text-heading lg:px-4 lg:ps-6">
                     {S.name}
                   </th>
                   <th scope="col" className="px-3 font-medium text-heading lg:px-4">
@@ -166,7 +169,7 @@ async function StudentList({ students }: { students: TeacherStudentRow[] }) {
                   <th scope="col" className="px-3 font-medium text-heading lg:px-4">
                     {S.subject}
                   </th>
-                  <th scope="col" className="px-3 pr-4 font-medium whitespace-nowrap text-heading lg:px-4">
+                  <th scope="col" className="px-3 pe-4 font-medium whitespace-nowrap text-heading lg:px-4">
                     {S.lastStatus}
                   </th>
                 </tr>
@@ -177,7 +180,7 @@ async function StudentList({ students }: { students: TeacherStudentRow[] }) {
                     key={student.key}
                     className="h-[52px] border-b border-divider transition-colors duration-150 last:border-b-0 hover:bg-row-hover"
                   >
-                    <td className="px-3 pl-4 lg:px-4 lg:pl-6">
+                    <td className="px-3 ps-4 lg:px-4 lg:ps-6">
                       <span className="flex items-center gap-3 font-medium text-heading">
                         <StudentAvatar name={student.fullName} photoUrl={student.photoUrl} className="size-7 border" />
                         <Link href={ROUTES.teacher.student(student.studentId)} className="truncate rounded-sm hover:text-primary">
@@ -189,7 +192,7 @@ async function StudentList({ students }: { students: TeacherStudentRow[] }) {
                       {student.levelName}
                     </td>
                     <td className="px-3 lg:px-4">{student.subjectName}</td>
-                    <td className="px-3 pr-4 lg:px-4">
+                    <td className="px-3 pe-4 lg:px-4">
                       <LastStatus status={student.lastStatus} />
                     </td>
                   </tr>

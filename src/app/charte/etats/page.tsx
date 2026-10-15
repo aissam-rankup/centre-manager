@@ -7,16 +7,17 @@ import { StatCardSkeleton } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 
 import { Section } from "../section";
 import { ErrorDemo, ToastDemo } from "./demos";
 
-const L = LABELS.styleguide;
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).styleguide.states.title };
+}
 
-export const metadata: Metadata = { title: L.states.title };
-
-export default function StatesPage() {
+export default async function StatesPage() {
+  const L = (await getLabels()).styleguide;
   return (
     <div className="flex flex-col gap-12">
       <PageHeader title={L.states.title} description={L.states.description} />

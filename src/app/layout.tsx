@@ -3,10 +3,17 @@ import { Poppins } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { arabicFont } from "@/components/vitrine/fonts";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { brandMetadata, getDocumentBrand } from "@/lib/branding";
+import { getRootUrl } from "@/lib/center-host";
 import { LABELS } from "@/lib/constants/labels";
+import { LabelsProvider, LocaleProvider } from "@/lib/i18n/client";
+import { dirFor } from "@/lib/i18n/locale";
+import { getAppLocale } from "@/lib/i18n/request-locale";
+import { cn } from "@/lib/utils";
+import { DEFAULT_VOCABULARY } from "@/lib/vocabulary";
 
 import "./globals.css";
 
@@ -17,14 +24,48 @@ const poppins = Poppins({
   display: "swap",
 });
 
+const OG_IMAGE = { url: "/brand/og-image.png", width: 1200, height: 630, alt: LABELS.app.name };
+
+/** Domaine racine (ROOT_DOMAIN) : base des adresses absolues des aperçus, jamais un domaine en dur. */
+function metadataBase(): URL | undefined {
+  try {
+    return new URL(getRootUrl("/"));
+  } catch {
+    return undefined;
+  }
+}
+
 const PLATFORM_METADATA: Metadata = {
+  metadataBase: metadataBase(),
   title: {
     default: LABELS.app.name,
     template: `%s · ${LABELS.app.name}`,
   },
   description: LABELS.app.metaDescription,
-  // Icône de la plateforme ; une favicon de centre (marque blanche) la remplace.
-  icons: { icon: "/favicon.ico" },
+  applicationName: LABELS.app.name,
+  // Icônes déclarées ici (et non par les conventions de fichiers, qui l'emporteraient sur la favicon
+  // d'un centre en marque blanche).
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/brand/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  openGraph: {
+    type: "website",
+    siteName: LABELS.app.name,
+    title: LABELS.app.name,
+    description: LABELS.app.metaDescription,
+    locale: "fr_FR",
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: LABELS.app.name,
+    description: LABELS.app.metaDescription,
+    images: [OG_IMAGE.url],
+  },
 };
 
 /** Onglet et favicon : marque du centre (marque blanche) de l'adresse ou du compte, sinon la plateforme. */
@@ -37,20 +78,23 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#eaf1fc" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c0a1d" },
-  ],
+  themeColor: "#6C2BF5",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+// Langue de l'utilisateur pour toute l'application ; les espaces d'un centre y ajoutent son vocabulaire.
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const locale = await getAppLocale();
   return (
-    <html lang="fr" className={poppins.variable} suppressHydrationWarning>
+    <html lang={locale} dir={dirFor(locale)} className={cn(poppins.variable, locale === "ar" && arabicFont.variable)} suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-          <TooltipProvider>{children}</TooltipProvider>
-          <Toaster position="top-center" closeButton />
-        </ThemeProvider>
+        <LocaleProvider locale={locale}>
+          <LabelsProvider terms={DEFAULT_VOCABULARY}>
+            <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+              <TooltipProvider>{children}</TooltipProvider>
+              <Toaster position="top-center" closeButton dir={dirFor(locale)} />
+            </ThemeProvider>
+          </LabelsProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

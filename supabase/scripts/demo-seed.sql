@@ -1,4 +1,8 @@
 -- =====================================================================
+-- PRODUCTION : ne jamais coller ce fichier tel quel (UTF-8 relu en Windows-1252 →
+-- « MathÃ©matiques »). Générer d'abord sa version ASCII :
+--   python supabase/scripts/sql_to_ascii.py supabase/scripts/demo-seed.sql C:/tmp/demo-seed-ascii.sql
+--
 -- CentroManager — jeu de démonstration (production) : 2 centres, 6 comptes
 --
 --  * Centre Excellence (soutien scolaire) et Institut Pro Compétences

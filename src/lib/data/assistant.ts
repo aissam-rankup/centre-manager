@@ -177,6 +177,9 @@ export type StudentListItem = {
   isOverdue: boolean;
   /** Remises en cours (badge). */
   discounts: DiscountSummary[];
+  /** Suspendu : date (recherche « Suspendus »). */
+  suspendedAt: string | null;
+  suspensionReason: string | null;
 };
 
 /** Même normalisation que private.normalize_search : minuscules, sans accents. */
@@ -191,15 +194,17 @@ export function normalizeSearch(value: string): string {
 
 export const SEARCH_LIMIT = 50;
 
-export async function searchStudentDirectory(query: string): Promise<StudentListItem[]> {
+/** Recherche d'élèves : actifs par défaut, ou uniquement les suspendus. */
+export async function searchStudentDirectory(query: string, suspended = false): Promise<StudentListItem[]> {
   await requireStaff();
   const supabase = await createClient();
 
   let request = supabase
     .from("student_directory")
-    .select("id, full_name, level_name, photo_url, is_overdue, discounts")
+    .select("id, full_name, level_name, photo_url, is_overdue, discounts, suspended_at, suspension_reason")
     .order("full_name", { ascending: true })
     .limit(SEARCH_LIMIT);
+  request = suspended ? request.not("suspended_at", "is", null) : request.is("suspended_at", null);
 
   const normalized = normalizeSearch(query);
   if (normalized) {
@@ -222,6 +227,8 @@ export async function searchStudentDirectory(query: string): Promise<StudentList
             photoUrl: row.photo_url ? (photos.get(row.photo_url) ?? null) : null,
             isOverdue: row.is_overdue ?? false,
             discounts: parseDiscountList(row.discounts),
+            suspendedAt: row.suspended_at,
+            suspensionReason: row.suspension_reason,
           },
         ]
       : [],
@@ -320,6 +327,8 @@ export type StudentFile = {
   reminders: StudentReminder[];
   /** Rappels à envoyer maintenant (campagnes confirmées, factures non réglées). */
   reminderItems: ReminderItem[];
+  /** Élève suspendu : date, motif et auteur ; null s'il est actif. */
+  suspension: { at: string; reason: string; byName: string | null } | null;
 };
 
 export async function getStudentFile(studentId: string): Promise<StudentFile | null> {
@@ -330,7 +339,9 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
 
   const { data: student, error } = await supabase
     .from("students")
-    .select("id, full_name, level_id, photo_url, guardian_name, guardian_phone, notes, created_at, levels(name)")
+    .select(
+      "id, full_name, level_id, photo_url, guardian_name, guardian_phone, notes, created_at, suspended_at, suspension_reason, levels(name), suspender:profiles!students_suspended_by_fkey(full_name)",
+    )
     .eq("id", studentId)
     .maybeSingle();
   if (error) throw error;
@@ -485,6 +496,9 @@ export async function getStudentFile(studentId: string): Promise<StudentFile | n
     guardianPhone: student.guardian_phone,
     notes: student.notes,
     createdAt: student.created_at,
+    suspension: student.suspended_at
+      ? { at: student.suspended_at, reason: student.suspension_reason ?? "", byName: student.suspender?.full_name ?? null }
+      : null,
     isOverdue: overdue.length > 0,
     oldestOverdueInvoiceId: overdue[0]?.id ?? null,
     enrollments: enrollmentsResult.data.map((row) => ({
@@ -567,7 +581,7 @@ export async function getLevelsWithSubjects(): Promise<LevelWithSubjects[]> {
 
   const { data, error } = await supabase
     .from("levels")
-    .select("id, name, sort_order, subjects(id, name, monthly_price), packs(id, name, monthly_price, active, pack_subjects(subject_id))")
+    .select("id, name, sort_order, subjects(id, name, monthly_price, archived_at), packs(id, name, monthly_price, active, pack_subjects(subject_id))")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   if (error) throw error;
@@ -575,7 +589,9 @@ export async function getLevelsWithSubjects(): Promise<LevelWithSubjects[]> {
   return data.map((level) => ({
     id: level.id,
     name: level.name,
-    subjects: [...level.subjects]
+    // Matières archivées : hors des listes de choix (inscription, affectation, pack).
+    subjects: level.subjects
+      .filter((subject) => subject.archived_at === null)
       .sort((a, b) => a.name.localeCompare(b.name, "fr"))
       .map((subject) => ({ id: subject.id, name: subject.name, monthlyPrice: Number(subject.monthly_price) })),
     packs: level.packs

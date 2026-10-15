@@ -1,18 +1,23 @@
 import { GraduationCap } from "lucide-react";
 
-import { LABELS } from "@/lib/constants/labels";
+import { Logo as DirasstyLogo } from "@/components/brand/logo";
+import { getLabels } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
 type LogoProps = {
-  /** « sidebar » : pour la barre latérale bleu nuit. */
-  variant?: "default" | "sidebar";
   /** Marque blanche : nom et logo du centre. */
   name?: string;
   logoUrl?: string | null;
+  /** Centre en marque blanche : la marque dirassty n'apparaît pas, même sans logo. */
+  whiteLabel?: boolean;
+  /** Logo au-dessus de la ligne de flottaison (page de connexion). */
+  priority?: boolean;
   className?: string;
 };
 
-export function Logo({ variant = "default", name = LABELS.app.name, logoUrl = null, className }: LogoProps) {
+/** Logo de l'en-tête : celui du centre en marque blanche, sinon dirassty. */
+export async function Logo({ name: brandName, logoUrl = null, whiteLabel = false, priority = false, className }: LogoProps) {
+  const name = brandName ?? (await getLabels()).app.name;
   if (logoUrl) {
     return (
       <span className={cn("inline-flex items-center gap-3", className)}>
@@ -22,17 +27,15 @@ export function Logo({ variant = "default", name = LABELS.app.name, logoUrl = nu
       </span>
     );
   }
-  return (
-    <span className={cn("inline-flex items-center gap-3", className)}>
-      <span
-        className={cn(
-          "flex size-9 items-center justify-center rounded-lg",
-          variant === "sidebar" ? "bg-white/10 text-white" : "bg-primary text-primary-foreground",
-        )}
-      >
-        <GraduationCap className="size-5" aria-hidden />
+  if (whiteLabel) {
+    return (
+      <span className={cn("inline-flex items-center gap-3", className)}>
+        <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <GraduationCap className="size-5" aria-hidden />
+        </span>
+        <span className="text-base font-semibold tracking-tight">{name}</span>
       </span>
-      <span className="text-base font-semibold tracking-tight">{name}</span>
-    </span>
-  );
+    );
+  }
+  return <DirasstyLogo height={28} priority={priority} className={className} />;
 }

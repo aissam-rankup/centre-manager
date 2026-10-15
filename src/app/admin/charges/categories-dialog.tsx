@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { saveExpenseCategory, setExpenseCategoryActive } from "@/lib/actions/expenses";
 import { EXPENSE_ICONS, type ExpenseCategoryView, type ExpenseIcon as ExpenseIconName } from "@/lib/expenses";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 /** Catégories de charges : ajout, renommage, icône, désactivation. */
@@ -55,6 +55,7 @@ export function CategoriesDialog({ categories }: { categories: ExpenseCategoryVi
 function CategoryRow({ category }: { category: ExpenseCategoryView }) {
   const LABELS = useLabels();
   const C = LABELS.expenses.categories;
+  const message = useMessage();
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -62,7 +63,7 @@ function CategoryRow({ category }: { category: ExpenseCategoryView }) {
 
   return (
     <li className={cn("flex items-center justify-between gap-3 py-2.5", !category.isActive && "opacity-60")}>
-      <button type="button" onClick={() => setEditing(true)} className="flex min-w-0 items-center gap-3 rounded-lg text-left hover:underline">
+      <button type="button" onClick={() => setEditing(true)} className="flex min-w-0 items-center gap-3 rounded-lg text-start hover:underline">
         <ExpenseIcon name={category.icon} />
         <span className="flex min-w-0 flex-col">
           <span className="truncate font-medium">{category.name}</span>
@@ -75,7 +76,7 @@ function CategoryRow({ category }: { category: ExpenseCategoryView }) {
         onClick={() =>
           startTransition(async () => {
             const result = await setExpenseCategoryActive({ id: category.id, active: !category.isActive });
-            if (!result.ok) toast.error(result.error);
+            if (!result.ok) toast.error(message(result.error));
           })
         }
       >
@@ -89,6 +90,7 @@ function CategoryRow({ category }: { category: ExpenseCategoryView }) {
 function CategoryEditor({ category, onDone }: { category?: ExpenseCategoryView; onDone: () => void }) {
   const LABELS = useLabels();
   const C = LABELS.expenses.categories;
+  const message = useMessage();
   const [name, setName] = useState(category?.name ?? "");
   const [icon, setIcon] = useState<ExpenseIconName>(category?.icon ?? "receipt");
   const [recurring, setRecurring] = useState(category?.isRecurring ?? false);
@@ -131,7 +133,7 @@ function CategoryEditor({ category, onDone }: { category?: ExpenseCategoryView; 
             startTransition(async () => {
               const result = await saveExpenseCategory({ id: category?.id, name, icon, isRecurring: recurring });
               if (!result.ok) {
-                setError(result.error);
+                setError(message(result.error));
                 return;
               }
               toast.success(C.saved);

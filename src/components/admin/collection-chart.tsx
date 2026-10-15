@@ -1,7 +1,7 @@
 "use client";
 
 import { Table2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -17,7 +17,8 @@ import {
 import { Button } from "@/components/ui/button";
 import type { CollectionDay } from "@/lib/data/collection";
 import { formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale } from "@/lib/i18n/client";
+import { intlLocale } from "@/lib/i18n/locale";
 
 // Ce mois-ci : la couleur de l'encaissé ; le mois précédent : référence neutre, en tirets.
 const SERIES = [
@@ -25,12 +26,12 @@ const SERIES = [
   { key: "previous", color: "var(--muted-foreground)", dash: "5 4" },
 ] as const;
 
-const compact = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 });
-
 /** Encaissé cumulé jour par jour : ce mois-ci contre le mois précédent, avec le prévisionnel en repère. */
 export function CollectionChart({ days, expected }: { days: CollectionDay[]; expected: number }) {
   const LABELS = useLabels();
   const C = LABELS.financeDashboard.collection.chart;
+  const locale = useLocale();
+  const compact = useMemo(() => new Intl.NumberFormat(intlLocale(locale), { notation: "compact", maximumFractionDigits: 1 }), [locale]);
   const [showTable, setShowTable] = useState(false);
   const elapsed = days.filter((day) => day.current !== null);
   const today = elapsed.at(-1)?.day;
@@ -120,13 +121,13 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
 
       {showTable ? (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[360px] text-left">
+          <table className="w-full min-w-[360px] text-start">
             <caption className="sr-only">{C.caption}</caption>
             <thead>
               <tr className="h-11 border-b text-caption text-muted-foreground">
                 <th scope="col" className="px-2 font-medium">{C.day}</th>
                 {series.map((series) => (
-                  <th key={series.key} scope="col" className="px-2 text-right font-medium">
+                  <th key={series.key} scope="col" className="px-2 text-end font-medium">
                     {C.series[series.key]}
                   </th>
                 ))}
@@ -137,8 +138,8 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
                 <tr key={day.day} className="h-11 border-b last:border-b-0">
                   <td className="px-2">{day.day}</td>
                   {series.map((series) => (
-                    <td key={series.key} className="numeric px-2 text-right font-normal">
-                      {day[series.key] === null ? "—" : formatMAD(day[series.key] ?? 0)}
+                    <td key={series.key} className="numeric px-2 text-end font-normal">
+                      {day[series.key] === null ? "—" : formatMAD(day[series.key] ?? 0, locale)}
                     </td>
                   ))}
                 </tr>
@@ -153,6 +154,7 @@ export function CollectionChart({ days, expected }: { days: CollectionDay[]; exp
 
 function CollectionTooltip({ active, payload }: TooltipContentProps) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const C = LABELS.financeDashboard.collection.chart;
   const row = payload?.[0]?.payload as CollectionDay | undefined;
   if (!active || !row) return null;
@@ -166,7 +168,7 @@ function CollectionTooltip({ active, payload }: TooltipContentProps) {
               <span className="size-2 rounded-full" style={{ background: series.color }} aria-hidden />
               {C.series[series.key]}
             </span>
-            <span className="numeric font-medium">{formatMAD(row[series.key] ?? 0)}</span>
+            <span className="numeric font-medium">{formatMAD(row[series.key] ?? 0, locale)}</span>
           </p>
         ),
       )}

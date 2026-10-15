@@ -1,5 +1,7 @@
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { ReactNode } from "react";
 
+import Link from "@/components/shared/app-link";
 import { cn } from "@/lib/utils";
 
 export type DataTableColumn<Row> = {
@@ -14,6 +16,8 @@ export type DataTableColumn<Row> = {
    */
   mobile?: "title" | "meta" | "wide" | "aside" | "hidden";
   className?: string;
+  /** Tri par lien (tableau rendu côté serveur) : adresse du tri et sens actuel (null : colonne non triée). */
+  sort?: { href: string; direction: "asc" | "desc" | null; label: string };
 };
 
 type DataTableProps<Row> = {
@@ -23,6 +27,8 @@ type DataTableProps<Row> = {
   caption: string;
   /** « plain » : sans cadre ni ombre, pour un tableau placé dans une carte. */
   variant?: "card" | "plain";
+  /** « compact » : marges de cellule réduites (tableaux à nombreuses colonnes). */
+  density?: "default" | "compact";
   className?: string;
 };
 
@@ -30,7 +36,16 @@ type DataTableProps<Row> = {
  * Tableau : lignes de 52 px et en-tête collant sur desktop,
  * transformé automatiquement en liste de cartes sous 768 px.
  */
-export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "card", className }: DataTableProps<Row>) {
+export function DataTable<Row>({
+  columns,
+  rows,
+  getRowId,
+  caption,
+  variant = "card",
+  density = "default",
+  className,
+}: DataTableProps<Row>) {
+  const cellPadding = density === "compact" ? "px-2.5" : "px-4";
   const titleColumns = columns.filter((c) => c.mobile === "title");
   const asideColumns = columns.filter((c) => c.mobile === "aside");
   const metaColumns = columns.filter((c) => ["meta", "wide"].includes(c.mobile ?? "meta"));
@@ -74,7 +89,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
           variant === "card" ? "rounded-xl bg-card shadow-card" : "-mx-(--card-spacing)",
         )}
       >
-        <table className="w-full border-collapse text-left text-table">
+        <table className="w-full border-collapse text-start text-table">
           <caption className="sr-only">{caption}</caption>
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="h-12 border-b border-divider">
@@ -82,12 +97,34 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
                 <th
                   key={column.id}
                   scope="col"
+                  aria-sort={column.sort?.direction ? (column.sort.direction === "asc" ? "ascending" : "descending") : undefined}
                   className={cn(
-                    "px-4 text-table font-medium whitespace-nowrap text-heading",
-                    column.align === "end" && "text-right",
+                    cellPadding,
+                    "text-table font-medium whitespace-nowrap text-heading",
+                    column.align === "end" && "text-end",
                   )}
                 >
-                  {column.header}
+                  {column.sort ? (
+                    <Link
+                      href={column.sort.href}
+                      aria-label={column.sort.label}
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-sm hover:text-primary",
+                        column.align === "end" && "flex-row-reverse",
+                      )}
+                    >
+                      {column.header}
+                      {column.sort.direction === "asc" ? (
+                        <ArrowUp className="size-3.5" aria-hidden />
+                      ) : column.sort.direction === "desc" ? (
+                        <ArrowDown className="size-3.5" aria-hidden />
+                      ) : (
+                        <ArrowUpDown className="size-3.5 text-subtle" aria-hidden />
+                      )}
+                    </Link>
+                  ) : (
+                    column.header
+                  )}
                 </th>
               ))}
             </tr>
@@ -98,7 +135,7 @@ export function DataTable<Row>({ columns, rows, getRowId, caption, variant = "ca
                 {columns.map((column) => (
                   <td
                     key={column.id}
-                    className={cn("px-4 py-0", column.align === "end" && "text-right", column.className)}
+                    className={cn(cellPadding, density === "compact" ? "py-2" : "py-0", column.align === "end" && "text-end", column.className)}
                   >
                     {column.cell(row)}
                   </td>

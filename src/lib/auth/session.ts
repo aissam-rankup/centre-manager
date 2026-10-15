@@ -1,9 +1,11 @@
 import "server-only";
 
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
 import { type CenterRole, ROLE_HOME, ROUTES, type UserRole } from "@/lib/auth/routes";
+import { CENTER_HEADER, decodeCenter } from "@/lib/center-host";
 import type { Database } from "@/lib/supabase/database.types";
 import { type BrandingData, parseBranding } from "@/lib/branding-data";
 import { type ModuleKey, parseModules } from "@/lib/modules";
@@ -40,15 +42,35 @@ export type SessionProfile = {
   /** Chemin de la photo (bucket staff-photos) et son URL signée. */
   photoPath: string | null;
   photoUrl: string | null;
+  /** Mot de passe temporaire défini par un responsable : à remplacer avant toute autre page. */
+  mustChangePassword: boolean;
 };
 
 /** Compte d'un centre (admin, assistant, professeur). */
 export type CenterProfile = SessionProfile & { centerId: string };
 
+/** Élève connecté (rôle student_user) : sa fiche et son centre, rien d'autre. */
+export type StudentSession = {
+  userId: string;
+  studentId: string;
+  fullName: string;
+  levelId: string;
+  levelName: string;
+  centerId: string;
+  centerName: string;
+  /** Accès ouvert, actif, centre en service et plateforme pédagogique incluse. */
+  allowed: boolean;
+  vocabulary: VocabularyTerms;
+  branding: BrandingData | null;
+  mustChangePassword: boolean;
+};
+
 export type AuthState =
   | { status: "anonymous" }
   /** Compte Auth sans profil applicatif : aucun accès. */
   | { status: "no-profile"; email: string }
+  /** Compte élève (student_user), sans profil d'équipe. */
+  | { status: "student"; student: StudentSession }
   | { status: "authenticated"; profile: SessionProfile };
 
 /**
@@ -63,14 +85,43 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
   const { sub: userId, email: rawEmail } = claimsData.claims;
   const email = typeof rawEmail === "string" ? rawEmail : "";
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, role, active, center_id, photo_url, centers(name)")
-    .eq("id", userId)
-    .maybeSingle();
+  const [{ data: profile, error }, passwordState] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, role, active, center_id, photo_url, centers(name)")
+      .eq("id", userId)
+      .maybeSingle(),
+    supabase.rpc("my_password_state").maybeSingle(),
+  ]);
 
   if (error) throw error;
-  if (!profile) return { status: "no-profile", email };
+  if (passwordState.error) throw passwordState.error;
+  // Session fermée par une réinitialisation du mot de passe : le jeton est
+  // encore valide quelques minutes, mais la session n'existe plus.
+  if (passwordState.data && !passwordState.data.session_valid) redirect(ROUTES.sessionClosed);
+  const mustChangePassword = passwordState.data?.must_change ?? false;
+  if (!profile) {
+    // Pas de profil d'équipe : peut-être un accès élève.
+    const { data: access, error: accessError } = await supabase.rpc("my_student_access").maybeSingle();
+    if (accessError) throw accessError;
+    if (!access) return { status: "no-profile", email };
+    return {
+      status: "student",
+      student: {
+        userId,
+        studentId: access.student_id,
+        fullName: access.full_name,
+        levelId: access.level_id,
+        levelName: access.level_name,
+        centerId: access.center_id,
+        centerName: access.center_name,
+        allowed: access.allowed,
+        vocabulary: parseVocabularyTerms(access.vocabulary),
+        branding: parseBranding(access.branding),
+        mustChangePassword,
+      },
+    };
+  }
 
   const [photos, access] = await Promise.all([
     signPhotoUrls(supabase, [profile.photo_url], STAFF_PHOTO_BUCKET),
@@ -109,6 +160,7 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
       branding: parseBranding(center?.branding),
       photoPath: profile.photo_url,
       photoUrl: profile.photo_url ? (photos.get(profile.photo_url) ?? null) : null,
+      mustChangePassword: support ? false : mustChangePassword,
     },
   };
 });
@@ -121,14 +173,27 @@ export async function requireRole(role: CenterRole | readonly CenterRole[]): Pro
   const allowed: readonly UserRole[] = typeof role === "string" ? [role] : role;
   const state = await getAuthState();
   if (state.status === "anonymous") redirect(ROUTES.login);
+  if (state.status === "student") redirect(ROUTES.student.home);
   if (state.status === "no-profile" || !state.profile.active) redirect(ROUTES.inactive);
+  if (state.profile.mustChangePassword) redirect(ROUTES.forcedPassword);
   if (!allowed.includes(state.profile.role)) redirect(ROLE_HOME[state.profile.role]);
   // Centre suspendu ou résilié : aucun espace, écran dédié (la RLS refuse de toute façon les données).
   // Le support (super-admin, lecture seule) reste possible sur un centre bloqué.
   if (state.profile.blocked && !state.profile.support) redirect(ROUTES.suspended);
   const { centerId } = state.profile;
   if (!centerId) redirect(ROUTES.inactive);
+  if (!state.profile.support) await requireOwnCenterHost(centerId, ROUTES.login);
   return { ...state.profile, centerId };
+}
+
+/**
+ * Adresse d'un autre centre que celui du compte : écran de connexion (le proxy
+ * y ferme la session et donne l'adresse du bon centre). Double du contrôle du
+ * proxy, sur chaque page protégée ; l'adresse n'autorise jamais rien.
+ */
+async function requireOwnCenterHost(accountCenterId: string | null, loginPath: string): Promise<void> {
+  const current = decodeCenter((await headers()).get(CENTER_HEADER));
+  if (current && current.id !== accountCenterId) redirect(loginPath);
 }
 
 /**
@@ -139,6 +204,7 @@ export async function requireSuperAdmin(): Promise<SessionProfile> {
   const state = await getAuthState();
   if (state.status !== "authenticated" || !state.profile.active) notFound();
   const { profile } = state;
+  if (profile.mustChangePassword) redirect(ROUTES.forcedPassword);
   // En support, le rôle affiché est « admin » : le vrai rôle reste super-admin.
   if (profile.role !== "super_admin" && !profile.support) notFound();
   return { ...profile, role: "super_admin", centerId: null, centerName: "", support: null, billing: null, planKey: null, modules: [], branding: null };
@@ -155,4 +221,20 @@ export function requireStaff(): Promise<CenterProfile> {
  */
 export function requireModule(profile: SessionProfile, key: ModuleKey): void {
   if (!profile.modules.includes(key)) notFound();
+}
+
+/**
+ * Garde de l'espace élève : compte élève dont l'accès est autorisé. Un compte
+ * d'équipe retourne à son espace ; un accès coupé reçoit l'écran de connexion
+ * élève avec un message (la base refuse de toute façon ses données).
+ */
+export async function requireStudent(): Promise<StudentSession> {
+  const state = await getAuthState();
+  if (state.status === "anonymous") redirect(ROUTES.student.login);
+  if (state.status === "no-profile") redirect(ROUTES.inactive);
+  if (state.status === "authenticated") redirect(state.profile.active ? ROLE_HOME[state.profile.role] : ROUTES.inactive);
+  if (!state.student.allowed) redirect(`${ROUTES.student.login}?acces=coupe`);
+  if (state.student.mustChangePassword) redirect(ROUTES.forcedPassword);
+  await requireOwnCenterHost(state.student.centerId, ROUTES.student.login);
+  return state.student;
 }

@@ -44,6 +44,8 @@ export function assistantSchemas(LABELS: AppLabels) {
       formula: z.enum(["unit", "pack"]),
       subjectIds: z.array(z.uuid()),
       packId: z.string(),
+      /** Ouvrir l'accès élève dans le même geste (centre avec la plateforme pédagogique). */
+      studentAccess: z.boolean(),
     })
     .superRefine((values, ctx) => {
       if (values.formula === "unit" && values.subjectIds.length === 0) {

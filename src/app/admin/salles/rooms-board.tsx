@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { deleteRoom, saveRoom, setRoomActive } from "@/lib/actions/rooms";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
+import { intlLocale } from "@/lib/i18n/locale";
 import { ROOM_EQUIPMENT, type RoomEquipment, type RoomView } from "@/lib/rooms";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +43,8 @@ function RoomCard({ room }: { room: RoomView }) {
   const LABELS = useLabels();
   const R = LABELS.rooms;
   const W = R.week;
+  const locale = useLocale();
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const overloaded = room.capacity === null ? [] : room.slots.filter((slot) => slot.enrolled > (room.capacity ?? 0));
@@ -89,7 +92,7 @@ function RoomCard({ room }: { room: RoomView }) {
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption">
         <span className="font-medium">{W.slots(room.slots.length)}</span>
-        <span className="text-muted-foreground">{W.hours(new Intl.NumberFormat("fr-FR").format(room.weeklyHours))}</span>
+        <span className="text-muted-foreground">{W.hours(new Intl.NumberFormat(intlLocale(locale)).format(room.weeklyHours))}</span>
         {overloaded.length > 0 ? (
           <span className="flex items-center gap-1 font-medium text-danger-ink">
             <TriangleAlert className="size-3.5" aria-hidden />
@@ -147,7 +150,7 @@ function RoomCard({ room }: { room: RoomView }) {
             startTransition(async () => {
               const result = await setRoomActive({ id: room.id, active: !room.isActive });
               if (result.ok) toast.success(room.isActive ? R.deactivated : R.activated);
-              else toast.error(result.error);
+              else toast.error(message(result.error));
             })
           }
         >
@@ -177,6 +180,7 @@ function RoomCard({ room }: { room: RoomView }) {
 function RoomDialog({ room }: { room?: RoomView }) {
   const LABELS = useLabels();
   const R = LABELS.rooms;
+  const message = useMessage();
   const initial = () => ({
     name: room?.name ?? "",
     capacity: room?.capacity === null || room?.capacity === undefined ? "" : String(room.capacity),
@@ -216,7 +220,7 @@ function RoomDialog({ room }: { room?: RoomView }) {
         startTransition(async () => {
           const result = await saveRoom({ id: room?.id, ...values });
           if (!result.ok) {
-            setError(result.error);
+            setError(message(result.error));
             setErrors(result.fieldErrors ?? {});
             return;
           }

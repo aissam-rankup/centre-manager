@@ -19,7 +19,7 @@ async function admin() {
 }
 
 function revalidatePayroll() {
-  revalidatePath(ROUTES.admin.payroll);
+  revalidatePath(ROUTES.admin.payroll, "layout");
   revalidatePath(ROUTES.admin.home);
 }
 
@@ -67,21 +67,28 @@ export async function unlockPayroll(input: unknown): Promise<ActionResult> {
   return success();
 }
 
-export async function markPayrollLinePaid(input: unknown): Promise<ActionResult> {
+/** Versement d'une ligne validée : enregistré avec son reçu de paie (numéroté, immuable). */
+export async function markPayrollLinePaid(input: unknown): Promise<ActionResult<{ receiptId: string }>> {
   const LABELS = await getLabels();
   const parsed = z
-    .object({ lineId: z.uuid(), paidAt: z.string().regex(ISO_DATE), method: z.enum(PAYMENT_METHODS) })
+    .object({
+      lineId: z.uuid(),
+      paidAt: z.string().regex(ISO_DATE),
+      method: z.enum(PAYMENT_METHODS),
+      note: z.string().trim().max(300).optional(),
+    })
     .safeParse(input);
   if (!parsed.success) return failure(LABELS.actions.errors.invalid);
   const supabase = await admin();
-  const { error } = await supabase.rpc("payroll_mark_paid", {
+  const { data, error } = await supabase.rpc("payroll_mark_paid", {
     p_line_id: parsed.data.lineId,
     p_paid_at: parsed.data.paidAt,
     p_method: parsed.data.method,
+    p_note: parsed.data.note || undefined,
   });
   if (error) return failure(await describeCenterError(error));
   revalidatePayroll();
-  return success();
+  return success({ receiptId: data.id });
 }
 
 /** Rémunération d'un professeur à partir d'une date (mode, salaire ou taux par matière). */
@@ -109,6 +116,31 @@ export async function saveTeacherPay(input: unknown): Promise<ActionResult> {
     p_effective_from: parsed.data.effectiveFrom,
     p_monthly_amount: parsed.data.monthlyAmount ?? undefined,
     p_rates: parsed.data.rates.map((rate) => ({ subject_id: rate.subjectId, rate_percent: rate.ratePercent })),
+  });
+  if (error) return failure(await describeCenterError(error));
+  revalidatePayroll();
+  return success();
+}
+
+/** Salaire fixe d'un assistant ou d'un admin à partir d'une date ; montant nul : retiré de la paie. */
+export async function saveStaffSalary(input: unknown): Promise<ActionResult> {
+  const LABELS = await getLabels();
+  const S = LABELS.payroll.settings;
+  const parsed = z
+    .object({
+      memberId: z.uuid(),
+      monthlyAmount: z.number().min(0, S.invalidAmount).max(1_000_000, S.invalidAmount).nullable(),
+      effectiveFrom: z.string().regex(ISO_DATE).nullable(),
+    })
+    .safeParse(input);
+  if (!parsed.success) return failure(parsed.error.issues[0]?.message ?? LABELS.actions.errors.invalid);
+  if (parsed.data.monthlyAmount !== null && parsed.data.effectiveFrom === null) return failure(LABELS.actions.errors.invalid);
+
+  const supabase = await admin();
+  const { error } = await supabase.rpc("set_staff_salary", {
+    p_member_id: parsed.data.memberId,
+    p_monthly_amount: parsed.data.monthlyAmount ?? undefined,
+    p_effective_from: parsed.data.effectiveFrom ?? undefined,
   });
   if (error) return failure(await describeCenterError(error));
   revalidatePayroll();

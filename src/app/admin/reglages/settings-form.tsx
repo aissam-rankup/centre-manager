@@ -11,32 +11,50 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { updateCenterSettings } from "@/lib/actions/receipts";
 import type { CenterReceiptSettings } from "@/lib/data/receipts";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { useModules } from "@/lib/modules-client";
-import { RECEIPT_FORMATS, type ReceiptFormat, renderReceiptMessage } from "@/lib/receipts";
+import { RECEIPT_FORMATS, type ReceiptFormat } from "@/lib/receipts";
+import { fillTemplate } from "@/lib/templates";
+import type { TemplateLanguagePack } from "@/lib/data/message-templates";
+import { dirFor, type Locale } from "@/lib/i18n/locale";
+import { TemplateLanguageSwitch } from "@/components/admin/template-language-switch";
 import { cn } from "@/lib/utils";
 
-type Errors = Partial<Record<"address" | "phone" | "receiptFormat" | "whatsappTemplate", string>>;
+type Errors = Partial<Record<string, string>>;
 
-export function CenterSettingsForm({ settings, centerName }: { settings: CenterReceiptSettings; centerName: string }) {
+export function CenterSettingsForm({
+  settings,
+  centerName,
+  packs,
+}: {
+  settings: CenterReceiptSettings;
+  centerName: string;
+  /** Variables, message proposé et modèle du centre dans chaque langue. */
+  packs: TemplateLanguagePack[];
+}) {
   const LABELS = useLabels();
+  const message = useMessage();
   const receipts = useModules().has("finance");
   const C = LABELS.centerSettings;
-  const T = LABELS.receipts.tokens;
   const [address, setAddress] = useState(settings.address ?? "");
   const [phone, setPhone] = useState(settings.phone ?? "");
   const [format, setFormat] = useState<ReceiptFormat>(settings.receiptFormat);
-  const [template, setTemplate] = useState(settings.whatsappTemplate ?? LABELS.receipts.whatsappTemplate);
+  const packOf = (locale: Locale) => packs.find((pack) => pack.locale === locale) ?? packs[0];
+  const [language, setLanguage] = useState<Locale>("fr");
+  const [templates, setTemplates] = useState<Record<Locale, string>>(() => {
+    const initial = { fr: "", en: "", ar: "" };
+    for (const pack of packs) initial[pack.locale] = pack.current.receipt ?? pack.defaults.receipt ?? "";
+    return initial;
+  });
+  const pack = packOf(language);
+  const template = templates[language];
+  const setTemplate = (value: string) => setTemplates((previous) => ({ ...previous, [language]: value }));
   const [errors, setErrors] = useState<Errors>({});
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const templateRef = useRef<HTMLTextAreaElement>(null);
 
-  const preview = renderReceiptMessage(
-    template,
-    { ...C.sample, center: centerName },
-    LABELS,
-  );
+  const preview = fillTemplate(template, pack.tokens, pack.canonical, { ...pack.sample, center: centerName });
 
   // Variable insérée à l'emplacement du curseur.
   const insertToken = (token: string) => {
@@ -56,7 +74,13 @@ export function CenterSettingsForm({ settings, centerName }: { settings: CenterR
     setError(null);
     setErrors({});
     startTransition(async () => {
-      const result = await updateCenterSettings({ address, phone, receiptFormat: format, whatsappTemplate: template });
+      const result = await updateCenterSettings({
+        address,
+        phone,
+        receiptFormat: format,
+        whatsappTemplate: templates.fr,
+        translations: { ar: templates.ar, en: templates.en },
+      });
       if (!result.ok) {
         setError(result.error);
         setErrors(result.fieldErrors ?? {});
@@ -109,29 +133,46 @@ export function CenterSettingsForm({ settings, centerName }: { settings: CenterR
           </fieldset>
 
           <div className="flex flex-col gap-2">
-            <FormField id="modele-whatsapp" label={C.template} error={errors.whatsappTemplate}>
-              <Textarea ref={templateRef} rows={6} maxLength={1000} value={template} onChange={(event) => setTemplate(event.target.value)} />
+            <TemplateLanguageSwitch
+              value={language}
+              onChange={setLanguage}
+              customized={Object.fromEntries(packs.map((p) => [p.locale, templates[p.locale] !== (p.defaults.receipt ?? "")]))}
+            />
+            <FormField id="modele-whatsapp" label={C.template} error={language === "fr" ? errors.whatsappTemplate : errors[`translations.${language}`]}>
+              <Textarea
+                key={language}
+                lang={language}
+                dir={dirFor(language)}
+                ref={templateRef}
+                rows={6}
+                maxLength={1000}
+                value={template}
+                onChange={(event) => setTemplate(event.target.value)}
+              />
             </FormField>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-caption text-muted-foreground">{C.templateHint}</span>
-              {Object.values(T).map((token) => (
+              {Object.values(pack.tokens).map((token) => (
                 <button
                   key={token}
                   type="button"
+                  lang={language}
                   onClick={() => insertToken(token)}
                   className="rounded-full border px-2.5 py-0.5 text-caption font-medium transition-colors hover:bg-muted"
                 >
                   {token}
                 </button>
               ))}
-              <Button type="button" variant="ghost" className="ml-auto" onClick={() => setTemplate(LABELS.receipts.whatsappTemplate)}>
+              <Button type="button" variant="ghost" className="ms-auto" onClick={() => setTemplate(pack.defaults.receipt ?? "")}>
                 <RotateCcw aria-hidden />
                 {C.templateReset}
               </Button>
             </div>
             <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
               <span className="text-caption font-medium text-muted-foreground">{C.preview}</span>
-              <p className="whitespace-pre-line">{preview}</p>
+              <p lang={language} dir={dirFor(language)} className="whitespace-pre-line">
+                {preview}
+              </p>
             </div>
           </div>
         </SectionCard>
@@ -139,7 +180,7 @@ export function CenterSettingsForm({ settings, centerName }: { settings: CenterR
 
       {error ? (
         <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-          {error}
+          {message(error)}
         </p>
       ) : null}
       <Button type="submit" disabled={pending} className="self-end">

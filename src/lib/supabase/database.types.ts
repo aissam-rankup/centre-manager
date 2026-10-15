@@ -167,6 +167,10 @@ export type Database = {
           id: string
           is_demo: boolean
           marked_at: string
+          marked_by: string | null
+          marked_by_role:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
           note: string | null
           session_date: string
           status: Database["public"]["Enums"]["attendance_status"]
@@ -178,6 +182,10 @@ export type Database = {
           id?: string
           is_demo?: boolean
           marked_at?: string
+          marked_by?: string | null
+          marked_by_role?:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
           note?: string | null
           session_date: string
           status: Database["public"]["Enums"]["attendance_status"]
@@ -189,6 +197,10 @@ export type Database = {
           id?: string
           is_demo?: boolean
           marked_at?: string
+          marked_by?: string | null
+          marked_by_role?:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
           note?: string | null
           session_date?: string
           status?: Database["public"]["Enums"]["attendance_status"]
@@ -197,6 +209,13 @@ export type Database = {
           teacher_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "attendance_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "attendance_student_id_fkey"
             columns: ["student_id"]
@@ -242,6 +261,165 @@ export type Database = {
           {
             foreignKeyName: "attendance_teacher_id_fkey"
             columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_conflicts: {
+        Row: {
+          attendance_id: string
+          center_id: string
+          detected_at: string
+          id: string
+          is_demo: boolean
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_status:
+            | Database["public"]["Enums"]["attendance_status"]
+            | null
+          staff_entry_id: number
+          teacher_entry_id: number
+        }
+        Insert: {
+          attendance_id: string
+          center_id: string
+          detected_at?: string
+          id?: string
+          is_demo?: boolean
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_status?:
+            | Database["public"]["Enums"]["attendance_status"]
+            | null
+          staff_entry_id: number
+          teacher_entry_id: number
+        }
+        Update: {
+          attendance_id?: string
+          center_id?: string
+          detected_at?: string
+          id?: string
+          is_demo?: boolean
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_status?:
+            | Database["public"]["Enums"]["attendance_status"]
+            | null
+          staff_entry_id?: number
+          teacher_entry_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_conflicts_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "absences_to_notify"
+            referencedColumns: ["attendance_id"]
+          },
+          {
+            foreignKeyName: "attendance_conflicts_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_conflicts_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_conflicts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_conflicts_staff_entry_id_fkey"
+            columns: ["staff_entry_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_conflicts_teacher_entry_id_fkey"
+            columns: ["teacher_entry_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_entries: {
+        Row: {
+          attendance_id: string
+          center_id: string
+          id: number
+          is_demo: boolean
+          marked_at: string
+          marked_by: string | null
+          marked_by_role:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
+          status: Database["public"]["Enums"]["attendance_status"]
+        }
+        Insert: {
+          attendance_id: string
+          center_id: string
+          id?: never
+          is_demo?: boolean
+          marked_at?: string
+          marked_by?: string | null
+          marked_by_role?:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
+          status: Database["public"]["Enums"]["attendance_status"]
+        }
+        Update: {
+          attendance_id?: string
+          center_id?: string
+          id?: never
+          is_demo?: boolean
+          marked_at?: string
+          marked_by?: string | null
+          marked_by_role?:
+            | Database["public"]["Enums"]["attendance_marker"]
+            | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_entries_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "absences_to_notify"
+            referencedColumns: ["attendance_id"]
+          },
+          {
+            foreignKeyName: "attendance_entries_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_entries_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_entries_marked_by_fkey"
+            columns: ["marked_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -797,6 +975,68 @@ export type Database = {
           },
         ]
       }
+      center_exports: {
+        Row: {
+          center_id: string
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          expires_at: string
+          file_size: number | null
+          id: string
+          period_from: string | null
+          period_to: string | null
+          reason_kind: string
+          reason_note: string | null
+          requested_by: string | null
+          requested_role: string
+          status: string
+          storage_path: string | null
+        }
+        Insert: {
+          center_id: string
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          expires_at?: string
+          file_size?: number | null
+          id?: string
+          period_from?: string | null
+          period_to?: string | null
+          reason_kind: string
+          reason_note?: string | null
+          requested_by?: string | null
+          requested_role: string
+          status?: string
+          storage_path?: string | null
+        }
+        Update: {
+          center_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          expires_at?: string
+          file_size?: number | null
+          id?: string
+          period_from?: string | null
+          period_to?: string | null
+          reason_kind?: string
+          reason_note?: string | null
+          requested_by?: string | null
+          requested_role?: string
+          status?: string
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_exports_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       center_modules: {
         Row: {
           center_id: string
@@ -845,6 +1085,32 @@ export type Database = {
           },
         ]
       }
+      center_slug_history: {
+        Row: {
+          center_id: string
+          changed_at: string
+          old_slug: string
+        }
+        Insert: {
+          center_id: string
+          changed_at?: string
+          old_slug: string
+        }
+        Update: {
+          center_id?: string
+          changed_at?: string
+          old_slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_slug_history_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       center_types: {
         Row: {
           code: string
@@ -888,9 +1154,15 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           custom_terms: Json
+          deletion_reason: string | null
+          deletion_requested_at: string | null
+          deletion_requested_by: string | null
+          deletion_scheduled_for: string | null
+          family_locale: string
           grace_days: number
           id: string
           is_demo: boolean
+          message_templates: Json
           name: string
           notes: string | null
           owner_contact_email: string | null
@@ -901,6 +1173,7 @@ export type Database = {
           phone: string | null
           plan_key: string
           price: number | null
+          purged_at: string | null
           receipt_format: Database["public"]["Enums"]["receipt_format"]
           receipt_whatsapp_template: string | null
           reminder_days_before: number
@@ -910,6 +1183,9 @@ export type Database = {
           risk_attendance_threshold: number
           slug: string
           status: Database["public"]["Enums"]["center_status"]
+          suspended_at: string | null
+          suspension_kind: string | null
+          suspension_note: string | null
         }
         Insert: {
           absence_notification_enabled?: boolean
@@ -926,9 +1202,15 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           custom_terms?: Json
+          deletion_reason?: string | null
+          deletion_requested_at?: string | null
+          deletion_requested_by?: string | null
+          deletion_scheduled_for?: string | null
+          family_locale?: string
           grace_days?: number
           id?: string
           is_demo?: boolean
+          message_templates?: Json
           name: string
           notes?: string | null
           owner_contact_email?: string | null
@@ -939,6 +1221,7 @@ export type Database = {
           phone?: string | null
           plan_key?: string
           price?: number | null
+          purged_at?: string | null
           receipt_format?: Database["public"]["Enums"]["receipt_format"]
           receipt_whatsapp_template?: string | null
           reminder_days_before?: number
@@ -948,6 +1231,9 @@ export type Database = {
           risk_attendance_threshold?: number
           slug: string
           status?: Database["public"]["Enums"]["center_status"]
+          suspended_at?: string | null
+          suspension_kind?: string | null
+          suspension_note?: string | null
         }
         Update: {
           absence_notification_enabled?: boolean
@@ -964,9 +1250,15 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           custom_terms?: Json
+          deletion_reason?: string | null
+          deletion_requested_at?: string | null
+          deletion_requested_by?: string | null
+          deletion_scheduled_for?: string | null
+          family_locale?: string
           grace_days?: number
           id?: string
           is_demo?: boolean
+          message_templates?: Json
           name?: string
           notes?: string | null
           owner_contact_email?: string | null
@@ -977,6 +1269,7 @@ export type Database = {
           phone?: string | null
           plan_key?: string
           price?: number | null
+          purged_at?: string | null
           receipt_format?: Database["public"]["Enums"]["receipt_format"]
           receipt_whatsapp_template?: string | null
           reminder_days_before?: number
@@ -986,6 +1279,9 @@ export type Database = {
           risk_attendance_threshold?: number
           slug?: string
           status?: Database["public"]["Enums"]["center_status"]
+          suspended_at?: string | null
+          suspension_kind?: string | null
+          suspension_note?: string | null
         }
         Relationships: [
           {
@@ -1577,6 +1873,105 @@ export type Database = {
           },
         ]
       }
+      learning_resources: {
+        Row: {
+          author_id: string
+          center_id: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          is_demo: boolean
+          is_published: boolean
+          level_id: string
+          published_at: string | null
+          subject_id: string
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string
+          center_id: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          is_demo?: boolean
+          is_published?: boolean
+          level_id: string
+          published_at?: string | null
+          subject_id: string
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          center_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          is_demo?: boolean
+          is_published?: boolean
+          level_id?: string
+          published_at?: string | null
+          subject_id?: string
+          title?: string
+          type?: Database["public"]["Enums"]["resource_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_resources_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_resources_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learning_resources_level_id_center_id_fkey"
+            columns: ["level_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "learning_resources_subject_id_level_id_fkey"
+            columns: ["subject_id", "level_id"]
+            isOneToOne: false
+            referencedRelation: "subject_catalog"
+            referencedColumns: ["id", "level_id"]
+          },
+          {
+            foreignKeyName: "learning_resources_subject_id_level_id_fkey"
+            columns: ["subject_id", "level_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id", "level_id"]
+          },
+        ]
+      }
       levels: {
         Row: {
           center_id: string
@@ -1796,6 +2191,50 @@ export type Database = {
           },
         ]
       }
+      password_events: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          center_id: string | null
+          created_at: string
+          event_type: Database["public"]["Enums"]["password_event_type"]
+          id: number
+          reason: string | null
+          target_role: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          center_id?: string | null
+          created_at?: string
+          event_type: Database["public"]["Enums"]["password_event_type"]
+          id?: never
+          reason?: string | null
+          target_role?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string | null
+          center_id?: string | null
+          created_at?: string
+          event_type?: Database["public"]["Enums"]["password_event_type"]
+          id?: never
+          reason?: string | null
+          target_role?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "password_events_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_reminders: {
         Row: {
           amount_reminded: number | null
@@ -1926,6 +2365,7 @@ export type Database = {
           final_amount: number | null
           id: string
           is_demo: boolean
+          member_role: Database["public"]["Enums"]["user_role"]
           paid_at: string | null
           paid_by: string | null
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
@@ -1944,6 +2384,7 @@ export type Database = {
           final_amount?: number | null
           id?: string
           is_demo?: boolean
+          member_role: Database["public"]["Enums"]["user_role"]
           paid_at?: string | null
           paid_by?: string | null
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
@@ -1962,6 +2403,7 @@ export type Database = {
           final_amount?: number | null
           id?: string
           is_demo?: boolean
+          member_role?: Database["public"]["Enums"]["user_role"]
           paid_at?: string | null
           paid_by?: string | null
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
@@ -2115,6 +2557,7 @@ export type Database = {
           actor_id: string | null
           center_id: string | null
           id: number
+          ip_address: unknown
           is_demo: boolean
           occurred_at: string
           payload: Json
@@ -2124,6 +2567,7 @@ export type Database = {
           actor_id?: string | null
           center_id?: string | null
           id?: never
+          ip_address?: unknown
           is_demo?: boolean
           occurred_at?: string
           payload?: Json
@@ -2133,6 +2577,7 @@ export type Database = {
           actor_id?: string | null
           center_id?: string | null
           id?: never
+          ip_address?: unknown
           is_demo?: boolean
           occurred_at?: string
           payload?: Json
@@ -2146,6 +2591,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_mrr_snapshots: {
+        Row: {
+          day: string
+          mrr: number
+          paying_centers: number
+          recorded_at: string
+        }
+        Insert: {
+          day: string
+          mrr: number
+          paying_centers: number
+          recorded_at?: string
+        }
+        Update: {
+          day?: string
+          mrr?: number
+          paying_centers?: number
+          recorded_at?: string
+        }
+        Relationships: []
       }
       platform_notifications: {
         Row: {
@@ -2226,6 +2692,7 @@ export type Database = {
           full_name: string
           id: string
           is_demo: boolean
+          must_change_password: boolean
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
           phone: string | null
           photo_url: string | null
@@ -2238,6 +2705,7 @@ export type Database = {
           full_name: string
           id: string
           is_demo?: boolean
+          must_change_password?: boolean
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
           phone?: string | null
           photo_url?: string | null
@@ -2250,6 +2718,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_demo?: boolean
+          must_change_password?: boolean
           pay_mode?: Database["public"]["Enums"]["pay_mode"] | null
           phone?: string | null
           photo_url?: string | null
@@ -2527,6 +2996,72 @@ export type Database = {
           },
         ]
       }
+      resource_views: {
+        Row: {
+          center_id: string
+          first_opened_at: string
+          is_demo: boolean
+          last_opened_at: string
+          open_count: number
+          resource_id: string
+          student_id: string
+        }
+        Insert: {
+          center_id: string
+          first_opened_at?: string
+          is_demo?: boolean
+          last_opened_at?: string
+          open_count?: number
+          resource_id: string
+          student_id: string
+        }
+        Update: {
+          center_id?: string
+          first_opened_at?: string
+          is_demo?: boolean
+          last_opened_at?: string
+          open_count?: number
+          resource_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_views_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_views_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "learning_resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_views_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id"]
+          },
+          {
+            foreignKeyName: "resource_views_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_views_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           capacity: number | null
@@ -2567,6 +3102,155 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "rooms_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_payments: {
+        Row: {
+          amount: number
+          cancel_reason: string | null
+          cancels_payment_id: string | null
+          center_id: string
+          center_snapshot: Json
+          id: string
+          issued_at: string
+          issued_by: string | null
+          issued_by_name: string | null
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          member_id: string | null
+          member_name: string
+          member_phone: string | null
+          member_role: Database["public"]["Enums"]["user_role"]
+          note: string | null
+          paid_on: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payroll_line_id: string | null
+          pdf_url: string | null
+          period_month: number
+          period_year: number
+          printed_at: string | null
+          receipt_number: string | null
+          receipt_seq: number
+          receipt_year: number
+          whatsapp_sent_at: string | null
+        }
+        Insert: {
+          amount: number
+          cancel_reason?: string | null
+          cancels_payment_id?: string | null
+          center_id: string
+          center_snapshot: Json
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          issued_by_name?: string | null
+          kind?: Database["public"]["Enums"]["receipt_kind"]
+          member_id?: string | null
+          member_name: string
+          member_phone?: string | null
+          member_role: Database["public"]["Enums"]["user_role"]
+          note?: string | null
+          paid_on: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payroll_line_id?: string | null
+          pdf_url?: string | null
+          period_month: number
+          period_year: number
+          printed_at?: string | null
+          receipt_number?: string | null
+          receipt_seq: number
+          receipt_year: number
+          whatsapp_sent_at?: string | null
+        }
+        Update: {
+          amount?: number
+          cancel_reason?: string | null
+          cancels_payment_id?: string | null
+          center_id?: string
+          center_snapshot?: Json
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          issued_by_name?: string | null
+          kind?: Database["public"]["Enums"]["receipt_kind"]
+          member_id?: string | null
+          member_name?: string
+          member_phone?: string | null
+          member_role?: Database["public"]["Enums"]["user_role"]
+          note?: string | null
+          paid_on?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payroll_line_id?: string | null
+          pdf_url?: string | null
+          period_month?: number
+          period_year?: number
+          printed_at?: string | null
+          receipt_number?: string | null
+          receipt_seq?: number
+          receipt_year?: number
+          whatsapp_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_payments_cancels_payment_id_fkey"
+            columns: ["cancels_payment_id"]
+            isOneToOne: true
+            referencedRelation: "salary_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_payments_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_payments_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_payments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_payments_payroll_line_id_center_id_fkey"
+            columns: ["payroll_line_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_lines"
+            referencedColumns: ["id", "center_id"]
+          },
+        ]
+      }
+      salary_receipt_counters: {
+        Row: {
+          center_id: string
+          last_number: number
+          year: number
+        }
+        Insert: {
+          center_id: string
+          last_number: number
+          year: number
+        }
+        Update: {
+          center_id?: string
+          last_number?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_receipt_counters_center_id_fkey"
             columns: ["center_id"]
             isOneToOne: false
             referencedRelation: "centers"
@@ -2717,6 +3401,91 @@ export type Database = {
           },
         ]
       }
+      student_accounts: {
+        Row: {
+          active: boolean
+          center_id: string
+          created_at: string
+          created_by: string | null
+          deactivated_at: string | null
+          deactivated_by: string | null
+          is_demo: boolean
+          login_code: string
+          must_change_password: boolean
+          student_id: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          center_id: string
+          created_at?: string
+          created_by?: string | null
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          is_demo?: boolean
+          login_code: string
+          must_change_password?: boolean
+          student_id: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          center_id?: string
+          created_at?: string
+          created_by?: string | null
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          is_demo?: boolean
+          login_code?: string
+          must_change_password?: boolean
+          student_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_accounts_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_accounts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_accounts_deactivated_by_fkey"
+            columns: ["deactivated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_accounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "follow_up_queue"
+            referencedColumns: ["student_id", "center_id"]
+          },
+          {
+            foreignKeyName: "student_accounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "student_directory"
+            referencedColumns: ["id", "center_id"]
+          },
+          {
+            foreignKeyName: "student_accounts_student_id_center_id_fkey"
+            columns: ["student_id", "center_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id", "center_id"]
+          },
+        ]
+      }
       students: {
         Row: {
           center_id: string
@@ -2728,11 +3497,15 @@ export type Database = {
           id: string
           is_demo: boolean
           level_id: string
+          message_locale: string | null
           notes: string | null
           notes_updated_at: string | null
           notes_updated_by: string | null
           photo_url: string | null
           search_name: string | null
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
         }
         Insert: {
           center_id: string
@@ -2744,11 +3517,15 @@ export type Database = {
           id?: string
           is_demo?: boolean
           level_id: string
+          message_locale?: string | null
           notes?: string | null
           notes_updated_at?: string | null
           notes_updated_by?: string | null
           photo_url?: string | null
           search_name?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
         }
         Update: {
           center_id?: string
@@ -2760,11 +3537,15 @@ export type Database = {
           id?: string
           is_demo?: boolean
           level_id?: string
+          message_locale?: string | null
           notes?: string | null
           notes_updated_at?: string | null
           notes_updated_by?: string | null
           photo_url?: string | null
           search_name?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
         }
         Relationships: [
           {
@@ -2795,10 +3576,19 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "students_suspended_by_fkey"
+            columns: ["suspended_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       subjects: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           center_id: string
           created_at: string
           id: string
@@ -2808,6 +3598,8 @@ export type Database = {
           name: string
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           center_id: string
           created_at?: string
           id?: string
@@ -2817,6 +3609,8 @@ export type Database = {
           name: string
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           center_id?: string
           created_at?: string
           id?: string
@@ -2826,6 +3620,13 @@ export type Database = {
           name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subjects_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subjects_center_id_fkey"
             columns: ["center_id"]
@@ -2850,9 +3651,11 @@ export type Database = {
           id: string
           is_demo: boolean
           method: Database["public"]["Enums"]["subscription_payment_method"]
+          note: string | null
           paid_at: string
           period_covered_end: string | null
           period_covered_start: string | null
+          plan_key: string
           recorded_by: string | null
           reference: string | null
         }
@@ -2863,9 +3666,11 @@ export type Database = {
           id?: string
           is_demo?: boolean
           method: Database["public"]["Enums"]["subscription_payment_method"]
+          note?: string | null
           paid_at?: string
           period_covered_end?: string | null
           period_covered_start?: string | null
+          plan_key: string
           recorded_by?: string | null
           reference?: string | null
         }
@@ -2876,9 +3681,11 @@ export type Database = {
           id?: string
           is_demo?: boolean
           method?: Database["public"]["Enums"]["subscription_payment_method"]
+          note?: string | null
           paid_at?: string
           period_covered_end?: string | null
           period_covered_start?: string | null
+          plan_key?: string
           recorded_by?: string | null
           reference?: string | null
         }
@@ -2889,6 +3696,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "centers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_payments_plan_key_fkey"
+            columns: ["plan_key"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["key"]
           },
           {
             foreignKeyName: "subscription_payments_recorded_by_fkey"
@@ -3416,6 +4230,8 @@ export type Database = {
           overdue_count: number | null
           photo_url: string | null
           search_name: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
           unpaid_amount: number | null
         }
         Relationships: [
@@ -3437,18 +4253,21 @@ export type Database = {
       }
       subject_catalog: {
         Row: {
+          archived_at: string | null
           center_id: string | null
           id: string | null
           level_id: string | null
           name: string | null
         }
         Insert: {
+          archived_at?: string | null
           center_id?: string | null
           id?: string | null
           level_id?: string | null
           name?: string | null
         }
         Update: {
+          archived_at?: string | null
           center_id?: string | null
           id?: string | null
           level_id?: string | null
@@ -3560,6 +4379,7 @@ export type Database = {
           subscribers: number
         }[]
       }
+      archive_subject: { Args: { p_subject_id: string }; Returns: number }
       assistant_dashboard_stats: {
         Args: never
         Returns: {
@@ -3570,6 +4390,19 @@ export type Database = {
           overdue_students: number
           unpaid_amount: number
           unpaid_count: number
+        }[]
+      }
+      authorize_password_reset: {
+        Args: { p_student_id?: string; p_target_user?: string }
+        Returns: {
+          allowed: boolean
+          center_slug: string
+          full_name: string
+          login_code: string
+          phone: string
+          reason: string
+          target_role: string
+          target_user_id: string
         }[]
       }
       billing_run_review: {
@@ -3641,6 +4474,43 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cancel_salary_payment: {
+        Args: { p_payment_id: string; p_reason: string }
+        Returns: {
+          amount: number
+          cancel_reason: string | null
+          cancels_payment_id: string | null
+          center_id: string
+          center_snapshot: Json
+          id: string
+          issued_at: string
+          issued_by: string | null
+          issued_by_name: string | null
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          member_id: string | null
+          member_name: string
+          member_phone: string | null
+          member_role: Database["public"]["Enums"]["user_role"]
+          note: string | null
+          paid_on: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payroll_line_id: string | null
+          pdf_url: string | null
+          period_month: number
+          period_year: number
+          printed_at: string | null
+          receipt_number: string | null
+          receipt_seq: number
+          receipt_year: number
+          whatsapp_sent_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "salary_payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       cash_month_overview: { Args: { p_month?: string }; Returns: Json }
       cash_session_history: {
         Args: { p_from: string; p_to: string }
@@ -3688,11 +4558,21 @@ export type Database = {
       center_for_host: {
         Args: { p_domain?: string; p_slug?: string }
         Returns: {
+          blocked: boolean
           branding: Json
           center_id: string
+          moved: boolean
           name: string
           slug: string
           white_label: boolean
+        }[]
+      }
+      centers_due_for_purge: {
+        Args: never
+        Returns: {
+          center_id: string
+          name: string
+          scheduled_for: string
         }[]
       }
       close_cash_session: {
@@ -3704,6 +4584,20 @@ export type Database = {
           p_session_id: string
         }
         Returns: Json
+      }
+      complete_center_export: {
+        Args: {
+          p_error?: string
+          p_export_id: string
+          p_file_size?: number
+          p_storage_path?: string
+        }
+        Returns: undefined
+      }
+      complete_my_password_change: { Args: never; Returns: undefined }
+      complete_password_reset: {
+        Args: { p_actor: string; p_target_user: string }
+        Returns: undefined
       }
       confirm_billing_run: { Args: { p_run_id: string }; Returns: Json }
       create_student: {
@@ -3723,6 +4617,19 @@ export type Database = {
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       delete_expense: { Args: { p_expense_id: string }; Returns: undefined }
+      delete_subject: { Args: { p_subject_id: string }; Returns: undefined }
+      expired_center_exports: {
+        Args: never
+        Returns: {
+          export_id: string
+          storage_path: string
+        }[]
+      }
+      export_center_data: { Args: { p_export_id: string }; Returns: Json }
+      mark_center_exports_expired: {
+        Args: { p_export_ids: string[] }
+        Returns: undefined
+      }
       mark_invoice_paid: {
         Args: { p_invoice_id: string }
         Returns: {
@@ -3760,6 +4667,18 @@ export type Database = {
         Args: { p_receipt_id: string }
         Returns: undefined
       }
+      mark_resource_opened: {
+        Args: { p_resource_id: string }
+        Returns: undefined
+      }
+      mark_salary_receipt_printed: {
+        Args: { p_payment_id: string }
+        Returns: undefined
+      }
+      mark_session_attendance: {
+        Args: { p_entries: Json; p_session_date: string; p_slot_id: string }
+        Returns: number
+      }
       my_center_access: {
         Args: never
         Returns: {
@@ -3781,7 +4700,72 @@ export type Database = {
           vocabulary: Json
         }[]
       }
+      my_center_slug: { Args: never; Returns: string }
       my_modules: { Args: never; Returns: string[] }
+      my_password_state: {
+        Args: never
+        Returns: {
+          must_change: boolean
+          session_valid: boolean
+        }[]
+      }
+      my_resources: {
+        Args: never
+        Returns: {
+          author_name: string
+          description: string
+          due_date: string
+          file_name: string
+          file_size: number
+          file_type: string
+          is_new: boolean
+          last_opened_at: string
+          level_name: string
+          published_at: string
+          resource_id: string
+          subject_id: string
+          subject_name: string
+          title: string
+          type: Database["public"]["Enums"]["resource_type"]
+        }[]
+      }
+      my_student_access: {
+        Args: never
+        Returns: {
+          active: boolean
+          allowed: boolean
+          branding: Json
+          center_id: string
+          center_name: string
+          center_status: Database["public"]["Enums"]["center_status"]
+          full_name: string
+          level_id: string
+          level_name: string
+          student_id: string
+          vocabulary: Json
+        }[]
+      }
+      open_attendance_conflicts: {
+        Args: never
+        Returns: {
+          attendance_id: string
+          conflict_id: string
+          current_status: Database["public"]["Enums"]["attendance_status"]
+          detected_at: string
+          level_name: string
+          session_date: string
+          staff_marked_at: string
+          staff_name: string
+          staff_role: Database["public"]["Enums"]["attendance_marker"]
+          staff_status: Database["public"]["Enums"]["attendance_status"]
+          student_id: string
+          student_name: string
+          subject_name: string
+          teacher_marked_at: string
+          teacher_name: string
+          teacher_status: Database["public"]["Enums"]["attendance_status"]
+        }[]
+      }
       open_cash_session: { Args: { p_opening_float?: number }; Returns: string }
       payment_reminder_queue: {
         Args: { p_run_id?: string; p_student_id?: string }
@@ -3813,29 +4797,40 @@ export type Database = {
         Args: {
           p_line_id: string
           p_method: Database["public"]["Enums"]["payment_method"]
+          p_note?: string
           p_paid_at: string
         }
         Returns: {
-          adjustment_amount: number
-          adjustment_reason: string | null
+          amount: number
+          cancel_reason: string | null
+          cancels_payment_id: string | null
           center_id: string
-          computed_amount: number
-          detail: Json
-          final_amount: number | null
+          center_snapshot: Json
           id: string
-          is_demo: boolean
-          paid_at: string | null
-          paid_by: string | null
-          pay_mode: Database["public"]["Enums"]["pay_mode"] | null
-          payment_method: Database["public"]["Enums"]["payment_method"] | null
-          payroll_period_id: string
-          teacher_id: string
-          teacher_name: string
-          updated_at: string
+          issued_at: string
+          issued_by: string | null
+          issued_by_name: string | null
+          kind: Database["public"]["Enums"]["receipt_kind"]
+          member_id: string | null
+          member_name: string
+          member_phone: string | null
+          member_role: Database["public"]["Enums"]["user_role"]
+          note: string | null
+          paid_on: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payroll_line_id: string | null
+          pdf_url: string | null
+          period_month: number
+          period_year: number
+          printed_at: string | null
+          receipt_number: string | null
+          receipt_seq: number
+          receipt_year: number
+          whatsapp_sent_at: string | null
         }
         SetofOptions: {
           from: "*"
-          to: "payroll_lines"
+          to: "salary_payments"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -3872,6 +4867,7 @@ export type Database = {
           final_amount: number | null
           id: string
           is_demo: boolean
+          member_role: Database["public"]["Enums"]["user_role"]
           paid_at: string | null
           paid_by: string | null
           pay_mode: Database["public"]["Enums"]["pay_mode"] | null
@@ -3930,6 +4926,36 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      platform_audit_actions: {
+        Args: never
+        Returns: {
+          action: string
+          events: number
+        }[]
+      }
+      platform_audit_log: {
+        Args: {
+          p_action?: string
+          p_center_id?: string
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_origin?: string
+          p_to?: string
+        }
+        Returns: {
+          action: string
+          actor_is_platform: boolean
+          actor_name: string
+          center_id: string
+          center_name: string
+          event_id: number
+          ip_address: string
+          occurred_at: string
+          payload: Json
+          total_count: number
+        }[]
+      }
       platform_billing_months: {
         Args: never
         Returns: {
@@ -3937,6 +4963,10 @@ export type Database = {
           expected: number
           month: string
         }[]
+      }
+      platform_cancel_center_deletion: {
+        Args: { p_center_id: string; p_reason?: string }
+        Returns: undefined
       }
       platform_center: {
         Args: { p_center_id: string }
@@ -3970,6 +5000,29 @@ export type Database = {
           users_count: number
         }[]
       }
+      platform_center_admins: {
+        Args: { p_center_id: string }
+        Returns: {
+          active: boolean
+          email: string
+          full_name: string
+          last_reset_at: string
+          last_sign_in_at: string
+          phone: string
+          user_id: string
+        }[]
+      }
+      platform_center_deletion: {
+        Args: { p_center_id: string }
+        Returns: {
+          due: boolean
+          purged_at: string
+          reason: string
+          requested_at: string
+          requested_by_name: string
+          scheduled_for: string
+        }[]
+      }
       platform_center_events: {
         Args: { p_center_id: string }
         Returns: {
@@ -3978,6 +5031,30 @@ export type Database = {
           event_id: number
           occurred_at: string
           payload: Json
+        }[]
+      }
+      platform_center_export_file: {
+        Args: { p_export_id: string }
+        Returns: {
+          center_slug: string
+          expires_at: string
+          storage_path: string
+        }[]
+      }
+      platform_center_exports: {
+        Args: { p_center_id: string }
+        Returns: {
+          completed_at: string
+          created_at: string
+          expires_at: string
+          export_id: string
+          file_size: number
+          period_from: string
+          period_to: string
+          reason_kind: string
+          reason_note: string
+          requested_by_name: string
+          status: string
         }[]
       }
       platform_center_modules: {
@@ -3993,6 +5070,37 @@ export type Database = {
           name: string
           source: Database["public"]["Enums"]["module_source"]
           updated_at: string
+        }[]
+      }
+      platform_center_overview: {
+        Args: { p_center_id: string }
+        Returns: {
+          active_students: number
+          admins_count: number
+          assistants_count: number
+          last_admin_sign_in_at: string
+          student_accounts_count: number
+          students_count: number
+          suspended_at: string
+          suspension_kind: string
+          suspension_note: string
+          teachers_count: number
+        }[]
+      }
+      platform_center_payment_totals: {
+        Args: { p_center_id: string }
+        Returns: {
+          granularity: string
+          payments_count: number
+          period_start: string
+          total: number
+        }[]
+      }
+      platform_center_slug_history: {
+        Args: { p_center_id: string }
+        Returns: {
+          changed_at: string
+          old_slug: string
         }[]
       }
       platform_center_users: {
@@ -4027,6 +5135,31 @@ export type Database = {
           status: Database["public"]["Enums"]["center_status"]
           students_count: number
         }[]
+      }
+      platform_centers_billing: {
+        Args: never
+        Returns: {
+          active_students: number
+          amount_due: number
+          billing_interval: Database["public"]["Enums"]["billing_interval"]
+          center_id: string
+          created_at: string
+          current_period_end: string
+          days_overdue: number
+          last_payment_amount: number
+          last_payment_at: string
+          name: string
+          periods_due: number
+          plan_key: string
+          plan_name: string
+          price: number
+          slug: string
+          status: Database["public"]["Enums"]["center_status"]
+        }[]
+      }
+      platform_change_center_slug: {
+        Args: { p_center_id: string; p_slug: string }
+        Returns: undefined
       }
       platform_create_center: {
         Args: {
@@ -4107,10 +5240,12 @@ export type Database = {
           center_id: string
           center_name: string
           method: Database["public"]["Enums"]["subscription_payment_method"]
+          note: string
           paid_at: string
           payment_id: string
           period_covered_end: string
           period_covered_start: string
+          plan_key: string
           recorded_by_name: string
           reference: string
         }[]
@@ -4126,15 +5261,80 @@ export type Database = {
           name: string
         }[]
       }
+      platform_reactivate_center: {
+        Args: { p_center_id: string; p_note?: string }
+        Returns: undefined
+      }
       platform_record_payment: {
         Args: {
           p_amount: number
           p_center_id: string
           p_method: Database["public"]["Enums"]["subscription_payment_method"]
+          p_note?: string
           p_paid_at: string
           p_reference?: string
         }
         Returns: string
+      }
+      platform_request_center_deletion: {
+        Args: { p_center_id: string; p_confirm_name: string; p_reason: string }
+        Returns: string
+      }
+      platform_request_center_export: {
+        Args: {
+          p_center_id: string
+          p_from?: string
+          p_reason_kind: string
+          p_reason_note?: string
+          p_to?: string
+        }
+        Returns: string
+      }
+      platform_revenue_by_plan: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          centers_count: number
+          paying_centers_count: number
+          payments_count: number
+          plan_key: string
+          plan_name: string
+          revenue: number
+        }[]
+      }
+      platform_revenue_kpis: {
+        Args: never
+        Returns: {
+          change_amount: number
+          change_ratio: number
+          current_value: number
+          kind: string
+          period_end: string
+          period_start: string
+          previous_end: string
+          previous_start: string
+          previous_value: number
+        }[]
+      }
+      platform_revenue_summary: {
+        Args: {
+          p_anchor?: string
+          p_end?: string
+          p_kind: string
+          p_start?: string
+        }
+        Returns: {
+          change_amount: number
+          change_ratio: number
+          payments_count: number
+          period_end: string
+          period_start: string
+          previous_end: string
+          previous_payments_count: number
+          previous_revenue: number
+          previous_start: string
+          revenue: number
+          to_date: boolean
+        }[]
       }
       platform_set_center_module: {
         Args: {
@@ -4180,9 +5380,22 @@ export type Database = {
           updated_at: string
         }[]
       }
+      platform_slug_availability: {
+        Args: { p_center_id?: string; p_slug: string }
+        Returns: string
+      }
       platform_start_support: {
         Args: { p_center_id: string; p_reason: string }
         Returns: string
+      }
+      platform_suspend_center: {
+        Args: {
+          p_center_id: string
+          p_confirm_name: string
+          p_kind: string
+          p_note: string
+        }
+        Returns: number
       }
       platform_upcoming_due: {
         Args: never
@@ -4220,7 +5433,6 @@ export type Database = {
           p_owner_contact_email: string
           p_owner_contact_name: string
           p_owner_contact_phone: string
-          p_slug: string
         }
         Returns: undefined
       }
@@ -4242,6 +5454,8 @@ export type Database = {
         Returns: undefined
       }
       prepare_billing_run: { Args: never; Returns: string }
+      purge_center: { Args: { p_center_id: string }; Returns: Json }
+      reactivate_student: { Args: { p_student_id: string }; Returns: number }
       record_cash_correction: {
         Args: { p_amount: number; p_reason: string; p_session_id: string }
         Returns: string
@@ -4311,6 +5525,17 @@ export type Database = {
         Returns: string
       }
       reenrollment_overview: { Args: never; Returns: Json }
+      register_student_account: {
+        Args: { p_login_code: string; p_student_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      resolve_attendance_conflict: {
+        Args: {
+          p_conflict_id: string
+          p_status: Database["public"]["Enums"]["attendance_status"]
+        }
+        Returns: undefined
+      }
       set_attendance_note: {
         Args: { p_attendance_id: string; p_note: string }
         Returns: undefined
@@ -4324,6 +5549,22 @@ export type Database = {
           p_run_id: string
           p_student_id: string
         }
+        Returns: undefined
+      }
+      set_staff_salary: {
+        Args: {
+          p_effective_from?: string
+          p_member_id: string
+          p_monthly_amount?: number
+        }
+        Returns: undefined
+      }
+      set_student_account_active: {
+        Args: { p_active: boolean; p_student_id: string }
+        Returns: string
+      }
+      set_student_message_locale: {
+        Args: { p_locale?: string; p_student_id: string }
         Returns: undefined
       }
       set_teacher_commission: {
@@ -4410,6 +5651,26 @@ export type Database = {
           teacher_name: string
         }[]
       }
+      staff_day_sessions: {
+        Args: { p_date: string }
+        Returns: {
+          absent_count: number
+          end_time: string
+          last_marked_at: string
+          level_name: string
+          marked_count: number
+          open_conflicts: number
+          room: string
+          slot_id: string
+          staff_marked: number
+          start_time: string
+          student_count: number
+          subject_id: string
+          subject_name: string
+          teacher_marked: number
+          teacher_name: string
+        }[]
+      }
       stale_cash_sessions: {
         Args: never
         Returns: {
@@ -4430,12 +5691,17 @@ export type Database = {
           note: string
         }[]
       }
+      student_account_user: { Args: { p_student_id: string }; Returns: string }
       student_attendance: {
         Args: { p_student_id: string }
         Returns: {
           attendance_id: string
           end_time: string
+          history: Json
           level_name: string
+          marked_at: string
+          marked_by_name: string
+          marked_by_role: Database["public"]["Enums"]["attendance_marker"]
           note: string
           session_date: string
           start_time: string
@@ -4445,6 +5711,12 @@ export type Database = {
           teacher_name: string
         }[]
       }
+      subject_dependencies: { Args: { p_subject_id: string }; Returns: Json }
+      suspend_student: {
+        Args: { p_reason: string; p_student_id: string }
+        Returns: undefined
+      }
+      unarchive_subject: { Args: { p_subject_id: string }; Returns: undefined }
       update_center_branding: {
         Args: {
           p_accent_color: string
@@ -4470,6 +5742,7 @@ export type Database = {
     Enums: {
       absence_notification_status: "prepared" | "sent" | "failed" | "no_phone"
       alert_type: "consecutive_absences" | "overdue_payment"
+      attendance_marker: "teacher" | "assistant" | "admin"
       attendance_status: "present" | "absent"
       billing_interval: "month" | "year"
       billing_run_status:
@@ -4496,6 +5769,13 @@ export type Database = {
       invoice_status: "pending" | "paid" | "overdue"
       module_source: "plan" | "manual" | "trial"
       notification_channel: "whatsapp" | "phone_call" | "in_person"
+      password_event_type:
+        | "reset_by_admin"
+        | "reset_by_assistant"
+        | "reset_by_super_admin"
+        | "self_change"
+        | "forced_change_completed"
+        | "denied"
       pay_mode: "fixed_salary" | "commission"
       payment_method: "cash" | "bank_transfer" | "card" | "cheque"
       payment_reminder_status: "prepared" | "sent" | "failed" | "no_phone"
@@ -4504,8 +5784,14 @@ export type Database = {
       receipt_format: "a5" | "ticket_80mm"
       receipt_kind: "payment" | "cancellation"
       reenrollment_intent: "pending" | "confirmed" | "dropped" | "paused"
+      resource_type: "exercise" | "exam" | "summary" | "other"
       schedule_conflict_type: "room" | "teacher" | "level"
-      subscription_payment_method: "bank_transfer" | "cash" | "card"
+      subscription_payment_method:
+        | "bank_transfer"
+        | "cash"
+        | "card"
+        | "cheque"
+        | "other"
       user_role: "admin" | "assistant" | "teacher" | "super_admin"
     }
     CompositeTypes: {
@@ -4636,6 +5922,7 @@ export const Constants = {
     Enums: {
       absence_notification_status: ["prepared", "sent", "failed", "no_phone"],
       alert_type: ["consecutive_absences", "overdue_payment"],
+      attendance_marker: ["teacher", "assistant", "admin"],
       attendance_status: ["present", "absent"],
       billing_interval: ["month", "year"],
       billing_run_status: ["draft", "confirmed", "sent", "closed", "cancelled"],
@@ -4658,6 +5945,14 @@ export const Constants = {
       invoice_status: ["pending", "paid", "overdue"],
       module_source: ["plan", "manual", "trial"],
       notification_channel: ["whatsapp", "phone_call", "in_person"],
+      password_event_type: [
+        "reset_by_admin",
+        "reset_by_assistant",
+        "reset_by_super_admin",
+        "self_change",
+        "forced_change_completed",
+        "denied",
+      ],
       pay_mode: ["fixed_salary", "commission"],
       payment_method: ["cash", "bank_transfer", "card", "cheque"],
       payment_reminder_status: ["prepared", "sent", "failed", "no_phone"],
@@ -4666,8 +5961,15 @@ export const Constants = {
       receipt_format: ["a5", "ticket_80mm"],
       receipt_kind: ["payment", "cancellation"],
       reenrollment_intent: ["pending", "confirmed", "dropped", "paused"],
+      resource_type: ["exercise", "exam", "summary", "other"],
       schedule_conflict_type: ["room", "teacher", "level"],
-      subscription_payment_method: ["bank_transfer", "cash", "card"],
+      subscription_payment_method: [
+        "bank_transfer",
+        "cash",
+        "card",
+        "cheque",
+        "other",
+      ],
       user_role: ["admin", "assistant", "teacher", "super_admin"],
     },
   },

@@ -1,4 +1,4 @@
-# CentroManager
+# dirassty
 
 SaaS de gestion des abonnements et des présences pour les centres de langue et de soutien scolaire.
 Utilisé uniquement par l'équipe du centre : Admin, Assistant (accueil) et Professeur.
@@ -42,14 +42,14 @@ npm run db:start
 
 Le premier démarrage télécharge les images Docker (quelques minutes). La commande applique les migrations de `supabase/migrations`, puis le seed de démonstration `supabase/seed.sql`.
 
-Supabase utilise les ports **5532x** pour cohabiter avec d'autres projets locaux :
+Supabase utilise les ports **4732x** pour cohabiter avec d'autres projets locaux :
 
 | Service | URL |
 | --- | --- |
-| API | http://127.0.0.1:55321 |
-| Base Postgres | postgresql://postgres:postgres@127.0.0.1:55322/postgres |
-| Studio | http://127.0.0.1:55323 |
-| Emails de test (Mailpit) | http://127.0.0.1:55324 |
+| API | http://127.0.0.1:47321 |
+| Base Postgres | postgresql://postgres:postgres@127.0.0.1:47322/postgres |
+| Studio | http://127.0.0.1:47323 |
+| Emails de test (Mailpit) | http://127.0.0.1:47324 |
 
 > **Windows** : Hyper-V réserve dynamiquement des plages de ports (`netsh interface ipv4 show excludedportrange protocol=tcp`). Si `supabase start` échoue avec « bind: An attempt was made to access a socket in a way forbidden », changez les ports dans `supabase/config.toml` (et `NEXT_PUBLIC_SUPABASE_URL`) vers une plage libre.
 
@@ -177,9 +177,9 @@ Plans compatibles : Business Web Hosting ou Cloud. Supabase reste hébergé sur 
 
 ## Marque blanche
 
-- **Formules** : `standard` (interface aux couleurs de CentroManager, aucun réglage de marque modifiable par le centre) ; `white_label` (nom, logo, favicon, couleurs, fond de connexion, expéditeur et contact de support du client ; la marque de la plateforme n'apparaît plus côté centre). Seul le super-admin change la formule.
+- **Formules** : `standard` (interface aux couleurs de dirassty, aucun réglage de marque modifiable par le centre) ; `white_label` (nom, logo, favicon, couleurs, fond de connexion, expéditeur et contact de support du client ; la marque de la plateforme n'apparaît plus côté centre). Seul le super-admin change la formule.
 - **Réglages** : console → fiche du centre → « Modifier la marque » (tout, domaine compris) ; administrateur d'un centre en marque blanche → menu « Marque » (tout sauf le domaine). Images dans le bucket public `center-branding/<center_id>/` (2 Mo, PNG, JPEG, WebP, SVG, ICO).
-- **Application côté serveur, sans clignotement** : les couleurs deviennent des variables CSS (`--primary`, `--sidebar`, `--ring`, `--reminder-*`, `--highlight`…) rendues avec la page (`BrandStyle`) ; titre d'onglet, favicon, logo de la barre latérale et de l'écran de connexion, et « CentroManager » dans les libellés remplacés par la marque. Aucune couleur de marque n'est écrite dans les composants.
+- **Application côté serveur, sans clignotement** : les couleurs deviennent des variables CSS (`--primary`, `--sidebar`, `--ring`, `--reminder-*`, `--highlight`…) rendues avec la page (`BrandStyle`) ; titre d'onglet, favicon, logo de la barre latérale et de l'écran de connexion, et « dirassty » dans les libellés remplacés par la marque. Aucune couleur de marque n'est écrite dans les composants.
 - **Adresses** (variable `PLATFORM_ROOT_DOMAIN`, ex. `centromanager.ma`) : chaque centre est servi sur `<slug>.<domaine racine>` ; un centre en marque blanche aussi sur son domaine personnalisé vérifié. L'écran de connexion prend la marque de l'adresse et refuse un compte d'un autre centre. La console `/platform` renvoie une 404 depuis l'adresse d'un centre. Sans `PLATFORM_ROOT_DOMAIN`, tout est servi sur un seul domaine (cas du domaine temporaire Hostinger).
 - **Domaine personnalisé — procédure** :
   1. Le super-admin saisit le domaine (ex. `app.moncentre.ma`) dans la marque du centre.
@@ -327,7 +327,7 @@ npx supabase migration new nom_de_la_migration
 
 ```
 supabase/
-  config.toml             configuration locale (ports 5532x, inscriptions publiques fermées)
+  config.toml             configuration locale (ports 4732x, inscriptions publiques fermées)
   migrations/             migrations SQL versionnées
   seed.sql                données de démonstration
   tests/database/         tests pgTAP (policies RLS, hook JWT)

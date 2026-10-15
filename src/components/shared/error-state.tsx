@@ -4,7 +4,7 @@ import { RotateCw, TriangleAlert } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 
 type ErrorStateProps = {
   title?: string;
@@ -14,19 +14,15 @@ type ErrorStateProps = {
   className?: string;
 };
 
-export function ErrorState({
-  title = LABELS.errors.genericTitle,
-  description = LABELS.errors.genericDescription,
-  onRetry,
-  className,
-}: ErrorStateProps) {
+export function ErrorState({ title, description, onRetry, className }: ErrorStateProps) {
+  const LABELS = useLabels();
   return (
     <div role="alert" className={className}>
       <EmptyState
         icon={TriangleAlert}
         tone="danger"
-        title={title}
-        description={description}
+        title={title ?? LABELS.errors.genericTitle}
+        description={description ?? LABELS.errors.genericDescription}
         action={
           onRetry ? (
             <Button onClick={onRetry}>

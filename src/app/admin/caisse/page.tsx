@@ -6,6 +6,7 @@ import { ROUTES } from "@/lib/auth/routes";
 import { requireModule, requireRole } from "@/lib/auth/session";
 import { getCashHistory, getCashPage } from "@/lib/data/cash";
 import { toISODate, today } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -18,13 +19,13 @@ export default async function AdminCashPage({ searchParams }: PageProps<"/admin/
   const { mois } = await searchParams;
   const todayIso = toISODate(today());
   const month = parseMonthParam(typeof mois === "string" ? mois : undefined, todayIso);
-  const [LABELS, page] = await Promise.all([getLabels(), getCashPage()]);
+  const [LABELS, locale, page] = await Promise.all([getLabels(), getAppLocale(), getCashPage()]);
   const history = page.support ? null : await getCashHistory(month);
 
   return (
     <div className="flex flex-col gap-6">
       <CashView page={page} fileBase={ROUTES.admin.students} cashBase={ROUTES.admin.cash} />
-      {history ? <CashHistory rows={history.rows} overview={history.overview} month={month} todayIso={todayIso} LABELS={LABELS} /> : null}
+      {history ? <CashHistory rows={history.rows} overview={history.overview} month={month} todayIso={todayIso} LABELS={LABELS} locale={locale} /> : null}
     </div>
   );
 }

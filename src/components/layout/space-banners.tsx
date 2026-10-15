@@ -3,17 +3,18 @@ import { LifeBuoy, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { endSupport } from "@/lib/actions/support";
 import type { SessionProfile } from "@/lib/auth/session";
-import { LABELS } from "@/lib/constants/labels";
 import { formatDate, formatTime } from "@/lib/format";
+import { getLabels } from "@/lib/i18n/server";
 
 /**
  * Bandeaux de l'espace administration :
  *  - retard de paiement de l'abonnement (administrateur du centre seulement) ;
  *  - mode support du super-admin (permanent, lecture seule).
  */
-export function SpaceBanners({ profile }: { profile: SessionProfile }) {
+export async function SpaceBanners({ profile }: { profile: SessionProfile }) {
   const pastDue = !profile.support && profile.centerStatus === "past_due" && profile.billing;
   if (!pastDue && !profile.support) return null;
+  const LABELS = await getLabels();
 
   return (
     <div className="flex flex-col">

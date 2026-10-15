@@ -11,6 +11,16 @@ export const ROUTES = {
   welcome: "/bienvenue",
   /** Centre suspendu ou résilié : écran explicatif et contact. */
   suspended: "/acces-suspendu",
+  /** Changement de son propre mot de passe (tous les rôles). */
+  myPassword: "/mon-mot-de-passe",
+  /** Mot de passe temporaire (défini par un responsable) : à remplacer avant toute autre page. */
+  forcedPassword: "/nouveau-mot-de-passe",
+  /** Session fermée par une réinitialisation : déconnexion, puis écran de connexion. */
+  sessionClosed: "/session-fermee",
+  /** Jeton renouvelé (rôle, changement obligatoire), puis espace du rôle. */
+  refreshSession: "/actualiser-session",
+  /** Sous-domaine sans centre : page sobre avec un lien vers le domaine racine. */
+  centerNotFound: "/centre-introuvable",
   platform: {
     home: "/platform",
     centers: "/platform/centres",
@@ -18,7 +28,10 @@ export const ROUTES = {
     catalogue: "/platform/catalogue",
     billing: "/platform/facturation",
     settings: "/platform/reglages",
+    journal: "/platform/journal",
   },
+  /** Route appelée par la tâche quotidienne (pg_cron → pg_net), protégée par un secret. */
+  platformPurgeApi: "/api/platform/purge",
   assistant: {
     home: "/assistant",
     students: "/assistant/eleves",
@@ -27,6 +40,9 @@ export const ROUTES = {
     absences: "/assistant/absences",
     reenrollment: "/assistant/reinscriptions",
     cash: "/assistant/caisse",
+    /** Séances d'un jour (aujourd'hui par défaut) et appel d'une séance. */
+    sessions: "/assistant/seances",
+    session: (slotId: string, date: string) => `/assistant/seances/${slotId}?date=${date}`,
   },
   teacher: {
     home: "/professeur",
@@ -34,6 +50,10 @@ export const ROUTES = {
     call: (slotId: string) => `/professeur/appel/${slotId}`,
     /** Fiche d'assiduité d'un élève (matières du professeur). */
     student: (studentId: string) => `/professeur/eleves/${studentId}`,
+    /** Ressources pédagogiques publiées par le professeur (plateforme pédagogique). */
+    resources: "/professeur/ressources",
+    newResource: "/professeur/ressources/nouvelle",
+    resource: (id: string) => `/professeur/ressources/${id}`,
   },
   admin: {
     home: "/admin",
@@ -46,6 +66,8 @@ export const ROUTES = {
     branding: "/admin/marque",
     settings: "/admin/reglages",
     payroll: "/admin/paie",
+    /** Historique des reçus de paie (filtres membre et période). */
+    salaryReceipts: "/admin/paie/recus",
     expenses: "/admin/charges",
     rooms: "/admin/salles",
     reenrollment: "/admin/reinscriptions",
@@ -53,6 +75,15 @@ export const ROUTES = {
   },
   /** Reçu imprimable (accueil et administration). */
   receipt: (id: string) => `/recus/${id}`,
+  /** Reçu de paie imprimable (administration). */
+  salaryReceipt: (id: string) => `/recus-paie/${id}`,
+  /** Fichier d'une ressource pédagogique (URL signée, après contrôle d'accès). */
+  resourceFile: (id: string) => `/ressources/${id}/fichier`,
+  /** Espace élève (rôle student_user) et sa connexion par code. */
+  student: {
+    home: "/eleve",
+    login: "/eleve/connexion",
+  },
 } as const;
 
 /** Espace d'accueil de chaque rôle. */
@@ -65,6 +96,16 @@ export const ROLE_HOME: Record<UserRole, string> = {
 
 /** Paramètre de requête portant la page demandée avant la connexion. */
 export const NEXT_PARAM = "suivant";
+
+/** Écran de connexion du centre après transfert depuis le domaine racine (se reconnecter une fois). */
+export const TRANSFER_PARAM = "transfert";
+
+/** Compte refusé sur l'adresse d'un autre centre : adresse (slug) de son centre, « plateforme » pour la console. */
+export const OTHER_CENTER_PARAM = "centre-du-compte";
+export const PLATFORM_ACCOUNT = "plateforme";
+
+/** Écran de connexion après une session fermée par une réinitialisation du mot de passe. */
+export const SESSION_CLOSED_PARAM = "session";
 
 /** Rôle propriétaire d'un chemin, ou null si le chemin n'appartient à aucun espace. */
 export function roleForPath(pathname: string): UserRole | null {

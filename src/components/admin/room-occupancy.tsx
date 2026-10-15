@@ -6,13 +6,13 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { ROUTES } from "@/lib/auth/routes";
 import type { AppLabels } from "@/lib/constants/labels";
 import { formatPercent } from "@/lib/format";
+import { intlLocale, type Locale } from "@/lib/i18n/locale";
 import type { OccupancyReport, RoomOccupancy, RoomStatus } from "@/lib/room-occupancy";
 import { cn } from "@/lib/utils";
 
-const hoursFormat = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
-
-function hours(minutes: number): string {
-  return hoursFormat.format(minutes / 60);
+function hoursIn(locale: Locale): (minutes: number) => string {
+  const format = new Intl.NumberFormat(intlLocale(locale), { maximumFractionDigits: 1 });
+  return (minutes) => format.format(minutes / 60);
 }
 
 const STATUS: Record<RoomStatus, { icon: typeof CircleCheck; ink: string }> = {
@@ -22,8 +22,9 @@ const STATUS: Record<RoomStatus, { icon: typeof CircleCheck; ink: string }> = {
 };
 
 /** Bloc « Occupation des salles » du tableau de bord admin : chiffres clés, salles, heures. */
-export function RoomOccupancyOverview({ data, LABELS }: { data: OccupancyReport; LABELS: AppLabels }) {
+export function RoomOccupancyOverview({ data, LABELS, locale }: { data: OccupancyReport; LABELS: AppLabels; locale: Locale }) {
   const O = LABELS.roomOccupancy;
+  const hours = hoursIn(locale);
 
   return (
     <section aria-labelledby="occupation" className="flex flex-col gap-3">
@@ -35,7 +36,7 @@ export function RoomOccupancyOverview({ data, LABELS }: { data: OccupancyReport;
         ) : (
           <>
             <dl className="grid gap-3 sm:grid-cols-3">
-              <KeyFigure label={O.overall} value={formatPercent(data.rate)} detail={O.overallHint} strong />
+              <KeyFigure label={O.overall} value={formatPercent(data.rate, locale)} detail={O.overallHint} strong />
               <KeyFigure
                 label={O.peak}
                 value={data.peak ? O.peakValue(LABELS.days[data.peak.day] ?? "", data.peak.hour) : O.noPeak}
@@ -49,7 +50,7 @@ export function RoomOccupancyOverview({ data, LABELS }: { data: OccupancyReport;
                 <h3 className="font-semibold">{O.roomsTitle}</h3>
                 <ul className="flex flex-col divide-y divide-divider">
                   {data.rooms.map((room) => (
-                    <RoomRow key={room.roomId} room={room} openMinutes={data.openMinutes} LABELS={LABELS} />
+                    <RoomRow key={room.roomId} room={room} openMinutes={data.openMinutes} hours={hours} LABELS={LABELS} locale={locale} />
                   ))}
                 </ul>
               </div>
@@ -75,7 +76,19 @@ function KeyFigure({ label, value, detail, strong = false }: { label: string; va
   );
 }
 
-function RoomRow({ room, openMinutes, LABELS }: { room: RoomOccupancy; openMinutes: number; LABELS: AppLabels }) {
+function RoomRow({
+  room,
+  openMinutes,
+  hours,
+  LABELS,
+  locale,
+}: {
+  room: RoomOccupancy;
+  openMinutes: number;
+  hours: (minutes: number) => string;
+  LABELS: AppLabels;
+  locale: Locale;
+}) {
   const O = LABELS.roomOccupancy;
   const { icon: Icon, ink } = STATUS[room.status];
   const free = Math.max(0, openMinutes - room.usedMinutes);
@@ -113,13 +126,13 @@ function RoomRow({ room, openMinutes, LABELS }: { room: RoomOccupancy; openMinut
         >
           <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(room.rate > 0 ? 2 : 0, room.rate * 100)}%` }} />
         </div>
-        <span className="numeric w-12 shrink-0 text-right text-table font-semibold">{formatPercent(room.rate)}</span>
+        <span className="numeric w-12 shrink-0 text-end text-table font-semibold">{formatPercent(room.rate, locale)}</span>
       </div>
       <p className="flex flex-wrap gap-x-3 gap-y-0.5 text-caption text-muted-foreground">
         <span>{O.used(hours(room.usedMinutes), hours(openMinutes))}</span>
         {room.fill !== null ? (
           <span title={O.fillHint} className={cn(room.fill > 1 && "font-semibold text-danger-ink")}>
-            {O.fill(formatPercent(room.fill))}
+            {O.fill(formatPercent(room.fill, locale))}
           </span>
         ) : null}
       </p>

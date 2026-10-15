@@ -1,29 +1,50 @@
 import { CalendarClock, CircleCheck, Mail, MailCheck, Phone } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { SectionHeading } from "@/components/dashboard/section-heading";
-import { StatTile, StatTiles } from "@/components/dashboard/stat-tile";
 import { CenterStatusBadge } from "@/components/platform/center-status-badge";
 import { DaysRemaining } from "@/components/platform/days-remaining";
+import { PeriodSelector } from "@/components/platform/period-selector";
+import { RevenueChart, type RevenueMonth } from "@/components/platform/revenue-chart";
+import { RevenueKpis, RevenueTrend } from "@/components/platform/revenue-kpis";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Money } from "@/components/shared/money";
 import { PageHeader } from "@/components/shared/page-header";
+import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
-import { LABELS } from "@/lib/constants/labels";
-import { type CenterStatus, getPlatformDashboard } from "@/lib/data/platform";
-import { formatDate, formatMAD } from "@/lib/format";
+import { type CenterStatus, getPlatformDashboard, getPlatformRevenue } from "@/lib/data/platform";
+import { formatDate, formatMAD, formatPercent, toISODate, today } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
+import { getLabels } from "@/lib/i18n/server";
 import { formatPhone, toTelHref } from "@/lib/phone";
+import { parsePeriod, periodOptions } from "@/lib/platform-period";
 
-const L = LABELS.platform.dashboard;
 const STATUSES: readonly CenterStatus[] = ["trial", "active", "past_due", "suspended", "cancelled"];
-const REMINDER_KINDS: Record<string, string> = L.reminderKinds;
 
-export const metadata: Metadata = { title: L.title };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getLabels()).platform.dashboard.title };
+}
 
-export default async function PlatformDashboardPage() {
-  const { overview, overdue, upcoming, notifications } = await getPlatformDashboard();
+export default async function PlatformDashboardPage({ searchParams }: PageProps<"/platform">) {
+  const [LABELS, locale, params] = await Promise.all([getLabels(), getAppLocale(), searchParams]);
+  const L = LABELS.platform.dashboard;
+  const C = LABELS.platformConsole;
+  const REMINDER_KINDS: Record<string, string> = L.reminderKinds;
+  const todayIso = toISODate(today());
+  const period = parsePeriod(params, todayIso);
+  const [{ overview, overdue, upcoming, notifications }, revenue] = await Promise.all([
+    getPlatformDashboard(),
+    getPlatformRevenue(period.selection),
+  ]);
+  const selected = revenue.selected;
+  const planTotal = revenue.byPlan.reduce((sum, row) => sum + Number(row.revenue), 0);
+  const chartMonths: RevenueMonth[] = [...revenue.months]
+    .reverse()
+    .map((row) => ({ month: row.month, revenue: Number(row.collected), current: row.month === `${todayIso.slice(0, 7)}-01` }));
+  const money = (amount: number) => formatMAD(amount, locale, { cents: true });
+  const planNames: Record<string, string> = LABELS.platform.plan;
   const statusCounts: Record<CenterStatus, number> = {
     trial: overview.trial_count,
     active: overview.active_count,
@@ -36,18 +57,102 @@ export default async function PlatformDashboardPage() {
     <div className="flex flex-col gap-8">
       <PageHeader title={L.title} description={L.description} />
 
-      <StatTiles>
-        <StatTile value={formatMAD(overview.monthly_recurring_revenue)} label={L.mrr} detail={L.mrrDetail} />
-        <StatTile value={formatMAD(overview.collected_this_month)} label={L.collected} href={ROUTES.platform.billing} />
-        <StatTile
-          value={overview.students_count}
-          label={L.students}
-          detail={`${overview.users_count} ${L.users.toLowerCase()}`}
-        />
-      </StatTiles>
+      <section aria-labelledby="revenus" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <SectionHeading id="revenus" title={C.kpis.title} />
+          <p className="text-caption text-muted-foreground">{C.kpis.description}</p>
+        </div>
+        <RevenueKpis kpis={revenue.kpis} />
+      </section>
+
+      <SectionCard title={C.period.title}>
+        <PeriodSelector form={period.form} options={periodOptions(todayIso)} todayIso={todayIso} />
+        {period.invalid ? (
+          <p role="alert" className="text-caption font-medium text-danger-ink">
+            {C.period.invalid}
+          </p>
+        ) : null}
+        <div className="grid gap-6 border-t border-divider pt-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <div className="flex flex-col gap-2">
+            <p className="text-caption text-muted-foreground">
+              {selected.period_start && selected.period_end
+                ? C.kpis.range(formatDate(selected.period_start), formatDate(selected.period_end))
+                : null}
+            </p>
+            <p className="numeric text-stat text-primary">{money(Number(selected.revenue ?? 0))}</p>
+            <p className="text-caption text-muted-foreground">
+              {C.period.revenue} · {C.period.payments(selected.payments_count ?? 0)}
+            </p>
+            <RevenueTrend
+              change={selected.change_amount === null ? null : Number(selected.change_amount)}
+              ratio={selected.change_ratio === null ? null : Number(selected.change_ratio)}
+              comparedWith={
+                selected.previous_start && selected.previous_end
+                  ? `${C.period.previous(formatDate(selected.previous_start), formatDate(selected.previous_end))}${LABELS.common.colon} ${money(Number(selected.previous_revenue ?? 0))}`
+                  : null
+              }
+            />
+            {selected.to_date ? <p className="text-caption text-subtle">{C.period.toDate}</p> : null}
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="flex flex-col gap-0.5">
+              <h3 className="text-body font-semibold text-heading">{C.byPlan.title}</h3>
+              {selected.period_start && selected.period_end ? (
+                <p className="text-caption text-muted-foreground">
+                  {C.byPlan.description(formatDate(selected.period_start), formatDate(selected.period_end))}
+                </p>
+              ) : null}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[420px] text-start text-table">
+                <caption className="sr-only">{C.byPlan.caption}</caption>
+                <thead>
+                  <tr className="h-10 border-b border-divider text-caption text-muted-foreground">
+                    <th scope="col" className="px-2 font-medium">{C.byPlan.plan}</th>
+                    <th scope="col" className="px-2 text-end font-medium">{C.byPlan.centers}</th>
+                    <th scope="col" className="px-2 text-end font-medium">{C.byPlan.paying}</th>
+                    <th scope="col" className="px-2 text-end font-medium">{C.byPlan.revenue}</th>
+                    <th scope="col" className="px-2 text-end font-medium">{C.byPlan.share}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {revenue.byPlan.map((row) => (
+                    <tr key={row.plan_key} className="h-11 border-b border-divider">
+                      <td className="px-2 font-medium text-heading">{planNames[row.plan_key] ?? row.plan_name}</td>
+                      <td className="numeric px-2 text-end">{row.centers_count}</td>
+                      <td className="numeric px-2 text-end">{row.paying_centers_count}</td>
+                      <td className="numeric px-2 text-end">{money(Number(row.revenue))}</td>
+                      <td className="numeric px-2 text-end text-muted-foreground">
+                        {planTotal > 0 ? formatPercent(Number(row.revenue) / planTotal, locale) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="h-11 font-semibold text-heading">
+                    <td className="px-2">{C.byPlan.total}</td>
+                    <td className="numeric px-2 text-end">{revenue.byPlan.reduce((sum, row) => sum + row.centers_count, 0)}</td>
+                    <td className="numeric px-2 text-end">{revenue.byPlan.reduce((sum, row) => sum + row.paying_centers_count, 0)}</td>
+                    <td className="numeric px-2 text-end">{money(planTotal)}</td>
+                    <td className="px-2" />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title={C.chart.title}>
+        <RevenueChart months={chartMonths} />
+      </SectionCard>
 
       <section aria-labelledby="statuts" className="flex flex-col gap-4">
-        <SectionHeading id="statuts" title={L.centersByStatus} />
+        <div className="flex flex-col gap-1">
+          <SectionHeading id="statuts" title={L.centersByStatus} />
+          <p className="text-caption text-muted-foreground">
+            {overview.students_count} {L.students.toLowerCase()} · {overview.users_count} {L.users.toLowerCase()}
+          </p>
+        </div>
         <ul className="stagger grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {STATUSES.map((status) => (
             <li key={status}>

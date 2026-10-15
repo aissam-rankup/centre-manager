@@ -6,6 +6,18 @@ export const ABSENCE_ALERT_THRESHOLD = 3;
 export type AttendancePeriod = "month" | "quarter" | "all";
 export const ATTENDANCE_PERIODS: readonly AttendancePeriod[] = ["month", "quarter", "all"];
 
+/** À quel titre une présence a été saisie. */
+export type AttendanceMarker = "teacher" | "assistant" | "admin";
+
+/** Une saisie de l'historique d'une présence. */
+export type AttendanceMark = {
+  status: "present" | "absent";
+  role: AttendanceMarker | null;
+  by: string | null;
+  /** ISO 8601. */
+  at: string;
+};
+
 export type AttendanceRecord = {
   id: string;
   date: string;
@@ -17,6 +29,12 @@ export type AttendanceRecord = {
   startTime: string | null;
   endTime: string | null;
   note: string | null;
+  /** Qui a saisi le statut affiché, à quel titre, quand. */
+  markedByName: string | null;
+  markedByRole: AttendanceMarker | null;
+  markedAt: string;
+  /** Saisies successives (vide s'il n'y en a eu qu'une). */
+  history: AttendanceMark[];
 };
 
 export type AbsenceEntry = AttendanceRecord & {

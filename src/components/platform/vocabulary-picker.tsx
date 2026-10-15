@@ -4,11 +4,9 @@ import { ChoiceItem } from "@/components/shared/choice-item";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { LABELS } from "@/lib/constants/labels";
 import type { CenterTypeOption } from "@/lib/data/platform";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { type CustomTermsInput, VOCABULARY_KEYS, type VocabularyKey } from "@/lib/validation/platform";
-
-const L = LABELS.platform.newCenter;
 
 type VocabularyPickerProps = {
   types: CenterTypeOption[];
@@ -31,6 +29,8 @@ export function VocabularyPicker({
   errors,
   idPrefix,
 }: VocabularyPickerProps) {
+  const L = useLabels().platform.newCenter;
+  const message = useMessage();
   const selected = types.find((type) => type.code === centerType);
 
   const setTerm = (key: VocabularyKey, patch: Partial<CustomTermsInput[VocabularyKey]>) =>
@@ -61,7 +61,7 @@ export function VocabularyPicker({
             </ChoiceItem>
           ))}
         </RadioGroup>
-        {errors.centerType ? <p className="text-caption text-danger-ink">{errors.centerType}</p> : null}
+        {errors.centerType ? <p className="text-caption text-danger-ink">{message(errors.centerType)}</p> : null}
       </fieldset>
 
       {selected?.isCustom ? (
@@ -85,7 +85,7 @@ export function VocabularyPicker({
                       aria-invalid={singularError ? true : undefined}
                       onChange={(event) => setTerm(key, { singular: event.target.value })}
                     />
-                    {singularError ? <p className="text-caption text-danger-ink">{singularError}</p> : null}
+                    {singularError ? <p className="text-caption text-danger-ink">{message(singularError)}</p> : null}
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor={`${idPrefix}-${key}-p`}>{L.plural}</Label>
@@ -96,7 +96,7 @@ export function VocabularyPicker({
                       aria-invalid={pluralError ? true : undefined}
                       onChange={(event) => setTerm(key, { plural: event.target.value })}
                     />
-                    {pluralError ? <p className="text-caption text-danger-ink">{pluralError}</p> : null}
+                    {pluralError ? <p className="text-caption text-danger-ink">{message(pluralError)}</p> : null}
                   </div>
                   <fieldset className="flex flex-col gap-1.5">
                     <legend className="mb-1.5 text-body font-medium">{L.gender}</legend>

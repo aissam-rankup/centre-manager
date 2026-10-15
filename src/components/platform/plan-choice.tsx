@@ -2,11 +2,9 @@
 
 import { ChoiceItem } from "@/components/shared/choice-item";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { LABELS } from "@/lib/constants/labels";
 import type { PlanOption } from "@/lib/data/platform";
 import { formatMAD } from "@/lib/format";
-
-const N = LABELS.platform.newCenter;
+import { useLabels, useLocale } from "@/lib/i18n/client";
 
 /** Choix du pack d'un centre (catalogue : nom, contenu, prix indicatif). */
 export function PlanChoice({
@@ -18,6 +16,8 @@ export function PlanChoice({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const N = useLabels().platform.newCenter;
+  const locale = useLocale();
   return (
     <RadioGroup value={value} onValueChange={onChange}>
       {plans.map((plan) => (
@@ -27,7 +27,7 @@ export function PlanChoice({
             <span className="font-medium">{plan.name}</span>
             {plan.description ? <span className="text-caption text-muted-foreground">{plan.description}</span> : null}
             {plan.monthlyPrice > 0 ? (
-              <span className="numeric text-caption text-muted-foreground">{N.planPrice(formatMAD(plan.monthlyPrice))}</span>
+              <span className="numeric text-caption text-muted-foreground">{N.planPrice(formatMAD(plan.monthlyPrice, locale))}</span>
             ) : null}
           </span>
         </ChoiceItem>

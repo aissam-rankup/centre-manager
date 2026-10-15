@@ -1,17 +1,16 @@
 "use client";
 
-import { Banknote, Bell, BellRing, MessageSquareText, StickyNote } from "lucide-react";
-import Link from "next/link";
+import { Banknote, Bell, BellRing, ClipboardX, MessageSquareText, StickyNote } from "lucide-react";
+import Link from "@/components/shared/app-link";
 import { useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LABELS } from "@/lib/constants/labels";
 import type { NotificationItem, NotificationKind } from "@/lib/data/notifications";
 import { formatDateTime } from "@/lib/format";
+import { useLabels } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
-const L = LABELS.notifications;
 const SEEN_KEY = "centromanager:notifications-vues";
 
 const KIND_ICON: Record<NotificationKind, typeof Bell> = {
@@ -19,12 +18,14 @@ const KIND_ICON: Record<NotificationKind, typeof Bell> = {
   note: StickyNote,
   absenceAlert: BellRing,
   cashVariance: Banknote,
+  attendanceConflict: ClipboardX,
 };
 const KIND_TONE: Record<NotificationKind, string> = {
   followUp: "bg-primary-soft text-primary",
   note: "bg-muted text-heading",
   absenceAlert: "bg-warning/15 text-warning-ink",
   cashVariance: "bg-danger/10 text-danger-ink",
+  attendanceConflict: "bg-warning/15 text-warning-ink",
 };
 
 /** Dernière consultation (préférence locale, sans incidence si le stockage est indisponible). */
@@ -49,6 +50,7 @@ type NotificationBellProps = {
 
 /** Cloche de l'en-tête : relances, notes de fiche et alertes ; compteur des nouveautés. */
 export function NotificationBell({ items, fileBase }: NotificationBellProps) {
+  const L = useLabels().notifications;
   const storedSeen = useSyncExternalStore(subscribe, readSeen, () => "");
   const [seenOverride, setSeenOverride] = useState<string | null>(null);
   const seen = seenOverride ?? storedSeen;
@@ -72,7 +74,7 @@ export function NotificationBell({ items, fileBase }: NotificationBellProps) {
         <Button variant="ghost" size="icon" className="relative text-muted-foreground" aria-label={L.open(unread)}>
           <Bell className="size-5" aria-hidden />
           {unread > 0 ? (
-            <span className="numeric absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] leading-none text-white">
+            <span className="numeric absolute top-1 end-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] leading-none text-white">
               {unread > 9 ? "9+" : unread}
             </span>
           ) : null}

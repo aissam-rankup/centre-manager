@@ -14,7 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { createTeacher } from "@/lib/actions/assistant";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
 import { generatePassword } from "@/lib/password";
 import { assistantSchemas, type NewTeacherInput } from "@/lib/validation/assistant";
@@ -25,6 +25,7 @@ type Created = { email: string; password: string };
 
 export function NewTeacherForm({ levels }: { levels: LevelWithSubjects[] }) {
   const LABELS = useLabels();
+  const message = useMessage();
   const L = LABELS.assistant.newTeacher;
   const [created, setCreated] = useState<Created | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +45,7 @@ export function NewTeacherForm({ levels }: { levels: LevelWithSubjects[] }) {
     startTransition(async () => {
       const result = await createTeacher(values);
       if (!result.ok) {
-        setServerError(result.error);
+        setServerError(message(result.error));
         for (const [field, message] of Object.entries(result.fieldErrors ?? {})) {
           if (field in EMPTY) setError(field as keyof NewTeacherInput, { message });
         }

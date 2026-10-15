@@ -1,6 +1,6 @@
 import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Minus, ShieldAlert } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { ExpenseIcon } from "@/components/expenses/expense-icon";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -11,9 +11,11 @@ import { ROUTES } from "@/lib/auth/routes";
 import { requireModule, requireRole } from "@/lib/auth/session";
 import type { AppLabels } from "@/lib/constants/labels";
 import { type ExpensesMonth, getExpensesMonth } from "@/lib/data/expenses";
-import { formatMAD, formatPercent, toISODate, today } from "@/lib/format";
+import { formatMAD, formatMonth, formatPercent, toISODate, today } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
-import { compareMonths, monthKey, monthLabel, parsePayrollMonth, type PayrollMonth, shiftMonth } from "@/lib/payroll";
+import { compareMonths, monthKey, parsePayrollMonth, type PayrollMonth, shiftMonth } from "@/lib/payroll";
 
 import { ExpensesBoard } from "./expenses-board";
 
@@ -38,6 +40,8 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/admin/c
   if (!data) return <EmptyState icon={ShieldAlert} title={X.title} description={X.supportUnavailable} />;
 
   const href = (value: PayrollMonth) => `${ROUTES.admin.expenses}?mois=${monthKey(value)}`;
+  const locale = await getAppLocale();
+  const monthName = formatMonth(`${monthKey(month)}-01`, locale);
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,7 +53,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/admin/c
             <ChevronLeft aria-hidden />
           </Link>
         </Button>
-        <span className="min-w-40 text-center font-semibold">{monthLabel(month)}</span>
+        <span className="min-w-40 text-center font-semibold">{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</span>
         {isCurrent ? (
           <Button variant="ghost" size="icon" disabled aria-label={X.nextMonth}>
             <ChevronRight aria-hidden />
@@ -71,8 +75,8 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/admin/c
           total={data.total}
         />
         <div className="flex flex-col gap-6">
-          <Breakdown data={data} LABELS={LABELS} />
-          <Comparison data={data} LABELS={LABELS} />
+          <Breakdown data={data} LABELS={LABELS} locale={locale} />
+          <Comparison data={data} LABELS={LABELS} locale={locale} />
         </div>
       </div>
     </div>
@@ -80,7 +84,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/admin/c
 }
 
 /** Part de chaque catégorie dans le total du mois (charges confirmées). */
-function Breakdown({ data, LABELS }: { data: ExpensesMonth; LABELS: AppLabels }) {
+function Breakdown({ data, LABELS, locale }: { data: ExpensesMonth; LABELS: AppLabels; locale: Locale }) {
   const B = LABELS.expenses.breakdown;
   const categories = new Map(data.categories.map((category) => [category.id, category]));
   const rows = data.totals.filter((row) => row.current > 0).sort((a, b) => b.current - a.current);
@@ -101,9 +105,9 @@ function Breakdown({ data, LABELS }: { data: ExpensesMonth; LABELS: AppLabels })
                     <ExpenseIcon name={category?.icon ?? "receipt"} className="size-7" />
                     <span className="truncate font-medium">{category?.name}</span>
                   </span>
-                  <span className="shrink-0 text-right">
-                    <span className="numeric font-semibold">{formatMAD(row.current)}</span>
-                    <span className="block text-caption text-muted-foreground">{B.share(formatPercent(share))}</span>
+                  <span className="shrink-0 text-end">
+                    <span className="numeric font-semibold">{formatMAD(row.current, locale)}</span>
+                    <span className="block text-caption text-muted-foreground">{B.share(formatPercent(share, locale))}</span>
                   </span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
@@ -119,7 +123,7 @@ function Breakdown({ data, LABELS }: { data: ExpensesMonth; LABELS: AppLabels })
 }
 
 /** Écart avec le mois précédent, global et par catégorie (MAD et %). */
-function Comparison({ data, LABELS }: { data: ExpensesMonth; LABELS: AppLabels }) {
+function Comparison({ data, LABELS, locale }: { data: ExpensesMonth; LABELS: AppLabels; locale: Locale }) {
   const C = LABELS.expenses.comparison;
   const categories = new Map(data.categories.map((category) => [category.id, category]));
   const rows = [...data.totals].sort((a, b) => Math.abs(b.current - b.previous) - Math.abs(a.current - a.previous));
@@ -128,10 +132,10 @@ function Comparison({ data, LABELS }: { data: ExpensesMonth; LABELS: AppLabels }
     const diff = current - previous;
     if (diff === 0) return { icon: Minus, text: C.same };
     if (previous === 0) return { icon: ArrowUpRight, text: C.newSpend };
-    const percent = formatPercent(Math.abs(diff) / previous);
+    const percent = formatPercent(Math.abs(diff) / previous, locale);
     return diff > 0
-      ? { icon: ArrowUpRight, text: C.up(formatMAD(diff), percent) }
-      : { icon: ArrowDownRight, text: C.down(formatMAD(-diff), percent) };
+      ? { icon: ArrowUpRight, text: C.up(formatMAD(diff, locale), percent) }
+      : { icon: ArrowDownRight, text: C.down(formatMAD(-diff, locale), percent) };
   };
   const overall = delta(data.total, data.previousTotal);
 
@@ -140,11 +144,11 @@ function Comparison({ data, LABELS }: { data: ExpensesMonth; LABELS: AppLabels }
       <dl className="grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-muted px-3 py-2">
           <dt className="text-caption text-muted-foreground">{C.current}</dt>
-          <dd className="numeric font-semibold">{formatMAD(data.total)}</dd>
+          <dd className="numeric font-semibold">{formatMAD(data.total, locale)}</dd>
         </div>
         <div className="rounded-xl bg-muted px-3 py-2">
           <dt className="text-caption text-muted-foreground">{C.previous}</dt>
-          <dd className="numeric font-semibold">{formatMAD(data.previousTotal)}</dd>
+          <dd className="numeric font-semibold">{formatMAD(data.previousTotal, locale)}</dd>
         </div>
       </dl>
       {data.previousTotal === 0 && data.total === 0 ? null : (

@@ -1,5 +1,5 @@
-import { LABELS } from "@/lib/constants/labels";
 import type { CenterStatus } from "@/lib/data/platform";
+import { getLabels } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
 const TONE: Record<CenterStatus, string> = {
@@ -11,7 +11,8 @@ const TONE: Record<CenterStatus, string> = {
 };
 
 /** Statut d'un centre : point suivi du libellé coloré (jamais la couleur seule). */
-export function CenterStatusBadge({ status, className }: { status: CenterStatus; className?: string }) {
+export async function CenterStatusBadge({ status, className }: { status: CenterStatus; className?: string }) {
+  const LABELS = await getLabels();
   return (
     <span
       className={cn(

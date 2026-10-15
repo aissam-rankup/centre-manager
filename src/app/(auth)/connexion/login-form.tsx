@@ -10,11 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from "@/lib/auth/actions";
 import { type LoginInput, loginSchema } from "@/lib/auth/schemas";
-import { LABELS } from "@/lib/constants/labels";
-
-const L = LABELS.auth.login;
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 export function LoginForm({ next }: { next: string | null }) {
+  const L = useLabels().auth.login;
+  const message = useMessage();
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -31,9 +31,10 @@ export function LoginForm({ next }: { next: string | null }) {
   const onSubmit = handleSubmit((values) => {
     setServerError(null);
     startTransition(async () => {
-      // En cas de succès, la Server Action redirige : aucun retour.
+      // Succès : navigation complète vers l'espace du rôle (ou l'adresse du centre).
       const result = await signIn(values, next);
-      if (result?.error) setServerError(result.error);
+      if ("location" in result) window.location.assign(result.location);
+      else setServerError(result.error);
     });
   });
 
@@ -45,7 +46,7 @@ export function LoginForm({ next }: { next: string | null }) {
           className="flex items-start gap-3 rounded-lg bg-danger/10 px-4 py-3 text-danger-ink"
         >
           <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden />
-          <p>{serverError}</p>
+          <p>{message(serverError)}</p>
         </div>
       ) : null}
 
@@ -64,7 +65,7 @@ export function LoginForm({ next }: { next: string | null }) {
         />
         {errors.email ? (
           <p id="email-error" className="text-caption text-danger-ink">
-            {errors.email.message}
+            {message(errors.email.message ?? "")}
           </p>
         ) : null}
       </div>
@@ -76,7 +77,7 @@ export function LoginForm({ next }: { next: string | null }) {
             id="password"
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
-            className="pr-12"
+            className="pe-12"
             aria-invalid={errors.password ? true : undefined}
             aria-describedby={errors.password ? "password-error" : undefined}
             {...register("password")}
@@ -85,7 +86,7 @@ export function LoginForm({ next }: { next: string | null }) {
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute top-0 right-0"
+            className="absolute top-0 end-0"
             onClick={() => setShowPassword((value) => !value)}
             aria-label={showPassword ? L.hidePassword : L.showPassword}
             aria-pressed={showPassword}
@@ -95,7 +96,7 @@ export function LoginForm({ next }: { next: string | null }) {
         </div>
         {errors.password ? (
           <p id="password-error" className="text-caption text-danger-ink">
-            {errors.password.message}
+            {message(errors.password.message ?? "")}
           </p>
         ) : null}
       </div>

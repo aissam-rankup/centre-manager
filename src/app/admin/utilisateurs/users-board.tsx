@@ -1,12 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Camera, CircleCheckBig, Copy, KeyRound, Pencil, Power, PowerOff, UserPlus, Users } from "lucide-react";
+import { Camera, CircleCheckBig, Copy, KeyRound, Pencil, Power, PowerOff, UserPlus, Users, Wallet } from "lucide-react";
 import { type ReactElement, useState, useTransition } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { AssignmentPicker } from "@/components/admin/assignment-picker";
+import { ResetPasswordDialog } from "@/components/password/reset-password-dialog";
+import Link from "@/components/shared/app-link";
 import { FormDialog } from "@/components/admin/form-dialog";
 import { useActionForm } from "@/components/admin/use-action-form";
 import { ConfirmAction } from "@/components/shared/confirm-action";
@@ -22,7 +24,8 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { createUser, setUserActive, updateUser } from "@/lib/actions/admin";
 import { removeUserPhoto, setUserPhoto } from "@/lib/actions/profile";
-import { useLabels } from "@/lib/i18n/client";
+import { ROUTES } from "@/lib/auth/routes";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import type { AdminUser } from "@/lib/data/admin";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
 import { formatDateTime } from "@/lib/format";
@@ -32,9 +35,9 @@ import { adminSchemas, type UserCreateInput } from "@/lib/validation/admin";
 
 const ROLES = ["admin", "assistant", "teacher"] as const;
 
-type UsersBoardProps = { users: AdminUser[]; levels: LevelWithSubjects[] };
+type UsersBoardProps = { users: AdminUser[]; levels: LevelWithSubjects[]; payrollEnabled: boolean };
 
-export function UsersBoard({ users, levels }: UsersBoardProps) {
+export function UsersBoard({ users, levels, payrollEnabled }: UsersBoardProps) {
   const LABELS = useLabels();
   const L = LABELS.admin.users;
   const columns: DataTableColumn<AdminUser>[] = [
@@ -63,7 +66,14 @@ export function UsersBoard({ users, levels }: UsersBoardProps) {
       id: "lastSignIn",
       header: L.lastSignIn,
       cell: (user) => (
-        <span className="numeric font-normal">{user.lastSignInAt ? formatDateTime(user.lastSignInAt) : L.never}</span>
+        <span className="flex flex-col">
+          <span className="numeric font-normal">{user.lastSignInAt ? formatDateTime(user.lastSignInAt) : L.never}</span>
+          {user.lastPasswordReset ? (
+            <span className="text-caption text-muted-foreground">
+              {LABELS.passwords.lastReset(formatDateTime(user.lastPasswordReset.at), user.lastPasswordReset.by)}
+            </span>
+          ) : null}
+        </span>
       ),
     },
     { id: "status", header: L.status, mobile: "aside", cell: (user) => <ActiveBadge active={user.active} /> },
@@ -94,6 +104,26 @@ export function UsersBoard({ users, levels }: UsersBoardProps) {
               </Button>
             }
           />
+          {/* Mot de passe : assistants et professeurs seulement (jamais un autre administrateur). */}
+          {!user.isSelf && user.active && (user.role === "assistant" || user.role === "teacher") ? (
+            <ResetPasswordDialog
+              target={{ userId: user.id }}
+              name={user.fullName}
+              trigger={
+                <Button variant="ghost" size="icon" aria-label={LABELS.passwords.resetFor(user.fullName)}>
+                  <KeyRound aria-hidden />
+                </Button>
+              }
+            />
+          ) : null}
+          {/* Rémunération : professeurs (mode, taux) ; assistants et admins (salaire fixe). */}
+          {payrollEnabled && user.active ? (
+            <Button asChild variant="ghost" size="icon" aria-label={`${LABELS.payroll.staff.fromUsers} — ${user.fullName}`}>
+              <Link href={`${ROUTES.admin.payroll}#${user.role === "teacher" ? "remuneration" : "salaires"}`}>
+                <Wallet aria-hidden />
+              </Link>
+            </Button>
+          ) : null}
           {user.isSelf ? null : <ToggleActiveButton user={user} />}
         </div>
       ),
@@ -184,6 +214,7 @@ function ToggleActiveButton({ user }: { user: AdminUser }) {
 function EditUserDialog({ user, levels, trigger }: { user: AdminUser; levels: LevelWithSubjects[]; trigger: ReactElement }) {
   const LABELS = useLabels();
   const L = LABELS.admin.users;
+  const message = useMessage();
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
     schema: adminSchemas(LABELS).userUpdateSchema,
     defaultValues: {
@@ -200,7 +231,7 @@ function EditUserDialog({ user, levels, trigger }: { user: AdminUser; levels: Le
   const roleLocked = user.role === "teacher" || user.isSelf;
 
   return (
-    <FormDialog open={open} onOpenChange={onOpenChange} trigger={trigger} title={L.editUser} description={user.email} pending={pending} error={error} onSubmit={onSubmit}>
+    <FormDialog open={open} onOpenChange={onOpenChange} trigger={trigger} title={L.editUser} description={user.email} pending={pending} error={error ? message(error) : null} onSubmit={onSubmit}>
       <FormField id={`nom-${user.id}`} label={L.name} error={errors.fullName?.message}>
         <Input {...form.register("fullName")} />
       </FormField>
@@ -239,6 +270,7 @@ const EMPTY: UserCreateInput = { fullName: "", role: "assistant", phone: "", ema
 function NewUserDialog({ levels, trigger }: { levels: LevelWithSubjects[]; trigger: ReactElement }) {
   const LABELS = useLabels();
   const L = LABELS.admin.users;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ email: string; password: string } | null>(null);
@@ -262,9 +294,9 @@ function NewUserDialog({ levels, trigger }: { levels: LevelWithSubjects[]; trigg
     startTransition(async () => {
       const result = await createUser(values);
       if (!result.ok) {
-        setError(result.error);
-        for (const [field, message] of Object.entries(result.fieldErrors ?? {})) {
-          if (field in EMPTY) form.setError(field as keyof UserCreateInput, { message });
+        setError(message(result.error));
+        for (const [field, text] of Object.entries(result.fieldErrors ?? {})) {
+          if (field in EMPTY) form.setError(field as keyof UserCreateInput, { message: text });
         }
         return;
       }
@@ -358,7 +390,9 @@ function NewUserDialog({ levels, trigger }: { levels: LevelWithSubjects[]; trigg
             name="subjectIds"
             render={({ field }) => <AssignmentPicker levels={levels} value={field.value} onChange={field.onChange} />}
           />
-          {errors.subjectIds ? <p className="text-caption text-danger-ink">{errors.subjectIds.message}</p> : null}
+          {errors.subjectIds ? (
+            <p className="text-caption text-danger-ink">{errors.subjectIds.message ? message(errors.subjectIds.message) : null}</p>
+          ) : null}
         </fieldset>
       ) : null}
     </FormDialog>

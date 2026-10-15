@@ -1,5 +1,5 @@
 import { CalendarSync, ListChecks, Settings, TriangleAlert, Users, Wallet } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { FilterChips } from "@/components/admin/filter-chips";
 import { CampaignStudents } from "@/components/reenrollment/campaign-students";
@@ -13,6 +13,7 @@ import { Money } from "@/components/shared/money";
 import { Button } from "@/components/ui/button";
 import type { CampaignPage } from "@/lib/data/reenrollment";
 import { formatDateTime, formatMAD, formatMonth, formatPercent } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { countIntents, isoDate } from "@/lib/reenrollment";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ type CampaignViewProps = {
 /** Revue d'une campagne : état, chiffres clés, élèves à risque, intention de chaque élève, confirmation. */
 export async function CampaignView({ page, todayIso, basePath, fileBase, settingsHref }: CampaignViewProps) {
   const LABELS = await getLabels();
+  const locale = await getAppLocale();
   const R = LABELS.reenrollment.review;
   const { run, runs, students } = page;
 
@@ -57,7 +59,7 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
     );
   }
 
-  const monthName = formatMonth(isoDate(run.year, run.month, 1));
+  const monthName = formatMonth(isoDate(run.year, run.month, 1), locale);
   const counts = countIntents(students);
   const atRisk = students.filter((student) => student.atRisk);
   const draft = run.status === "draft";
@@ -88,7 +90,7 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
                 monthName={monthName}
                 students={run.studentCount}
                 invoices={keptLines}
-                total={formatMAD(run.totalExpected)}
+                total={formatMAD(run.totalExpected, locale)}
                 pending={counts.pending}
                 dropped={counts.dropped}
                 paused={counts.paused}
@@ -104,7 +106,7 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
           label={R.campaigns}
           options={runs.map((item) => ({
             value: item.id,
-            label: `${R.month(formatMonth(isoDate(item.year, item.month, 1)))} · ${R.status[item.status]}`,
+            label: `${R.month(formatMonth(isoDate(item.year, item.month, 1), locale))} · ${R.status[item.status]}`,
           }))}
           current={run.id}
           href={(value) => (value ? `${basePath}?campagne=${value}` : basePath)}
@@ -172,10 +174,10 @@ export async function CampaignView({ page, todayIso, basePath, fileBase, setting
                   </a>
                   <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption">
                     {student.overdueAmount > 0 ? (
-                      <span className="font-medium text-danger-ink">{R.risk.overdue(formatMAD(student.overdueAmount))}</span>
+                      <span className="font-medium text-danger-ink">{R.risk.overdue(formatMAD(student.overdueAmount, locale))}</span>
                     ) : null}
                     {student.lowAttendance && student.attendanceRate !== null ? (
-                      <span className="font-medium text-warning-ink">{R.risk.attendance(formatPercent(student.attendanceRate))}</span>
+                      <span className="font-medium text-warning-ink">{R.risk.attendance(formatPercent(student.attendanceRate, locale))}</span>
                     ) : null}
                     <span className="text-muted-foreground">{R.intent[student.intent]}</span>
                   </span>

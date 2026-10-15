@@ -39,16 +39,18 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import type { ActionResult } from "@/lib/actions/result";
 import {
+  reactivateCenter,
   recordSubscriptionPayment,
   resendInvitation,
+  suspendCenter,
   updateCenterDetails,
   updateCenterDueDate,
   updateCenterPricing,
   updateCenterStatus,
 } from "@/lib/actions/platform";
 import { startSupport } from "@/lib/actions/support";
-import { LABELS } from "@/lib/constants/labels";
 import type { BillingInterval, CenterStatus, CenterTypeOption, PlanOption } from "@/lib/data/platform";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import {
   type CenterDetailsInput,
   centerDetailsSchema,
@@ -59,13 +61,15 @@ import {
   type CustomTermsInput,
   type DueDateInput,
   dueDateSchema,
+  type ReactivateCenterInput,
+  reactivateCenterSchema,
+  SUSPENSION_KINDS,
+  type SuspendCenterInput,
+  suspendCenterSchema,
+  SUBSCRIPTION_PAYMENT_METHODS,
   type SubscriptionPaymentInput,
   subscriptionPaymentSchema,
 } from "@/lib/validation/platform";
-
-const P = LABELS.platform;
-const A = P.actions;
-const N = P.newCenter;
 
 /** Données de la fiche nécessaires aux formulaires. */
 export type CenterActionsData = {
@@ -102,6 +106,12 @@ type ActionDialogProps = {
   submitLabel?: string;
   onSubmit: () => void;
   children: ReactNode;
+  /** Nom accessible du bouton d'ouverture (ligne d'un tableau). */
+  triggerLabel?: string;
+  /** Bouton d'ouverture réduit à son icône (nom accessible et infobulle : triggerLabel). */
+  triggerIconOnly?: boolean;
+  /** Validation impossible tant qu'une condition manque (ex. nom retapé). */
+  submitDisabled?: boolean;
 };
 
 function ActionDialog({
@@ -113,16 +123,21 @@ function ActionDialog({
   open,
   onOpenChange,
   pending,
-  submitLabel = A.save,
+  submitLabel,
   onSubmit,
   children,
+  triggerLabel,
+  triggerIconOnly = false,
+  submitDisabled = false,
 }: ActionDialogProps) {
+  const LABELS = useLabels();
+  const A = LABELS.platform.actions;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button variant={variant}>
+        <Button variant={variant} size={triggerIconOnly ? "icon" : "default"} aria-label={triggerLabel} title={triggerIconOnly ? triggerLabel : undefined}>
           <Icon aria-hidden />
-          {trigger}
+          {triggerIconOnly ? null : trigger}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
@@ -143,9 +158,9 @@ function ActionDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
               {LABELS.common.cancel}
             </Button>
-            <Button type="submit" variant={variant === "destructive" ? "destructive" : "default"} disabled={pending}>
+            <Button type="submit" variant={variant === "destructive" ? "destructive" : "default"} disabled={pending || submitDisabled}>
               {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : null}
-              {pending ? A.saving : submitLabel}
+              {pending ? A.saving : (submitLabel ?? A.save)}
             </Button>
           </DialogFooter>
         </form>
@@ -156,13 +171,14 @@ function ActionDialog({
 
 /** Ouverture, envoi et retour d'une action : toast, fermeture, erreurs de champs. */
 function useAction<T>(action: (input: T) => Promise<ActionResult>, successMessage: string) {
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const run = (values: T, onFieldErrors?: (errors: Record<string, string>) => void) =>
     startTransition(async () => {
       const result = await action(values);
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(message(result.error));
         if (result.fieldErrors) onFieldErrors?.(result.fieldErrors);
         return;
       }
@@ -175,7 +191,28 @@ function useAction<T>(action: (input: T) => Promise<ActionResult>, successMessag
 // ---------------------------------------------------------------------
 // Paiement
 // ---------------------------------------------------------------------
-function PaymentDialog({ data }: { data: CenterActionsData }) {
+type PaymentDialogData = Pick<CenterActionsData, "centerId" | "price" | "billingInterval" | "todayIso">;
+
+/**
+ * Paiement reçu : montant, date, mode, référence, note. Met à jour l'échéance
+ * et l'historique, journalisé. Fiche du centre ou ligne de la liste (compact).
+ */
+export function RecordPaymentDialog({
+  data,
+  compact,
+  iconOnly,
+  centerName,
+}: {
+  data: PaymentDialogData;
+  compact?: boolean;
+  /** Bouton réduit à l'icône (tableau des centres). */
+  iconOnly?: boolean;
+  centerName?: string;
+}) {
+  const LABELS = useLabels();
+  const P = LABELS.platform;
+  const A = P.actions;
+  const C = LABELS.platformConsole;
   const { open, setOpen, pending, run } = useAction(recordSubscriptionPayment, A.paymentSaved);
   const defaults: SubscriptionPaymentInput = {
     centerId: data.centerId,
@@ -183,16 +220,19 @@ function PaymentDialog({ data }: { data: CenterActionsData }) {
     paidAt: data.todayIso,
     method: "bank_transfer",
     reference: "",
+    note: "",
   };
   const form = useForm<SubscriptionPaymentInput>({ resolver: zodResolver(subscriptionPaymentSchema), defaultValues: defaults });
   const errors = form.formState.errors;
 
   return (
     <ActionDialog
-      trigger={A.recordPayment}
+      trigger={compact ? C.centers.record : A.recordPayment}
+      triggerLabel={compact && centerName ? C.centers.recordFor(centerName) : undefined}
+      triggerIconOnly={iconOnly}
       icon={Wallet}
-      variant="default"
-      title={A.paymentTitle}
+      variant={compact ? "outline" : "default"}
+      title={centerName ? C.centers.recordFor(centerName) : A.paymentTitle}
       description={A.paymentDescription(data.billingInterval === "year" ? A.periodYear : A.periodMonth)}
       open={open}
       onOpenChange={(next) => {
@@ -216,8 +256,8 @@ function PaymentDialog({ data }: { data: CenterActionsData }) {
           control={form.control}
           name="method"
           render={({ field }) => (
-            <RadioGroup value={field.value} onValueChange={field.onChange} className="sm:grid-cols-3">
-              {(["bank_transfer", "cash", "card"] as const).map((method) => (
+            <RadioGroup value={field.value} onValueChange={field.onChange} className="grid-cols-2 sm:grid-cols-4">
+              {SUBSCRIPTION_PAYMENT_METHODS.map((method) => (
                 <ChoiceItem key={method}>
                   <RadioGroupItem value={method} />
                   {P.paymentMethod[method]}
@@ -230,6 +270,9 @@ function PaymentDialog({ data }: { data: CenterActionsData }) {
       <FormField id="payment-reference" label={A.paymentReference} hint={A.paymentReferenceHint} error={errors.reference?.message}>
         <Input autoComplete="off" {...form.register("reference")} />
       </FormField>
+      <FormField id="payment-note" label={C.payment.note} hint={C.payment.noteHint} error={errors.note?.message}>
+        <Textarea rows={2} maxLength={500} {...form.register("note")} />
+      </FormField>
     </ActionDialog>
   );
 }
@@ -238,6 +281,7 @@ function PaymentDialog({ data }: { data: CenterActionsData }) {
 // Échéance
 // ---------------------------------------------------------------------
 function DueDateDialog({ data }: { data: CenterActionsData }) {
+  const A = useLabels().platform.actions;
   const { open, setOpen, pending, run } = useAction(updateCenterDueDate, A.saved);
   const defaults: DueDateInput = { centerId: data.centerId, dueDate: data.dueDate ?? data.todayIso, reason: "" };
   const form = useForm<DueDateInput>({ resolver: zodResolver(dueDateSchema), defaultValues: defaults });
@@ -271,6 +315,9 @@ function DueDateDialog({ data }: { data: CenterActionsData }) {
 // Pack et tarif
 // ---------------------------------------------------------------------
 function PricingDialog({ data }: { data: CenterActionsData }) {
+  const P = useLabels().platform;
+  const A = P.actions;
+  const N = P.newCenter;
   const { open, setOpen, pending, run } = useAction(updateCenterPricing, A.saved);
   const defaults: CenterPricingInput = {
     centerId: data.centerId,
@@ -336,11 +383,13 @@ function PricingDialog({ data }: { data: CenterActionsData }) {
 // Informations et vocabulaire
 // ---------------------------------------------------------------------
 function DetailsDialog({ data, types }: { data: CenterActionsData; types: CenterTypeOption[] }) {
+  const P = useLabels().platform;
+  const A = P.actions;
+  const N = P.newCenter;
   const { open, setOpen, pending, run } = useAction(updateCenterDetails, A.saved);
   const defaults: CenterDetailsInput = {
     centerId: data.centerId,
     name: data.name,
-    slug: data.slug,
     ownerName: data.ownerName,
     ownerPhone: data.ownerPhone,
     ownerEmail: data.ownerEmail,
@@ -369,19 +418,10 @@ function DetailsDialog({ data, types }: { data: CenterActionsData; types: Center
         if (next) form.reset(defaults);
       }}
       pending={pending}
-      onSubmit={() =>
-        void form.handleSubmit((values) =>
-          run(values, (fieldErrors) => {
-            if (fieldErrors.slug) form.setError("slug", { message: fieldErrors.slug });
-          }),
-        )()
-      }
+      onSubmit={() => void form.handleSubmit((values) => run(values))()}
     >
       <FormField id="details-name" label={N.name} error={errors.name?.message}>
         <Input autoComplete="off" {...form.register("name")} />
-      </FormField>
-      <FormField id="details-slug" label={N.slug} hint={N.slugHint} error={errors.slug?.message}>
-        <Input autoComplete="off" autoCapitalize="none" {...form.register("slug")} />
       </FormField>
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField id="details-owner" label={N.ownerName} error={errors.ownerName?.message}>
@@ -421,27 +461,29 @@ function DetailsDialog({ data, types }: { data: CenterActionsData; types: Center
 // ---------------------------------------------------------------------
 type ManualStatus = CenterStatusInput["status"];
 
-const STATUS_ACTION: Record<ManualStatus, { trigger: string; icon: LucideIcon; variant: "outline" | "destructive" }> = {
-  active: { trigger: A.reactivate, icon: CircleCheck, variant: "outline" },
-  suspended: { trigger: A.suspend, icon: PauseCircle, variant: "outline" },
-  cancelled: { trigger: A.cancel, icon: Ban, variant: "destructive" },
+const STATUS_ACTION: Record<ManualStatus, { trigger: "reactivate" | "suspend" | "cancel"; icon: LucideIcon; variant: "outline" | "destructive" }> = {
+  active: { trigger: "reactivate", icon: CircleCheck, variant: "outline" },
+  suspended: { trigger: "suspend", icon: PauseCircle, variant: "outline" },
+  cancelled: { trigger: "cancel", icon: Ban, variant: "destructive" },
 };
 
 function StatusDialog({ centerId, status }: { centerId: string; status: ManualStatus }) {
+  const A = useLabels().platform.actions;
   const { open, setOpen, pending, run } = useAction(updateCenterStatus, A.statusSaved[status]);
   const defaults: CenterStatusInput = { centerId, status, reason: "" };
   const form = useForm<CenterStatusInput>({ resolver: zodResolver(centerStatusSchema), defaultValues: defaults });
   const error = form.formState.errors.reason?.message;
   const config = STATUS_ACTION[status];
+  const trigger = A[config.trigger];
 
   return (
     <ActionDialog
-      trigger={config.trigger}
+      trigger={trigger}
       icon={config.icon}
       variant={config.variant}
       title={A.statusTitle[status]}
       description={A.statusDescription[status]}
-      submitLabel={config.trigger}
+      submitLabel={trigger}
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
@@ -458,9 +500,125 @@ function StatusDialog({ centerId, status }: { centerId: string; status: ManualSt
 }
 
 // ---------------------------------------------------------------------
+// Suspendre / réactiver l'accès
+// ---------------------------------------------------------------------
+/** Nom retapé : même comparaison que la base (casse et espaces ignorés). */
+export function sameCenterName(typed: string, name: string): boolean {
+  return typed.trim().toLocaleLowerCase("fr") === name.trim().toLocaleLowerCase("fr");
+}
+
+function SuspendDialog({ centerId, name }: { centerId: string; name: string }) {
+  const LABELS = useLabels();
+  const S = LABELS.platformConsole.access;
+  const message = useMessage();
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const defaults: SuspendCenterInput = { centerId, kind: "unpaid", note: "", confirmName: "" };
+  const form = useForm<SuspendCenterInput>({ resolver: zodResolver(suspendCenterSchema), defaultValues: defaults });
+  const errors = form.formState.errors;
+  const kind = useWatch({ control: form.control, name: "kind" });
+  const typed = useWatch({ control: form.control, name: "confirmName" });
+  const matches = sameCenterName(typed ?? "", name);
+
+  return (
+    <ActionDialog
+      trigger={S.suspend}
+      icon={PauseCircle}
+      variant="destructive"
+      title={S.suspendTitle}
+      description={S.suspendDescription}
+      submitLabel={S.suspend}
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) form.reset(defaults);
+      }}
+      pending={pending}
+      submitDisabled={!matches}
+      onSubmit={() =>
+        void form.handleSubmit((values) =>
+          startTransition(async () => {
+            const result = await suspendCenter(values);
+            if (!result.ok) {
+              toast.error(message(result.error));
+              return;
+            }
+            toast.success(S.suspended(result.data?.signedOut ?? 0));
+            setOpen(false);
+          }),
+        )()
+      }
+    >
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-body font-medium">{S.kindLegend}</legend>
+        <Controller
+          control={form.control}
+          name="kind"
+          render={({ field }) => (
+            <RadioGroup value={field.value} onValueChange={field.onChange} className="sm:grid-cols-2">
+              {SUSPENSION_KINDS.map((value) => (
+                <ChoiceItem key={value}>
+                  <RadioGroupItem value={value} />
+                  {S.kinds[value]}
+                </ChoiceItem>
+              ))}
+            </RadioGroup>
+          )}
+        />
+        {errors.kind ? <p className="text-caption text-danger-ink">{S.kindRequired}</p> : null}
+      </fieldset>
+      <FormField id="suspend-note" label={kind === "other" ? S.note : S.noteOptional} error={errors.note ? S.noteRequired : undefined}>
+        <Textarea rows={2} maxLength={300} placeholder={S.notePlaceholder} {...form.register("note")} />
+      </FormField>
+      <FormField
+        id="suspend-confirm"
+        label={S.confirmName(name)}
+        error={typed && !matches ? S.confirmMismatch : errors.confirmName?.message}
+      >
+        <Input autoComplete="off" spellCheck={false} {...form.register("confirmName")} />
+      </FormField>
+    </ActionDialog>
+  );
+}
+
+function ReactivateDialog({ centerId }: { centerId: string }) {
+  const LABELS = useLabels();
+  const S = LABELS.platformConsole.access;
+  const A = LABELS.platform.actions;
+  const { open, setOpen, pending, run } = useAction(reactivateCenter, S.reactivated);
+  const defaults: ReactivateCenterInput = { centerId, note: "" };
+  const form = useForm<ReactivateCenterInput>({ resolver: zodResolver(reactivateCenterSchema), defaultValues: defaults });
+
+  return (
+    <ActionDialog
+      trigger={S.reactivate}
+      icon={CircleCheck}
+      variant="default"
+      title={S.reactivateTitle}
+      description={S.reactivateDescription}
+      submitLabel={S.reactivate}
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) form.reset(defaults);
+      }}
+      pending={pending}
+      onSubmit={() => void form.handleSubmit((values) => run(values))()}
+    >
+      <FormField id="reactivate-note" label={A.reasonOptional} error={form.formState.errors.note?.message}>
+        <Textarea rows={2} maxLength={300} {...form.register("note")} />
+      </FormField>
+    </ActionDialog>
+  );
+}
+
+// ---------------------------------------------------------------------
 // Accès support (lecture seule)
 // ---------------------------------------------------------------------
 function SupportDialog({ centerId }: { centerId: string }) {
+  const P = useLabels().platform;
+  const A = P.actions;
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [reason, setReason] = useState("");
@@ -490,7 +648,7 @@ function SupportDialog({ centerId }: { centerId: string }) {
         startTransition(async () => {
           // Succès : redirection vers l'espace administration du centre.
           const result = await startSupport({ centerId, reason });
-          if (result && !result.ok) toast.error(result.error);
+          if (result && !result.ok) toast.error(message(result.error));
         });
       }}
     >
@@ -528,14 +686,14 @@ export function CenterActions({ data, types }: { data: CenterActionsData; types:
   return (
     <div className="flex flex-wrap gap-2">
       <SupportDialog centerId={data.centerId} />
-      <PaymentDialog data={data} />
+      <RecordPaymentDialog data={data} />
       <DueDateDialog data={data} />
       <PricingDialog data={data} />
       <DetailsDialog data={data} types={types} />
       {data.status === "suspended" ? (
-        <StatusDialog centerId={data.centerId} status="active" />
+        <ReactivateDialog centerId={data.centerId} />
       ) : (
-        <StatusDialog centerId={data.centerId} status="suspended" />
+        <SuspendDialog centerId={data.centerId} name={data.name} />
       )}
       <StatusDialog centerId={data.centerId} status="cancelled" />
     </div>
@@ -556,6 +714,8 @@ export function ResendInvitationButton({
   email: string;
   signedIn: boolean;
 }) {
+  const A = useLabels().platform.actions;
+  const message = useMessage();
   const [pending, startTransition] = useTransition();
   const [link, setLink] = useState<string | null>(null);
   const label = signedIn ? A.passwordLink : A.resendInvitation;
@@ -569,7 +729,7 @@ export function ResendInvitationButton({
       onClick={() =>
         startTransition(async () => {
           const result = await resendInvitation({ centerId, userId });
-          if (!result.ok) toast.error(result.error);
+          if (!result.ok) toast.error(message(result.error));
           else if (result.data.link) setLink(result.data.link);
           else toast.success(result.data.passwordLink ? A.passwordLinkSent : A.invitationSent);
         })

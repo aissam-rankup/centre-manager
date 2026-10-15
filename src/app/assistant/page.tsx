@@ -1,6 +1,6 @@
 import { CircleCheckBig, UserCheck } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { AbsenceAlertsBlock } from "@/components/absences/absence-alerts";
 import { ContactButtons } from "@/components/assistant/contact-buttons";
@@ -16,6 +16,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StudentAvatar } from "@/components/shared/student-avatar";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireRole } from "@/lib/auth/session";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { getAbsenceAlertsSettings, getAbsencesToNotify } from "@/lib/data/absence-alerts";
 import { type AbsenceAlertItem, type FollowUpQueueItem, getAssistantDashboard } from "@/lib/data/assistant";
@@ -41,7 +42,8 @@ export default async function AssistantDashboardPage() {
   const tracking = profile.modules.includes("absence_tracking");
   const absences = tracking && absenceSettings.enabled ? await getAbsencesToNotify() : [];
   const absencesPending = absences.filter((item) => !item.notifiedAt).length;
-  const dateLabel = formatDateWithWeekday(today());
+  const locale = await getAppLocale();
+  const dateLabel = formatDateWithWeekday(today(), locale);
 
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_260px] lg:items-start">
@@ -55,11 +57,11 @@ export default async function AssistantDashboardPage() {
             <StatTile
               value={stats.overdueCount}
               label={L.stats.overduePayments}
-              detail={L.stats.overduePaymentsDetail(LABELS.billing.studentsCount(stats.overdueStudents), formatMAD(stats.overdueAmount))}
+              detail={L.stats.overduePaymentsDetail(LABELS.billing.studentsCount(stats.overdueStudents), formatMAD(stats.overdueAmount, locale))}
               links={[{ href: "#relances", label: D.detail }]}
             />
             <StatTile
-              value={formatMAD(monthUnpaid.amount)}
+              value={formatMAD(monthUnpaid.amount, locale)}
               label={L.stats.monthUnpaid}
               detail={L.stats.monthUnpaidDetail(monthUnpaid.count)}
               links={[{ href: ROUTES.assistant.students, label: D.detail }]}
@@ -146,7 +148,7 @@ export default async function AssistantDashboardPage() {
                 <ProgressTile
                   key={subject.subjectId}
                   index={index}
-                  ring={<ProgressRing value={subject.rate} caption={D.presence.ring} />}
+                  ring={<ProgressRing value={subject.rate} caption={D.presence.ring} locale={locale} />}
                   title={subject.subjectName}
                   description={D.presence.detail(subject.levelName, subject.students)}
                 />

@@ -8,6 +8,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { AccessLinkDialog } from "@/components/platform/access-link-dialog";
+import { SlugPreview, useSlugAvailability } from "@/components/platform/center-address";
 import { PlanChoice } from "@/components/platform/plan-choice";
 import { VocabularyPicker } from "@/components/platform/vocabulary-picker";
 import { ChoiceItem } from "@/components/shared/choice-item";
@@ -20,9 +21,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { createCenter } from "@/lib/actions/platform";
 import { ROUTES } from "@/lib/auth/routes";
 import { addBillingInterval } from "@/lib/billing-interval";
-import { LABELS } from "@/lib/constants/labels";
+import { addressFor } from "@/lib/center-host";
 import type { CenterTypeOption, PlanOption } from "@/lib/data/platform";
 import { formatDate, formatMAD } from "@/lib/format";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import {
   CUSTOM_CENTER_TYPE,
@@ -32,10 +34,6 @@ import {
   newCenterSchema,
   VOCABULARY_KEYS,
 } from "@/lib/validation/platform";
-
-const P = LABELS.platform;
-const L = P.newCenter;
-const STEP_COUNT = L.steps.length;
 
 /** « Centre Élan — Rabat » → « centre-elan-rabat » */
 function slugify(text: string): string {
@@ -54,9 +52,17 @@ type NewCenterFormProps = {
   plans: PlanOption[];
   /** Date du jour à Casablanca (AAAA-MM-JJ). */
   todayIso: string;
+  /** Motif de l'adresse d'un centre (« https://{slug}.<domaine racine> »). */
+  addressPattern: string;
 };
 
-export function NewCenterForm({ types, plans, todayIso }: NewCenterFormProps) {
+export function NewCenterForm({ types, plans, todayIso, addressPattern }: NewCenterFormProps) {
+  const LABELS = useLabels();
+  const locale = useLocale();
+  const P = LABELS.platform;
+  const L = P.newCenter;
+  const STEP_COUNT = L.steps.length;
+  const message = useMessage();
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -105,6 +111,8 @@ export function NewCenterForm({ types, plans, todayIso }: NewCenterFormProps) {
     name: ["billingInterval", "activationDate", "centerType", "plan", "price", "status", "name", "slug", "firstDueDate"],
   });
 
+  const slugAvailability = useSlugAvailability(slug, null);
+
   // Première échéance proposée : activation + la durée facturée, tant qu'elle n'a pas été modifiée à la main.
   useEffect(() => {
     if (!dueEdited && /^\d{4}-\d{2}-\d{2}$/.test(activationDate)) {
@@ -147,7 +155,15 @@ export function NewCenterForm({ types, plans, todayIso }: NewCenterFormProps) {
     // d'un champ imbriqué d'un Controller n'est pas remontée par trigger().
     if (step === 1 && !checkCustomTerms()) return;
     const valid = await trigger([...NEW_CENTER_STEP_FIELDS[step]]);
-    if (valid) goTo(Math.min(step + 1, STEP_COUNT - 1));
+    if (!valid) return;
+    // Adresse réservée ou déjà prise : vérifiée en direct, bloque l'étape.
+    if (step === 0 && slugAvailability !== "available") {
+      if (slugAvailability === "taken" || slugAvailability === "reserved" || slugAvailability === "invalid") {
+        setError("slug", { message: LABELS.centerAddress.status[slugAvailability] });
+      }
+      return;
+    }
+    goTo(Math.min(step + 1, STEP_COUNT - 1));
   };
 
   const submit = form.handleSubmit((values) => {
@@ -156,10 +172,10 @@ export function NewCenterForm({ types, plans, todayIso }: NewCenterFormProps) {
       const result = await createCenter(values);
       if (!result.ok) {
         setServerError(result.error);
-        for (const [field, message] of Object.entries(result.fieldErrors ?? {})) {
+        for (const [field, text] of Object.entries(result.fieldErrors ?? {})) {
           const known = NEW_CENTER_STEP_FIELDS.findIndex((fields) => (fields as readonly string[]).includes(field));
           if (known >= 0) {
-            setError(field as keyof NewCenterInput, { message });
+            setError(field as keyof NewCenterInput, { message: text });
             goTo(known);
           }
         }
@@ -225,9 +241,11 @@ export function NewCenterForm({ types, plans, todayIso }: NewCenterFormProps) {
                 <Input
                   autoComplete="off"
                   autoCapitalize="none"
+                  spellCheck={false}
                   {...register("slug", { onChange: () => setSlugEdited(true) })}
                 />
               </FormField>
+              <SlugPreview pattern={addressPattern} slug={slug} availability={slugAvailability} />
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField id="ownerName" label={`${L.ownerName} (${L.optional})`} error={errors.ownerName?.message}>
                   <Input autoComplete="off" {...register("ownerName")} />
@@ -356,11 +374,11 @@ export function NewCenterForm({ types, plans, todayIso }: NewCenterFormProps) {
                 </h3>
                 <dl className="grid gap-x-6 gap-y-2 text-caption sm:grid-cols-2">
                   <SummaryItem label={L.name}>{name}</SummaryItem>
-                  <SummaryItem label={L.slug}>{slug}</SummaryItem>
+                  <SummaryItem label={L.slug}>{addressFor(addressPattern, slug).replace(/^https?:\/\//, "")}</SummaryItem>
                   <SummaryItem label={L.typeLegend}>{typeLabel}</SummaryItem>
                   <SummaryItem label={L.plan}>{plans.find((option) => option.key === plan)?.name ?? "—"}</SummaryItem>
                   <SummaryItem label={L.price}>
-                    {Number.isFinite(priceValue) ? `${formatMAD(priceValue)} ${P.interval[billingInterval]}` : "—"}
+                    {Number.isFinite(priceValue) ? `${formatMAD(priceValue, locale)} ${P.interval[billingInterval]}` : "—"}
                   </SummaryItem>
                   <SummaryItem label={L.status}>{L.statusOptions[status]}</SummaryItem>
                   <SummaryItem label={L.activationDate}>{formatDate(activationDate)}</SummaryItem>
@@ -372,7 +390,7 @@ export function NewCenterForm({ types, plans, todayIso }: NewCenterFormProps) {
 
           {serverError ? (
             <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-              {serverError}
+              {message(serverError)}
             </p>
           ) : null}
         </CardContent>
@@ -409,6 +427,8 @@ function SummaryItem({ label, children }: { label: string; children: React.React
 }
 
 function Stepper({ current }: { current: number }) {
+  const L = useLabels().platform.newCenter;
+  const STEP_COUNT = L.steps.length;
   return (
     <ol className="flex items-center gap-2" aria-label={L.progress(current + 1, STEP_COUNT)}>
       {L.steps.map((label, index) => {
@@ -417,16 +437,16 @@ function Stepper({ current }: { current: number }) {
         return (
           <li key={label} className="flex flex-1 items-center gap-2" aria-current={active ? "step" : undefined}>
             <span
-              className={cn(
-                "numeric flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-caption",
+              className={`text-caption ${cn(
+                "numeric flex size-8 shrink-0 items-center justify-center rounded-full border-2",
                 done && "border-primary-soft bg-primary-soft text-primary",
                 active && "border-primary bg-primary text-primary-foreground",
                 !done && !active && "border-border bg-card text-muted-foreground",
-              )}
+              )}`}
             >
               {done ? <Check className="size-4" aria-hidden /> : index + 1}
             </span>
-            <span className={cn("hidden text-caption lg:inline", active ? "font-semibold" : "text-muted-foreground")}>
+            <span className={`hidden text-caption lg:inline ${active ? "font-semibold" : "text-muted-foreground"}`}>
               {label}
             </span>
             {index < STEP_COUNT - 1 ? (

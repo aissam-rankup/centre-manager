@@ -1,6 +1,6 @@
 import { ArrowLeft, UserX } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
@@ -13,7 +13,11 @@ import {
 } from "@/components/students/student-file-sections";
 import { StudentTabs } from "@/components/students/student-tabs";
 import { ReceiptsSection } from "@/components/receipts/receipts-section";
+import { getCenterFamilyLocale, getStudentMessageLocale } from "@/lib/data/family-locale";
 import { getStudentReceipts } from "@/lib/data/receipts";
+import { getStudentAccess } from "@/lib/data/student-access";
+import { FamilyLocaleSelect } from "@/components/students/family-locale-select";
+import { StudentAccessCard } from "@/components/students/student-access-card";
 import { AttendanceSheet } from "@/components/attendance/attendance-sheet";
 import { parseAttendanceFilters } from "@/lib/attendance";
 import { getAttendanceData } from "@/lib/data/attendance";
@@ -23,6 +27,7 @@ import { requireRole } from "@/lib/auth/session";
 import { getLabels } from "@/lib/i18n/server";
 import { getLevelOptions } from "@/lib/data/admin";
 import { getLevelsWithSubjects, getStudentFile } from "@/lib/data/assistant";
+import { StudentSuspension } from "@/components/students/student-suspension";
 import { toISODate, today } from "@/lib/format";
 
 import { EnrollmentsEditor, StudentAdminActions } from "./student-admin";
@@ -63,11 +68,16 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
   }
 
   const levelCatalog = catalog.find((level) => level.id === student.levelId);
-  const receipts = await getStudentReceipts(student.id);
+  const [receipts, access, ownLocale, centerLocale] = await Promise.all([
+    getStudentReceipts(student.id),
+    getStudentAccess(student.id),
+    getStudentMessageLocale(student.id),
+    getCenterFamilyLocale(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
-      <Button asChild variant="ghost" className="-ml-3 self-start">
+      <Button asChild variant="ghost" className="-ms-3 self-start">
         <Link href={ROUTES.admin.students}>
           <ArrowLeft aria-hidden />
           {L.back}
@@ -75,6 +85,10 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
       </Button>
 
       <StudentHeader student={student} actions={<StudentAdminActions student={student} levels={levels} />} />
+
+      <StudentSuspension studentId={student.id} studentName={student.fullName} suspension={student.suspension} readOnly={Boolean(profile.support)} />
+
+      <FamilyLocaleSelect studentId={student.id} value={ownLocale} centerLocale={centerLocale} readOnly={Boolean(profile.support)} />
 
       <EnrollmentsEditor
         studentId={student.id}
@@ -94,6 +108,17 @@ export default async function AdminStudentPage({ params, searchParams }: PagePro
             ...(levelCatalog?.subjects ?? []).map((subject) => ({ value: `subject:${subject.id}`, label: subject.name })),
             ...(levelCatalog?.packs ?? []).map((pack) => ({ value: `pack:${pack.id}`, label: LABELS.packs.label(pack.name) })),
           ]}
+        />
+      ) : null}
+
+      {access ? (
+        <StudentAccessCard
+          studentId={student.id}
+          studentName={student.fullName}
+          guardianPhone={student.guardianPhone}
+          access={access}
+          familyLocale={ownLocale ?? centerLocale}
+          readOnly={Boolean(profile.support)}
         />
       ) : null}
 

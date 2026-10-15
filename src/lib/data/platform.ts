@@ -3,6 +3,8 @@ import "server-only";
 import { z } from "zod";
 
 import { requireSuperAdmin } from "@/lib/auth/session";
+import { cleanupExpiredExports } from "@/lib/exports/generate";
+import { getLabels } from "@/lib/i18n/server";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { type CustomTermsInput, customTermsSchema } from "@/lib/validation/platform";
@@ -87,26 +89,48 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
   return data;
 }
 
+/**
+ * Libellés à clé fixe (types d'établissement, modules) dans la langue de l'utilisateur ;
+ * le texte lu en base sert de repli pour une clé inconnue.
+ */
+async function catalogueNames() {
+  const P = (await getLabels()).platform;
+  return {
+    centerType: (code: string, fallback: string) => P.centerTypeNames[code] ?? fallback,
+    module: <T extends { name: string; description: string }>(key: string, row: T): T => {
+      const known = P.moduleCatalogue[key];
+      return known ? { ...row, name: known.name, description: known.description } : row;
+    },
+  };
+}
+
 export async function getPlatformCenters(): Promise<PlatformCenterRow[]> {
   const supabase = await platformClient();
-  const { data, error } = await supabase.rpc("platform_centers");
+  const [{ data, error }, names] = await Promise.all([supabase.rpc("platform_centers"), catalogueNames()]);
   if (error) throw error;
-  return data;
+  return data.map((row) => ({ ...row, center_type_label: names.centerType(row.center_type, row.center_type_label) }));
 }
 
 export type CenterTypeOption = { code: string; label: string; isCustom: boolean; terms: CustomTermsInput };
 
 export async function getCenterTypes(): Promise<CenterTypeOption[]> {
   const supabase = await platformClient();
-  const { data, error } = await supabase.from("center_types").select("code, label, is_custom, terms").order("sort_order");
+  const [{ data, error }, names] = await Promise.all([
+    supabase.from("center_types").select("code, label, is_custom, terms").order("sort_order"),
+    catalogueNames(),
+  ]);
   if (error) throw error;
   return data.map((row) => ({
     code: row.code,
-    label: row.label,
+    label: names.centerType(row.code, row.label),
     isCustom: row.is_custom,
     terms: customTermsSchema.parse(row.terms),
   }));
 }
+
+export type CenterOverview = Fn<"platform_center_overview">[number];
+export type CenterPaymentTotal = Fn<"platform_center_payment_totals">[number];
+export type CenterDeletion = Fn<"platform_center_deletion">[number];
 
 export type PlatformCenterFile = {
   center: PlatformCenter;
@@ -114,29 +138,59 @@ export type PlatformCenterFile = {
   events: PlatformEvent[];
   payments: PlatformPayment[];
   modules: CenterModule[];
+  /** Compteurs (aucun détail financier interne du centre) et suspension en cours. */
+  overview: CenterOverview | null;
+  totals: CenterPaymentTotal[];
+  /** Suppression définitive : demande en cours ou purge effectuée. */
+  deletion: CenterDeletion | null;
 };
+
+export type PlatformCenterAdmin = Fn<"platform_center_admins">[number];
+
+/** Administrateurs d'un centre (console) : contact et dernière réinitialisation du mot de passe. */
+export async function getPlatformCenterAdmins(centerId: string): Promise<PlatformCenterAdmin[]> {
+  await requireSuperAdmin();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("platform_center_admins", { p_center_id: centerId });
+  if (error) throw error;
+  return data;
+}
 
 export async function getPlatformCenterFile(centerId: string): Promise<PlatformCenterFile | null> {
   const supabase = await platformClient();
-  const [center, users, events, payments, modules] = await Promise.all([
+  const [center, users, events, payments, modules, overview, totals, deletion] = await Promise.all([
     supabase.rpc("platform_center", { p_center_id: centerId }).maybeSingle(),
     supabase.rpc("platform_center_users", { p_center_id: centerId }),
     supabase.rpc("platform_center_events", { p_center_id: centerId }),
     supabase.rpc("platform_payments", { p_center_id: centerId }),
     supabase.rpc("platform_center_modules", { p_center_id: centerId }),
+    supabase.rpc("platform_center_overview", { p_center_id: centerId }).maybeSingle(),
+    supabase.rpc("platform_center_payment_totals", { p_center_id: centerId }),
+    supabase.rpc("platform_center_deletion", { p_center_id: centerId }).maybeSingle(),
   ]);
+  if (deletion.error) throw deletion.error;
+  if (overview.error) throw overview.error;
+  if (totals.error) throw totals.error;
   if (center.error) throw center.error;
   if (users.error) throw users.error;
   if (events.error) throw events.error;
   if (payments.error) throw payments.error;
   if (modules.error) throw modules.error;
   if (!center.data) return null;
+  const names = await catalogueNames();
   return {
-    center: { ...center.data, branding: brandingSchema.parse(center.data.branding) },
+    center: {
+      ...center.data,
+      center_type_label: names.centerType(center.data.center_type, center.data.center_type_label),
+      branding: brandingSchema.parse(center.data.branding),
+    },
     users: users.data,
     events: events.data,
     payments: payments.data,
-    modules: modules.data,
+    modules: modules.data.map((row) => names.module(row.module_key, row)),
+    overview: overview.data,
+    totals: totals.data,
+    deletion: deletion.data,
   };
 }
 
@@ -155,10 +209,10 @@ export type PlatformCatalogue = { plans: PlatformPlan[]; modules: PlatformModule
 /** Catalogue : packs (prix, modules inclus) et modules activables. */
 export async function getPlatformCatalogue(): Promise<PlatformCatalogue> {
   const supabase = await platformClient();
-  const [plans, modules] = await Promise.all([supabase.rpc("platform_plans"), supabase.rpc("platform_modules")]);
+  const [plans, modules, names] = await Promise.all([supabase.rpc("platform_plans"), supabase.rpc("platform_modules"), catalogueNames()]);
   if (plans.error) throw plans.error;
   if (modules.error) throw modules.error;
-  return { plans: plans.data, modules: modules.data };
+  return { plans: plans.data, modules: modules.data.map((row) => names.module(row.key, row)) };
 }
 
 /** Packs proposés à la création d'un centre et au changement de pack. */
@@ -172,4 +226,118 @@ export async function getPlanOptions(): Promise<PlanOption[]> {
     description: plan.description,
     monthlyPrice: Number(plan.monthly_price),
   }));
+}
+
+// ---------------------------------------------------------------------
+// Revenus, état de paiement, journal (calculs faits par la base)
+// ---------------------------------------------------------------------
+export type RevenueKpi = Fn<"platform_revenue_kpis">[number];
+export type RevenueSummary = Fn<"platform_revenue_summary">[number];
+export type RevenueByPlan = Fn<"platform_revenue_by_plan">[number];
+export type CenterBillingRow = Fn<"platform_centers_billing">[number] & { center_type: string; center_type_label: string };
+export type AuditEvent = Fn<"platform_audit_log">[number];
+
+/** Période demandée au tableau de bord (voir lib/platform-period). */
+export type RevenueSelection =
+  | { kind: "month" | "quarter" | "year"; anchor: string }
+  | { kind: "custom"; start: string; end: string };
+
+export type PlatformRevenue = {
+  kpis: RevenueKpi[];
+  selected: RevenueSummary;
+  byPlan: RevenueByPlan[];
+  months: BillingMonth[];
+};
+
+export async function getPlatformRevenue(selection: RevenueSelection): Promise<PlatformRevenue> {
+  const supabase = await platformClient();
+  const summary = await supabase
+    .rpc(
+      "platform_revenue_summary",
+      selection.kind === "custom"
+        ? { p_kind: "custom", p_start: selection.start, p_end: selection.end }
+        : { p_kind: selection.kind, p_anchor: selection.anchor },
+    )
+    .single();
+  if (summary.error) throw summary.error;
+  const [kpis, byPlan, months] = await Promise.all([
+    supabase.rpc("platform_revenue_kpis"),
+    supabase.rpc("platform_revenue_by_plan", { p_start: summary.data.period_start, p_end: summary.data.period_end }),
+    supabase.rpc("platform_billing_months"),
+  ]);
+  if (kpis.error) throw kpis.error;
+  if (byPlan.error) throw byPlan.error;
+  if (months.error) throw months.error;
+  return { kpis: kpis.data, selected: summary.data, byPlan: byPlan.data, months: months.data };
+}
+
+/** Centres et état de paiement (montant dû, retard, dernier paiement, élèves actifs). */
+export async function getCentersBilling(): Promise<CenterBillingRow[]> {
+  const supabase = await platformClient();
+  const [billing, centers, names] = await Promise.all([
+    supabase.rpc("platform_centers_billing"),
+    supabase.rpc("platform_centers"),
+    catalogueNames(),
+  ]);
+  if (billing.error) throw billing.error;
+  if (centers.error) throw centers.error;
+  const types = new Map(centers.data.map((row) => [row.center_id, row]));
+  return billing.data.map((row) => {
+    const center = types.get(row.center_id);
+    return {
+      ...row,
+      center_type: center?.center_type ?? "",
+      center_type_label: center ? names.centerType(center.center_type, center.center_type_label) : "",
+    };
+  });
+}
+
+export type AuditFilters = {
+  centerId: string | null;
+  action: string | null;
+  origin: "platform" | "center" | "automatic" | null;
+  from: string | null;
+  to: string | null;
+  page: number;
+};
+
+export const AUDIT_PAGE_SIZE = 50;
+
+export type AuditLog = { events: AuditEvent[]; total: number; actions: string[] };
+
+export async function getAuditLog(filters: AuditFilters): Promise<AuditLog> {
+  const supabase = await platformClient();
+  const [events, actions] = await Promise.all([
+    supabase.rpc("platform_audit_log", {
+      p_center_id: filters.centerId ?? undefined,
+      p_action: filters.action ?? undefined,
+      p_origin: filters.origin ?? undefined,
+      p_from: filters.from ?? undefined,
+      p_to: filters.to ?? undefined,
+      p_limit: AUDIT_PAGE_SIZE,
+      p_offset: (filters.page - 1) * AUDIT_PAGE_SIZE,
+    }),
+    supabase.rpc("platform_audit_actions"),
+  ]);
+  if (events.error) throw events.error;
+  if (actions.error) throw actions.error;
+  return {
+    events: events.data,
+    total: Number(events.data[0]?.total_count ?? 0),
+    actions: actions.data.map((row) => row.action),
+  };
+}
+
+// ---------------------------------------------------------------------
+// Exports des données d'un centre
+// ---------------------------------------------------------------------
+export type CenterExport = Fn<"platform_center_exports">[number];
+
+/** Exports d'un centre (liens expirés nettoyés au passage : fichiers supprimés). */
+export async function getCenterExports(centerId: string): Promise<CenterExport[]> {
+  const supabase = await platformClient();
+  await cleanupExpiredExports().catch(() => undefined);
+  const { data, error } = await supabase.rpc("platform_center_exports", { p_center_id: centerId });
+  if (error) throw error;
+  return data;
 }

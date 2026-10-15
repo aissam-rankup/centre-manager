@@ -3,13 +3,14 @@
 import { Tag } from "lucide-react";
 
 import { type DiscountSummary, discountBadgeLabel, discountScopeLabel } from "@/lib/discounts";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 /** Badge de remise : pastille orangée, icône étiquette, valeur et motif (« Remise 25 % — fratrie »). */
 export function DiscountBadge({ discount, className }: { discount: DiscountSummary; className?: string }) {
   const LABELS = useLabels();
-  const label = discountBadgeLabel(discount, LABELS);
+  const locale = useLocale();
+  const label = discountBadgeLabel(discount, LABELS, locale);
   const scope = discountScopeLabel(discount, LABELS);
 
   return (
@@ -37,6 +38,7 @@ export function DiscountBadges({
   className?: string;
 }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   if (discounts.length === 0) return null;
   const rest = discounts.length - max;
 
@@ -50,7 +52,7 @@ export function DiscountBadges({
           className="text-caption font-medium text-muted-foreground"
           title={discounts
             .slice(max)
-            .map((discount) => discountBadgeLabel(discount, LABELS))
+            .map((discount) => discountBadgeLabel(discount, LABELS, locale))
             .join(" · ")}
         >
           {LABELS.discounts.more(rest)}

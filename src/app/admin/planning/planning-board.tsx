@@ -22,7 +22,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { abandonSlotConflicts, saveSlot } from "@/lib/actions/admin";
 import type { PlanningData, PlanningSlot } from "@/lib/data/admin";
 import { today } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import { gridRange, isOverloaded, minutesToTime, PLANNING_AXES, type PlanningAxis, roomOpportunities } from "@/lib/planning-grid";
 import { toMinutes } from "@/lib/rooms";
 import type { SlotConflictReport } from "@/lib/schedule-conflicts";
@@ -382,6 +382,7 @@ function EntityChip({
 function SlotDialog({ data, slot, trigger }: { data: PlanningData; slot?: PlanningSlot; trigger: React.ReactElement }) {
   const LABELS = useLabels();
   const L = LABELS.admin.planning;
+  const message = useMessage();
   const [report, setReport] = useState<SlotConflictReport | null>(null);
   const { form, open, onOpenChange, onSubmit, pending, error } = useActionForm({
     schema: adminSchemas(LABELS).slotSchema,
@@ -434,7 +435,7 @@ function SlotDialog({ data, slot, trigger }: { data: PlanningData; slot?: Planni
       trigger={trigger}
       title={slot ? L.editSlot : L.newSlot}
       pending={pending}
-      error={report ? null : error}
+      error={report || !error ? null : message(error)}
       onSubmit={onSubmit}
     >
       <FormField id="slot-subject" label={L.subject} error={errors.subjectId?.message}>

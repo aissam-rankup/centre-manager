@@ -81,13 +81,13 @@ export function CampaignStudents({ runId, students, editable, issued, cancelled,
         </div>
         <label className="relative w-full lg:w-72">
           <span className="sr-only">{R.search}</span>
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={R.search}
-            className="h-11 pl-9 font-normal"
+            className="h-11 ps-9 font-normal"
           />
         </label>
       </div>

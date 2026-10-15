@@ -1,10 +1,11 @@
 "use client";
 
 import { Ellipsis, GraduationCap, LogOut, Search } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { usePathname, useSelectedLayoutSegment } from "next/navigation";
 import { type ReactNode, useTransition } from "react";
 
+import { Logo } from "@/components/brand/logo";
 import { findActiveHref, type NavItem } from "@/components/layout/nav-types";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { type ShellUser, UserMenu } from "@/components/layout/user-menu";
@@ -34,8 +35,10 @@ type AppShellProps = {
   notifications?: { items: NotificationItem[]; fileBase: string };
   /** Bandeaux permanents en haut de page (retard de paiement, mode support). */
   banners?: ReactNode;
-  /** Logo de la marque du centre (marque blanche) ; icône de la plateforme sinon. */
+  /** Logo de la marque du centre (marque blanche) ; symbole dirassty sinon. */
   logoUrl?: string | null;
+  /** Centre en marque blanche : ni symbole dirassty, ni mention « Propulsé par ». */
+  whiteLabel?: boolean;
   /** Entrée « Marque » (administrateur d'un centre en marque blanche). */
   brandingEditable?: boolean;
   /** Réinscription automatique activée (ou campagnes existantes) : entrée « Réinscriptions ». */
@@ -57,6 +60,7 @@ export function AppShell({
   notifications,
   banners,
   logoUrl = null,
+  whiteLabel = false,
   brandingEditable = false,
   reenrollment = false,
   children,
@@ -66,8 +70,13 @@ export function AppShell({
   const items = navigationFor(LABELS, { brandingEditable, reenrollment, modules })[space];
   const home = items[0]?.href ?? "/";
   const pathname = usePathname();
-  const activeHref = findActiveHref(items, pathname);
-  const sectionTitle = items.find((item) => item.href === activeHref)?.label ?? "";
+  // Titre : toutes les pages de l'espace, y compris celles masquées du menu
+  // (ex. Réinscriptions quand la réinscription automatique est coupée) ;
+  // sinon l'accueil, préfixe de toutes les adresses, donnait son titre.
+  const allItems = navigationFor(LABELS, { brandingEditable: true, reenrollment: true, modules })[space];
+  const pageHref = findActiveHref(allItems, pathname);
+  const activeHref = items.some((item) => item.href === pageHref) ? pageHref : null;
+  const sectionTitle = allItems.find((item) => item.href === pageHref)?.label ?? "";
   // Section de l'espace (« eleves », « rapports »… ; null pour l'accueil) : clé de l'entrée de page.
   const section = useSelectedLayoutSegment();
 
@@ -75,13 +84,22 @@ export function AppShell({
     <div className="min-h-dvh bg-background md:bg-app md:p-4 lg:p-8">
       <a
         href="#contenu"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-3 focus:shadow-raised"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-3 focus:shadow-raised"
       >
         {LABELS.common.skipToContent}
       </a>
 
       <div className="flex min-h-dvh bg-background md:h-[calc(100dvh-32px)] md:min-h-0 md:overflow-hidden md:rounded-4xl md:shadow-shell lg:h-[calc(100dvh-64px)]">
-        <Sidebar items={items} activeHref={activeHref} home={home} label={spaceLabel} withSignOut={Boolean(user)} logoUrl={logoUrl} />
+        <Sidebar
+          items={items}
+          activeHref={activeHref}
+          home={home}
+          label={spaceLabel}
+          withSignOut={Boolean(user)}
+          logoUrl={logoUrl}
+          whiteLabel={whiteLabel}
+          poweredBy={Boolean(user) && !whiteLabel && space !== "platform"}
+        />
 
         <div className="flex min-w-0 flex-1 flex-col">
           {banners}
@@ -135,12 +153,12 @@ function HeaderSearch({ action }: { action: string }) {
     <form action={action} role="search" className="md:flex md:flex-1 md:justify-center">
       <label className="relative flex h-9 w-full items-center md:w-[300px]">
         <span className="sr-only">{LABELS.nav.searchStudent}</span>
-        <Search className="pointer-events-none absolute left-3.5 size-3.5 text-subtle" aria-hidden />
+        <Search className="pointer-events-none absolute start-3.5 size-3.5 text-subtle" aria-hidden />
         <input
           type="search"
           name="q"
           placeholder={LABELS.nav.searchStudent}
-          className="h-full w-full rounded-full border border-border bg-card pr-4 pl-9 text-table text-foreground outline-none placeholder:text-caption placeholder:text-subtle focus-visible:border-primary"
+          className="h-full w-full rounded-full border border-border bg-card pe-4 ps-9 text-table text-foreground outline-none placeholder:text-caption placeholder:text-subtle focus-visible:border-primary"
         />
       </label>
     </form>
@@ -157,9 +175,12 @@ type SidebarProps = {
   label?: string;
   withSignOut: boolean;
   logoUrl: string | null;
+  whiteLabel: boolean;
+  /** Mention « Propulsé par dirassty » en bas de la barre. */
+  poweredBy: boolean;
 };
 
-function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl }: SidebarProps) {
+function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl, whiteLabel, poweredBy }: SidebarProps) {
   const LABELS = useLabels();
   const [pending, startTransition] = useTransition();
 
@@ -173,8 +194,10 @@ function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl }: Sideb
           // Logo du client (marque blanche) : image externe du bucket public, taille fixe.
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt="" className="size-10 rounded-lg bg-white object-contain p-1" />
-        ) : (
+        ) : whiteLabel ? (
           <GraduationCap className="size-6" aria-hidden />
+        ) : (
+          <Logo variant="mark" tone="white" height={36} priority />
         )}
       </Link>
 
@@ -188,22 +211,34 @@ function Sidebar({ items, activeHref, home, label, withSignOut, logoUrl }: Sideb
         ))}
       </nav>
 
-      {withSignOut ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => startTransition(() => signOut())}
-              aria-label={LABELS.common.signOut}
-              className="mt-auto flex size-10 shrink-0 items-center justify-center rounded-lg text-sidebar-muted transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            >
-              <LogOut className="size-5" aria-hidden />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">{LABELS.common.signOut}</TooltipContent>
-        </Tooltip>
-      ) : null}
+      <div className="mt-auto flex flex-col items-center gap-4">
+        {withSignOut ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => startTransition(() => signOut())}
+                aria-label={LABELS.common.signOut}
+                className="flex size-10 shrink-0 items-center justify-center rounded-lg text-sidebar-muted transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              >
+                <LogOut className="size-5" aria-hidden />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{LABELS.common.signOut}</TooltipContent>
+          </Tooltip>
+        ) : null}
+        {poweredBy ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={0} role="img" aria-label={LABELS.app.poweredBy} className="flex shrink-0 opacity-70">
+                <Logo variant="mark" tone="white" height={16} decorative />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="right">{LABELS.app.poweredBy}</TooltipContent>
+          </Tooltip>
+        ) : null}
+      </div>
     </aside>
   );
 }

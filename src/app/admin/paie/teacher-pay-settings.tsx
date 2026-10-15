@@ -1,6 +1,6 @@
 "use client";
 
-import { History, Pencil } from "lucide-react";
+import { History, Pencil, UserMinus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -9,15 +9,16 @@ import { FormField } from "@/components/shared/form-field";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { saveTeacherPay } from "@/lib/actions/payroll";
-import type { PayHistoryEntry, TeacherPaySettings } from "@/lib/data/payroll";
+import { saveStaffSalary, saveTeacherPay } from "@/lib/actions/payroll";
+import type { PayHistoryEntry, StaffSalarySettings, TeacherPaySettings } from "@/lib/data/payroll";
 import { formatDate, formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { formatRate, PAY_MODES, type PayMode } from "@/lib/payroll";
 import { cn } from "@/lib/utils";
 
 export function TeacherPaySettingsSection({ teachers, defaultFrom }: { teachers: TeacherPaySettings[]; defaultFrom: string }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const S = LABELS.payroll.settings;
 
   return (
@@ -28,10 +29,10 @@ export function TeacherPaySettingsSection({ teachers, defaultFrom }: { teachers:
           const summary =
             teacher.payMode === "fixed_salary"
               ? teacher.currentSalary !== null
-                ? S.current.salary(formatMAD(teacher.currentSalary))
+                ? S.current.salary(formatMAD(teacher.currentSalary, locale))
                 : S.current.none
               : teacher.payMode === "commission"
-                ? rated.map((subject) => `${subject.subject} (${subject.level}) ${formatRate(subject.currentRate ?? 0)}`).join(" · ") ||
+                ? rated.map((subject) => `${subject.subject} (${subject.level}) ${formatRate(subject.currentRate ?? 0, locale)}`).join(" · ") ||
                   S.current.none
                 : S.current.none;
           return (
@@ -72,8 +73,10 @@ function HistoryList({ entries, format }: { entries: PayHistoryEntry[]; format: 
 
 function TeacherPayDialog({ teacher, defaultFrom }: { teacher: TeacherPaySettings; defaultFrom: string }) {
   const LABELS = useLabels();
+  const locale = useLocale();
   const P = LABELS.payroll;
   const S = P.settings;
+  const message = useMessage();
   const initialRates = () =>
     Object.fromEntries(teacher.subjects.map((subject) => [subject.subjectId, subject.currentRate === null ? "" : String(subject.currentRate)]));
 
@@ -116,7 +119,7 @@ function TeacherPayDialog({ teacher, defaultFrom }: { teacher: TeacherPaySetting
     startTransition(async () => {
       const result = await saveTeacherPay({ teacherId: teacher.teacherId, payMode: mode, effectiveFrom: from, monthlyAmount, rates: parsedRates });
       if (!result.ok) {
-        setError(result.error);
+        setError(message(result.error));
         return;
       }
       toast.success(S.saved);
@@ -209,7 +212,7 @@ function TeacherPayDialog({ teacher, defaultFrom }: { teacher: TeacherPaySetting
               {teacher.salaryHistory.length > 0 ? (
                 <div className="flex flex-col gap-1">
                   <span className="text-caption font-medium">{P.modes.fixed_salary}</span>
-                  <HistoryList entries={teacher.salaryHistory} format={formatMAD} />
+                  <HistoryList entries={teacher.salaryHistory} format={(value) => formatMAD(value, locale)} />
                 </div>
               ) : null}
               {teacher.subjects
@@ -217,11 +220,138 @@ function TeacherPayDialog({ teacher, defaultFrom }: { teacher: TeacherPaySetting
                 .map((subject) => (
                   <div key={subject.subjectId} className="flex flex-col gap-1">
                     <span className="text-caption font-medium">{S.rateFor(subject.subject, subject.level)}</span>
-                    <HistoryList entries={subject.history} format={formatRate} />
+                    <HistoryList entries={subject.history} format={(value) => formatRate(value, locale)} />
                   </div>
                 ))}
             </div>
           ) : null}
+        </div>
+      ) : null}
+    </FormDialog>
+  );
+}
+
+/** Salaires des assistants et admins : salaire fixe à partir d'une date, ou hors paie. */
+export function StaffSalarySection({ members, defaultFrom }: { members: StaffSalarySettings[]; defaultFrom: string }) {
+  const LABELS = useLabels();
+  const locale = useLocale();
+  const S = LABELS.payroll.settings;
+  const T = LABELS.payroll.staff;
+
+  return (
+    <SectionCard id="salaires" title={T.title} description={T.description}>
+      <ul className="flex flex-col divide-y">
+        {members.map((member) => (
+          <li key={member.memberId} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 flex-col">
+              <span className="font-medium">{member.memberName}</span>
+              <span className="text-caption text-muted-foreground">{LABELS.roles[member.role]}</span>
+              <span className="text-caption text-muted-foreground">
+                {member.onPayroll
+                  ? member.currentSalary !== null
+                    ? S.current.salary(formatMAD(member.currentSalary, locale))
+                    : S.current.none
+                  : T.notOnPayroll}
+              </span>
+            </div>
+            <StaffSalaryDialog member={member} defaultFrom={defaultFrom} />
+          </li>
+        ))}
+      </ul>
+    </SectionCard>
+  );
+}
+
+function StaffSalaryDialog({ member, defaultFrom }: { member: StaffSalarySettings; defaultFrom: string }) {
+  const LABELS = useLabels();
+  const locale = useLocale();
+  const P = LABELS.payroll;
+  const S = P.settings;
+  const T = P.staff;
+  const message = useMessage();
+  const initialAmount = () => (member.onPayroll && member.currentSalary !== null ? String(member.currentSalary) : "");
+
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState(initialAmount);
+  const [from, setFrom] = useState(defaultFrom);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const [showHistory, setShowHistory] = useState(false);
+
+  const save = (monthlyAmount: number | null, done: string) => {
+    setError(null);
+    startTransition(async () => {
+      const result = await saveStaffSalary({ memberId: member.memberId, monthlyAmount, effectiveFrom: monthlyAmount === null ? null : from });
+      if (!result.ok) {
+        setError(message(result.error));
+        return;
+      }
+      toast.success(done);
+      setOpen(false);
+    });
+  };
+
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const monthlyAmount = Number(amount.replace(",", "."));
+    if (amount.trim() === "" || !Number.isFinite(monthlyAmount) || monthlyAmount < 0) {
+      setError(S.invalidAmount);
+      return;
+    }
+    save(monthlyAmount, S.saved);
+  };
+
+  return (
+    <FormDialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        if (value) {
+          setAmount(initialAmount());
+          setFrom(defaultFrom);
+          setError(null);
+          setShowHistory(false);
+        }
+      }}
+      title={T.dialogTitle(member.memberName)}
+      pending={pending}
+      error={error}
+      onSubmit={onSubmit}
+      trigger={
+        <Button variant="outline">
+          <Pencil aria-hidden />
+          {member.onPayroll ? S.edit : T.setSalary}
+        </Button>
+      }
+    >
+      <FormField id={`salaire-equipe-${member.memberId}`} label={S.monthlyAmount}>
+        <Input type="number" inputMode="decimal" min={0} step={100} value={amount} onChange={(event) => setAmount(event.target.value)} className="numeric font-normal" />
+      </FormField>
+      <FormField id={`effet-equipe-${member.memberId}`} label={S.effectiveFrom} hint={S.effectiveFromHint}>
+        <Input type="date" value={from} onChange={(event) => setFrom(event.target.value)} className="numeric font-normal" />
+      </FormField>
+
+      {member.salaryHistory.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <Button type="button" variant="ghost" className="self-start" onClick={() => setShowHistory((value) => !value)} aria-expanded={showHistory}>
+            <History aria-hidden />
+            {S.history}
+          </Button>
+          {showHistory ? (
+            <div className="rounded-xl bg-muted px-4 py-3">
+              <HistoryList entries={member.salaryHistory} format={(value) => formatMAD(value, locale)} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {member.onPayroll ? (
+        <div className="flex flex-col gap-1 border-t border-divider pt-3">
+          <Button type="button" variant="ghost" className="self-start text-danger-ink" disabled={pending} onClick={() => save(null, T.removed)}>
+            <UserMinus aria-hidden />
+            {T.remove}
+          </Button>
+          <p className="text-caption text-muted-foreground">{T.removeHint}</p>
         </div>
       ) : null}
     </FormDialog>

@@ -1,25 +1,26 @@
 import { ChevronLeft, ChevronRight, ShieldAlert, Users } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { requireModule, requireRole } from "@/lib/auth/session";
-import { getPayroll, getTeacherPaySettings } from "@/lib/data/payroll";
-import { toISODate, today } from "@/lib/format";
+import { getPayroll, getStaffSalarySettings, getTeacherPaySettings } from "@/lib/data/payroll";
+import { formatMonth, toISODate, today } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
-import { compareMonths, monthKey, monthLabel, parsePayrollMonth, type PayrollMonth, shiftMonth } from "@/lib/payroll";
+import { compareMonths, monthKey, parsePayrollMonth, type PayrollMonth, shiftMonth } from "@/lib/payroll";
 
 import { PayrollActions, PayrollBoard } from "./payroll-board";
-import { TeacherPaySettingsSection } from "./teacher-pay-settings";
+import { StaffSalarySection, TeacherPaySettingsSection } from "./teacher-pay-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getLabels()).payroll.title };
 }
 
-/** Paie des professeurs : un mois à la fois (jamais un mois à venir). */
+/** Paie de l'équipe (professeurs, assistants et admins salariés) : un mois à la fois (jamais un mois à venir). */
 export default async function PayrollPage({ searchParams }: PageProps<"/admin/paie">) {
   const LABELS = await getLabels();
   const P = LABELS.payroll;
@@ -36,8 +37,9 @@ export default async function PayrollPage({ searchParams }: PageProps<"/admin/pa
   const month = compareMonths(requested, current) > 0 ? current : requested;
   const isCurrent = compareMonths(month, current) === 0;
 
-  const [payroll, teachers] = await Promise.all([getPayroll(month), getTeacherPaySettings()]);
+  const [payroll, teachers, staff] = await Promise.all([getPayroll(month), getTeacherPaySettings(), getStaffSalarySettings()]);
   const href = (value: PayrollMonth) => `${ROUTES.admin.payroll}?mois=${monthKey(value)}`;
+  const monthName = formatMonth(`${monthKey(month)}-01`, await getAppLocale());
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,7 +51,7 @@ export default async function PayrollPage({ searchParams }: PageProps<"/admin/pa
             <ChevronLeft aria-hidden />
           </Link>
         </Button>
-        <span className="min-w-40 text-center font-semibold">{monthLabel(month)}</span>
+        <span className="min-w-40 text-center font-semibold">{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</span>
         {isCurrent ? (
           <Button variant="ghost" size="icon" disabled aria-label={P.nextMonth}>
             <ChevronRight aria-hidden />
@@ -75,6 +77,8 @@ export default async function PayrollPage({ searchParams }: PageProps<"/admin/pa
       {teachers.length > 0 ? (
         <TeacherPaySettingsSection teachers={teachers} defaultFrom={`${monthKey(month)}-01`} />
       ) : null}
+
+      {staff.length > 0 ? <StaffSalarySection members={staff} defaultFrom={`${monthKey(month)}-01`} /> : null}
     </div>
   );
 }

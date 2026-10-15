@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircle, TriangleAlert, UserRound } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { useId, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { setReenrollmentIntent } from "@/lib/actions/reenrollment";
 import { formatDate, formatDateTime, formatMAD, formatPercent } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 import { isLeaving, type ReenrollmentIntent, type ReviewStudent } from "@/lib/reenrollment";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +43,8 @@ type StudentIntentCardProps = {
 /** Un élève dans la revue : lignes du mois, risques, intention (reconduit, abandonne, en pause). */
 export function StudentIntentCard({ runId, student, editable, issued, cancelled, fileHref }: StudentIntentCardProps) {
   const LABELS = useLabels();
+  const locale = useLocale();
+  const message = useMessage();
   const R = LABELS.reenrollment.review;
   const [pending, startTransition] = useTransition();
   const [leaveChoice, setLeaveChoice] = useState<"dropped" | "paused" | null>(null);
@@ -75,7 +77,7 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
       });
       if (!result.ok) {
         if (onDone) setDialogError(result.error);
-        else toast.error(result.error);
+        else toast.error(message(result.error));
         return;
       }
       onDone?.();
@@ -99,13 +101,13 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
               {student.overdueAmount > 0 ? (
                 <span className="inline-flex items-center gap-1">
                   <TriangleAlert className="size-3.5" aria-hidden />
-                  {R.risk.overdue(formatMAD(student.overdueAmount))}
+                  {R.risk.overdue(formatMAD(student.overdueAmount, locale))}
                 </span>
               ) : null}
               {student.lowAttendance && student.attendanceRate !== null ? (
                 <span className="inline-flex items-center gap-1">
                   <TriangleAlert className="size-3.5" aria-hidden />
-                  {R.risk.attendance(formatPercent(student.attendanceRate))}
+                  {R.risk.attendance(formatPercent(student.attendanceRate, locale))}
                 </span>
               ) : null}
             </span>
@@ -148,11 +150,11 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className={cn("truncate font-medium", !kept && "text-muted-foreground", !kept && !cancelled && "line-through")}>
                       {line.name}
-                      {line.kind === "pack" ? <span className="ml-2 text-caption font-normal text-muted-foreground">{R.pack}</span> : null}
+                      {line.kind === "pack" ? <span className="ms-2 text-caption font-normal text-muted-foreground">{R.pack}</span> : null}
                     </span>
                     <span className="text-caption text-muted-foreground">
                       {cancelled ? null : kept ? R.due(formatDate(line.dueDate)) : R.lineRemoved}
-                      {kept && line.discountAmount > 0 ? ` · ${R.full} ${formatMAD(line.amountFull)} − ${formatMAD(line.discountAmount)}` : null}
+                      {kept && line.discountAmount > 0 ? ` · ${R.full} ${formatMAD(line.amountFull, locale)} − ${formatMAD(line.discountAmount, locale)}` : null}
                     </span>
                     {line.discountConflict && kept ? <span className="text-caption text-warning-ink">{R.conflict}</span> : null}
                   </div>
@@ -273,7 +275,7 @@ export function StudentIntentCard({ runId, student, editable, issued, cancelled,
             </label>
             {dialogError ? (
               <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-                {dialogError}
+                {message(dialogError)}
               </p>
             ) : null}
             <DialogFooter>

@@ -11,16 +11,18 @@ import { FormField } from "@/components/shared/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import { createClient } from "@/lib/supabase/client";
 
-const L = LABELS.welcome;
+// Messages de validation en français : affichés dans la langue de l'utilisateur par FormField.
+const V = LABELS.welcome;
 
 const passwordSchema = z
   .object({
-    password: z.string().min(8, L.tooShort).max(72, L.tooShort),
+    password: z.string().min(8, V.tooShort).max(72, V.tooShort),
     confirm: z.string(),
   })
-  .refine((values) => values.password === values.confirm, { message: L.mismatch, path: ["confirm"] });
+  .refine((values) => values.password === values.confirm, { message: V.mismatch, path: ["confirm"] });
 type PasswordInput = z.infer<typeof passwordSchema>;
 
 type LinkState = { status: "checking" } | { status: "invalid" } | { status: "ready"; email: string };
@@ -60,6 +62,7 @@ async function openSessionFromLink(): Promise<LinkState> {
 let linkPromise: Promise<LinkState> | null = null;
 
 export function WelcomeForm() {
+  const L = useLabels().welcome;
   const router = useRouter();
   const [link, setLink] = useState<LinkState>({ status: "checking" });
   const [serverError, setServerError] = useState<string | null>(null);

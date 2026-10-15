@@ -1,7 +1,7 @@
 import { MessageCircle, Phone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { toTelHref, toWhatsAppHref } from "@/lib/phone";
 
 type ContactButtonsProps = {
@@ -13,10 +13,11 @@ type ContactButtonsProps = {
 };
 
 /** Appeler ou écrire sur WhatsApp au responsable. Rien n'est affiché sans numéro valide. */
-export function ContactButtons({ phone, name, variant = "icon" }: ContactButtonsProps) {
+export async function ContactButtons({ phone, name, variant = "icon" }: ContactButtonsProps) {
   const tel = phone ? toTelHref(phone) : null;
   const whatsapp = phone ? toWhatsAppHref(phone) : null;
   if (!tel || !whatsapp) return null;
+  const LABELS = await getLabels();
 
   if (variant === "labeled") {
     return (

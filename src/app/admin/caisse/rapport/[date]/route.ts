@@ -2,9 +2,8 @@ import { renderToBuffer } from "@react-pdf/renderer";
 
 import { requireRole } from "@/lib/auth/session";
 import { getCashSessionSummary } from "@/lib/data/cash";
-import { getLabels } from "@/lib/i18n/server";
 import { CashReportPdf } from "@/lib/pdf/cash-report-pdf";
-import { getCenterPdfBrand } from "@/lib/pdf/center-brand";
+import { getStaffPdfContext } from "@/lib/pdf/center-brand";
 import { createClient } from "@/lib/supabase/server";
 
 /** « 2026-02-31 », « 0000-01-01 » : pas une date du calendrier (la base les refuserait). */
@@ -15,7 +14,7 @@ function isCalendarDate(value: string): boolean {
   return year >= 2000 && year <= 2100 && !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
-/** Rapport de caisse d'une journée, à la marque du centre (admin, hors mode support). */
+/** Rapport de caisse d'une journée, à la marque du centre (admin, hors mode support), dans la langue de l'utilisateur. */
 export async function GET(_request: Request, { params }: { params: Promise<{ date: string }> }) {
   const { date } = await params;
   if (!isCalendarDate(date)) return new Response(null, { status: 404 });
@@ -32,12 +31,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ dat
     .order("opened_at", { ascending: true });
   if (error) return new Response(null, { status: 500 });
 
-  const [LABELS, brand, sessions] = await Promise.all([
-    getLabels(),
-    getCenterPdfBrand(),
-    Promise.all(data.map((row) => getCashSessionSummary(row.id))),
-  ]);
-  const buffer = await renderToBuffer(CashReportPdf({ brand, labels: LABELS, date, sessions, generatedAt: new Date() }));
+  const [pdf, sessions] = await Promise.all([getStaffPdfContext(), Promise.all(data.map((row) => getCashSessionSummary(row.id)))]);
+  const buffer = await renderToBuffer(CashReportPdf({ ...pdf, date, sessions, generatedAt: new Date() }));
   return new Response(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",

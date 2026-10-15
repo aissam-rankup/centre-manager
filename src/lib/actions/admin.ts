@@ -115,13 +115,97 @@ export async function saveSubject(input: unknown): Promise<ActionResult> {
   return success();
 }
 
+export type SubjectDependencies = {
+  archived: boolean;
+  activeEnrollments: number;
+  pastEnrollments: number;
+  invoices: number;
+  attendance: number;
+  packs: number;
+  /** Packs proposés contenant la matière (empêchent l'archivage). */
+  activePacks: string[];
+  resources: number;
+  teachers: number;
+  slots: number;
+  rates: number;
+  discounts: number;
+};
+
+/** Ce qui lie une matière : historique (bloque la suppression) et liens détachables. */
+export async function getSubjectDependencies(subjectId: string): Promise<ActionResult<SubjectDependencies>> {
+  const LABELS = await getLabels();
+  if (!idSchema.safeParse(subjectId).success) return failure(LABELS.actions.errors.invalid);
+  const { supabase } = await admin();
+  const { data, error } = await supabase.rpc("subject_dependencies", { p_subject_id: subjectId });
+  if (error) return failure(await describeAdminError(error));
+  const deps = z
+    .object({
+      archived: z.boolean(),
+      active_enrollments: z.number(),
+      past_enrollments: z.number(),
+      invoices: z.number(),
+      attendance: z.number(),
+      packs: z.number(),
+      active_packs: z.array(z.string()),
+      resources: z.number(),
+      teachers: z.number(),
+      slots: z.number(),
+      rates: z.number(),
+      discounts: z.number(),
+    })
+    .safeParse(data);
+  if (!deps.success) return failure(LABELS.actions.errors.unexpected);
+  const d = deps.data;
+  return success({
+    archived: d.archived,
+    activeEnrollments: d.active_enrollments,
+    pastEnrollments: d.past_enrollments,
+    invoices: d.invoices,
+    attendance: d.attendance,
+    packs: d.packs,
+    activePacks: d.active_packs,
+    resources: d.resources,
+    teachers: d.teachers,
+    slots: d.slots,
+    rates: d.rates,
+    discounts: d.discounts,
+  });
+}
+
+/** Suppression définitive : seulement sans historique (sinon la base refuse et l'archivage est proposé). */
 export async function deleteSubject(subjectId: string): Promise<ActionResult> {
   const LABELS = await getLabels();
   if (!idSchema.safeParse(subjectId).success) return failure(LABELS.actions.errors.invalid);
   const { supabase } = await admin();
-  const { error } = await supabase.from("subjects").delete().eq("id", subjectId);
+  const { error } = await supabase.rpc("delete_subject", { p_subject_id: subjectId });
+  if (error) return failure(error.code === "23503" ? LABELS.admin.subjects.removal.hasHistory : await describeAdminError(error));
+  revalidateAdmin();
+  revalidatePath(ROUTES.teacher.home, "layout");
+  return success();
+}
+
+/** Archivage : hors des listes de choix, historique conservé ; créneaux retirés. */
+export async function archiveSubject(subjectId: string): Promise<ActionResult<{ slotsRemoved: number }>> {
+  const LABELS = await getLabels();
+  if (!idSchema.safeParse(subjectId).success) return failure(LABELS.actions.errors.invalid);
+  const { supabase } = await admin();
+  const { data, error } = await supabase.rpc("archive_subject", { p_subject_id: subjectId });
   if (error) return failure(await describeAdminError(error));
   revalidateAdmin();
+  revalidatePath(ROUTES.assistant.home, "layout");
+  revalidatePath(ROUTES.teacher.home, "layout");
+  return success({ slotsRemoved: data });
+}
+
+export async function unarchiveSubject(subjectId: string): Promise<ActionResult> {
+  const LABELS = await getLabels();
+  if (!idSchema.safeParse(subjectId).success) return failure(LABELS.actions.errors.invalid);
+  const { supabase } = await admin();
+  const { error } = await supabase.rpc("unarchive_subject", { p_subject_id: subjectId });
+  if (error) return failure(await describeAdminError(error));
+  revalidateAdmin();
+  revalidatePath(ROUTES.assistant.home, "layout");
+  revalidatePath(ROUTES.teacher.home, "layout");
   return success();
 }
 
@@ -484,7 +568,15 @@ export async function updateUser(input: unknown): Promise<ActionResult> {
       .eq("teacher_id", id);
     if (currentError) return failure(await describeAdminError(currentError));
 
-    const toRemove = current.filter((a) => !subjectIds.includes(a.subject_id)).map((a) => a.id);
+    // Matières archivées : absentes des cases à cocher, leurs affectations restent.
+    const { data: archived, error: archivedError } = await supabase
+      .from("subjects")
+      .select("id")
+      .in("id", current.map((a) => a.subject_id))
+      .not("archived_at", "is", null);
+    if (archivedError) return failure(await describeAdminError(archivedError));
+    const archivedIds = new Set(archived.map((subject) => subject.id));
+    const toRemove = current.filter((a) => !subjectIds.includes(a.subject_id) && !archivedIds.has(a.subject_id)).map((a) => a.id);
     const toAdd = subjectIds.filter((subjectId) => !current.some((a) => a.subject_id === subjectId));
 
     if (toRemove.length > 0) {
@@ -550,10 +642,15 @@ export async function deleteStudent(studentId: string): Promise<ActionResult> {
   if (!idSchema.safeParse(studentId).success) return failure(LABELS.actions.errors.invalid);
   const { supabase } = await admin();
 
-  const { data: student } = await supabase.from("students").select("photo_url").eq("id", studentId).maybeSingle();
+  const [{ data: student }, { data: access }] = await Promise.all([
+    supabase.from("students").select("photo_url").eq("id", studentId).maybeSingle(),
+    supabase.from("student_accounts").select("user_id").eq("student_id", studentId).maybeSingle(),
+  ]);
   const { error } = await supabase.from("students").delete().eq("id", studentId);
   if (error) return failure(await describeAdminError(error));
   if (student?.photo_url) await supabase.storage.from(PHOTO_BUCKET).remove([student.photo_url]);
+  // Accès élève : son compte de connexion disparaît avec la fiche (lu avant la suppression, sous la RLS).
+  if (access?.user_id) await createAdminClient().auth.admin.deleteUser(access.user_id);
 
   revalidateAdmin();
   revalidatePath(ROUTES.assistant.home, "layout");

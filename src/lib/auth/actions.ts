@@ -1,22 +1,26 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { centerLoginRedirect } from "@/lib/auth/center-login";
 import { destinationAfterLogin, ROUTES } from "@/lib/auth/routes";
 import { loginSchema } from "@/lib/auth/schemas";
-import { getHostCenter } from "@/lib/branding";
-import { CENTER_COOKIE } from "@/lib/hosts";
 import { LABELS } from "@/lib/constants/labels";
 import { createClient } from "@/lib/supabase/server";
 
-export type LoginResult = { error: string };
+/**
+ * Échec : message affichable. Succès ou changement d'adresse (autre centre,
+ * transfert depuis le domaine racine) : adresse à ouvrir par une navigation
+ * complète (le proxy résout l'adresse du centre à chaque requête ; le rendu
+ * interne d'une redirection de Server Action n'y passe pas).
+ */
+export type LoginResult = { error: string } | { location: string };
 
 const L = LABELS.auth.errors;
 
 /**
  * Connexion par email et mot de passe.
- * Succès : redirection vers la page demandée (si elle appartient au rôle) ou l'accueil du rôle.
+ * Succès : page demandée (si elle appartient au rôle) ou accueil du rôle.
  * Échec : message d'erreur affichable.
  */
 export async function signIn(input: unknown, next: string | null): Promise<LoginResult> {
@@ -43,19 +47,18 @@ export async function signIn(input: unknown, next: string | null): Promise<Login
     return { error: L.inactive };
   }
 
-  // Adresse d'un centre (sous-domaine ou domaine personnalisé) : seuls ses comptes s'y connectent.
-  // Centre seulement mémorisé par le navigateur (?centre=) : il est oublié, sans refus.
-  const hostCenter = await getHostCenter();
-  if (hostCenter && profile.center_id !== hostCenter.centerId) {
-    if (hostCenter.viaCookie) {
-      (await cookies()).delete(CENTER_COOKIE);
-    } else {
-      await supabase.auth.signOut();
-      return { error: L.wrongCenter };
-    }
-  }
+  // Adresse d'un centre : seuls ses comptes s'y connectent (sinon déconnexion et lien
+  // vers l'adresse de leur centre). Domaine racine : un compte de centre est envoyé
+  // vers l'adresse de son centre pour s'y connecter une fois.
+  const elsewhere = await centerLoginRedirect(supabase, {
+    accountCenterId: profile.center_id,
+    superAdmin: profile.role === "super_admin",
+    loginPath: ROUTES.login,
+    next,
+  });
+  if (elsewhere) return { location: elsewhere };
 
-  redirect(destinationAfterLogin(profile.role, next));
+  return { location: destinationAfterLogin(profile.role, next) };
 }
 
 /**

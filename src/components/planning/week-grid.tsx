@@ -68,7 +68,7 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
           {hours.map((minute) => (
             <span
               key={minute}
-              className="numeric absolute right-1 -translate-y-1/2 text-caption text-muted-foreground"
+              className="numeric absolute end-1 -translate-y-1/2 text-caption text-muted-foreground"
               style={{ top: (minute - range.start) * PX_PER_MINUTE }}
             >
               {minutesToTime(minute)}
@@ -115,7 +115,7 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
                     onClick={block.onAction}
                     aria-label={block.ariaLabel}
                     title={block.ariaLabel}
-                    className="absolute inset-x-0.5 flex flex-col items-start gap-1 overflow-hidden rounded-lg border-2 border-dashed border-success/60 bg-success/5 p-1.5 text-left transition-colors hover:bg-success/15"
+                    className="absolute inset-x-0.5 flex flex-col items-start gap-1 overflow-hidden rounded-lg border-2 border-dashed border-success/60 bg-success/5 p-1.5 text-start transition-colors hover:bg-success/15"
                     style={{ top: (block.start - range.start) * PX_PER_MINUTE + 1, height: (block.end - block.start) * PX_PER_MINUTE - 2 }}
                   >
                     <span className="line-clamp-2 text-caption leading-tight font-medium text-success-ink">{block.label}</span>
@@ -130,6 +130,9 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
                 const overloaded = isOverloaded(slot, rooms);
                 const capacity = rooms.get(slot.roomId)?.capacity ?? null;
                 const compact = (end - start) * PX_PER_MINUTE < 64;
+                // Cours côte à côte (même créneau) : carte étroite, une ligne par information.
+                // Cours trop chargé : détails sur une ligne, pour laisser la place à l'alerte.
+                const narrow = columns > 1;
                 const details = [
                   hidden === "level" ? null : slot.levelName,
                   hidden === "teacher" ? null : slot.teacherName,
@@ -148,7 +151,7 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
                       .filter(Boolean)
                       .join("\n")}
                     className={cn(
-                      "absolute flex touch-manipulation flex-col gap-0.5 overflow-hidden rounded-lg px-2 py-1.5 text-left text-white shadow-card transition-opacity select-none",
+                      "absolute flex touch-manipulation flex-col gap-0.5 overflow-hidden rounded-lg px-2 py-1.5 text-start text-white shadow-card transition-opacity select-none",
                       "cursor-grab focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none active:cursor-grabbing",
                       tones.get(slot.subjectId),
                       overloaded && "ring-2 ring-danger ring-offset-1 ring-offset-card",
@@ -161,15 +164,21 @@ export function WeekGrid({ slots, days, mobileDay, range, hidden, rooms, tones, 
                       width: `calc(${100 / columns}% - 4px)`,
                     }}
                   >
-                    <span className="numeric flex items-center gap-1 text-caption leading-tight font-medium">
-                      {pendingIds.has(slot.id) ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden /> : null}
-                      {LABELS.teacher.schedule.time(slot.startTime, slot.endTime)}
-                      {overloaded ? <TriangleAlert className="ml-auto size-3.5 shrink-0" aria-label={G.overloadedShort} /> : null}
+                    {/* Lignes à hauteur fixe (shrink-0) : ce qui dépasse est coupé en bas, jamais superposé. */}
+                    <span className="numeric flex shrink-0 items-center gap-1 text-caption leading-tight font-medium">
+                      {pendingIds.has(slot.id) ? <LoaderCircle className="size-3.5 shrink-0 animate-spin" aria-hidden /> : null}
+                      <span className="truncate whitespace-nowrap">{LABELS.teacher.schedule.time(slot.startTime, slot.endTime)}</span>
+                      {overloaded ? <TriangleAlert className="ms-auto size-3.5 shrink-0" aria-label={G.overloadedShort} /> : null}
                     </span>
-                    <span className="truncate text-table leading-tight font-semibold">{slot.subjectName}</span>
-                    {compact ? null : <span className="line-clamp-2 text-caption leading-tight text-white/85">{details.join(" · ")}</span>}
-                    {overloaded && !compact && capacity !== null ? (
-                      <span className="numeric truncate text-caption leading-tight font-semibold">{G.overloaded(slot.enrolled, capacity)}</span>
+                    <span className="shrink-0 truncate text-table leading-tight font-semibold">{slot.subjectName}</span>
+                    {compact ? null : (
+                      <span className={cn("shrink-0 text-caption leading-tight text-white/85", narrow || overloaded ? "line-clamp-1" : "line-clamp-2")}>
+                        {details.join(" · ")}
+                      </span>
+                    )}
+                    {/* Carte étroite : l'icône d'alerte suffit, la phrase reste dans l'infobulle. */}
+                    {overloaded && !compact && !narrow && capacity !== null ? (
+                      <span className="numeric shrink-0 truncate text-caption leading-tight font-semibold">{G.overloaded(slot.enrolled, capacity)}</span>
                     ) : null}
                   </button>
                 );

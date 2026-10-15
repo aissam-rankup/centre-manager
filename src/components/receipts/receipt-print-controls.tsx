@@ -38,7 +38,7 @@ export function ReceiptPrintControls({ receiptId, guardianPhone, autoPrint, back
   return (
     <div className="mx-auto mb-4 flex w-full max-w-[148mm] flex-wrap items-center gap-2 print:hidden">
       {backHref ? (
-        <Button asChild variant="ghost" className="-ml-3 mr-auto">
+        <Button asChild variant="ghost" className="-ms-3 me-auto">
           <a href={backHref}>
             <ArrowLeft aria-hidden />
             {L.back}

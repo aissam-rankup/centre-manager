@@ -18,6 +18,7 @@ import type { AbsenceToNotify } from "@/lib/absences";
 import { getAuthState } from "@/lib/auth/session";
 import type { AttendanceData } from "@/lib/data/attendance";
 import { formatDate, formatDateTime, formatDateWithWeekday, formatPercent, toISODate, today } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
 import { getLabels } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,7 @@ type AttendanceSheetProps = {
  */
 export async function AttendanceSheet({ data, filters, basePath, keep = {}, teacherScope = false }: AttendanceSheetProps) {
   const LABELS = await getLabels();
+  const locale = await getAppLocale();
   const state = await getAuthState();
   const detailed = state.status === "authenticated" && state.profile.modules.includes("absence_tracking");
   const L = LABELS.attendanceSheet;
@@ -87,7 +89,7 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
         <>
           <StatTiles>
             <StatTile value={summary.absences} label={L.totalAbsences} detail={L.periods[filters.period]} />
-            <StatTile value={summary.rate === null ? L.noRate : formatPercent(summary.rate)} label={L.rate} />
+            <StatTile value={summary.rate === null ? L.noRate : formatPercent(summary.rate, locale)} label={L.rate} />
             <StatTile value={summary.sessions} label={L.sessions} />
           </StatTiles>
 
@@ -99,13 +101,13 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="truncate font-medium text-heading">{subject.subjectName}</span>
                       <span className="numeric shrink-0 text-caption text-muted-foreground">
-                        {L.absencesCount(subject.absences)} · {subject.rate === null ? L.noRate : formatPercent(subject.rate)}
+                        {L.absencesCount(subject.absences)} · {subject.rate === null ? L.noRate : formatPercent(subject.rate, locale)}
                       </span>
                     </div>
                     <div
                       className="h-2 overflow-hidden rounded-full bg-muted"
                       role="img"
-                      aria-label={`${subject.subjectName} : ${L.rate} ${subject.rate === null ? L.noRate : formatPercent(subject.rate)}`}
+                      aria-label={`${subject.subjectName} : ${L.rate} ${subject.rate === null ? L.noRate : formatPercent(subject.rate, locale)}`}
                     >
                       <div
                         className={cn("h-full rounded-full", (subject.rate ?? 1) < 0.8 ? "bg-warning" : "bg-success")}
@@ -199,7 +201,7 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                         )}
                       </span>
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="font-medium text-heading first-letter:uppercase">{formatDateWithWeekday(absence.date)}</span>
+                        <span className="font-medium text-heading first-letter:uppercase">{formatDateWithWeekday(absence.date, locale)}</span>
                         <span className="text-caption text-muted-foreground">
                           {absence.startTime && absence.endTime ? `${absence.startTime} – ${absence.endTime}` : L.noTime} · {absence.subjectName}
                           {absence.teacherName ? ` · ${absence.teacherName}` : ""}
@@ -211,6 +213,28 @@ export async function AttendanceSheet({ data, filters, basePath, keep = {}, teac
                           </span>
                         ) : null}
                         <span className={cn("text-caption", absence.note ? "text-foreground" : "text-subtle")}>{absence.note ?? L.noNote}</span>
+                        {absence.markedByName && absence.markedByRole ? (
+                          <span className="text-caption text-subtle">
+                            {L.markedBy(LABELS.attendanceMarkers[absence.markedByRole], absence.markedByName, formatDateTime(absence.markedAt))}
+                          </span>
+                        ) : null}
+                        {absence.history.length > 1 ? (
+                          <details className="text-caption">
+                            <summary className="cursor-pointer text-muted-foreground">{L.history}</summary>
+                            <ol className="mt-1 flex flex-col gap-0.5 ps-4">
+                              {absence.history.map((mark, index) => (
+                                <li key={`${mark.at}-${index}`} className="list-decimal text-subtle">
+                                  {L.historyItem(
+                                    mark.role ? LABELS.attendanceMarkers[mark.role] : LABELS.common.none,
+                                    mark.by ?? LABELS.common.none,
+                                    LABELS.status[mark.status],
+                                    formatDateTime(mark.at),
+                                  )}
+                                </li>
+                              ))}
+                            </ol>
+                          </details>
+                        ) : null}
                         <AbsenceNotificationStatus item={notifiable} />
                       </div>
                       <div className="flex flex-col items-start gap-2 sm:items-end">

@@ -1,7 +1,10 @@
-import { LABELS } from "@/lib/constants/labels";
+"use client";
+
+import type { AppLabels } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
-export type Status = keyof typeof LABELS.status;
+export type Status = keyof AppLabels["status"];
 
 type Tone = "success" | "danger" | "warning" | "neutral";
 
@@ -31,6 +34,7 @@ type StatusBadgeProps = {
 
 /** Statut : point de 6 px suivi du libellé coloré, sans fond (jamais la couleur seule). */
 export function StatusBadge({ status, className }: StatusBadgeProps) {
+  const LABELS = useLabels();
   const tone = TONE_STYLES[STATUS_TONE[status]];
 
   return (

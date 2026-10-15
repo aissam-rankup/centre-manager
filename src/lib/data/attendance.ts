@@ -1,9 +1,28 @@
 import "server-only";
 
+import { z } from "zod";
+
 import type { NotificationChannel } from "@/lib/absences";
-import type { AttendanceRecord } from "@/lib/attendance";
+import type { AttendanceMark, AttendanceRecord } from "@/lib/attendance";
 import { getAuthState } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+
+const historySchema = z
+  .array(
+    z.object({
+      status: z.enum(["present", "absent"]),
+      role: z.enum(["teacher", "assistant", "admin"]).nullable(),
+      by: z.string().nullable(),
+      at: z.string(),
+    }),
+  )
+  .nullable()
+  .catch(null);
+
+/** Saisies successives d'une présence (vide s'il n'y en a eu qu'une). */
+function parseHistory(value: unknown): AttendanceMark[] {
+  return historySchema.parse(value) ?? [];
+}
 
 export type AbsenceFollowUp = {
   id: string;
@@ -82,6 +101,10 @@ export async function getAttendanceData(studentId: string): Promise<AttendanceDa
       startTime: row.start_time ? row.start_time.slice(0, 5) : null,
       endTime: row.end_time ? row.end_time.slice(0, 5) : null,
       note: row.note,
+      markedByName: row.marked_by_name,
+      markedByRole: row.marked_by_role,
+      markedAt: row.marked_at,
+      history: parseHistory(row.history),
     })),
     followUps: followUps.data.map((row) => ({
       id: row.follow_up_id,

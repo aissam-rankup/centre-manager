@@ -3,13 +3,19 @@ import "server-only";
 import { requireRole } from "@/lib/auth/session";
 import { toISODate, today } from "@/lib/format";
 import { type PayMode, type PayrollDetail, type PayrollMonth, type PayrollStatus, parsePayrollDetail } from "@/lib/payroll";
+import { getLineReceiptIds } from "@/lib/data/salary-receipts";
 import type { PaymentMethod } from "@/lib/receipts";
+import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
+
+type UserRole = Database["public"]["Enums"]["user_role"];
 
 export type PayrollLineView = {
   id: string;
   teacherId: string;
   teacherName: string;
+  /** Rôle figé sur la ligne : professeur, assistant ou admin salarié. */
+  memberRole: UserRole;
   payMode: PayMode | null;
   computed: number;
   adjustment: number;
@@ -17,6 +23,8 @@ export type PayrollLineView = {
   final: number;
   paidAt: string | null;
   paymentMethod: PaymentMethod | null;
+  /** Reçu de paie en vigueur (versement non annulé). */
+  receiptId: string | null;
   detail: PayrollDetail;
 };
 
@@ -46,7 +54,7 @@ export async function getPayroll(month: PayrollMonth): Promise<PayrollView | nul
   const [{ data: lines, error: linesError }, { data: validator, error: validatorError }] = await Promise.all([
     supabase
       .from("payroll_lines")
-      .select("id, teacher_id, teacher_name, pay_mode, computed_amount, adjustment_amount, adjustment_reason, final_amount, paid_at, payment_method, detail")
+      .select("id, teacher_id, teacher_name, member_role, pay_mode, computed_amount, adjustment_amount, adjustment_reason, final_amount, paid_at, payment_method, detail")
       .eq("payroll_period_id", period.id)
       .order("teacher_name"),
     period.validated_by
@@ -55,6 +63,7 @@ export async function getPayroll(month: PayrollMonth): Promise<PayrollView | nul
   ]);
   if (linesError) throw linesError;
   if (validatorError) throw validatorError;
+  const receipts = await getLineReceiptIds(lines.filter((line) => line.paid_at).map((line) => line.id));
 
   return {
     periodId: period.id,
@@ -67,6 +76,7 @@ export async function getPayroll(month: PayrollMonth): Promise<PayrollView | nul
       id: line.id,
       teacherId: line.teacher_id,
       teacherName: line.teacher_name,
+      memberRole: line.member_role,
       payMode: line.pay_mode,
       computed: Number(line.computed_amount),
       adjustment: Number(line.adjustment_amount),
@@ -74,6 +84,7 @@ export async function getPayroll(month: PayrollMonth): Promise<PayrollView | nul
       final: Number(line.final_amount ?? 0),
       paidAt: line.paid_at,
       paymentMethod: line.payment_method,
+      receiptId: receipts.get(line.id) ?? null,
       detail: parsePayrollDetail(line.pay_mode, line.detail),
     })),
   };
@@ -149,6 +160,45 @@ export async function getTeacherPaySettings(): Promise<TeacherPaySettings[]> {
       currentSalary: current(salaryHistory, todayIso),
       salaryHistory,
       subjects,
+    };
+  });
+}
+
+export type StaffSalarySettings = {
+  memberId: string;
+  memberName: string;
+  role: UserRole;
+  /** Dans la paie (salaire fixe) ou non. */
+  onPayroll: boolean;
+  /** Salaire en vigueur aujourd'hui. */
+  currentSalary: number | null;
+  salaryHistory: PayHistoryEntry[];
+};
+
+/** Assistants et admins actifs : salaire fixe éventuel et historique (admin, hors mode support). */
+export async function getStaffSalarySettings(): Promise<StaffSalarySettings[]> {
+  const profile = await requireRole("admin");
+  if (profile.support) return [];
+  const supabase = await createClient();
+
+  const [members, salaries] = await Promise.all([
+    supabase.from("profiles").select("id, full_name, role, pay_mode").in("role", ["assistant", "admin"]).eq("active", true).order("full_name"),
+    supabase.from("teacher_salaries").select("teacher_id, monthly_amount, effective_from, effective_to").order("effective_from", { ascending: false }),
+  ]);
+  for (const result of [members, salaries]) if (result.error) throw result.error;
+
+  const todayIso = toISODate(today());
+  return (members.data ?? []).map((member) => {
+    const salaryHistory = (salaries.data ?? [])
+      .filter((row) => row.teacher_id === member.id)
+      .map((row) => ({ value: Number(row.monthly_amount), from: row.effective_from, to: row.effective_to }));
+    return {
+      memberId: member.id,
+      memberName: member.full_name,
+      role: member.role,
+      onPayroll: member.pay_mode === "fixed_salary",
+      currentSalary: current(salaryHistory, todayIso),
+      salaryHistory,
     };
   });
 }

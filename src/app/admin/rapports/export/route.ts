@@ -1,15 +1,16 @@
 import type { NextRequest } from "next/server";
 
-import { getLabels } from "@/lib/i18n/server";
 import { toCsv } from "@/lib/csv";
 import { getReports, type ReportPeriod } from "@/lib/data/admin";
 import { toISODate, today } from "@/lib/format";
+import { getAppLocale } from "@/lib/i18n/request-locale";
+import { getLabels } from "@/lib/i18n/server";
 
 const PERIODS: readonly ReportPeriod[] = ["30", "90", "all"];
 
-/** Export CSV d'un rapport : ?type=niveaux|matieres|packs|absences&periode=30|90|all (admin uniquement). */
+/** Export CSV d'un rapport : ?type=niveaux|matieres|packs|absences&periode=30|90|all (admin uniquement), dans la langue de l'utilisateur. */
 export async function GET(request: NextRequest) {
-  const LABELS = await getLabels();
+  const [LABELS, locale] = await Promise.all([getLabels(), getAppLocale()]);
   const L = LABELS.admin.reports;
   const type = request.nextUrl.searchParams.get("type");
   const rawPeriod = request.nextUrl.searchParams.get("periode");
@@ -24,6 +25,7 @@ export async function GET(request: NextRequest) {
       csv = toCsv(
         [L.level, L.students, L.enrollments],
         reports.byLevel.map((row) => [row.levelName, row.students, row.enrollments]),
+        locale,
       );
       break;
     case "matieres":
@@ -36,12 +38,14 @@ export async function GET(request: NextRequest) {
           row.monthlyPrice,
           row.monthlyRevenue,
         ]),
+        locale,
       );
       break;
     case "packs":
       csv = toCsv(
         [L.pack, L.level, L.subscribers, `${L.price} (MAD)`, `${L.packRevenue} (MAD)`],
         reports.byPack.map((row) => [row.packName, row.levelName, row.subscribers, row.monthlyPrice, row.monthlyRevenue]),
+        locale,
       );
       break;
     case "absences":
@@ -55,6 +59,7 @@ export async function GET(request: NextRequest) {
           row.totalCount,
           Math.round(row.rate * 1000) / 10,
         ]),
+        locale,
       );
       break;
     default:

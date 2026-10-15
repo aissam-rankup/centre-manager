@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import type { ActionResult } from "@/lib/actions/result";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 
 type ConfirmActionProps = {
   /** Bouton déclencheur. */
@@ -41,6 +41,8 @@ export function ConfirmAction({
   action,
   onDone,
 }: ConfirmActionProps) {
+  const LABELS = useLabels();
+  const message = useMessage();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -75,7 +77,7 @@ export function ConfirmAction({
         </AlertDialogHeader>
         {error ? (
           <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-danger-ink">
-            {error}
+            {message(error)}
           </p>
         ) : null}
         <AlertDialogFooter>

@@ -4,11 +4,11 @@ import { toast } from "sonner";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
-import { LABELS } from "@/lib/constants/labels";
-
-const L = LABELS.styleguide;
+import { useLabels } from "@/lib/i18n/client";
 
 export function ErrorDemo() {
+  const LABELS = useLabels();
+  const L = LABELS.styleguide;
   return (
     <ErrorState
       title={L.errorState.title}
@@ -19,6 +19,7 @@ export function ErrorDemo() {
 }
 
 export function ToastDemo() {
+  const L = useLabels().styleguide;
   return (
     <div className="flex flex-wrap gap-3">
       <Button variant="outline" onClick={() => toast.success(L.toasts.success, { description: L.toasts.successDescription })}>

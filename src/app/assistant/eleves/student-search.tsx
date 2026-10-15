@@ -1,7 +1,7 @@
 "use client";
 
-import { ChevronRight, LoaderCircle, Search, SearchX, Users, X } from "lucide-react";
-import Link from "next/link";
+import { ChevronRight, LoaderCircle, PauseCircle, Search, SearchX, Users, X } from "lucide-react";
+import Link from "@/components/shared/app-link";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";
@@ -14,8 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { searchStudents } from "@/lib/actions/assistant";
 import { ROUTES } from "@/lib/auth/routes";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import type { StudentListItem } from "@/lib/data/assistant";
+import { formatDate } from "@/lib/format";
 
 const DEBOUNCE_MS = 200;
 
@@ -23,8 +24,11 @@ type StudentSearchProps = { initialResults: StudentListItem[]; initialQuery?: st
 
 export function StudentSearch({ initialResults, initialQuery = "" }: StudentSearchProps) {
   const LABELS = useLabels();
+  const message = useMessage();
   const L = LABELS.assistant.search;
   const [query, setQuery] = useState(initialQuery);
+  // Élèves suspendus : liste à part, consultable.
+  const [suspended, setSuspended] = useState(false);
   const [results, setResults] = useState(initialResults);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -41,7 +45,7 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
     const id = ++requestId.current;
     const timer = window.setTimeout(() => {
       startTransition(async () => {
-        const result = await searchStudents(query);
+        const result = await searchStudents(query, suspended);
         if (id !== requestId.current) return;
         if (result.ok) {
           setResults(result.data);
@@ -52,7 +56,7 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
       });
     }, DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [query, attempt]);
+  }, [query, attempt, suspended]);
 
   const hasQuery = query.trim().length > 0;
 
@@ -62,7 +66,7 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
         <label htmlFor="recherche-eleve" className="sr-only">
           {L.label}
         </label>
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Search className="pointer-events-none absolute top-1/2 start-3 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <Input
           id="recherche-eleve"
           type="search"
@@ -73,14 +77,14 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
           placeholder={L.placeholder}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="h-12 pr-12 pl-10 text-base [&::-webkit-search-cancel-button]:hidden"
+          className="h-12 pe-12 ps-10 text-base [&::-webkit-search-cancel-button]:hidden"
         />
         {hasQuery ? (
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute top-1/2 right-0.5 -translate-y-1/2"
+            className="absolute top-1/2 end-0.5 -translate-y-1/2"
             onClick={() => setQuery("")}
             aria-label={L.clear}
           >
@@ -88,6 +92,17 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
           </Button>
         ) : null}
       </div>
+
+      <Button
+        type="button"
+        variant={suspended ? "default" : "outline"}
+        className="self-start"
+        aria-pressed={suspended}
+        onClick={() => setSuspended((value) => !value)}
+      >
+        <PauseCircle aria-hidden />
+        {suspended ? L.hideSuspended : L.showSuspended}
+      </Button>
 
       <p className="flex h-5 items-center gap-2 text-caption text-muted-foreground" aria-live="polite">
         {pending ? (
@@ -101,12 +116,14 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
       </p>
 
       {error ? (
-        <ErrorState description={error} onRetry={() => setAttempt((value) => value + 1)} />
+        <ErrorState description={message(error)} onRetry={() => setAttempt((value) => value + 1)} />
       ) : pending && results.length === 0 ? (
         <ResultsSkeleton />
       ) : results.length === 0 ? (
         hasQuery ? (
           <EmptyState icon={SearchX} title={L.emptyTitle} description={L.emptyDescription} />
+        ) : suspended ? (
+          <EmptyState icon={PauseCircle} title={L.noSuspendedTitle} description={L.noSuspendedDescription} />
         ) : (
           <EmptyState icon={Users} title={L.noStudentsTitle} description={L.noStudentsDescription} />
         )
@@ -126,9 +143,21 @@ export function StudentSearch({ initialResults, initialQuery = "" }: StudentSear
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate font-medium">{student.fullName}</span>
                   <span className="truncate text-caption text-muted-foreground">{student.levelName}</span>
+                  {student.suspendedAt ? (
+                    <span className="truncate text-caption text-muted-foreground">
+                      {LABELS.admin.students.suspendedOn(formatDate(student.suspendedAt))}
+                      {student.suspensionReason ? ` · ${student.suspensionReason}` : ""}
+                    </span>
+                  ) : null}
                   <DiscountBadges discounts={student.discounts} className="mt-1" />
                 </span>
-                <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />
+                {student.suspendedAt ? (
+                  <span className="rounded-full bg-warning/15 px-2.5 py-0.5 text-caption font-semibold text-warning-ink">
+                    {LABELS.assistant.student.suspension.badge}
+                  </span>
+                ) : (
+                  <StatusBadge status={student.isOverdue ? "overdue" : "upToDate"} />
+                )}
                 <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
               </Link>
             </li>

@@ -1,40 +1,83 @@
 import { TZDate } from "@date-fns/tz";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { arMA, enGB, fr } from "date-fns/locale";
 
 import { LABELS } from "@/lib/constants/labels";
+import { intlLocale, type Locale } from "@/lib/i18n/locale";
 
 /** Fuseau horaire de référence de l'application. */
 export const TIME_ZONE = "Africa/Casablanca";
 
-const amountFormatter = new Intl.NumberFormat("fr-FR", {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
+/**
+ * Le Maroc est passé à l'heure GMT toute l'année le 20/09/2026 à 01:00 UTC
+ * (tzdata 2026c). Les environnements dont la base de fuseaux est plus
+ * ancienne (Node 24 : 2025c) appliquent encore UTC+1 : le serveur affichait
+ * une heure d'avance sur le navigateur. La règle est donc appliquée ici :
+ * GMT depuis la bascule, règles d'Africa/Casablanca avant (historique).
+ * Même règle en base : private.local_time.
+ */
+export const MOROCCO_GMT_SINCE = Date.UTC(2026, 8, 20, 1, 0);
 
-/** Montant avec centimes : toujours deux décimales (« 1 732,50 »). */
-const centsFormatter = new Intl.NumberFormat("fr-FR", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const percentFormatter = new Intl.NumberFormat("fr-FR", {
-  style: "percent",
-  maximumFractionDigits: 1,
-});
-
-/** « 1 200 MAD », « 1 732,50 MAD » */
-export function formatMAD(amount: number): string {
-  // Espace insécable classique pour les milliers, pour un rendu « 1 200 MAD » homogène.
-  const rounded = Math.round(amount * 100) / 100;
-  const formatter = Number.isInteger(rounded) ? amountFormatter : centsFormatter;
-  const digits = formatter.format(rounded).replace(/ /g, " ");
-  return `${digits} ${LABELS.currency.code}`;
+/** Fuseau à utiliser pour un instant donné (millisecondes UTC). */
+export function appTimeZoneAt(instant: number): string {
+  return instant >= MOROCCO_GMT_SINCE ? "+00:00" : TIME_ZONE;
 }
 
-/** « 12,5 % » */
-export function formatPercent(ratio: number): string {
-  return percentFormatter.format(ratio);
+/** Formateurs de montant d'une langue : sans centimes, avec centimes (toujours deux décimales, « 1 732,50 »). */
+type AmountFormatters = { whole: Intl.NumberFormat; cents: Intl.NumberFormat };
+
+/** Un jeu de formateurs de montant par locale Intl, créé à la première demande. */
+const amountFormatters = new Map<string, AmountFormatters>();
+
+function amountFormattersFor(intl: string): AmountFormatters {
+  let formatters = amountFormatters.get(intl);
+  if (!formatters) {
+    formatters = {
+      whole: new Intl.NumberFormat(intl, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+      cents: new Intl.NumberFormat(intl, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    };
+    amountFormatters.set(intl, formatters);
+  }
+  return formatters;
+}
+
+/** Nom de la devise en arabe, après le montant (« 1.200 درهم »). */
+const ARABIC_CURRENCY = "درهم";
+
+/** Un formateur de pourcentage par langue, créé à la première demande. */
+const percentFormatters = new Map<Locale, Intl.NumberFormat>();
+
+/**
+ * « 1 200 MAD », « 1 732,50 MAD » (français et anglais) ; « 1.200 درهم », « 1.732,50 درهم » (arabe, chiffres occidentaux).
+ * Les messages et documents destinés aux familles gardent la langue par défaut.
+ */
+export function formatMAD(amount: number, locale: Locale = "fr", options: { cents?: boolean } = {}): string {
+  const rounded = Math.round(amount * 100) / 100;
+  const arabic = locale === "ar";
+  const { whole, cents } = amountFormattersFor(arabic ? intlLocale("ar") : "fr-FR");
+  // `cents` : toujours deux décimales (« 12 500,00 MAD », console de la plateforme).
+  const formatter = Number.isInteger(rounded) && !options.cents ? whole : cents;
+  // Espace insécable classique pour les milliers, pour un rendu « 1 200 MAD » homogène.
+  const digits = formatter.format(rounded).replace(/ /g, " ");
+  return `${digits} ${arabic ? ARABIC_CURRENCY : LABELS.currency.code}`;
+}
+
+/** « 12,5 % » ; « 12.5% » */
+export function formatPercent(ratio: number, locale: Locale = "fr"): string {
+  let formatter = percentFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(intlLocale(locale), { style: "percent", maximumFractionDigits: 1 });
+    percentFormatters.set(locale, formatter);
+  }
+  return formatter.format(ratio);
+}
+
+/** Noms des jours et des mois dans la langue de l'interface (arabe : mois du Maroc, « يوليوز، غشت »). */
+const DATE_LOCALES = { fr, en: enGB, ar: arMA } as const;
+
+/** Locale date-fns d'une langue (formats personnalisés : `format(date, "MMM", { locale: dateLocale(locale) })`). */
+export function dateLocale(locale: Locale) {
+  return DATE_LOCALES[locale];
 }
 
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -47,15 +90,19 @@ const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 export function inAppTimeZone(date: Date | string): TZDate {
   if (typeof date === "string") {
     const match = DATE_ONLY.exec(date);
-    if (match) return new TZDate(Number(match[1]), Number(match[2]) - 1, Number(match[3]), TIME_ZONE);
-    return new TZDate(new Date(date), TIME_ZONE);
+    if (match) {
+      const [year, month, day] = [Number(match[1]), Number(match[2]) - 1, Number(match[3])];
+      return new TZDate(year, month, day, appTimeZoneAt(Date.UTC(year, month, day)));
+    }
+    const instant = new Date(date);
+    return new TZDate(instant, appTimeZoneAt(instant.getTime()));
   }
-  return new TZDate(date, TIME_ZONE);
+  return new TZDate(date, appTimeZoneAt(date.getTime()));
 }
 
 /** Date du jour à Casablanca. */
 export function today(): TZDate {
-  return TZDate.tz(TIME_ZONE);
+  return TZDate.tz(appTimeZoneAt(Date.now()));
 }
 
 /** « 24/09/2026 » */
@@ -73,21 +120,21 @@ export function formatDateTime(date: Date | string): string {
   return format(inAppTimeZone(date), "dd/MM/yyyy HH:mm", { locale: fr });
 }
 
-/** « jeudi 24/09/2026 » */
-export function formatDateWithWeekday(date: Date | string): string {
-  return format(inAppTimeZone(date), "EEEE dd/MM/yyyy", { locale: fr });
+/** « jeudi 24/09/2026 » ; « Thursday 24/09/2026 » */
+export function formatDateWithWeekday(date: Date | string, locale: Locale = "fr"): string {
+  return format(inAppTimeZone(date), "EEEE dd/MM/yyyy", { locale: DATE_LOCALES[locale] });
 }
 
-/** « 27 septembre 2026 » */
-export function formatLongDate(date: Date | string): string {
-  return format(inAppTimeZone(date), "d MMMM yyyy", { locale: fr });
+/** « 27 septembre 2026 » ; « 27 September 2026 » */
+export function formatLongDate(date: Date | string, locale: Locale = "fr"): string {
+  return format(inAppTimeZone(date), "d MMMM yyyy", { locale: DATE_LOCALES[locale] });
 }
 
-/** « 5 novembre », « 1er décembre » */
-export function formatDayMonth(date: Date | string): string {
+/** « 5 novembre », « 1er décembre » ; « 5 November », « 1 December » */
+export function formatDayMonth(date: Date | string, locale: Locale = "fr"): string {
   const zoned = inAppTimeZone(date);
   const day = zoned.getDate();
-  return `${day === 1 ? "1er" : day} ${format(zoned, "MMMM", { locale: fr })}`;
+  return `${day === 1 && locale === "fr" ? "1er" : day} ${format(zoned, "MMMM", { locale: DATE_LOCALES[locale] })}`;
 }
 
 /** « 2026-09-24 » — format des colonnes `date` Postgres, au fuseau de Casablanca. */
@@ -95,7 +142,7 @@ export function toISODate(date: Date | string): string {
   return format(inAppTimeZone(date), "yyyy-MM-dd");
 }
 
-/** « septembre 2026 » */
-export function formatMonth(date: Date | string): string {
-  return format(inAppTimeZone(date), "MMMM yyyy", { locale: fr });
+/** « septembre 2026 » ; « September 2026 » */
+export function formatMonth(date: Date | string, locale: Locale = "fr"): string {
+  return format(inAppTimeZone(date), "MMMM yyyy", { locale: DATE_LOCALES[locale] });
 }

@@ -5,11 +5,12 @@ import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
-import { LABELS } from "@/lib/constants/labels";
+import { useLabels } from "@/lib/i18n/client";
 
 const noop = () => () => {};
 
 export function ThemeToggle() {
+  const LABELS = useLabels();
   const { resolvedTheme, setTheme } = useTheme();
   // Le thème n'est connu qu'après hydratation : rendu serveur = thème clair par défaut.
   const mounted = useSyncExternalStore(noop, () => true, () => false);

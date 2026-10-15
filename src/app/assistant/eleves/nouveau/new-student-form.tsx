@@ -12,15 +12,20 @@ import { ChoiceItem } from "@/components/shared/choice-item";
 import { FormField } from "@/components/shared/form-field";
 import { Money } from "@/components/shared/money";
 import { StudentAvatar } from "@/components/shared/student-avatar";
+import { type ShownCredentials, StudentCredentialsDialog } from "@/components/students/student-credentials-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { createStudent } from "@/lib/actions/assistant";
 import { ROUTES } from "@/lib/auth/routes";
-import { useLabels } from "@/lib/i18n/client";
+import { setStudentMessageLocale } from "@/lib/actions/family-locale";
+import { useLabels, useMessage } from "@/lib/i18n/client";
+import { isLocale, type Locale, LOCALE_NAMES, LOCALES } from "@/lib/i18n/locale";
+import { useModules } from "@/lib/modules-client";
 import type { LevelWithSubjects } from "@/lib/data/assistant";
 import { formatDate } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
@@ -31,10 +36,16 @@ type NewStudentFormProps = {
   levels: LevelWithSubjects[];
   /** Date du jour à Casablanca (AAAA-MM-JJ), fournie par le serveur. */
   todayIso: string;
+  /** Langue des familles du centre (réglages) : proposée par défaut. */
+  centerLocale: Locale;
 };
 
-export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
+export function NewStudentForm({ levels, todayIso, centerLocale }: NewStudentFormProps) {
   const LABELS = useLabels();
+  const message = useMessage();
+  const F = LABELS.centerSettings.familyLocale;
+  // Langue propre de la famille ; null : langue du centre.
+  const [familyLocale, setFamilyLocale] = useState<Locale | null>(null);
   const L = LABELS.assistant.newStudent;
   const STEP_COUNT = L.steps.length;
   const router = useRouter();
@@ -42,6 +53,9 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
   const [photo, setPhoto] = useState<CapturedPhoto | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const modules = useModules();
+  // Élève inscrit avec son accès : identifiants à montrer, puis sa fiche.
+  const [created, setCreated] = useState<{ credentials: ShownCredentials; href: string } | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const stepChanged = useRef(false);
 
@@ -63,6 +77,7 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
       formula: "unit",
       subjectIds: [],
       packId: "",
+      studentAccess: false,
     },
     mode: "onTouched",
   });
@@ -121,11 +136,20 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
     startTransition(async () => {
       const result = await createStudent(data);
       if (!result.ok) {
-        setServerError(result.error);
+        setServerError(message(result.error));
         return;
       }
+      // Langue propre de la famille : enregistrée après la création (vide : langue du centre).
+      if (familyLocale) {
+        const saved = await setStudentMessageLocale({ studentId: result.data.studentId, locale: familyLocale });
+        if (!saved.ok) toast.error(message(saved.error));
+      }
       toast.success(L.success, { description: L.successDescription });
-      router.push(`${ROUTES.assistant.students}/${result.data.studentId}`);
+      if (result.data.accessFailed) toast.error(LABELS.studentAccess.failed);
+      const fileHref = `${ROUTES.assistant.students}/${result.data.studentId}`;
+      // Identifiants de l'accès élève : affichés une fois avant d'ouvrir la fiche.
+      if (result.data.credentials) setCreated({ credentials: result.data.credentials, href: fileHref });
+      else router.push(fileHref);
     });
   });
 
@@ -178,6 +202,16 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
                   placeholder={L.fields.guardianPhonePlaceholder}
                   {...register("guardianPhone")}
                 />
+              </FormField>
+              <FormField id="familyLocale" label={F.label} hint={F.studentHint}>
+                <NativeSelect value={familyLocale ?? ""} onChange={(event) => setFamilyLocale(isLocale(event.target.value) ? event.target.value : null)}>
+                  <option value="">{F.centerDefault(LOCALE_NAMES[centerLocale])}</option>
+                  {LOCALES.map((option) => (
+                    <option key={option} value={option} lang={option}>
+                      {LOCALE_NAMES[option]}
+                    </option>
+                  ))}
+                </NativeSelect>
               </FormField>
               <FormField id="notes" label={L.fields.notes} error={errors.notes?.message}>
                 <Textarea rows={3} placeholder={L.fields.notesPlaceholder} {...register("notes")} />
@@ -386,6 +420,23 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
                   </span>
                 </span>
               </SummaryRow>
+              {modules.has("lms") ? (
+                <div className="pt-4">
+                  <ChoiceItem className="items-start">
+                    <Controller
+                      control={control}
+                      name="studentAccess"
+                      render={({ field }) => (
+                        <Checkbox className="mt-0.5" checked={field.value} onCheckedChange={(value) => field.onChange(value === true)} />
+                      )}
+                    />
+                    <span className="flex flex-col">
+                      <span className="font-medium">{LABELS.studentAccess.newStudentOption}</span>
+                      <span className="text-caption text-muted-foreground">{LABELS.studentAccess.newStudentHint}</span>
+                    </span>
+                  </ChoiceItem>
+                </div>
+              ) : null}
               <div className="pt-4">
                 <p className="rounded-lg bg-brand/10 px-4 py-3 text-brand-ink">
                   {L.summary.firstInvoice(
@@ -423,6 +474,16 @@ export function NewStudentForm({ levels, todayIso }: NewStudentFormProps) {
           </Button>
         )}
       </div>
+      <StudentCredentialsDialog
+        credentials={created?.credentials ?? null}
+        studentName={fullName}
+        guardianPhone={guardianPhone || null}
+        familyLocale={familyLocale ?? centerLocale}
+        onClose={() => {
+          if (created) router.push(created.href);
+          setCreated(null);
+        }}
+      />
     </form>
   );
 }

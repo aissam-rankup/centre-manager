@@ -12,10 +12,12 @@ import { updateCashSettings } from "@/lib/actions/cash";
 import { parseCents } from "@/lib/cash";
 import type { CashSettings } from "@/lib/data/cash";
 import { formatMAD } from "@/lib/format";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useLocale, useMessage } from "@/lib/i18n/client";
 
 export function CashSettingsForm({ settings }: { settings: CashSettings }) {
   const LABELS = useLabels();
+  const locale = useLocale();
+  const message = useMessage();
   const S = LABELS.cash.settings;
   const [perAssistant, setPerAssistant] = useState(settings.perAssistant);
   const [threshold, setThreshold] = useState(String(settings.threshold).replace(".", ","));
@@ -33,7 +35,7 @@ export function CashSettingsForm({ settings }: { settings: CashSettings }) {
           const result = await updateCashSettings({ perAssistant, threshold });
           if (!result.ok) {
             setErrors(result.fieldErrors ?? {});
-            toast.error(result.error);
+            toast.error(message(result.error));
             return;
           }
           toast.success(LABELS.centerSettings.saved);
@@ -56,7 +58,7 @@ export function CashSettingsForm({ settings }: { settings: CashSettings }) {
         <FormField
           id="seuil-ecart"
           label={S.threshold}
-          hint={S.thresholdHint(formatMAD((cents ?? Math.round(settings.threshold * 100)) / 100))}
+          hint={S.thresholdHint(formatMAD((cents ?? Math.round(settings.threshold * 100)) / 100, locale))}
           error={errors.threshold}
         >
           <Input inputMode="decimal" value={threshold} onChange={(event) => setThreshold(event.target.value)} className="numeric w-40 font-normal" />

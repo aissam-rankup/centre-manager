@@ -135,16 +135,16 @@ select is((select count(*)::integer from public.receipts), 0, 'sans Finance : re
 select is((select count(*)::integer from public.students), 1, 'socle : élèves toujours visibles');
 
 select set_config('request.path', '/rpc/open_cash_session', true);
-select throws_ok($$select private.check_module_request()$$, '42501', null, 'API : fonction d''un module coupé refusée');
+select throws_ok($$select api_guard.check_module_request()$$, '42501', null, 'API : fonction d''un module coupé refusée');
 select set_config('request.path', '/receipts', true);
-select throws_ok($$select private.check_module_request()$$, '42501', null, 'API : table d''un module coupé refusée');
+select throws_ok($$select api_guard.check_module_request()$$, '42501', null, 'API : table d''un module coupé refusée');
 select set_config('request.path', '/rpc/record_payment', true);
-select lives_ok($$select private.check_module_request()$$, 'API : fonction du socle acceptée');
+select lives_ok($$select api_guard.check_module_request()$$, 'API : fonction du socle acceptée');
 select set_config('request.path', '/students', true);
-select lives_ok($$select private.check_module_request()$$, 'API : table du socle acceptée');
+select lives_ok($$select api_guard.check_module_request()$$, 'API : table du socle acceptée');
 set local request.jwt.claims = '{"sub":"a9100000-0000-4000-8000-000000000004","role":"authenticated"}';
 select set_config('request.path', '/rpc/open_cash_session', true);
-select lives_ok($$select private.check_module_request()$$, 'API : module actif d''un autre centre accepté');
+select lives_ok($$select api_guard.check_module_request()$$, 'API : module actif d''un autre centre accepté');
 select set_config('request.path', '', true);
 reset role;
 select is((select count(*)::integer from public.receipts where center_id = 'c9100000-0000-4000-8000-0000000000a1'), 1,

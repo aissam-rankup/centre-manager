@@ -13,9 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { LABELS } from "@/lib/constants/labels";
-
-const L = LABELS.platform.accessLink;
+import { useLabels } from "@/lib/i18n/client";
 
 /** Lien d'invitation ou de mot de passe à transmettre quand le courriel n'a pas pu partir. */
 export function AccessLinkDialog({
@@ -27,6 +25,7 @@ export function AccessLinkDialog({
   email: string;
   onClose: () => void;
 }) {
+  const L = useLabels().platform.accessLink;
   return (
     <Dialog open={Boolean(link)} onOpenChange={(open) => (open ? null : onClose())}>
       <DialogContent className="sm:max-w-lg">

@@ -1,8 +1,9 @@
-import { LABELS } from "@/lib/constants/labels";
+import { getLabels } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
 /** Jours restants avant l'échéance, ou jours de retard (en rouge). */
-export function DaysRemaining({ days, className }: { days: number | null; className?: string }) {
+export async function DaysRemaining({ days, className }: { days: number | null; className?: string }) {
+  const LABELS = await getLabels();
   if (days === null) return <span className={cn("text-muted-foreground", className)}>{LABELS.platform.noDueDate}</span>;
   return (
     <span

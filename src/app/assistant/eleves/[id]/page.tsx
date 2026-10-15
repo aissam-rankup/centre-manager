@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
@@ -17,7 +17,12 @@ import {
 } from "@/components/students/student-file-sections";
 import { StudentTabs } from "@/components/students/student-tabs";
 import { ReceiptsSection } from "@/components/receipts/receipts-section";
+import { getCenterFamilyLocale, getStudentMessageLocale } from "@/lib/data/family-locale";
 import { getStudentReceipts } from "@/lib/data/receipts";
+import { getStudentAccess } from "@/lib/data/student-access";
+import { FamilyLocaleSelect } from "@/components/students/family-locale-select";
+import { StudentAccessCard } from "@/components/students/student-access-card";
+import { StudentSuspension } from "@/components/students/student-suspension";
 import { AttendanceSheet } from "@/components/attendance/attendance-sheet";
 import { parseAttendanceFilters } from "@/lib/attendance";
 import { getAttendanceData } from "@/lib/data/attendance";
@@ -48,11 +53,16 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
   const [student, profile] = await Promise.all([loadStudent(id), requireRole("assistant")]);
   // Reçus : module Finance.
   const finance = profile.modules.includes("finance");
-  const receipts = await getStudentReceipts(student.id);
+  const [receipts, access, ownLocale, centerLocale] = await Promise.all([
+    getStudentReceipts(student.id),
+    getStudentAccess(student.id),
+    getStudentMessageLocale(student.id),
+    getCenterFamilyLocale(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
-      <Button asChild variant="ghost" className="-ml-3 self-start">
+      <Button asChild variant="ghost" className="-ms-3 self-start">
         <Link href={ROUTES.assistant.students}>
           <ArrowLeft aria-hidden />
           {L.back}
@@ -60,6 +70,10 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
       </Button>
 
       <StudentHeader student={student} />
+
+      <StudentSuspension studentId={student.id} studentName={student.fullName} suspension={student.suspension} readOnly={Boolean(profile.support)} />
+
+      <FamilyLocaleSelect studentId={student.id} value={ownLocale} centerLocale={centerLocale} readOnly={Boolean(profile.support)} />
 
       <SubjectsSection student={student} />
 
@@ -70,6 +84,17 @@ export default async function StudentFilePage({ params, searchParams }: PageProp
           canEdit={false}
           targets={[]}
           todayIso={toISODate(today())}
+        />
+      ) : null}
+
+      {access ? (
+        <StudentAccessCard
+          studentId={student.id}
+          studentName={student.fullName}
+          guardianPhone={student.guardianPhone}
+          access={access}
+          familyLocale={ownLocale ?? centerLocale}
+          readOnly={Boolean(profile.support)}
         />
       ) : null}
 

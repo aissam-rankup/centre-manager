@@ -1,4 +1,10 @@
+import { TEXTS_AR } from "@/lib/constants/labels-ar";
+import { TEXTS_EN } from "@/lib/constants/labels-en";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locale";
+import { translateDbMessage } from "@/lib/i18n/translate-db-message";
 import { DEFAULT_VOCABULARY, translateTree, translator, type VocabularyTerms } from "@/lib/vocabulary";
+import { arabicTranslator } from "@/lib/vocabulary-ar";
+import { englishTranslator } from "@/lib/vocabulary-en";
 
 /** Heure parlée : « 15:00 » → « 15h », « 15:30 » → « 15h30 ». */
 function hourLabel(time: string): string {
@@ -27,7 +33,9 @@ function ofMonth(month: string): string {
  */
 const TEXTS = {
   app: {
-    name: "CentroManager",
+    name: "dirassty",
+    tagline: "Gérez votre centre, simplement.",
+    poweredBy: "Propulsé par dirassty",
     metaDescription: "Abonnements, paiements et présences de votre centre de langue ou de soutien scolaire.",
   },
   common: {
@@ -43,6 +51,9 @@ const TEXTS = {
     openMenu: "Ouvrir le menu",
     skipToContent: "Aller au contenu principal",
     signOut: "Se déconnecter",
+    language: "Langue",
+    /** Deux-points avant une valeur : espace en français, aucune en anglais. */
+    colon: " :",
     seeAll: "Voir tout",
     show: "Afficher",
     none: "—",
@@ -70,9 +81,210 @@ const TEXTS = {
     open: (count: number) => (count === 0 ? "Notifications" : `Notifications — ${count} nouvelle(s)`),
     description: "Relances et notes des 14 derniers jours, alertes à traiter.",
     empty: "Aucune notification pour le moment.",
-    kinds: { followUp: "Relance", note: "Note de fiche", absenceAlert: "Alerte d'absences", cashVariance: "Écart de caisse" },
+    kinds: {
+      followUp: "Relance",
+      note: "Note de fiche",
+      absenceAlert: "Alerte d'absences",
+      cashVariance: "Écart de caisse",
+      attendanceConflict: "Appel en désaccord",
+    },
     by: (name: string) => `par ${name}`,
     priority: "Prioritaire",
+  },
+  studentAccess: {
+    title: "Accès élève",
+    description: "Connexion de l'élève à son espace (plateforme pédagogique) avec un code fourni par le centre. Aucune donnée personnelle ne lui est demandée.",
+    none: "Pas encore d'accès.",
+    active: "Accès actif",
+    inactive: "Accès désactivé",
+    code: "Code de connexion",
+    openedOn: (date: string) => `Ouvert le ${date}`,
+    disabledOn: (date: string) => `Désactivé le ${date}`,
+    open: "Ouvrir l'accès",
+    disable: "Désactiver l'accès",
+    enable: "Réactiver l'accès",
+    disableTitle: "Désactiver l'accès de l'élève ?",
+    disableDescription: "L'élève ne pourra plus se connecter. Rien n'est supprimé : l'accès peut être réactivé.",
+    opened: "Accès ouvert.",
+    disabled: "Accès désactivé.",
+    enabled: "Accès réactivé.",
+    failed: "L'accès n'a pas pu être créé. Réessayez.",
+    newStudentOption: "Ouvrir l'accès élève",
+    newStudentHint: "L'élève se connectera à son espace avec un code et un mot de passe, affichés une seule fois après l'inscription.",
+    credentials: {
+      title: "Identifiants de l'élève",
+      description: "Notez-les ou envoyez-les au responsable : le mot de passe ne sera plus affiché.",
+      url: "Adresse de connexion",
+      code: "Code",
+      password: "Mot de passe",
+      copy: "Copier",
+      copied: "Copié.",
+      whatsapp: "Envoyer au responsable",
+      done: "J'ai noté",
+      message: (name: string, url: string, code: string, password: string) =>
+        `Bonjour, voici l'accès de ${name} à son espace : ${url} — code ${code}, mot de passe temporaire ${password}. Un mot de passe personnel sera demandé à la première connexion.`,
+    },
+  },
+  studentLogin: {
+    title: "Espace élève",
+    description: "Connectez-vous avec le code et le mot de passe donnés par votre centre.",
+    code: "Code",
+    codePlaceholder: "Ex. 7K4Q 2MXP",
+    password: "Mot de passe",
+    submit: "Se connecter",
+    submitting: "Connexion…",
+    invalid: "Code ou mot de passe incorrect.",
+    codeRequired: "Saisissez votre code (8 caractères).",
+    passwordRequired: "Saisissez votre mot de passe.",
+    disabled: "Votre accès est désactivé. Contactez votre centre.",
+    rateLimited: "Trop de tentatives. Patientez une minute, puis réessayez.",
+    unavailable: "Connexion impossible pour le moment. Vérifiez votre connexion internet, puis réessayez.",
+    staffLink: "Vous faites partie de l'équipe ? Connexion de l'équipe",
+    studentLink: "Vous êtes élève ? Connexion élève",
+  },
+  resources: {
+    title: "Mes ressources",
+    description: "Exercices, examens et résumés de cours pour vos matières. Une ressource publiée apparaît dans l'espace des élèves inscrits à la matière et au niveau.",
+    new: "Publier une ressource",
+    newTitle: "Nouvelle ressource",
+    editTitle: "Modifier la ressource",
+    back: "Mes ressources",
+    types: { exercise: "Exercice", exam: "Examen", summary: "Résumé de cours", other: "Autre" },
+    filterSubject: "Filtrer par matière",
+    allSubjects: "Toutes les matières",
+    emptyTitle: "Aucune ressource",
+    emptyDescription: "Publiez un premier exercice, un sujet d'examen ou un résumé de cours.",
+    noAssignmentsTitle: "Aucune matière",
+    noAssignmentsDescription: "L'administration ne vous a encore affecté aucune matière.",
+    published: "Publiée",
+    draft: "Brouillon",
+    publishedOn: (date: string) => `Publiée le ${date}`,
+    updatedOn: (date: string) => `Modifiée le ${date}`,
+    dueOn: (date: string) => `À rendre le ${date}`,
+    open: "Ouvrir le fichier",
+    edit: "Modifier",
+    publish: "Publier",
+    unpublish: "Dépublier",
+    delete: "Supprimer",
+    deleteTitle: "Supprimer la ressource ?",
+    deleteDescription: "La ressource et son fichier sont supprimés définitivement ; les élèves ne la verront plus.",
+    deleted: "Ressource supprimée.",
+    publishedToast: "Ressource publiée.",
+    unpublishedToast: "Ressource dépubliée : les élèves ne la voient plus.",
+    saved: "Ressource enregistrée.",
+    fields: {
+      type: "Type",
+      subject: "Matière et niveau",
+      subjectPlaceholder: "Choisir une matière",
+      title: "Titre",
+      titlePlaceholder: "Ex. Série 3 — Fonctions dérivées",
+      description: "Description",
+      descriptionHint: "Consignes, chapitre concerné… (facultatif)",
+      file: "Fichier",
+      fileHint: "PDF ou image (JPEG, PNG, WebP), 8 Mo au maximum.",
+      currentFile: (name: string) => `Fichier actuel : ${name}`,
+      replaceFile: "Remplacer le fichier (facultatif)",
+      dueDate: "À rendre le (facultatif)",
+      dueDateHint: "Pour un exercice ou un examen à rendre.",
+      publishNow: "Publier maintenant",
+      publishNowHint: "Sinon, la ressource reste en brouillon : vous seul la voyez.",
+    },
+    submit: "Enregistrer",
+    submitting: "Enregistrement…",
+    validation: {
+      titleRequired: "Saisissez un titre.",
+      titleTooLong: "150 caractères au maximum.",
+      descriptionTooLong: "2 000 caractères au maximum.",
+      subjectRequired: "Choisissez une matière.",
+      fileRequired: "Ajoutez un fichier (PDF ou image).",
+      fileTooLarge: "Fichier trop lourd : 8 Mo au maximum.",
+      fileInvalid: "Format refusé : PDF, JPEG, PNG ou WebP uniquement.",
+      dueDateInvalid: "Date invalide.",
+    },
+    errors: {
+      upload: "Le fichier n'a pas pu être envoyé. Réessayez.",
+    },
+  },
+  studentSpace: {
+    title: "Mon espace",
+    welcome: (name: string) => `Bonjour ${name}`,
+    description: (center: string, level: string) => `${center} · ${level}`,
+    comingSoonTitle: "Aucune ressource pour le moment",
+    comingSoon: "Vos exercices, examens et résumés de cours apparaîtront ici dès que vos professeurs les publieront.",
+    newCount: (count: number) => (count <= 1 ? `${count} nouveauté` : `${count} nouveautés`),
+    dueCount: (count: number) => (count <= 1 ? `${count} échéance à venir` : `${count} échéances à venir`),
+    dueSoonTitle: "À rendre bientôt",
+    resourcesTitle: "Mes ressources",
+    filterSubject: "Filtrer par matière",
+    allSubjects: "Toutes les matières",
+    typeGroups: { exercise: "Exercices", exam: "Examens", summary: "Résumés de cours", other: "Autres documents" },
+    new: "Nouveau",
+    open: "Ouvrir",
+    download: "Télécharger",
+    by: (name: string) => `Par ${name}`,
+    publishedOn: (date: string) => `Publié le ${date}`,
+    dueIn: (days: number) =>
+      days < 0 ? "Échéance passée" : days === 0 ? "À rendre aujourd'hui" : days === 1 ? "À rendre demain" : `À rendre dans ${days} jours`,
+    dueOn: (date: string) => `le ${date}`,
+    emptySubjectTitle: "Rien dans cette matière",
+    emptySubjectDescription: "Aucune ressource publiée pour l'instant dans cette matière.",
+    signOut: "Se déconnecter",
+  },
+  /** À quel titre une présence a été saisie. */
+  attendanceMarkers: { teacher: "Professeur", assistant: "Accueil", admin: "Administration" },
+  sessions: {
+    title: "Séances du jour",
+    description: "Toutes les séances en temps réel. Ouvrez une séance pour faire l'appel à la place du professeur, s'il n'a pas pu le faire.",
+    dayLabel: (date: string) => `Séances du ${date}`,
+    today: "Aujourd'hui",
+    previousDay: "Jour précédent",
+    nextDay: "Jour suivant",
+    rangeHint: "L'appel se fait ou se corrige jusqu'à 7 jours après la séance.",
+    emptyTitle: "Aucune séance ce jour-là",
+    emptyDescription: "Le planning ne prévoit aucune séance ce jour de la semaine.",
+    state: { upcoming: "À venir", ongoing: "En cours", done: "Terminée" },
+    progress: (marked: number, total: number) => `${marked} / ${total} pointés`,
+    notMarked: "Appel non fait",
+    absents: (count: number) => (count <= 1 ? `${count} absent` : `${count} absents`),
+    byTeacher: "Appel du professeur",
+    byStaff: "Appel de l'accueil",
+    byBoth: "Professeur et accueil",
+    conflicts: (count: number) => (count <= 1 ? `${count} saisie en désaccord` : `${count} saisies en désaccord`),
+    take: "Faire l'appel",
+    edit: "Corriger l'appel",
+    lastMarked: (time: string) => `Dernière saisie à ${time}`,
+    roster: {
+      back: "Séances du jour",
+      description: "Marquez chaque élève présent ou absent. L'administration voit qui a saisi l'appel et quand.",
+      allPresent: "Tous présents",
+      present: "Présent",
+      absent: "Absent",
+      notMarked: "Non pointé",
+      markedBy: (role: string, name: string, time: string) => `${role} · ${name} · ${time}`,
+      save: "Enregistrer l'appel",
+      saving: "Enregistrement…",
+      saved: (count: number) => (count <= 1 ? `${count} présence enregistrée.` : `${count} présences enregistrées.`),
+      nothingToSave: "Marquez au moins un élève.",
+      unmarked: (count: number) => (count <= 1 ? `${count} élève sans statut` : `${count} élèves sans statut`),
+      emptyTitle: "Aucun élève inscrit",
+      emptyDescription: "Personne n'est inscrit à cette séance à cette date.",
+      notFoundTitle: "Séance introuvable",
+      notFoundDescription: "Cette séance n'existe pas, n'a pas lieu ce jour-là, ou la date est hors des 7 derniers jours.",
+      teacherOf: (name: string) => `Professeur : ${name}`,
+    },
+  },
+  attendanceConflicts: {
+    title: "Appels en désaccord",
+    description: "Le professeur et l'accueil ont saisi des statuts différents. La saisie la plus récente est affichée ; choisissez celle à retenir.",
+    banner: (count: number) =>
+      count <= 1 ? "Un appel est en désaccord entre le professeur et l'accueil." : `${count} appels sont en désaccord entre le professeur et l'accueil.`,
+    review: "Voir les désaccords",
+    session: (subject: string, date: string) => `${subject} · ${date}`,
+    entry: (role: string, name: string, status: string, time: string) => `${role} (${name}) : ${status}, ${time}`,
+    displayed: (status: string) => `Affiché : ${status}`,
+    keep: (status: string) => `Retenir « ${status} »`,
+    resolved: "Statut retenu.",
+    notification: (subject: string, date: string) => `${subject}, séance du ${date}`,
   },
   attendanceSheet: {
     title: "Assiduité",
@@ -88,6 +300,9 @@ const TEXTS = {
     noRate: "—",
     bySubject: "Par matière",
     absencesCount: (count: number) => (count <= 1 ? `${count} absence` : `${count} absences`),
+    markedBy: (role: string, name: string, time: string) => `Saisi par ${name} (${role}), ${time}`,
+    history: "Saisies successives",
+    historyItem: (role: string, name: string, status: string, time: string) => `${role} (${name}) : ${status}, ${time}`,
     sessionsCount: (count: number) => (count <= 1 ? `${count} séance` : `${count} séances`),
     streaksTitle: "Absences consécutives",
     streak: (length: number, subject: string) => `${length} absences consécutives en ${subject}`,
@@ -213,6 +428,7 @@ const TEXTS = {
     platformCatalogue: "Catalogue",
     platformBilling: "Facturation",
     platformSettings: "Réglages",
+    platformJournal: "Journal",
     branding: "Marque",
     settings: "Réglages",
     payroll: "Paie",
@@ -220,12 +436,133 @@ const TEXTS = {
     rooms: "Salles",
     reenrollment: "Réinscriptions",
     cash: "Caisse",
+    sessions: "Séances du jour",
+    resources: "Ressources",
     short: {
+      sessions: "Séances",
       dashboard: "Accueil",
       subjects: "Matières",
       newStudent: "Inscrire",
       newTeacher: "Professeur",
     },
+  },
+  passwords: {
+    reset: "Réinitialiser le mot de passe",
+    resetFor: (name: string) => `Réinitialiser le mot de passe — ${name}`,
+    resetAdmin: "Réinitialiser le mot de passe de l'admin",
+    resetTitle: (name: string) => `Nouveau mot de passe pour ${name}`,
+    resetDescription:
+      "Le mot de passe actuel n'est jamais visible. Vous en définissez un nouveau, temporaire : la personne est déconnectée de tous ses appareils et devra le remplacer à sa prochaine connexion.",
+    modeLegend: "Mot de passe temporaire",
+    modeGenerate: "Générer automatiquement (10 caractères lisibles)",
+    modeManual: "Le saisir moi-même",
+    manualLabel: "Mot de passe temporaire",
+    manualHint: "8 caractères au moins.",
+    confirm: "Réinitialiser",
+    confirming: "Réinitialisation…",
+    cancel: "Annuler",
+    doneTitle: "Mot de passe temporaire",
+    doneDescription: "Il ne sera plus jamais affiché : copiez-le ou envoyez-le maintenant.",
+    password: "Mot de passe temporaire",
+    loginCode: "Code de connexion",
+    address: "Adresse de connexion",
+    copy: "Copier",
+    copied: "Copié.",
+    message: "Message WhatsApp (modifiable)",
+    whatsapp: "Envoyer sur WhatsApp",
+    noPhone: "Aucun numéro enregistré : transmettez le mot de passe de vive voix.",
+    done: "J'ai transmis le mot de passe",
+    staffMessage: (name: string, url: string, password: string) =>
+      `Bonjour ${name}, votre mot de passe a été réinitialisé. Connectez-vous sur ${url} avec le mot de passe temporaire ${password}, puis choisissez-en un nouveau.`,
+    studentMessage: (name: string, url: string, code: string, password: string) =>
+      `Bonjour, voici le nouvel accès de ${name} : ${url} — code ${code}, mot de passe temporaire ${password}. Un nouveau mot de passe sera demandé à la connexion.`,
+    lastReset: (date: string, by: string) => `Mot de passe réinitialisé le ${date} par ${by}`,
+    lastResetByYou: (date: string) => `Mot de passe réinitialisé le ${date} par vous`,
+    unknownActor: "un responsable",
+    errors: {
+      forbidden: "Accès refusé : vous ne pouvez pas réinitialiser le mot de passe de ce compte.",
+      rate_limited: "Trop de réinitialisations en une heure. Réessayez plus tard.",
+      inactive: "Ce compte est désactivé : réactivez-le d'abord.",
+      not_found: "Compte introuvable.",
+      failed: "Le mot de passe n'a pas pu être changé. Réessayez.",
+    },
+    admins: {
+      title: "Administrateur du centre",
+      titlePlural: "Administrateurs du centre",
+      none: "Aucun administrateur.",
+      lastSignIn: "Dernière connexion",
+      never: "Jamais connecté",
+    },
+    mine: {
+      menu: "Mon mot de passe",
+      title: "Mon mot de passe",
+      description: "Saisissez votre mot de passe actuel, puis le nouveau.",
+      current: "Mot de passe actuel",
+      next: "Nouveau mot de passe",
+      confirm: "Confirmer le nouveau mot de passe",
+      submit: "Enregistrer",
+      submitting: "Enregistrement…",
+      saved: "Mot de passe modifié. Vos autres appareils ont été déconnectés.",
+      wrongCurrent: "Mot de passe actuel incorrect.",
+      back: "Retour",
+    },
+    forced: {
+      title: "Choisissez votre nouveau mot de passe",
+      description:
+        "Votre mot de passe a été défini par un responsable. Choisissez-en un personnel pour continuer : il ne sera connu que de vous.",
+      submit: "Valider et continuer",
+    },
+    validation: {
+      required: "Saisissez un mot de passe.",
+      tooShort: "8 caractères au moins.",
+      tooLong: "72 caractères au plus.",
+      mismatch: "Les deux mots de passe ne correspondent pas.",
+      sameAsOld: "Choisissez un mot de passe différent de l'actuel.",
+      weak: "Mot de passe trop faible : ajoutez des lettres, des chiffres ou des symboles.",
+      currentRequired: "Saisissez votre mot de passe actuel.",
+    },
+    strength: {
+      label: "Robustesse",
+      levels: ["", "Faible", "Moyen", "Bon", "Excellent"],
+    },
+    sessionClosed: "Votre session a été fermée (mot de passe modifié). Connectez-vous à nouveau.",
+    unavailable: "Service momentanément indisponible. Réessayez.",
+  },
+  centerAddress: {
+    label: "Adresse du centre",
+    preview: "Aperçu",
+    copy: "Copier",
+    copied: "Adresse copiée.",
+    copyFailed: "Copie impossible : sélectionnez l'adresse à la main.",
+    open: "Ouvrir",
+    checking: "Vérification de l'adresse…",
+    status: {
+      available: "Adresse disponible.",
+      current: "Adresse actuelle du centre.",
+      taken: "Adresse déjà utilisée par un autre centre.",
+      reserved: "Adresse réservée à la plateforme.",
+      invalid: "2 à 63 caractères : lettres minuscules, chiffres et tirets (ni au début, ni à la fin).",
+    },
+    change: "Changer l'adresse",
+    changeTitle: "Changer l'adresse du centre",
+    changeDescription:
+      "L'ancienne adresse continuera de rediriger vers la nouvelle. Les comptes du centre devront se reconnecter : prévenez le centre.",
+    newSlug: "Nouvelle adresse",
+    confirmLabel: (from: string, to: string) => `Je confirme le passage de ${from} à ${to}.`,
+    submit: "Changer l'adresse",
+    submitting: "Changement…",
+    changed: "Adresse du centre modifiée.",
+    cancel: "Annuler",
+  },
+  centerHost: {
+    unavailable: "Service momentanément indisponible. Réessayez dans quelques instants.",
+    notFoundTitle: "Centre introuvable",
+    notFoundDescription: "Aucun centre ne correspond à cette adresse. Vérifiez l'adresse transmise par votre centre.",
+    notFoundLink: (root: string) => `Aller sur ${root}`,
+    wrongCenter: "Ce compte n'appartient pas à ce centre. Connectez-vous depuis l'adresse de votre centre :",
+    platformAccount: "Ce compte est celui de la console de la plateforme. Connectez-vous depuis son adresse :",
+    transferred:
+      "Votre centre a désormais sa propre adresse. Connectez-vous une nouvelle fois ici (une seule fois), puis gardez cette adresse dans vos favoris :",
   },
   auth: {
     login: {
@@ -251,7 +588,6 @@ const TEXTS = {
       rateLimited: "Trop de tentatives. Patientez quelques minutes, puis réessayez.",
       unavailable: "Connexion impossible pour le moment. Vérifiez votre connexion internet, puis réessayez.",
       inactive: "Ce compte est désactivé. Contactez l'administrateur de votre centre.",
-      wrongCenter: "Ce compte n'appartient pas à ce centre. Connectez-vous depuis l'adresse de votre centre.",
     },
     inactive: {
       title: "Compte inactif",
@@ -322,7 +658,7 @@ const TEXTS = {
     verifying: "Vérification…",
     verifiedOk: "Domaine vérifié : il pointe bien vers la plateforme.",
     verifiedKo: (target: string) => `Le domaine ne pointe pas encore vers ${target} (la propagation DNS peut prendre quelques heures).`,
-    noTarget: "Cible DNS non configurée : définissez PLATFORM_CNAME_TARGET ou PLATFORM_ROOT_DOMAIN.",
+    noTarget: "Cible DNS non configurée : définissez PLATFORM_CNAME_TARGET ou ROOT_DOMAIN.",
     save: "Enregistrer la marque",
     saving: "Enregistrement…",
     saved: "Marque enregistrée",
@@ -330,7 +666,39 @@ const TEXTS = {
     optional: "facultatif",
   },
   platform: {
-    brand: "CentroManager",
+    /** Modules (clé fixe) : nom et description affichés, quelle que soit la langue de la base. */
+    moduleCatalogue: {
+      finance: {
+        name: "Finance",
+        description: "Paie des professeurs (salaire fixe, commissions), reçus imprimables et WhatsApp, charges et revenu net, remises, caisse journalière.",
+      },
+      reenrollment: {
+        name: "Réinscription",
+        description: "Campagnes de réinscription automatique chaque mois, intentions des élèves, rappels de paiement.",
+      },
+      absence_tracking: {
+        name: "Suivi des absences",
+        description: "Fiche d'assiduité détaillée, alerte après trois absences, absences à signaler et messages WhatsApp au tuteur.",
+      },
+      white_label: {
+        name: "Marque blanche",
+        description: "Interface aux couleurs du centre : nom, logo, favicon, couleurs, domaine personnalisé.",
+      },
+      lms: {
+        name: "Plateforme pédagogique",
+        description: "Espace professeur de publication (exercices, examens, résumés de cours) et espace élève de consultation.",
+      },
+    } as Record<string, { name: string; description: string }>,
+    /** Types d'établissement (code fixe). */
+    centerTypeNames: {
+      soutien_scolaire: "Soutien scolaire",
+      centre_formation: "Centre de formation",
+      institut_langue: "Institut de langue",
+      auto_ecole: "Auto-école",
+      soutien_universitaire: "Centre de soutien universitaire",
+      personnalise: "Personnalisé",
+    } as Record<string, string>,
+    brand: "dirassty",
     centerStatus: {
       trial: "Essai",
       active: "Actif",
@@ -357,6 +725,8 @@ const TEXTS = {
       bank_transfer: "Virement",
       cash: "Espèces",
       card: "Carte",
+      cheque: "Chèque",
+      other: "Autre",
     },
     noDueDate: "Sans échéance",
     notSet: "Non renseigné",
@@ -415,6 +785,7 @@ const TEXTS = {
       allTypes: "Tous les types",
       allPlans: "Tous les packs",
       caption: "Liste des centres",
+      address: "Adresse",
       name: "Centre",
       type: "Type",
       plan: "Pack",
@@ -432,8 +803,8 @@ const TEXTS = {
       back: "Tous les centres",
       notFound: "Centre introuvable",
       identity: "Informations",
-      slug: "Adresse",
-      loginUrl: "Adresse de connexion du centre",
+      slug: "Adresse du centre",
+      formerSlugs: (list: string) => `Anciennes adresses (redirigées vers l'actuelle) : ${list}`,
       type: "Type d'établissement",
       createdAt: "Créé le",
       activatedAt: "Activé le",
@@ -465,7 +836,7 @@ const TEXTS = {
       historyEmpty: "Aucun événement.",
       automatic: "Automatique",
       branding: "Marque blanche",
-      brandingStandard: "Module marque blanche non activé : l'interface est aux couleurs de CentroManager.",
+      brandingStandard: "Module marque blanche non activé : l'interface est aux couleurs de dirassty.",
       brandingEmpty: "Aucun réglage de marque enregistré.",
       brandName: "Nom de marque",
       colors: "Couleurs",
@@ -504,9 +875,16 @@ const TEXTS = {
       "center.details_changed": "Informations modifiées",
       "center.admin_invited": "Administrateur invité",
       "platform.settings_changed": "Réglages modifiés",
+      "center.admin_password_reset": "Mot de passe de l'admin réinitialisé",
       "center.password_link_sent": "Lien de mot de passe envoyé",
       "support.started": "Accès support ouvert",
       "support.ended": "Accès support fermé",
+      "center.access_suspended": "Accès suspendu",
+      "center.access_reactivated": "Accès réactivé",
+      "center.data_exported": "Données exportées",
+      "center.deletion_requested": "Suppression définitive demandée",
+      "center.deletion_cancelled": "Suppression définitive annulée",
+      "center.purged": "Données du centre supprimées",
     },
     eventFallback: "Action",
     modules: {
@@ -597,7 +975,7 @@ const TEXTS = {
       name: "Nom du centre",
       namePlaceholder: "Centre Al Amal — Rabat",
       slug: "Adresse du centre",
-      slugHint: "Sert au sous-domaine du centre (ex. al-amal). Lettres minuscules, chiffres et tirets.",
+      slugHint: "Sous-domaine du centre (ex. al-amal). Lettres minuscules, chiffres et tirets.",
       ownerName: "Nom du directeur",
       ownerPhone: "Téléphone du directeur",
       ownerEmail: "Courriel du directeur",
@@ -711,7 +1089,7 @@ const TEXTS = {
       description: "Contact affiché aux centres suspendus pour régulariser leur abonnement.",
       contactTitle: "Contact de régularisation",
       name: "Nom affiché",
-      namePlaceholder: "Service client CentroManager",
+      namePlaceholder: "Service client dirassty",
       phone: "Téléphone",
       email: "Courriel",
       saved: "Réglages enregistrés",
@@ -731,6 +1109,240 @@ const TEXTS = {
       center: "Centre",
       empty: "Aucun paiement",
       emptyDescription: "Les paiements d'abonnement enregistrés apparaîtront ici.",
+    },
+  },
+  /** Console de la plateforme : revenus, état de paiement des centres, journal. */
+  platformConsole: {
+    trend: {
+      up: "Hausse",
+      down: "Baisse",
+      stable: "Stable",
+      /** « Hausse de 3 200 MAD (+12,5 %) » */
+      change: (direction: string, amount: string, percent: string | null) =>
+        percent ? `${direction} de ${amount} (${percent})` : `${direction} de ${amount}`,
+      vsPeriod: (from: string, to: string) => `par rapport au ${from} – ${to}`,
+      vsDay: (date: string) => `par rapport au ${date}`,
+      noPrevious: "Aucun encaissement sur la période précédente",
+      noHistory: "Comparaison disponible dans un mois (relevé quotidien)",
+    },
+    kpis: {
+      title: "Revenus de dirassty",
+      description: "Abonnements payés par les centres : seuls les paiements encaissés comptent.",
+      month: "Revenu du mois",
+      quarter: "Revenu du trimestre",
+      year: "Revenu de l'année",
+      mrr: "Revenu mensuel récurrent",
+      mrrDetail: "Abonnements en service ramenés au mois",
+      range: (from: string, to: string) => `Du ${from} au ${to}`,
+    },
+    period: {
+      title: "Revenus d'une période",
+      legend: "Période",
+      kinds: { month: "Mois", quarter: "Trimestre", year: "Année", custom: "Personnalisée" },
+      month: "Mois",
+      quarter: "Trimestre",
+      year: "Année",
+      quarterOption: (quarter: number, year: number) => `T${quarter} ${year}`,
+      from: "Du",
+      to: "Au",
+      apply: "Afficher",
+      invalid: "Période invalide : la date de début doit précéder la date de fin.",
+      revenue: "Encaissé",
+      payments: (n: number) => `${n} paiement${n > 1 ? "s" : ""}`,
+      previous: (from: string, to: string) => `Période précédente (du ${from} au ${to})`,
+      toDate: "Période en cours : comparée à la même date de la période précédente.",
+    },
+    chart: {
+      title: "Revenus des douze derniers mois",
+      caption: "Revenus encaissés par mois",
+      month: "Mois",
+      revenue: "Encaissé",
+      showTable: "Voir le tableau",
+      hideTable: "Voir le graphique",
+      currentMonth: "En cours",
+    },
+    byPlan: {
+      title: "Répartition par pack",
+      description: (from: string, to: string) => `Centres actuels de chaque pack et revenus encaissés du ${from} au ${to}.`,
+      plan: "Pack",
+      centers: "Centres",
+      paying: "En service",
+      revenue: "Revenu",
+      share: "Part du revenu",
+      total: "Total",
+      caption: "Centres et revenus par pack",
+    },
+    centers: {
+      summaryTitle: "Synthèse",
+      active: "Centres actifs",
+      trial: "En essai",
+      pastDue: "En retard",
+      suspended: "Suspendus",
+      totalDue: "Total dû",
+      totalDueDetail: (n: number) => `${n} centre${n > 1 ? "s" : ""} concerné${n > 1 ? "s" : ""}`,
+      lastPayment: "Dernier paiement",
+      lastAmount: "Montant payé",
+      nextDue: "Prochaine échéance",
+      amountDue: "Montant dû",
+      daysLate: "Retard",
+      activeStudents: "Élèves actifs",
+      lateBy: (days: number) => `En retard de ${days} jour${days > 1 ? "s" : ""}`,
+      dueToday: "Échéance aujourd'hui",
+      upToDate: "À jour",
+      noPayment: "Aucun",
+      sortBy: (column: string) => `Trier par ${column}`,
+      sortedAsc: "tri croissant",
+      sortedDesc: "tri décroissant",
+      record: "Encaisser",
+      recordFor: (name: string) => `Enregistrer un paiement — ${name}`,
+    },
+    payment: {
+      note: "Note",
+      noteHint: "Visible uniquement dans la console (facultatif).",
+    },
+    access: {
+      suspend: "Suspendre l'accès",
+      reactivate: "Réactiver l'accès",
+      suspendTitle: "Suspendre l'accès du centre",
+      suspendDescription:
+        "Aucune donnée n'est supprimée. Tous les comptes du centre (administrateurs, assistants, professeurs, élèves) sont déconnectés immédiatement et voient une page de suspension à l'adresse du centre.",
+      kindLegend: "Motif",
+      kinds: { unpaid: "Impayé", client_request: "Demande du client", contract_end: "Fin de contrat", other: "Autre" } as Record<string, string>,
+      note: "Précision",
+      noteOptional: "Précision (facultatif)",
+      notePlaceholder: "Ex. contrat non renouvelé au 30 septembre",
+      noteRequired: "Précisez le motif.",
+      kindRequired: "Choisissez un motif.",
+      confirmName: (name: string) => `Pour confirmer, retapez le nom du centre : ${name}`,
+      confirmMismatch: "Le nom saisi ne correspond pas au nom du centre.",
+      suspended: (n: number) =>
+        n === 0 ? "Accès suspendu. Aucun compte n'était connecté." : `Accès suspendu. ${n} compte${n > 1 ? "s" : ""} déconnecté${n > 1 ? "s" : ""}.`,
+      reactivateTitle: "Réactiver l'accès du centre",
+      reactivateDescription:
+        "Les comptes du centre retrouvent l'accès immédiatement (chacun se reconnecte). Si l'échéance est dépassée, prolongez-la ou enregistrez un paiement : sinon le contrôle quotidien suspendra de nouveau le centre pour impayé.",
+      reactivated: "Accès réactivé",
+      banner: (kind: string, date: string) => `Accès suspendu depuis le ${date} · motif : ${kind}`,
+      bannerManual: "Un paiement ne lève pas cette suspension : utilisez « Réactiver l'accès ».",
+      bannerUnpaid: "Un paiement enregistré remet le centre en service.",
+    },
+    sheet: {
+      activity: "Activité du centre",
+      activityNote: "Compteurs uniquement : les encaissements des élèves, les salaires et la caisse du centre ne sont pas visibles dans la console.",
+      students: "Élèves",
+      activeStudents: (n: number) => `dont ${n} actif${n > 1 ? "s" : ""}`,
+      teachers: "Professeurs",
+      assistants: "Assistants",
+      admins: "Administrateurs",
+      studentAccounts: "Accès élèves",
+      lastAdminSignIn: "Dernière connexion d'un administrateur",
+      never: "Jamais",
+      totals: "Totaux des paiements d'abonnement",
+      totalsEmpty: "Aucun paiement enregistré.",
+      byMonth: "Par mois",
+      byQuarter: "Par trimestre",
+      byYear: "Par année",
+      quarter: (quarter: number, year: number) => `T${quarter} ${year}`,
+      payments: (n: number) => `${n} paiement${n > 1 ? "s" : ""}`,
+      phone: "Téléphone",
+      noPhone: "Aucun téléphone",
+    },
+    exports: {
+      open: "Exporter les données",
+      title: "Exporter les données du centre",
+      description:
+        "Archive ZIP : un classeur Excel (un onglet par type de donnée) et les mêmes tableaux en CSV. Aucun mot de passe ni jeton. Le lien de téléchargement reste valable 24 heures, puis le fichier est supprimé.",
+      periodLegend: "Période",
+      periodAll: "Tout l'historique",
+      periodRange: "Une plage de dates",
+      from: "Du",
+      to: "Au",
+      periodHint: "La période s'applique aux données datées (paiements, reçus, présences, charges, paie, caisse).",
+      reasonLegend: "Motif",
+      reasons: { client_request: "Demande du client", contract_end: "Fin de contrat", backup: "Sauvegarde", other: "Autre" } as Record<string, string>,
+      note: "Précision",
+      noteOptional: "Précision (facultatif)",
+      noteRequired: "Précisez le motif.",
+      submit: "Préparer l'export",
+      requested: "Export en préparation : il apparaît dans la liste dès qu'il est prêt.",
+      listTitle: "Exports",
+      listEmpty: "Aucun export pour ce centre.",
+      status: { pending: "En préparation", ready: "Prêt", failed: "Échec", expired: "Expiré" } as Record<string, string>,
+      requestedBy: (name: string, date: string) => `Demandé par ${name} le ${date}`,
+      period: (from: string, to: string) => `Du ${from} au ${to}`,
+      allHistory: "Tout l'historique",
+      expiresAt: (date: string) => `Lien valable jusqu'au ${date}`,
+      download: "Télécharger",
+      linkUnavailable: "Ce lien a expiré : préparez un nouvel export.",
+      size: (megabytes: string) => `${megabytes} Mo`,
+      deletionAdvice: "Avant toute suppression définitive, téléchargez un export complet des données.",
+    },
+    deletion: {
+      title: "Suppression définitive",
+      activeHint: "Suppression impossible tant que le centre est en service : suspendez-le ou résiliez-le d'abord.",
+      idleHint:
+        "Les données du centre peuvent être supprimées définitivement après un délai de 30 jours, pendant lequel la demande reste annulable.",
+      request: "Demander la suppression définitive",
+      requestDescription:
+        "Dans 30 jours, toutes les données du centre (élèves, paiements, présences, équipe, fichiers…) et tous ses comptes seront supprimés, sans retour possible. Seuls la facturation de l'abonnement et le journal de la plateforme sont conservés. Pendant ces 30 jours, la demande reste annulable.",
+      exportFirst: "Téléchargez d'abord un export complet des données : après la suppression, rien ne pourra être récupéré.",
+      exportReady: "Un export est prêt au téléchargement dans la section « Exports ».",
+      noExport: "Aucun export prêt pour ce centre : préparez-en un avant de continuer.",
+      reason: "Motif de la suppression",
+      reasonPlaceholder: "Ex. fin de contrat, demande écrite du directeur du 2 octobre",
+      reasonRequired: "Indiquez le motif.",
+      submit: "Programmer la suppression",
+      requested: (date: string) => `Suppression programmée le ${date}.`,
+      banner: (date: string, days: number) =>
+        `Suppression définitive prévue le ${date} (dans ${days} jour${days > 1 ? "s" : ""}). Le centre reste récupérable jusque-là.`,
+      bannerDue: "Le délai de 30 jours est écoulé : la suppression aura lieu lors de la prochaine tâche quotidienne.",
+      requestedBy: (name: string, date: string) => `Demandée par ${name} le ${date}`,
+      cancel: "Annuler la suppression",
+      cancelTitle: "Annuler la suppression définitive",
+      cancelDescription: "Le centre reste suspendu ou résilié ; il pourra de nouveau être réactivé.",
+      cancelled: "Suppression annulée",
+      purgeNow: "Supprimer définitivement maintenant",
+      purgeTitle: "Supprimer définitivement les données",
+      purgeDescription:
+        "Le délai de 30 jours est écoulé. Les fichiers puis les données et les comptes du centre vont être supprimés immédiatement. Cette action est irréversible.",
+      purged: "Données du centre supprimées.",
+      purgeFailed: "La suppression n'a pas pu aboutir. Réessayez ; rien n'a été supprimé côté données.",
+      purgedBanner: (date: string) =>
+        `Données supprimées le ${date}. Seuls la facturation de l'abonnement et le journal de la plateforme sont conservés.`,
+    },
+    journal: {
+      title: "Journal",
+      description: "Actions de la console et changements automatiques. Le journal est en lecture seule : rien ne peut y être modifié ni supprimé.",
+      filters: "Filtrer le journal",
+      center: "Centre",
+      allCenters: "Tous les centres",
+      action: "Type d'action",
+      allActions: "Toutes les actions",
+      origin: "Auteur",
+      allOrigins: "Tous",
+      origins: { platform: "Super-admin", center: "Compte du centre", automatic: "Automatique" },
+      families: {
+        "center.": "Centres (statut, échéance, informations)",
+        "subscription.": "Abonnements et paiements",
+        "support.": "Accès support",
+        "branding.": "Marque blanche",
+        "platform.": "Plateforme",
+      } as Record<string, string>,
+      from: "Du",
+      to: "Au",
+      apply: "Filtrer",
+      reset: "Effacer les filtres",
+      date: "Date",
+      author: "Auteur",
+      detail: "Détail",
+      ip: "Adresse IP",
+      caption: "Journal des actions de la plateforme",
+      count: (n: number) => `${n} événement${n > 1 ? "s" : ""}`,
+      empty: "Aucun événement",
+      emptyDescription: "Aucune action ne correspond à ces filtres.",
+      previous: "Plus récents",
+      next: "Plus anciens",
+      page: (page: number, pages: number) => `Page ${page} sur ${pages}`,
+      seeAll: "Voir tout le journal",
     },
   },
   welcome: {
@@ -753,7 +1365,9 @@ const TEXTS = {
   suspended: {
     title: "Accès suspendu",
     description: (center: string) =>
-      `L'accès${center ? ` à ${center}` : ""} est suspendu : l'abonnement n'est pas réglé. Vos données sont conservées et l'accès sera rétabli dès la régularisation.`,
+      `L'accès${center ? ` à ${center}` : " à ce centre"} est temporairement suspendu. Vos données sont conservées et l'accès sera rétabli dès la régularisation.`,
+    /** Adresse d'un centre suspendu : tout visiteur, avec ou sans session. */
+    hostDescription: "L'accès à ce centre est temporairement suspendu. Contactez l'administrateur de votre centre.",
     cancelledTitle: "Abonnement résilié",
     cancelledDescription: (center: string) =>
       `L'abonnement${center ? ` de ${center}` : ""} a été résilié. Les données restent disponibles à l'export pendant 90 jours sur demande.`,
@@ -923,6 +1537,7 @@ const TEXTS = {
     cancelReason: "Motif",
     cancelledNotice: (number: string, date: string) => `Reçu annulé le ${date} (reçu d'annulation n° ${number}).`,
     thanks: "Merci de votre confiance.",
+    editedWith: "Édité avec dirassty",
     phone: (phone: string) => `Tél. ${phone}`,
     print: "Imprimer",
     printAgain: "Réimprimer",
@@ -994,7 +1609,7 @@ const TEXTS = {
     due: (date: string) => `Échéance ${date}`,
   },
   payroll: {
-    title: "Paie des professeurs",
+    title: "Paie de l'équipe",
     description: "Montants calculés automatiquement chaque mois : salaire fixe, ou commission sur le tarif plein des élèves inscrits.",
     month: "Mois",
     previousMonth: "Mois précédent",
@@ -1009,7 +1624,7 @@ const TEXTS = {
     validatedBy: (name: string, date: string) => `Validée par ${name} le ${date}`,
     validatedOn: (date: string) => `Validée le ${date}`,
     columns: {
-      teacher: "Professeur",
+      teacher: "Membre de l'équipe",
       mode: "Rémunération",
       computed: "Calculé",
       adjustment: "Ajustement",
@@ -1018,7 +1633,7 @@ const TEXTS = {
     },
     modes: { fixed_salary: "Salaire fixe", commission: "Commission", none: "Non configurée" },
     total: "Masse salariale du mois",
-    teachersCount: (count: number) => (count <= 1 ? `${count} professeur` : `${count} professeurs`),
+    teachersCount: (count: number) => (count <= 1 ? `${count} membre` : `${count} membres`),
     emptyTitle: "Aucun professeur",
     emptyDescription: "Créez des comptes professeurs et affectez-leur des matières pour calculer la paie.",
     showDetail: "Voir le détail du calcul",
@@ -1077,10 +1692,15 @@ const TEXTS = {
       date: "Date du versement",
       method: "Mode de versement",
       confirm: "Enregistrer le versement",
-      done: "Versement enregistré",
+      done: "Versement enregistré, reçu de paie émis",
+      note: "Note (facultative)",
+      notePlaceholder: "Ex. : salaire remis en main propre",
+      receiptHint: "Un reçu de paie numéroté est émis à l'enregistrement.",
     },
     exports: {
       payslip: "Fiche de paie",
+      receipt: "Reçu de paie",
+      receipts: "Reçus de paie",
       summaryPdf: "Récapitulatif (PDF)",
       summaryCsv: "Récapitulatif (tableur)",
     },
@@ -1109,13 +1729,100 @@ const TEXTS = {
       historyFrom: (date: string) => `depuis le ${date}`,
       historyRange: (from: string, to: string) => `du ${from} au ${to}`,
     },
+    staff: {
+      title: "Salaires de l'équipe",
+      description: "Assistants et administrateurs salariés : salaire fixe mensuel à partir d'une date. Sans salaire, le membre n'apparaît pas dans la paie.",
+      notOnPayroll: "Hors paie",
+      setSalary: "Définir le salaire",
+      dialogTitle: (name: string) => `Salaire — ${name}`,
+      remove: "Retirer de la paie",
+      removeHint: "Le membre n'apparaît plus dans les paies à venir. Les paies validées et l'historique sont conservés.",
+      removed: "Membre retiré de la paie",
+      fromUsers: "Rémunération",
+    },
     pdf: {
       payslipTitle: "Fiche de paie",
       summaryTitle: "Récapitulatif de la paie",
       period: "Période",
-      teacher: "Professeur",
+      teacher: "Bénéficiaire",
       generatedAt: (date: string) => `Édité le ${date}`,
-      signature: "Signature du professeur",
+      signature: "Signature du bénéficiaire",
+    },
+  },
+  salaryReceipts: {
+    title: "Reçu de paie",
+    cancellationTitle: "Reçu d'annulation de paie",
+    number: (number: string) => `Reçu de paie n° ${number}`,
+    cancellationNumber: (number: string) => `Annulation n° ${number}`,
+    issuedAt: (date: string) => `Émis le ${date}`,
+    member: "Bénéficiaire",
+    role: "Fonction",
+    period: "Période de paie",
+    paidOn: "Date du versement",
+    method: "Mode de paiement",
+    amount: "Montant versé",
+    amountCancelled: "Montant annulé",
+    amountInWords: "Arrêté à la somme de",
+    note: "Note",
+    issuedBy: "Versé par",
+    cancelledBy: "Annulé par",
+    cancels: (number: string) => `Annule le reçu de paie n° ${number}`,
+    cancelReason: "Motif",
+    cancelledNotice: (number: string, date: string) => `Reçu annulé le ${date} (reçu d'annulation n° ${number}).`,
+    signatureMember: "Signature du bénéficiaire",
+    signatureCenter: "Cachet et signature du centre",
+    notFound: "Reçu de paie introuvable.",
+    back: "Reçus de paie",
+    listTitle: "Reçus de paie",
+    listDescription:
+      "Chaque versement de salaire produit un reçu numéroté. Un reçu ne se modifie pas : une erreur se corrige par un reçu d'annulation.",
+    filters: {
+      member: "Membre",
+      allMembers: "Tous les membres",
+      period: "Période de paie",
+      allPeriods: "Toutes les périodes",
+      apply: "Filtrer",
+      reset: "Effacer les filtres",
+    },
+    columns: {
+      number: "N°",
+      issuedAt: "Émis le",
+      member: "Membre",
+      period: "Période",
+      amount: "Montant",
+      method: "Mode",
+      status: "État",
+    },
+    status: { valid: "Valide", cancelled: "Annulé", cancellation: "Annulation" },
+    emptyTitle: "Aucun reçu de paie",
+    emptyDescription: "Les reçus apparaîtront ici dès le premier versement de salaire.",
+    emptyFiltered: "Aucun reçu pour ces filtres.",
+    count: (count: number) => (count <= 1 ? `${count} reçu` : `${count} reçus`),
+    view: "Voir le reçu",
+    whatsappMessage: (values: { member: string; period: string; amount: string; number: string; link: string; center: string }) =>
+      `Bonjour ${values.member}, voici votre reçu de paie n° ${values.number} pour ${values.period} : ${values.amount}.\nReçu : ${values.link}\n${values.center}`,
+    share: {
+      trigger: "Envoyer sur WhatsApp",
+      title: "Envoyer le reçu sur WhatsApp",
+      description: "Vérifiez le numéro et le message, puis ouvrez WhatsApp pour l'envoyer.",
+      phone: "Numéro WhatsApp",
+      noPhone: "Aucun numéro enregistré pour ce membre : saisissez celui à utiliser.",
+      phoneInvalid: "Numéro invalide. Exemple : 06 12 34 56 78.",
+      message: "Message",
+      messageRequired: "Le message ne peut pas être vide.",
+      open: "Ouvrir WhatsApp",
+      preparing: "Préparation du reçu…",
+      linkHint: (days: number) => `Le lien du reçu reste valable ${days} jours.`,
+    },
+    cancel: {
+      trigger: "Annuler le reçu",
+      title: (number: string) => `Annuler le reçu de paie n° ${number} ?`,
+      description:
+        "Un reçu d'annulation, numéroté à la suite, est émis et lié à ce reçu. Le salaire redevient « à verser » dans la paie du mois.",
+      reason: "Motif de l'annulation",
+      reasonRequired: "Indiquez le motif de l'annulation.",
+      confirm: "Émettre le reçu d'annulation",
+      done: "Reçu d'annulation émis",
     },
   },
   expenses: {
@@ -1859,6 +2566,17 @@ const TEXTS = {
     },
   },
   centerSettings: {
+    /** Langue des messages et documents remis aux familles (WhatsApp, reçus, fiche d'assiduité). */
+    familyLocale: {
+      title: "Langue des familles",
+      description: "Langue par défaut des messages WhatsApp et des documents remis aux familles. Elle se change famille par famille sur la fiche de l'élève.",
+      label: "Langue des messages",
+      centerDefault: (language: string) => `Langue du centre (${language})`,
+      studentHint: "Messages WhatsApp, reçus et fiche d'assiduité envoyés à cette famille.",
+      saved: "Langue des messages enregistrée",
+      templateLanguage: "Langue du message",
+      customTemplateNote: "Un message par langue : chaque famille reçoit celui de sa langue (fiche de l'élève, sinon langue du centre).",
+    },
     title: "Réglages du centre",
     description: "Coordonnées, reçus de paiement, réinscription automatique et alertes d'absence.",
     contactTitle: "Coordonnées",
@@ -2003,6 +2721,48 @@ const TEXTS = {
       priceHint: "Le tarif s'applique aux nouvelles inscriptions. Les inscriptions existantes gardent leur tarif d'inscription.",
       deleteSubject: (name: string) => `Supprimer la matière « ${name} » ?`,
       deleteSubjectHint: "Possible seulement si aucune inscription ne la référence.",
+      archived: "Archivée",
+      archivedOn: (date: string) => `Archivée le ${date}`,
+      showArchived: (count: number) => (count <= 1 ? `Afficher la matière archivée (${count})` : `Afficher les matières archivées (${count})`),
+      hideArchived: "Masquer les matières archivées",
+      unarchive: "Réactiver",
+      unarchiveTitle: (name: string) => `Réactiver la matière « ${name} » ?`,
+      unarchiveHint: "Elle sera de nouveau proposée pour les inscriptions, le planning et les packs.",
+      unarchived: "Matière réactivée : elle est de nouveau proposée.",
+      removal: {
+        trigger: "Supprimer ou archiver",
+        title: (name: string) => `Supprimer la matière « ${name} » ?`,
+        loading: "Vérification de ce qui est lié à la matière…",
+        deletable: "Aucun élève, aucune présence ni aucun historique de paiement ne la concerne : elle peut être supprimée définitivement.",
+        detached: "Ces liens seront retirés avant la suppression :",
+        teachers: (count: number) => (count <= 1 ? `${count} professeur affecté` : `${count} professeurs affectés`),
+        slots: (count: number) => (count <= 1 ? `${count} créneau du planning` : `${count} créneaux du planning`),
+        rates: (count: number) => (count <= 1 ? `${count} taux de commission` : `${count} taux de commission`),
+        discounts: (count: number) => (count <= 1 ? `${count} remise ciblée` : `${count} remises ciblées`),
+        delete: "Supprimer définitivement",
+        deleted: "Matière supprimée",
+        hasHistory:
+          "Cette matière ne peut pas être supprimée : elle est liée à un historique (inscriptions, paiements, présences) qu'il faut conserver. Archivez-la : elle disparaîtra des listes de choix et restera dans l'historique.",
+        blockedTitle: "Suppression impossible : la matière a un historique à conserver",
+        blocking: "Éléments liés :",
+        activeEnrollments: (count: number) => (count <= 1 ? `${count} inscription en cours` : `${count} inscriptions en cours`),
+        pastEnrollments: (count: number) => (count <= 1 ? `${count} inscription passée` : `${count} inscriptions passées`),
+        invoices: (count: number) => (count <= 1 ? `${count} facture` : `${count} factures`),
+        attendance: (count: number) => (count <= 1 ? `${count} présence ou absence` : `${count} présences ou absences`),
+        packs: (count: number) => (count <= 1 ? `${count} pack` : `${count} packs`),
+        resources: (count: number) => (count <= 1 ? `${count} ressource pédagogique` : `${count} ressources pédagogiques`),
+        archiveExplain:
+          "Archivez-la plutôt : elle n'apparaîtra plus pour une nouvelle inscription, un nouveau créneau ni l'appel, mais restera dans l'historique et les statistiques. Vous pourrez la réactiver.",
+        archiveSlots: (count: number) =>
+          count <= 1 ? `${count} créneau du planning sera retiré.` : `${count} créneaux du planning seront retirés.`,
+        archive: "Archiver la matière",
+        archived: "Matière archivée",
+        cannotArchiveEnrolled: (count: number) =>
+          count <= 1
+            ? `${count} élève suit encore cette matière : arrêtez son inscription avant de l'archiver.`
+            : `${count} élèves suivent encore cette matière : arrêtez leurs inscriptions avant de l'archiver.`,
+        cannotArchivePacks: (names: string) => `La matière fait partie d'un pack proposé (${names}) : retirez-la du pack ou désactivez le pack avant de l'archiver.`,
+      },
       enrolled: (count: number) => (count <= 1 ? `${count} inscrit` : `${count} inscrits`),
       studentsInLevel: (count: number) => (count <= 1 ? `${count} élève` : `${count} élèves`),
       noSubjects: "Aucune matière pour ce niveau.",
@@ -2141,7 +2901,7 @@ const TEXTS = {
       passwordHint: "8 caractères minimum. À communiquer à la personne.",
       generate: "Générer",
       createdTitle: "Compte créé",
-      createdDescription: "Transmettez ces identifiants. La personne peut se connecter immédiatement.",
+      createdDescription: "Transmettez ces identifiants. La personne peut se connecter immédiatement et choisira son propre mot de passe à la première connexion.",
       copy: "Copier les identifiants",
       copied: "Identifiants copiés",
       emptyTitle: "Aucun utilisateur",
@@ -2157,6 +2917,8 @@ const TEXTS = {
       allLevels: "Tous les niveaux",
       filterStatus: "Paiement",
       allStatuses: "Tous les statuts de paiement",
+      suspendedFilter: "Suspendus",
+      suspendedOn: (date: string) => `Suspendu le ${date}`,
       name: "Élève",
       level: "Niveau",
       guardian: "Responsable",
@@ -2359,6 +3121,11 @@ const TEXTS = {
       emptyDescription: "Vérifiez l'orthographe du nom, ou inscrivez un nouvel élève.",
       noStudentsTitle: "Aucun élève inscrit",
       noStudentsDescription: "Les élèves inscrits apparaîtront ici.",
+      showSuspended: "Voir les élèves suspendus",
+      hideSuspended: "Revenir aux élèves actifs",
+      suspendedTitle: "Élèves suspendus",
+      noSuspendedTitle: "Aucun élève suspendu",
+      noSuspendedDescription: "Les élèves suspendus depuis leur profil apparaîtront ici.",
       newStudent: "Nouvel élève",
     },
     student: {
@@ -2367,6 +3134,28 @@ const TEXTS = {
       noGuardian: "Aucun responsable renseigné",
       notes: "Notes",
       enrolledOn: (date: string) => `Inscrit le ${date}`,
+      suspension: {
+        badge: "Suspendu",
+        title: "Élève suspendu",
+        since: (date: string, name: string | null) => (name ? `Depuis le ${date}, par ${name}` : `Depuis le ${date}`),
+        reason: "Motif",
+        effects:
+          "Il n'apparaît plus dans les appels, les absences, les relances ni les réinscriptions, et n'est plus facturé. Son profil et son historique sont conservés ; ses impayés restent dus.",
+        suspend: "Suspendre l'élève",
+        suspendTitle: (name: string) => `Suspendre ${name} ?`,
+        suspendDescription:
+          "L'élève est mis de côté : plus d'appel, d'alerte d'absence, de relance, de réinscription ni de facture, et son accès à l'espace élève est coupé. Rien n'est supprimé ; vous pourrez le réactiver à tout moment.",
+        reasonLabel: "Motif de la suspension",
+        reasonPlaceholder: "Ex. : ne paie plus depuis septembre",
+        reasonRequired: "Indiquez le motif de la suspension.",
+        confirm: "Suspendre",
+        done: "Élève suspendu",
+        reactivate: "Réactiver",
+        reactivateTitle: (name: string) => `Réactiver ${name} ?`,
+        reactivateDescription:
+          "L'élève redevient actif partout : appels, absences, relances, réinscriptions. La facture du mois en cours est émise pour ses inscriptions.",
+        reactivated: "Élève réactivé",
+      },
       tabsLabel: "Historique de l'élève",
       tabs: { payments: "Paiements", receipts: "Reçus", absences: "Absences", followUps: "Relances" },
       sections: {
@@ -2520,7 +3309,7 @@ const TEXTS = {
         copy: "Copier les identifiants",
         copied: "Identifiants copiés",
         credentials: (email: string, password: string) =>
-          `CentroManager\nEmail : ${email}\nMot de passe provisoire : ${password}`,
+          `dirassty\nEmail : ${email}\nMot de passe provisoire : ${password}`,
         another: "Créer un autre professeur",
       },
       noSubjectsTitle: "Aucune matière configurée",
@@ -2540,7 +3329,7 @@ const TEXTS = {
   styleguide: {
     tokens: {
       title: "Charte graphique",
-      description: "Couleurs, typographie et formes de CentroManager.",
+      description: "Couleurs, typographie et formes de dirassty.",
     },
     components: {
       title: "Composants",
@@ -2654,26 +3443,142 @@ type CenterNamespaces =
   | "reenrollment"
   | "cash";
 
-export type AppLabels = typeof TEXTS;
+/** Forme d'un arbre de libellés : même structure, textes quelconques (chaque langue a les siens). */
+type LabelTree<T> = T extends string
+  ? string
+  : T extends (...args: infer A) => infer R
+    ? (...args: A) => LabelTree<R>
+    : T extends readonly (infer U)[]
+      ? readonly LabelTree<U>[]
+      : T extends object
+        ? { readonly [K in keyof T]: LabelTree<T[K]> }
+        : T;
 
-/** Libellés neutres, identiques pour tous les centres. */
+export type AppLabels = LabelTree<typeof TEXTS>;
+
+/** Libellés neutres, identiques pour tous les centres (français). */
 export const LABELS: Omit<AppLabels, CenterNamespaces> = TEXTS;
+
+/** Libellés de chaque langue : la vérification de type impose la même structure partout. */
+const TEXTS_BY_LOCALE: Record<Locale, AppLabels> = { fr: TEXTS, en: TEXTS_EN, ar: TEXTS_AR };
 
 const cache = new Map<string, AppLabels>();
 
 /**
- * Libellés complets dans le vocabulaire d'un centre ; en marque blanche,
- * le nom de la plateforme est remplacé par celui de la marque du centre.
+ * Libellés complets dans la langue de l'utilisateur et le vocabulaire d'un centre ;
+ * en marque blanche, le nom de la plateforme est remplacé par celui de la marque du centre.
+ * Sans langue : français (référence des modèles de messages).
  */
-export function labelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName?: string | null): AppLabels {
-  const key = JSON.stringify([terms, brandName ?? null]);
+export function labelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName?: string | null, locale: Locale = DEFAULT_LOCALE): AppLabels {
+  const key = JSON.stringify([terms, brandName ?? null, locale]);
   let labels = cache.get(key);
   if (!labels) {
-    const vocabulary = translator(terms);
+    const vocabulary = locale === "en" ? englishTranslator(terms) : locale === "ar" ? arabicTranslator(terms) : translator(terms);
     const platformName = TEXTS.app.name;
     const translate = brandName && brandName !== platformName ? (text: string) => vocabulary(text).replaceAll(platformName, brandName) : vocabulary;
-    labels = translateTree(TEXTS, translate);
+    labels = translateTree(TEXTS_BY_LOCALE[locale], translate);
+    // Modèles de messages (WhatsApp, reçus) et leurs variables : dans la langue du centre (français).
+    if (locale !== DEFAULT_LOCALE) labels = withMessageTemplates(labels, labelsFor(terms, brandName));
     cache.set(key, labels);
   }
   return labels;
+}
+
+const familyCache = new Map<string, AppLabels>();
+
+/**
+ * Libellés d'un message ou d'un document remis à une famille, dans la langue de
+ * cette famille : modèles de messages compris (contrairement à labelsFor, qui
+ * garde les modèles en français pour l'interface).
+ */
+export function familyLabelsFor(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName?: string | null, locale: Locale = DEFAULT_LOCALE): AppLabels {
+  if (locale === DEFAULT_LOCALE) return labelsFor(terms, brandName);
+  const key = JSON.stringify([terms, brandName ?? null, locale]);
+  let labels = familyCache.get(key);
+  if (!labels) {
+    const vocabulary = locale === "en" ? englishTranslator(terms) : arabicTranslator(terms);
+    const platformName = TEXTS.app.name;
+    const translate = brandName && brandName !== platformName ? (text: string) => vocabulary(text).replaceAll(platformName, brandName) : vocabulary;
+    labels = translateTree(TEXTS_BY_LOCALE[locale], translate);
+    familyCache.set(key, labels);
+  }
+  return labels;
+}
+
+/**
+ * Modèles de messages envoyés aux familles (WhatsApp, reçus), leurs variables et
+ * les exemples de l'aperçu : gardés en français quelle que soit la langue de l'interface.
+ */
+const MESSAGE_TEMPLATE_PATHS: readonly string[] = [
+  "receipts.tokens",
+  "receipts.whatsappTemplate",
+  "reenrollment.reminders.tokens",
+  "reenrollment.reminders.templates",
+  "reenrollment.reminders.settings.sample",
+  "absenceAlerts.tokens",
+  "absenceAlerts.template",
+  "absenceAlerts.seriesTemplate",
+  "absenceAlerts.settings.sample",
+  "centerSettings.sample",
+];
+
+function withMessageTemplates<T>(tree: T, french: T): T {
+  const copy = structuredCloneTree(tree);
+  for (const path of MESSAGE_TEMPLATE_PATHS) {
+    const keys = path.split(".");
+    const last = keys.pop();
+    let target: unknown = copy;
+    let source: unknown = french;
+    for (const key of keys) {
+      target = (target as Record<string, unknown> | undefined)?.[key];
+      source = (source as Record<string, unknown> | undefined)?.[key];
+    }
+    if (last && target && typeof target === "object" && source && typeof source === "object" && last in source) {
+      (target as Record<string, unknown>)[last] = (source as Record<string, unknown>)[last];
+    }
+  }
+  return copy;
+}
+
+/** Copie des objets de l'arbre (fonctions et textes partagés), pour ne pas modifier l'arbre mis en cache. */
+function structuredCloneTree<T>(tree: T): T {
+  if (!tree || typeof tree !== "object" || Array.isArray(tree)) return tree;
+  return Object.fromEntries(Object.entries(tree).map(([k, v]) => [k, structuredCloneTree(v)])) as T;
+}
+
+const messageTranslators = new Map<string, (text: string) => string>();
+
+/**
+ * Message déjà rédigé en français (erreur de validation, d'action serveur, message
+ * d'une fonction SQL) → même message dans la langue de l'utilisateur. Un texte
+ * inconnu (texte calculé) est rendu tel quel.
+ */
+export function messageTranslator(terms: VocabularyTerms = DEFAULT_VOCABULARY, brandName?: string | null, locale: Locale = DEFAULT_LOCALE): (text: string) => string {
+  if (locale === "fr") return (text) => text;
+  const key = JSON.stringify([terms, brandName ?? null, locale]);
+  let translate = messageTranslators.get(key);
+  if (!translate) {
+    const map = new Map<string, string>();
+    const collect = (source: unknown, target: unknown) => {
+      if (typeof source === "string") {
+        if (typeof target === "string" && !map.has(source)) map.set(source, target);
+        return;
+      }
+      if (!source || typeof source !== "object" || !target || typeof target !== "object") return;
+      for (const [k, v] of Object.entries(source)) collect(v, (target as Record<string, unknown>)[k]);
+    };
+    // Textes neutres (LABELS) puis textes dans le vocabulaire du centre.
+    collect(TEXTS, labelsFor(terms, brandName, locale));
+    collect(labelsFor(terms, brandName), labelsFor(terms, brandName, locale));
+    // Message d'une fonction SQL (vocabulaire par défaut) : dictionnaire des messages de la base.
+    const vocabulary = locale === "en" ? englishTranslator(terms) : arabicTranslator(terms);
+    translate = (text) => {
+      const known = map.get(text);
+      if (known !== undefined) return known;
+      const fromDatabase = translateDbMessage(text, locale);
+      return fromDatabase === null ? text : vocabulary(fromDatabase);
+    };
+    messageTranslators.set(key, translate);
+  }
+  return translate;
 }

@@ -24,7 +24,9 @@ select no_plan();
 create schema isolation_test;
 create table isolation_test.global_tables (tbl text primary key);
 -- Catalogue commun (modules, packs) : aucune donnée de centre.
-insert into isolation_test.global_tables values ('center_types'), ('platform_settings'), ('modules'), ('plans'), ('plan_modules');
+insert into isolation_test.global_tables values ('center_types'), ('platform_settings'), ('modules'), ('plans'), ('plan_modules'),
+  -- Relevés du revenu mensuel récurrent de la plateforme.
+  ('platform_mrr_snapshots');
 
 -- ---------------------------------------------------------------------
 -- Contrôles structurels
@@ -130,6 +132,27 @@ insert into public.attendance (student_id, subject_id, teacher_id, session_date,
   ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today() - 14, 'absent', 'Malade'),
   ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today() - 7, 'absent', null),
   ('4b000000-0000-4000-8000-000000000001', '2b000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000c', private.today(), 'absent', null);
+-- Accès élève de B (plateforme pédagogique : centre B en Premium).
+insert into auth.users (id, email) values ('4b0000e1-0000-4000-8000-000000000001', 'eleve-bbbbiso1@eleves.centromanager.invalid');
+insert into public.student_accounts (user_id, student_id, center_id, login_code)
+values ('4b0000e1-0000-4000-8000-000000000001', '4b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 'BBBBISO1');
+-- Ressource pédagogique de B (publiée par le professeur B, matière de B).
+insert into public.learning_resources (center_id, subject_id, level_id, author_id, type, title)
+select 'cb000000-0000-4000-8000-000000000001', s.id, s.level_id, 'b0000000-0000-4000-8000-00000000000c', 'summary', 'Résumé B'
+from public.subjects s where s.center_id = 'cb000000-0000-4000-8000-000000000001' limit 1;
+-- Ouverture d'une ressource de B par l'élève de B.
+insert into public.resource_views (student_id, resource_id, center_id)
+select '4b000000-0000-4000-8000-000000000001', r.id, r.center_id
+from public.learning_resources r where r.center_id = 'cb000000-0000-4000-8000-000000000001' limit 1;
+-- Réinitialisation d'un mot de passe dans B (journal lisible par l'admin de B seulement).
+insert into public.password_events (center_id, actor_id, actor_role, target_user_id, target_role, event_type)
+values ('cb000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-00000000000a', 'admin',
+        'b0000000-0000-4000-8000-00000000000c', 'teacher', 'reset_by_admin');
+-- Ancienne adresse de B (historique, lisible par le super-admin seulement).
+insert into public.center_slug_history (old_slug, center_id) values ('iso-b-ancienne', 'cb000000-0000-4000-8000-000000000001');
+-- Saisie de l'accueil B en désaccord avec le professeur B (historique et désaccord du centre B).
+update public.attendance set status = 'present', marked_by = 'b0000000-0000-4000-8000-00000000000b', marked_by_role = 'assistant'
+where student_id = '4b000000-0000-4000-8000-000000000001' and session_date = private.today();
 insert into public.follow_ups (student_id, type, channel, note) values
   ('4b000000-0000-4000-8000-000000000001', 'absence', 'phone', 'Relance B');
 insert into public.platform_notifications (center_id, kind, scheduled_for, recipient)
@@ -156,6 +179,10 @@ insert into public.payroll_periods (id, center_id, year, month) values
 insert into public.payroll_lines (id, payroll_period_id, center_id, teacher_id, teacher_name, pay_mode, computed_amount) values
   ('6b000000-0000-4000-8000-000000000001', '5b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001',
    'b0000000-0000-4000-8000-00000000000c', 'Prof B', 'commission', 90);
+-- Versement de B et son reçu de paie (compteur de la série de paie compris).
+update public.payroll_lines set paid_at = date '2026-02-01', payment_method = 'cash'
+where id = '6b000000-0000-4000-8000-000000000001';
+select private.issue_salary_receipt('6b000000-0000-4000-8000-000000000001', 'Paie B');
 insert into public.expenses (id, center_id, category_id, label, amount, receipt_url)
 select '7b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', ec.id, 'Loyer B', 4000,
        'cb000000-0000-4000-8000-000000000001/loyer.pdf'
@@ -165,7 +192,8 @@ insert into public.schedule_conflicts_log (center_id, attempted_slot, conflict_t
 values ('cb000000-0000-4000-8000-000000000001', '{"day_of_week": 2}', 'room');
 insert into public.absence_notifications (student_id, center_id, attendance_id, channel)
 select '4b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', a.id, 'whatsapp'
-from public.attendance a where a.student_id = '4b000000-0000-4000-8000-000000000001' limit 1;
+from public.attendance a where a.student_id = '4b000000-0000-4000-8000-000000000001' and a.status = 'absent'
+order by a.session_date limit 1;
 -- Réinscription et caisse de B : campagne (ligne, intention), rappel de paiement,
 -- session de caisse et mouvement d'espèces.
 insert into public.billing_runs (id, center_id, period_year, period_month, total_expected, student_count)
@@ -183,11 +211,15 @@ insert into public.cash_sessions (id, center_id, session_date, opening_float)
 values ('9b000000-0000-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', private.today() - 1, 100);
 insert into public.cash_movements (center_id, cash_session_id, kind, amount, reason)
 values ('cb000000-0000-4000-8000-000000000001', '9b000000-0000-4000-8000-000000000001', 'bank_deposit', -50, 'Dépôt B');
+-- Export des données de B (console de la plateforme).
+insert into public.center_exports (center_id, requested_role, reason_kind)
+values ('cb000000-0000-4000-8000-000000000001', 'super_admin', 'backup');
 -- Fichiers de B (photos d'élève et d'équipe, reçu, justificatif).
 insert into storage.objects (bucket_id, name) values
   ('student-photos', 'cb000000-0000-4000-8000-000000000001/4b000000-0000-4000-8000-000000000001.jpg'),
   ('staff-photos', 'cb000000-0000-4000-8000-000000000001/b0000000-0000-4000-8000-00000000000a/1.jpg'),
   ('receipts', 'cb000000-0000-4000-8000-000000000001/recu.pdf'),
+  ('salary-receipts', 'cb000000-0000-4000-8000-000000000001/recu-paie.pdf'),
   ('expense-receipts', 'cb000000-0000-4000-8000-000000000001/loyer.pdf');
 
 -- Lignes de B : tout ce qui n'était pas dans la photographie.
@@ -254,7 +286,7 @@ from unnest(array['students', 'enrollments', 'invoices', 'attendance', 'alerts',
                   'discounts', 'receipts', 'center_events', 'teacher_salaries', 'teacher_commissions', 'payroll_periods',
                   'payroll_lines', 'expense_categories', 'expenses', 'rooms', 'schedule_conflicts_log',
                   'absence_notifications', 'billing_runs', 'billing_run_lines', 'reenrollment_intents',
-                  'payment_reminders', 'cash_sessions', 'cash_movements']) as tbl;
+                  'payment_reminders', 'cash_sessions', 'cash_movements', 'salary_payments']) as tbl;
 reset role;
 
 -- ---------------------------------------------------------------------

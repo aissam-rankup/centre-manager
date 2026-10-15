@@ -1,5 +1,5 @@
 import { CalendarCheck, CalendarDays, UserRound } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { ContactButtons } from "@/components/assistant/contact-buttons";
 import { FollowUpDialog } from "@/components/assistant/follow-up-dialog";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getLabels } from "@/lib/i18n/server";
 import type { AbsenceRow } from "@/lib/data/absences";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 
 
 type AbsencesViewProps = {
@@ -82,6 +82,12 @@ export async function AbsencesView({ rows, dateIso, todayIso, basePath, fileBase
                 </div>
               </dl>
 
+              {row.markedByName && row.markedByRole ? (
+                <p className="text-caption text-subtle">
+                  {LABELS.attendanceSheet.markedBy(LABELS.attendanceMarkers[row.markedByRole], row.markedByName, formatDateTime(row.markedAt))}
+                </p>
+              ) : null}
+
               {row.streak ? (
                 <p className="rounded-lg bg-warning/10 px-3 py-2 text-caption font-medium text-warning-ink">{L.streak(row.streak)}</p>
               ) : null}
@@ -95,7 +101,7 @@ export async function AbsencesView({ rows, dateIso, todayIso, basePath, fileBase
                   defaultType="absence"
                   triggerVariant="compact"
                 />
-                <Button asChild variant="ghost" className="ml-auto">
+                <Button asChild variant="ghost" className="ms-auto">
                   <Link href={`${fileBase}/${row.studentId}`}>
                     <UserRound aria-hidden />
                     {L.openFile}

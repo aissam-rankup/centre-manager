@@ -7,7 +7,9 @@ import {
   CalendarDays,
   CalendarRange,
   CalendarSync,
+  ClipboardCheck,
   Component,
+  FolderOpen,
   DoorOpen,
   GraduationCap,
   HandCoins,
@@ -22,6 +24,7 @@ import {
   Users,
   UserCog,
   Wallet,
+  ScrollText,
 } from "lucide-react";
 
 import type { NavItem } from "@/components/layout/nav-types";
@@ -52,6 +55,7 @@ export function navigationFor(
       { href: ROUTES.assistant.students, label: LABELS.nav.students, icon: Users },
       { href: ROUTES.assistant.newStudent, label: LABELS.nav.newStudent, shortLabel: LABELS.nav.short.newStudent, icon: UserPlus },
       { href: ROUTES.assistant.cash, label: LABELS.nav.cash, icon: Banknote, module: "finance" },
+      { href: ROUTES.assistant.sessions, label: LABELS.nav.sessions, shortLabel: LABELS.nav.short.sessions, icon: ClipboardCheck },
       { href: ROUTES.assistant.absences, label: LABELS.nav.absences, icon: CalendarX },
       ...(options.reenrollment
         ? [{ href: ROUTES.assistant.reenrollment, label: LABELS.nav.reenrollment, icon: CalendarSync, module: "reenrollment" as const }]
@@ -61,6 +65,7 @@ export function navigationFor(
     teacher: [
       { href: ROUTES.teacher.home, label: LABELS.nav.home, icon: House },
       { href: ROUTES.teacher.schedule, label: LABELS.nav.schedule, icon: CalendarDays },
+      { href: ROUTES.teacher.resources, label: LABELS.nav.resources, icon: FolderOpen, module: "lms" },
     ],
     admin: [
       { href: ROUTES.admin.home, label: LABELS.nav.dashboard, shortLabel: LABELS.nav.short.dashboard, icon: LayoutDashboard },
@@ -87,6 +92,7 @@ export function navigationFor(
       { href: ROUTES.platform.centers, label: LABELS.nav.platformCenters, icon: Building2 },
       { href: ROUTES.platform.catalogue, label: LABELS.nav.platformCatalogue, icon: Layers },
       { href: ROUTES.platform.billing, label: LABELS.nav.platformBilling, icon: Wallet },
+      { href: ROUTES.platform.journal, label: LABELS.nav.platformJournal, icon: ScrollText },
       { href: ROUTES.platform.settings, label: LABELS.nav.platformSettings, icon: Settings },
     ],
     styleguide: [

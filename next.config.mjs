@@ -10,15 +10,26 @@ const appHost = (() => {
   }
 })();
 
+// Sous-domaines des centres (<slug>.ROOT_DOMAIN, relayés par le Worker Cloudflare) :
+// les Server Actions envoyées depuis ces adresses sont acceptées.
+const rootDomain = (process.env.ROOT_DOMAIN ?? "").trim().toLowerCase();
+const allowedOrigins = [
+  ...(appHost ? [appHost] : []),
+  ...(rootDomain ? [rootDomain, `*.${rootDomain}`] : []),
+];
+
 /** @type {import("next").NextConfig} */
 const nextConfig = {
+  // Les arguments des Server Actions (mots de passe compris) ne sont jamais écrits dans les logs.
+  logging: { serverFunctions: false },
   // Moteur PDF (fiches d'assiduité) : chargé tel quel par Node, sans passer par le bundler.
   serverExternalPackages: ["@react-pdf/renderer"],
   experimental: {
     serverActions: {
-      // Photo élève (2 Mo max côté serveur, ~150 Ko en pratique après compression) + marge multipart.
-      bodySizeLimit: "3mb",
-      ...(appHost ? { allowedOrigins: [appHost] } : {}),
+      // Ressource pédagogique (8 Mo max : PDF ou image) + marge multipart, sous la limite de
+      // 10 Mo des requêtes qui traversent le proxy ; photo élève : 2 Mo.
+      bodySizeLimit: "9mb",
+      ...(allowedOrigins.length ? { allowedOrigins } : {}),
     },
   },
 };

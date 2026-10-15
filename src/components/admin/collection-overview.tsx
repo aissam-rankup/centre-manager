@@ -1,5 +1,5 @@
 import { ArrowRight, TriangleAlert } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shared/app-link";
 
 import { CollectionChart } from "@/components/admin/collection-chart";
 import { SectionHeading } from "@/components/dashboard/section-heading";
@@ -8,11 +8,12 @@ import { ROUTES } from "@/lib/auth/routes";
 import type { AppLabels } from "@/lib/constants/labels";
 import type { CollectionOverview, ReenrollmentOverview } from "@/lib/data/collection";
 import { formatMAD, formatMonth, formatPercent } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/locale";
 import { isoDate } from "@/lib/reenrollment";
 import { cn } from "@/lib/utils";
 
 /** Recouvrement du mois : prévisionnel, encaissé à ce jour, reste, taux, puis courbe comparée au mois précédent. */
-export function CollectionOverviewSection({ data, LABELS }: { data: CollectionOverview; LABELS: AppLabels }) {
+export function CollectionOverviewSection({ data, LABELS, locale }: { data: CollectionOverview; LABELS: AppLabels; locale: Locale }) {
   const C = LABELS.financeDashboard.collection;
   const remaining = Math.max(0, data.expected - data.collected);
   const rate = data.expected > 0 ? data.collected / data.expected : null;
@@ -22,20 +23,20 @@ export function CollectionOverviewSection({ data, LABELS }: { data: CollectionOv
     <section aria-labelledby="recouvrement" className="flex flex-col gap-3">
       <SectionHeading id="recouvrement" title={C.title} />
       <div className="flex flex-col gap-5 rounded-xl bg-card p-5 shadow-card md:p-6">
-        <p className="text-caption text-muted-foreground">{C.description(formatMonth(data.monthStart))}</p>
+        <p className="text-caption text-muted-foreground">{C.description(formatMonth(data.monthStart, locale))}</p>
         <dl className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <Kpi label={C.expected} value={formatMAD(data.expected)} detail={C.expectedHint(data.invoices)} />
-          <Kpi label={C.collected} value={formatMAD(data.collected)} detail={C.collectedHint(data.paidInvoices, data.invoices)} />
-          <Kpi label={C.remaining} value={formatMAD(remaining)} />
+          <Kpi label={C.expected} value={formatMAD(data.expected, locale)} detail={C.expectedHint(data.invoices)} />
+          <Kpi label={C.collected} value={formatMAD(data.collected, locale)} detail={C.collectedHint(data.paidInvoices, data.invoices)} />
+          <Kpi label={C.remaining} value={formatMAD(remaining, locale)} />
           <Kpi
             label={C.rate}
-            value={rate === null ? "—" : formatPercent(rate)}
+            value={rate === null ? "—" : formatPercent(rate, locale)}
             detail={rate === null ? C.rateNone : undefined}
             emphasis
           />
         </dl>
         {rate !== null && previousRate !== null ? (
-          <p className="text-caption text-muted-foreground">{C.comparison(formatPercent(rate), formatPercent(previousRate))}</p>
+          <p className="text-caption text-muted-foreground">{C.comparison(formatPercent(rate, locale), formatPercent(previousRate, locale))}</p>
         ) : previousRate === null ? (
           <p className="text-caption text-muted-foreground">{C.comparisonNone}</p>
         ) : null}
@@ -60,9 +61,9 @@ function Kpi({ label, value, detail, emphasis = false }: { label: string; value:
 }
 
 /** Réinscription : reconduits, abandons, pauses, et par matière ou pack. */
-export function ReenrollmentOverviewCard({ data, LABELS }: { data: ReenrollmentOverview; LABELS: AppLabels }) {
+export function ReenrollmentOverviewCard({ data, LABELS, locale }: { data: ReenrollmentOverview; LABELS: AppLabels; locale: Locale }) {
   const D = LABELS.reenrollment.dashboard;
-  const month = formatMonth(isoDate(data.year, data.month, 1));
+  const month = formatMonth(isoDate(data.year, data.month, 1), locale);
   const counts = [
     { key: "confirmed", value: data.confirmed, tone: "text-success-ink" },
     { key: "dropped", value: data.dropped, tone: "text-danger-ink" },
@@ -96,7 +97,7 @@ export function ReenrollmentOverviewCard({ data, LABELS }: { data: ReenrollmentO
                   <span className="flex justify-between gap-3 text-caption">
                     <span className="font-medium">
                       {subject.name}
-                      {subject.kind === "pack" ? <span className="ml-1 text-muted-foreground">({D.pack})</span> : null}
+                      {subject.kind === "pack" ? <span className="ms-1 text-muted-foreground">({D.pack})</span> : null}
                     </span>
                     <span className="numeric">{D.subjectLine(subject.kept, subject.dropped)}</span>
                   </span>
@@ -124,13 +125,21 @@ export function ReenrollmentOverviewCard({ data, LABELS }: { data: ReenrollmentO
 }
 
 /** Mois commencé sans campagne confirmée : les factures attendent. */
-export function LateDraftBanner({ draft, LABELS }: { draft: { id: string; year: number; month: number }; LABELS: AppLabels }) {
+export function LateDraftBanner({
+  draft,
+  LABELS,
+  locale,
+}: {
+  draft: { id: string; year: number; month: number };
+  LABELS: AppLabels;
+  locale: Locale;
+}) {
   const D = LABELS.reenrollment.dashboard;
   return (
     <div role="status" className="flex flex-col gap-3 rounded-xl bg-warning/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="flex items-start gap-2">
         <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning-ink" aria-hidden />
-        {D.lateDraft(formatMonth(isoDate(draft.year, draft.month, 1)))}
+        {D.lateDraft(formatMonth(isoDate(draft.year, draft.month, 1), locale))}
       </p>
       <Button asChild variant="outline" className="min-h-11 self-start sm:self-auto">
         <Link href={`${ROUTES.admin.reenrollment}?campagne=${draft.id}`}>{D.lateDraftAction}</Link>

@@ -1,7 +1,6 @@
 "use server";
 
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -11,8 +10,11 @@ import { ROUTES } from "@/lib/auth/routes";
 import { requireRole, requireStaff } from "@/lib/auth/session";
 import { getSessionBrand } from "@/lib/branding";
 import { labelsFor } from "@/lib/constants/labels";
+import { getFamilyContext } from "@/lib/data/family-locale";
+import { getTranslatedTemplate, prepareTranslatedTemplates } from "@/lib/data/message-templates";
+import { isTranslatedLocale, TRANSLATED_LOCALES } from "@/lib/message-templates";
 import { getReminderQueue, getReminderSettings } from "@/lib/data/reminders";
-import { formatDayMonth, formatMAD } from "@/lib/format";
+import { dateLocale, formatDayMonth, formatMAD } from "@/lib/format";
 import { describeCenterError, getLabels } from "@/lib/i18n/server";
 import { isValidPhone, toWhatsAppHref } from "@/lib/phone";
 import { REMINDER_TYPES, renderReminderMessage } from "@/lib/reminders";
@@ -58,22 +60,27 @@ export async function sendPaymentReminder(input: unknown): Promise<ActionResult<
     const whatsapp = phone && isValidPhone(phone) ? toWhatsAppHref(phone) : null;
     if (!whatsapp) return failure(R.noPhone, { phone: LABELS.receipts.share.phoneInvalid });
 
-    const [settings, brand] = await Promise.all([getReminderSettings(), getSessionBrand()]);
-    const custom = settings.templates[item.type];
+    // Message dans la langue de la famille (fiche de l'élève, sinon réglages du centre).
+    const [settings, brand, family] = await Promise.all([getReminderSettings(), getSessionBrand(), getFamilyContext(item.studentId)]);
+    // Modèle du centre dans la langue de la famille (le français a ses colonnes).
+    const custom = isTranslatedLocale(family.locale)
+      ? await getTranslatedTemplate(family.locale, `reminder_${item.type}`)
+      : settings.templates[item.type];
     template = custom ? "custom" : "default";
     message = renderReminderMessage(
       custom,
       item.type,
       {
         student: item.fullName,
-        month: format(new Date(item.year, item.month - 1, 1), "MMMM", { locale: fr }),
+        month: format(new Date(item.year, item.month - 1, 1), "MMMM", { locale: dateLocale(family.locale) }),
         subjects: item.subjectNames.join(", "),
-        amount: formatMAD(item.amountDue),
-        date: formatDayMonth(item.dueDate),
-        days: R.days(item.daysOverdue ?? 0),
+        amount: formatMAD(item.amountDue, family.locale),
+        date: formatDayMonth(item.dueDate, family.locale),
+        days: family.labels.reenrollment.reminders.days(item.daysOverdue ?? 0),
         center: brand.whiteLabel ? brand.name : profile.centerName,
       },
-      LABELS,
+      family.labels,
+      family.locale,
     );
     href = `${whatsapp}?text=${encodeURIComponent(message)}`;
   }
@@ -110,6 +117,8 @@ export async function updateReminderSettings(input: unknown): Promise<ActionResu
       enabled: z.boolean(),
       daysBefore: z.coerce.number(R.settings.daysInvalid).int(R.settings.daysInvalid).min(0, R.settings.daysInvalid).max(28, R.settings.daysInvalid),
       templates: z.object({ upcoming: template, due_today: template, overdue: template }),
+      // Modèles en arabe et en anglais par vague (vides : message proposé dans la langue de la famille).
+      translations: z.partialRecord(z.enum(TRANSLATED_LOCALES), z.partialRecord(z.enum(REMINDER_TYPES), z.string())).optional(),
     })
     .safeParse(input);
   if (!parsed.success) {
@@ -127,10 +136,20 @@ export async function updateReminderSettings(input: unknown): Promise<ActionResu
       return [type, value && value !== R.templates[type] ? toCanonicalTokens(value, R.tokens, canonical) : null];
     }),
   ) as Record<(typeof REMINDER_TYPES)[number], string | null>;
+  const prepared = await prepareTranslatedTemplates(
+    TRANSLATED_LOCALES.flatMap((locale) =>
+      REMINDER_TYPES.flatMap((type) => {
+        const value = parsed.data.translations?.[locale]?.[type];
+        return value === undefined ? [] : [{ locale, kind: `reminder_${type}` as const, value }];
+      }),
+    ),
+  );
+  if (!prepared.ok) return failure(prepared.error);
   const { error } = await supabase
     .from("centers")
     .update({
       payment_reminders_enabled: parsed.data.enabled,
+      message_templates: prepared.templates,
       reminder_days_before: parsed.data.daysBefore,
       reminder_template_upcoming: stored.upcoming,
       reminder_template_due_today: stored.due_today,

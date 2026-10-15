@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { abandonSlotConflicts, saveSlot } from "@/lib/actions/admin";
 import type { PlanningData, PlanningSlot } from "@/lib/data/admin";
-import { useLabels } from "@/lib/i18n/client";
+import { useLabels, useMessage } from "@/lib/i18n/client";
 import type { SlotConflictReport } from "@/lib/schedule-conflicts";
 
 /** Ce qu'un déplacement peut changer. */
@@ -36,6 +36,7 @@ export type PendingMove = Pick<SlotValues, "dayOfWeek" | "startTime" | "endTime"
 export function useSlotMove(data: PlanningData) {
   const LABELS = useLabels();
   const L = LABELS.admin.planning;
+  const message = useMessage();
   const [pending, setPending] = useState<Record<string, PendingMove>>({});
   const [conflict, setConflict] = useState<{ slot: PlanningSlot; values: SlotValues; report: SlotConflictReport } | null>(null);
   const [busy, startTransition] = useTransition();
@@ -68,7 +69,7 @@ export function useSlotMove(data: PlanningData) {
         return;
       }
       setConflict(null);
-      toast.error(result.error);
+      toast.error(message(result.error));
     });
 
   const move = (slot: PlanningSlot, changes: SlotChanges) => {
