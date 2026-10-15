@@ -2,7 +2,7 @@
 
 import { Ellipsis, GraduationCap, LogOut, Search } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSelectedLayoutSegment } from "next/navigation";
 import { type ReactNode, useTransition } from "react";
 
 import { findActiveHref, type NavItem } from "@/components/layout/nav-types";
@@ -68,6 +68,8 @@ export function AppShell({
   const pathname = usePathname();
   const activeHref = findActiveHref(items, pathname);
   const sectionTitle = items.find((item) => item.href === activeHref)?.label ?? "";
+  // Section de l'espace (« eleves », « rapports »… ; null pour l'accueil) : clé de l'entrée de page.
+  const section = useSelectedLayoutSegment();
 
   return (
     <div className="min-h-dvh bg-background md:bg-app md:p-4 lg:p-8">
@@ -106,7 +108,15 @@ export function AppShell({
           </header>
 
           <main id="contenu" className="flex-1 px-4 pt-4 pb-28 md:overflow-y-auto md:px-8 md:pt-0 md:pb-8">
-            {children}
+            {/*
+              Entrée douce, rejouée à chaque changement de section (coupée si « réduire les animations »).
+              Remplace un template.tsx par espace : en développement, Next enveloppe chaque template
+              dans un nœud d'inspection qui, différé dans le flux RSC, déclenche au chargement
+              l'avertissement « unique key prop » dans OuterLayoutRouter.
+            */}
+            <div key={section ?? ""} className="animate-enter">
+              {children}
+            </div>
           </main>
         </div>
       </div>
